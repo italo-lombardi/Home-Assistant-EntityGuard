@@ -298,9 +298,9 @@
     "flag_action": {
       "options": {
         "save": "Wyjdź bez zmian",
-        "add": "Dodaj flage",
-        "replace": "Zastap wszystkie flagi",
-        "clear": "Wyczysc wszystkie flagi"
+        "add": "Dodaj flagę",
+        "replace": "Zastąp wszystkie flagi",
+        "clear": "Wyczyść wszystkie flagi"
       }
     }
   },

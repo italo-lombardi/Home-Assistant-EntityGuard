@@ -298,8 +298,8 @@
     "flag_action": {
       "options": {
         "save": "Avsluta utan ändringar",
-        "add": "Lagg till flagga",
-        "replace": "Ersatt alla flaggor",
+        "add": "Lägg till flagga",
+        "replace": "Ersätt alla flaggor",
         "clear": "Rensa alla flaggor"
       }
     }

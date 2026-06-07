@@ -10,7 +10,7 @@ from homeassistant.components.http import StaticPathConfig
 from homeassistant.components.lovelace.resources import ResourceStorageCollection
 from homeassistant.components.recorder import get_instance as recorder_get_instance
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
-from homeassistant.const import Platform
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
@@ -147,11 +147,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if hass.is_running:
             await _deferred_flag_check()
         else:
-            from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
-
-            hass.bus.async_listen_once(
+            unsub = hass.bus.async_listen_once(
                 EVENT_HOMEASSISTANT_STARTED, _deferred_flag_check
             )
+            entry.async_on_unload(unsub)
 
         # Sync device-registry name to entry.title (handles renames).
         device_reg = dr.async_get(hass)

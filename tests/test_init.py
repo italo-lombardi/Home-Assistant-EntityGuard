@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.core import HomeAssistant
 
@@ -107,18 +107,13 @@ async def test_remove_rule_entry_clears_statistics(
         type("Entity", (), {"entity_id": "sensor.test_rule_enforcement_count_total"})(),
     ]
 
-    mock_recorder_instance = type("Recorder", (), {})()
-    mock_clear = AsyncMock()
-    # Real async_clear_statistics is sync (@callback) — use MagicMock semantics.
-    from unittest.mock import MagicMock
-
+    # Real Recorder.async_clear_statistics is sync (@callback), so MagicMock matches.
     mock_clear = MagicMock()
+    mock_recorder_instance = type("Recorder", (), {})()
     mock_recorder_instance.async_clear_statistics = mock_clear
 
     with (
-        patch(
-            "custom_components.entity_guard.er.async_get",
-        ),
+        patch("custom_components.entity_guard.er.async_get"),
         patch(
             "custom_components.entity_guard.er.async_entries_for_config_entry",
             return_value=entities,

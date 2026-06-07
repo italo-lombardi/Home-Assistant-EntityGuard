@@ -12,6 +12,7 @@ from homeassistant.helpers.issue_registry import (
 )
 
 from .const import DOMAIN
+from .models import parse_rule_config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,8 +24,6 @@ async def async_check_missing_flag_entities(hass: HomeAssistant, entry_id: str) 
     entry = hass.config_entries.async_get_entry(entry_id)
     if entry is None:
         return
-
-    from .models import parse_rule_config
 
     try:
         config = parse_rule_config(entry)

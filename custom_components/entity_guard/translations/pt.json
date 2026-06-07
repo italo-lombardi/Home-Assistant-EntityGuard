@@ -298,7 +298,7 @@
     "flag_action": {
       "options": {
         "save": "Sair sem alterações",
-        "add": "Adicionar condicao",
+        "add": "Adicionar condição",
         "replace": "Substituir todas as condições",
         "clear": "Limpar todas as condições"
       }
