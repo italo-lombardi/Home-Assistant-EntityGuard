@@ -8,11 +8,13 @@ from pathlib import Path
 
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.components.lovelace.resources import ResourceStorageCollection
+from homeassistant.components import recorder
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
+from homeassistant.util import slugify
 
 from .const import (
     CONF_ENTRY_TYPE,
@@ -187,7 +189,20 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Block hub removal while rules still exist; recreate hub immediately if forced."""
     if entry.data.get(CONF_ENTRY_TYPE) != ENTRY_TYPE_HUB:
-        _LOGGER.debug("Removed rule entry %s", entry.entry_id)
+        _LOGGER.debug("Removed rule entry %s; clearing statistics", entry.entry_id)
+        device_slug = slugify(entry.title)
+        statistic_ids = [
+            f"sensor.{device_slug}_{suffix}"
+            for suffix in (
+                "cooldown_remaining",
+                "enforcement_count_today",
+                "enforcement_count_total",
+            )
+        ]
+        await recorder.async_clear_statistics(hass, statistic_ids)
+        _LOGGER.debug(
+            "Cleared %d statistic(s) for rule %s", len(statistic_ids), entry.entry_id
+        )
         return
     rule_entries = [
         e

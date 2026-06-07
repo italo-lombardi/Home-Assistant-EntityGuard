@@ -11,6 +11,7 @@ from custom_components.entity_guard import (
     PLATFORMS_RULE,
     async_setup_entry,
     async_unload_entry,
+    async_remove_entry,
 )
 from custom_components.entity_guard.const import DOMAIN
 
@@ -92,3 +93,36 @@ async def test_unload_rule_entry(hass: HomeAssistant, rule_entry) -> None:
 
     assert result is True
     mock_unload.assert_called_once_with(rule_entry, PLATFORMS_RULE)
+
+
+async def test_remove_rule_entry_clears_statistics(
+    hass: HomeAssistant, rule_entry
+) -> None:
+    """Rule removal clears orphaned statistics."""
+    rule_entry.add_to_hass(hass)
+    with patch(
+        "custom_components.entity_guard.recorder", autospec=True
+    ) as mock_recorder:
+        mock_recorder.async_clear_statistics = AsyncMock()
+        await async_remove_entry(hass, rule_entry)
+
+    mock_recorder.async_clear_statistics.assert_called_once()
+    call_args = mock_recorder.async_clear_statistics.call_args
+    assert call_args[0][0] == hass
+    statistic_ids = call_args[0][1]
+    assert len(statistic_ids) == 3
+    assert all(isinstance(id, str) for id in statistic_ids)
+
+
+async def test_remove_hub_entry_skips_statistics(
+    hass: HomeAssistant, hub_entry
+) -> None:
+    """Hub removal does not clear statistics."""
+    hub_entry.add_to_hass(hass)
+    with patch(
+        "custom_components.entity_guard.recorder", autospec=True
+    ) as mock_recorder:
+        mock_recorder.async_clear_statistics = AsyncMock()
+        await async_remove_entry(hass, hub_entry)
+
+    mock_recorder.async_clear_statistics.assert_not_called()

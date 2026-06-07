@@ -174,7 +174,7 @@
       },
       "edit_flags": {
         "title": "Rediger flaggbetingelser",
-        "description": "Gjeldende flagg: {summary}\n\n{current_state}. Velg «add» for å legge til, «clear» for å fjerne alle, eller «save» for å la være uendret.",
+        "description": "Gjeldende flagg: {summary}\n\n{current_state}. Velg 'legg til' for a legge til, 'erstatt' for a erstatte alle, 'fjern' for a slette alle eller 'lagre' for a la vaere uendret.",
         "data": {
           "entity": "Flaggenhet",
           "match_state": "Påkrevd tilstand",
@@ -297,8 +297,9 @@
     },
     "flag_action": {
       "options": {
-        "save": "Lagre uten endringer",
+        "save": "Avslutt uten endringer",
         "add": "Legg til flagg",
+        "replace": "Erstatt alle flagg",
         "clear": "Fjern alle flagg"
       }
     }

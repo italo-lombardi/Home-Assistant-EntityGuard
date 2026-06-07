@@ -137,11 +137,15 @@
       },
       "edit_basics": {
         "title": "Edit name",
-        "data": {"rule_name": "Rule name"}
+        "data": {
+          "rule_name": "Rule name"
+        }
       },
       "edit_entities": {
         "title": "Edit target entities",
-        "data": {"target_entities": "Target entities"}
+        "data": {
+          "target_entities": "Target entities"
+        }
       },
       "edit_safety": {
         "title": "Safety acknowledgment",
@@ -293,42 +297,83 @@
     },
     "flag_action": {
       "options": {
-        "save": "Save without changes",
+        "save": "Exit without changes",
         "add": "Add flag",
+        "replace": "Replace all flags",
         "clear": "Clear all flags"
       }
     }
   },
   "entity": {
     "binary_sensor": {
-      "armed": {"name": "Armed"},
-      "active": {"name": "Active"},
-      "in_cooldown": {"name": "In cooldown"}
+      "armed": {
+        "name": "Armed"
+      },
+      "active": {
+        "name": "Active"
+      },
+      "in_cooldown": {
+        "name": "In cooldown"
+      }
     },
     "sensor": {
-      "status": {"name": "Status"},
-      "last_enforced": {"name": "Last enforced"},
-      "enforcement_count_today": {"name": "Enforcements today"},
-      "enforcement_count_total": {"name": "Enforcements total"},
-      "cooldown_remaining": {"name": "Cooldown remaining"},
-      "safety_status": {"name": "Safety status"},
-      "suppressed_until": {"name": "Suppressed until"}
+      "status": {
+        "name": "Status"
+      },
+      "last_enforced": {
+        "name": "Last enforced"
+      },
+      "enforcement_count_today": {
+        "name": "Enforcements today"
+      },
+      "enforcement_count_total": {
+        "name": "Enforcements total"
+      },
+      "cooldown_remaining": {
+        "name": "Cooldown remaining"
+      },
+      "safety_status": {
+        "name": "Safety status"
+      },
+      "suppressed_until": {
+        "name": "Suppressed until"
+      }
     },
     "switch": {
-      "enabled": {"name": "Enabled"},
-      "debounce_enabled": {"name": "Debounce enabled"},
-      "master_enabled": {"name": "Master enabled"}
+      "enabled": {
+        "name": "Enabled"
+      },
+      "debounce_enabled": {
+        "name": "Debounce enabled"
+      },
+      "master_enabled": {
+        "name": "Master enabled"
+      }
     },
     "number": {
-      "delay_seconds": {"name": "Delay (seconds)"},
-      "debounce_seconds": {"name": "Debounce (seconds)"},
-      "max_enforcements_per_minute": {"name": "Max enforcements per minute"}
+      "delay_seconds": {
+        "name": "Delay (seconds)"
+      },
+      "debounce_seconds": {
+        "name": "Debounce (seconds)"
+      },
+      "max_enforcements_per_minute": {
+        "name": "Max enforcements per minute"
+      }
     },
     "button": {
-      "reset": {"name": "Reset cooldowns"},
-      "test_enforce": {"name": "Test enforce"},
-      "clear_suppression": {"name": "Clear suppression"},
-      "clear_history": {"name": "Clear history (counters)"}
+      "reset": {
+        "name": "Reset cooldowns"
+      },
+      "test_enforce": {
+        "name": "Test enforce"
+      },
+      "clear_suppression": {
+        "name": "Clear suppression"
+      },
+      "clear_history": {
+        "name": "Clear history (counters)"
+      }
     }
   }
 }

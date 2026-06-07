@@ -174,7 +174,7 @@
       },
       "edit_flags": {
         "title": "Edytuj warunki flag",
-        "description": "Bieżące flagi: {summary}\n\n{current_state}. Wybierz „add”, aby dodać, „clear”, aby usunąć wszystkie, lub „save”, aby pozostawić bez zmian.",
+        "description": "Obecne flagi: {summary}\n\n{current_state}. Wybierz 'dodaj' aby dodac, 'zastap' aby zastapic wszystkie, 'wyczysc' aby usunac wszystkie lub 'zapisz' aby pozostawic bez zmian.",
         "data": {
           "entity": "Encja flagi",
           "match_state": "Wymagany stan",
@@ -297,9 +297,10 @@
     },
     "flag_action": {
       "options": {
-        "save": "Zapisz bez zmian",
-        "add": "Dodaj flagę",
-        "clear": "Wyczyść wszystkie flagi"
+        "save": "Wyjdz bez zmian",
+        "add": "Dodaj flage",
+        "replace": "Zastap wszystkie flagi",
+        "clear": "Wyczysc wszystkie flagi"
       }
     }
   },

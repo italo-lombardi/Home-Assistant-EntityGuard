@@ -174,7 +174,7 @@
       },
       "edit_flags": {
         "title": "Rediger flag-betingelser",
-        "description": "Aktuelle flag: {summary}\n\n{current_state}. Vælg 'tilføj' for at tilføje, 'ryd' for at fjerne alle eller 'gem' for at lade være uændret.",
+        "description": "Aktuelle flag: {summary}\n\n{current_state}. Vælg 'tilføj' for at tilføje, 'erstat' for at erstattet alle, 'ryd' for at fjerne alle eller 'gem' for at lade være uændret.",
         "data": {
           "entity": "Flag-entitet",
           "match_state": "Krævet tilstand",
@@ -297,9 +297,10 @@
     },
     "flag_action": {
       "options": {
-        "save": "Gem uden ændringer",
-        "add": "Tilføj flag",
-        "clear": "Ryd alle flag"
+        "save": "Afslut uden ændringer",
+        "add": "Tilføj flagg",
+        "replace": "Erstat alle flagg",
+        "clear": "Ryd alle flagg"
       }
     }
   },

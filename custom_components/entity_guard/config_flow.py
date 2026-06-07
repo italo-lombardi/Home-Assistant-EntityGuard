@@ -1027,27 +1027,40 @@ class EntityGuardOptionsFlow(OptionsFlow):
             if action == "clear":
                 self._working[CONF_FLAGS] = []
                 return self._save()
-
-            entity = user_input.get(CONF_FLAG_ENTITY)
-            match_state = str(user_input.get(CONF_FLAG_MATCH_STATE, "")).strip()
-            existing = list(self._working.get(CONF_FLAGS, []))
-            last_entity = entity
-
-            if action == "add":
+            if action == "replace":
+                entity = user_input.get(CONF_FLAG_ENTITY)
+                match_state = str(user_input.get(CONF_FLAG_MATCH_STATE, "")).strip()
                 if not entity or not match_state:
                     errors["base"] = "incomplete_flag"
                 else:
-                    existing.append(
+                    self._working[CONF_FLAGS] = [
                         {
                             CONF_FLAG_ENTITY: entity,
                             CONF_FLAG_MATCH_STATE: match_state,
                         }
-                    )
-                    self._working[CONF_FLAGS] = existing
+                    ]
                     return self._save()
             else:
-                self._working[CONF_FLAGS] = existing
-                return self._save()
+                entity = user_input.get(CONF_FLAG_ENTITY)
+                match_state = str(user_input.get(CONF_FLAG_MATCH_STATE, "")).strip()
+                existing = list(self._working.get(CONF_FLAGS, []))
+                last_entity = entity
+
+                if action == "add":
+                    if not entity or not match_state:
+                        errors["base"] = "incomplete_flag"
+                    else:
+                        existing.append(
+                            {
+                                CONF_FLAG_ENTITY: entity,
+                                CONF_FLAG_MATCH_STATE: match_state,
+                            }
+                        )
+                        self._working[CONF_FLAGS] = existing
+                        return self._save()
+                else:
+                    self._working[CONF_FLAGS] = existing
+                    return self._save()
 
         flags = self._working.get(CONF_FLAGS, [])
         summary = (
@@ -1065,7 +1078,7 @@ class EntityGuardOptionsFlow(OptionsFlow):
                 vol.Optional(CONF_FLAG_MATCH_STATE, default=""): str,
                 vol.Required("action", default="save"): selector.SelectSelector(
                     selector.SelectSelectorConfig(
-                        options=["save", "add", "clear"],
+                        options=["save", "add", "replace", "clear"],
                         translation_key="flag_action",
                         mode=selector.SelectSelectorMode.LIST,
                     )

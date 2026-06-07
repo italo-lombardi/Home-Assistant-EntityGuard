@@ -174,7 +174,7 @@
       },
       "edit_flags": {
         "title": "Redigera flaggvillkor",
-        "description": "Aktuella flaggor: {summary}\n\n{current_state}. Välj 'lägg till' för att lägga till, 'rensa' för att ta bort alla, eller 'spara' för att lämna oförändrat.",
+        "description": "Aktuella flaggor: {summary}\n\n{current_state}. Valj 'lagg till' for att lagga till, 'ersatt' for att ersatta alla, 'rensa' for att ta bort alla eller 'spara' for att lamna oforandrat.",
         "data": {
           "entity": "Flaggentitet",
           "match_state": "Krävt tillstånd",
@@ -297,8 +297,9 @@
     },
     "flag_action": {
       "options": {
-        "save": "Spara utan ändringar",
-        "add": "Lägg till flagga",
+        "save": "Avsluta utan andringar",
+        "add": "Lagg till flagga",
+        "replace": "Ersatt alla flaggor",
         "clear": "Rensa alla flaggor"
       }
     }

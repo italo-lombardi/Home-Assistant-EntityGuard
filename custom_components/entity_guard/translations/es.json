@@ -174,7 +174,7 @@
       },
       "edit_flags": {
         "title": "Editar condiciones de marca",
-        "description": "Marcas actuales: {summary}\n\n{current_state}. Elija 'añadir' para agregar, 'borrar' para eliminar todas, o 'guardar' para dejar sin cambios.",
+        "description": "Banderas actuales: {summary}\n\n{current_state}. Elige 'anadir' para anadir, 'reemplazar' para reemplazar todas, 'borrar' para quitar todas o 'guardar' para dejar sin cambios.",
         "data": {
           "entity": "Entidad de marca",
           "match_state": "Estado requerido",
@@ -297,8 +297,9 @@
     },
     "flag_action": {
       "options": {
-        "save": "Guardar sin cambios",
-        "add": "Añadir marca",
+        "save": "Salir sin cambios",
+        "add": "Anadir marca",
+        "replace": "Reemplazar todas las marcas",
         "clear": "Borrar todas las marcas"
       }
     }

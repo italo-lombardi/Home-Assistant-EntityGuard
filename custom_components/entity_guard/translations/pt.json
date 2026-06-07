@@ -174,7 +174,7 @@
       },
       "edit_flags": {
         "title": "Editar condições",
-        "description": "Condições atuais: {summary}\n\n{current_state}. Escolha 'adicionar' para acrescentar, 'limpar' para remover todas, ou 'guardar' para deixar inalteradas.",
+        "description": "Condicoes atuais: {summary}\n\n{current_state}. Escolha 'adicionar' para adicionar, 'substituir' para substituir todas, 'limpar' para remover todas ou 'guardar' para deixar inalterado.",
         "data": {
           "entity": "Entidade da condição",
           "match_state": "Estado requerido",
@@ -297,9 +297,10 @@
     },
     "flag_action": {
       "options": {
-        "save": "Guardar sem alterações",
-        "add": "Adicionar condição",
-        "clear": "Limpar todas as condições"
+        "save": "Sair sem alteracoes",
+        "add": "Adicionar condicao",
+        "replace": "Substituir todas as condicoes",
+        "clear": "Limpar todas as condicoes"
       }
     }
   },

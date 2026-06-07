@@ -174,7 +174,7 @@
       },
       "edit_flags": {
         "title": "Voorwaarden bewerken",
-        "description": "Huidige voorwaarden: {summary}\n\n{current_state}. Kies 'add' om toe te voegen, 'clear' om alles te verwijderen, of 'save' om ongewijzigd te laten.",
+        "description": "Huidige voorwaarden: {summary}\n\n{current_state}. Kies 'toevoegen' om toe te voegen, 'vervangen' om alle te vervangen, 'wissen' om alle te verwijderen of 'opslaan' om ongewijzigd te laten.",
         "data": {
           "entity": "Voorwaarde-entiteit",
           "match_state": "Vereiste status",
@@ -297,8 +297,9 @@
     },
     "flag_action": {
       "options": {
-        "save": "Opslaan zonder wijzigingen",
+        "save": "Afsluiten zonder wijzigingen",
         "add": "Voorwaarde toevoegen",
+        "replace": "Alle voorwaarden vervangen",
         "clear": "Alle voorwaarden wissen"
       }
     }

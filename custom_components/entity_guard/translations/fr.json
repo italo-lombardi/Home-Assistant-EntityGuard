@@ -174,7 +174,7 @@
       },
       "edit_flags": {
         "title": "Modifier les conditions",
-        "description": "Conditions actuelles : {summary}\n\n{current_state}. Choisissez « add » pour ajouter, « clear » pour tout supprimer, ou « save » pour ne rien modifier.",
+        "description": "Conditions actuelles : {summary}\n\n{current_state}. Choisissez 'ajouter' pour ajouter, 'remplacer' pour remplacer toutes, 'effacer' pour supprimer toutes ou 'enregistrer' pour ne pas modifier.",
         "data": {
           "entity": "Entité de la condition",
           "match_state": "État requis",
@@ -297,8 +297,9 @@
     },
     "flag_action": {
       "options": {
-        "save": "Enregistrer sans modification",
+        "save": "Quitter sans modification",
         "add": "Ajouter une condition",
+        "replace": "Remplacer toutes les conditions",
         "clear": "Effacer toutes les conditions"
       }
     }
