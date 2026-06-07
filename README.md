@@ -100,6 +100,15 @@ Example: a curfew flag (`input_boolean.kids_curfew == "on"`) AND a presence flag
 
 ![Step 3: Flags](custom_components/entity_guard/docs/04_flags.png)
 
+When editing a rule's flags via **Configure → Edit flag conditions**, you have four actions:
+
+- **Add** — append the new condition to the existing list
+- **Replace** — clear all existing conditions and save only the new one
+- **Clear** — remove all conditions
+- **Exit without changes** — leave the list as-is
+
+If a flag entity is later deleted from Home Assistant, Entity Guard surfaces a **Repair issue** (Settings → System → Repairs) so you know which rule references the missing entity. The rule will not enforce while flags cannot be evaluated.
+
 ### Step 4: Advanced
 
 | Field | Default | Description |
