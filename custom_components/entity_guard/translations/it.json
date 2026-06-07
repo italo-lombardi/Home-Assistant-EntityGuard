@@ -375,5 +375,11 @@
         "name": "Cancella storico (contatori)"
       }
     }
+  },
+  "issues": {
+    "flag_entity_missing": {
+      "title": "Entità flag mancante nella regola '{rule_name}'",
+      "description": "The following flag entity/entities no longer exist but are referenced in the rule: {missing_entities}. The rule will not enforce when these flags cannot be evaluated. Update or remove the rule to resolve this issue."
+    }
   }
 }
