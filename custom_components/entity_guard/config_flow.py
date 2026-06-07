@@ -1024,43 +1024,58 @@ class EntityGuardOptionsFlow(OptionsFlow):
 
         if user_input is not None:
             action = user_input.get("action", "save")
-            if action == "clear":
-                self._working[CONF_FLAGS] = []
-                return self._save()
-            if action == "replace":
-                entity = user_input.get(CONF_FLAG_ENTITY)
-                match_state = str(user_input.get(CONF_FLAG_MATCH_STATE, "")).strip()
-                if not entity or not match_state:
-                    errors["base"] = "incomplete_flag"
-                else:
-                    self._working[CONF_FLAGS] = [
-                        {
-                            CONF_FLAG_ENTITY: entity,
-                            CONF_FLAG_MATCH_STATE: match_state,
-                        }
-                    ]
-                    return self._save()
-            else:
-                entity = user_input.get(CONF_FLAG_ENTITY)
-                match_state = str(user_input.get(CONF_FLAG_MATCH_STATE, "")).strip()
-                existing = list(self._working.get(CONF_FLAGS, []))
-                last_entity = entity
+            entity = user_input.get(CONF_FLAG_ENTITY)
+            match_state = str(user_input.get(CONF_FLAG_MATCH_STATE, "")).strip()
+            last_entity = entity
 
-                if action == "add":
+            match action:
+                case "clear":
+                    _LOGGER.debug("Flag action: clear all conditions")
+                    self._working[CONF_FLAGS] = []
+                    return self._save()
+
+                case "replace":
                     if not entity or not match_state:
                         errors["base"] = "incomplete_flag"
                     else:
+                        _LOGGER.debug(
+                            "Flag action: replace with single condition %s=%s",
+                            entity,
+                            match_state,
+                        )
+                        self._working[CONF_FLAGS] = [
+                            {
+                                CONF_FLAG_ENTITY: entity,
+                                CONF_FLAG_MATCH_STATE: match_state,
+                            }
+                        ]
+                        return self._save()
+
+                case "add":
+                    if not entity or not match_state:
+                        errors["base"] = "incomplete_flag"
+                    else:
+                        existing = list(self._working.get(CONF_FLAGS, []))
                         existing.append(
                             {
                                 CONF_FLAG_ENTITY: entity,
                                 CONF_FLAG_MATCH_STATE: match_state,
                             }
                         )
+                        _LOGGER.debug(
+                            "Flag action: add condition %s=%s (total: %d)",
+                            entity,
+                            match_state,
+                            len(existing),
+                        )
                         self._working[CONF_FLAGS] = existing
                         return self._save()
-                else:
-                    self._working[CONF_FLAGS] = existing
+
+                case _:
+                    _LOGGER.debug("Flag action: save without changes")
                     return self._save()
+
+
 
         flags = self._working.get(CONF_FLAGS, [])
         summary = (

@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.2.0-beta.1] — 2026-06-07
+
+### Added
+
+- **Flag replacement action**: New 'replace' button in options→edit_flags to delete all existing conditions and save only the new one
+- **Repair issue detection**: Proactive validation on rule startup detects missing flag entities and creates repair issues (non-fixable warning, user must update or remove rule)
+- **Missing flag entity repair**: New repair flow in Settings → System → Repairs displays missing flag entities with rule context
+- **Logging for debugging**: Added debug/info/warning logs to flag action dispatch, repair creation/deletion, and statistics cleanup for easier troubleshooting
+
+### Fixed
+
+- **Statistics cleanup robustness**: Rule removal now uses entity registry lookup instead of suffix reconstruction to clear orphaned statistics (cooldown_remaining, enforcement_count_today, enforcement_count_total). Handles user-renamed entities correctly
+- **Edge case guard**: Added check for empty statistics list to prevent silent failures during statistics cleanup
+- **Config flow UX**: Improved error recovery in flag editor when validation fails
+- **Flag action dispatch**: Refactored to match/case for clarity and reduced nesting
+
+### Changed
+
+- **UI labels**: Renamed 'Save without changes' → 'Exit without changes' in flag conditions editor for clarity
+- **Translations**: Updated all 11 language files (da, de, en, es, fr, it, nb, nl, pl, pt, sv) with new strings and repair issue messages
+- **Manifest**: Now declares `recorder` in `after_dependencies` (previously implicit)
+
+### Technical
+
+- Fixed JSON translation formatting (placeholder quotes must use double quotes per Home Assistant standards)
+- Test coverage: Fixed test mocking for entity registry lookups in statistics cleanup
+
 ## [0.1.1] — 2026-06-01
 
 ### Lovelace card
