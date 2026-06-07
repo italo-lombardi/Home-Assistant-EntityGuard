@@ -377,9 +377,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Flag-Entität fehlt in Regel '{rule_name}'",
+      "title": "Flag-Entität fehlt in Regel \"{rule_name}\"",
       "description": "Die folgenden Flag-Entitäten existieren nicht mehr, werden aber in der Regel referenziert: {missing_entities}. Die Regel wird nicht durchgesetzt, wenn diese Flags nicht ausgewertet werden können. Aktualisiere oder entferne die Regel, um dieses Problem zu beheben."
     }
   }
 }
-

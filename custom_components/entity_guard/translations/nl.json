@@ -378,9 +378,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Vlag-entiteit ontbreekt in regel '{rule_name}'",
+      "title": "Vlag-entiteit ontbreekt in regel \"{rule_name}\"",
       "description": "De volgende vlag-entiteiten bestaan niet meer, maar worden in de regel verwezen: {missing_entities}. De regel wordt niet afgedwongen wanneer deze vlaggen niet kunnen worden geëvalueerd. Werk de regel bij of verwijder deze om dit probleem op te lossen."
     }
   }
 }
-

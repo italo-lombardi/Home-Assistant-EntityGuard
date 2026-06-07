@@ -378,9 +378,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Entidade de sinalizador ausente na regra '{rule_name}'",
+      "title": "Entidade de sinalizador ausente na regra \"{rule_name}\"",
       "description": "As seguintes entidades de sinalizador não existem mais, mas são referenciadas na regra: {missing_entities}. A regra não será aplicada quando esses sinalizadores não puderem ser avaliados. Atualize ou remova a regra para resolver este problema."
     }
   }
 }
-

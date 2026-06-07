@@ -378,9 +378,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Brakuje jednostki flagi w regule '{rule_name}'",
+      "title": "Brakuje jednostki flagi w regule \"{rule_name}\"",
       "description": "Następujące jednostki flag już nie istnieją, ale są odwołania w regule: {missing_entities}. Reguła nie będzie egzekwowana, gdy te flagi nie mogą być oceniane. Zaktualizuj lub usuń regułę, aby rozwiązać ten problem."
     }
   }
 }
-

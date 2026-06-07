@@ -378,9 +378,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Flagg-entitet mangler i regel '{rule_name}'",
+      "title": "Flagg-entitet mangler i regel \"{rule_name}\"",
       "description": "Følgende flagg-enheter eksisterer ikke lenger, men blir referert til i regelen: {missing_entities}. Regelen vil ikke håndheves når disse flaggene ikke kan evalueres. Oppdater eller fjern regelen for å løse dette problemet."
     }
   }
 }
-

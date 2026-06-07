@@ -378,9 +378,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Entité drapeau manquante dans la règle '{rule_name}'",
+      "title": "Entité drapeau manquante dans la règle \"{rule_name}\"",
       "description": "Les entités drapeau suivantes n'existent plus mais sont référencées dans la règle: {missing_entities}. La règle ne s'appliquera pas quand ces drapeaux ne peuvent pas être évalués. Mettez à jour ou supprimez la règle pour résoudre ce problème."
     }
   }
 }
-

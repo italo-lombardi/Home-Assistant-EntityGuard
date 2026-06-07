@@ -378,9 +378,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Entidad de indicador faltante en la regla '{rule_name}'",
+      "title": "Entidad de indicador faltante en la regla \"{rule_name}\"",
       "description": "Las siguientes entidades de indicador ya no existen pero se hace referencia a ellas en la regla: {missing_entities}. La regla no se aplicará cuando estos indicadores no se puedan evaluar. Actualiza o elimina la regla para resolver este problema."
     }
   }
 }
-

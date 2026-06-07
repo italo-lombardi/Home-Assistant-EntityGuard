@@ -378,9 +378,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Entità flag mancante nella regola '{rule_name}'",
+      "title": "Entità flag mancante nella regola \"{rule_name}\"",
       "description": "Le seguenti entità flag non esistono più ma sono referenziate nella regola: {missing_entities}. La regola non verrà applicata quando questi flag non possono essere valutati. Aggiorna o rimuovi la regola per risolvere questo problema."
     }
   }
 }
-
