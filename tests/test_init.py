@@ -100,9 +100,22 @@ async def test_remove_rule_entry_clears_statistics(
 ) -> None:
     """Rule removal clears orphaned statistics."""
     rule_entry.add_to_hass(hass)
-    with patch(
-        "custom_components.entity_guard.recorder", autospec=True
-    ) as mock_recorder:
+    with (
+        patch(
+            "custom_components.entity_guard.recorder", autospec=True
+        ) as mock_recorder,
+        patch(
+            "custom_components.entity_guard.er.async_get", autospec=True
+        ),
+        patch(
+            "custom_components.entity_guard.er.async_entries_for_config_entry",
+            return_value=[
+                type("Entity", (), {"entity_id": "sensor.test_rule_cooldown_remaining"})(),
+                type("Entity", (), {"entity_id": "sensor.test_rule_enforcement_count_today"})(),
+                type("Entity", (), {"entity_id": "sensor.test_rule_enforcement_count_total"})(),
+            ],
+        ),
+    ):
         mock_recorder.async_clear_statistics = AsyncMock()
         await async_remove_entry(hass, rule_entry)
 
