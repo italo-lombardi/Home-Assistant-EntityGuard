@@ -14,7 +14,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
-from homeassistant.util import slugify
+from homeassistant.helpers import entity_registry as er
 
 from .const import (
     CONF_ENTRY_TYPE,
@@ -23,6 +23,7 @@ from .const import (
     ENTRY_TYPE_RULE,
 )
 from .models import parse_rule_config
+from .repairs import async_check_missing_flag_entities
 from .rule_engine import RuleEngine, signal_for_rule, signal_master_update
 from .services import async_register_services, async_unload_services
 from .storage import EntityGuardStore
@@ -135,6 +136,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             config.target_entities,
             config.mode,
         )
+        await async_check_missing_flag_entities(hass, entry.entry_id)
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS_RULE)
         # Sync device-registry name to entry.title (handles renames).
         device_reg = dr.async_get(hass)
@@ -190,14 +192,11 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Block hub removal while rules still exist; recreate hub immediately if forced."""
     if entry.data.get(CONF_ENTRY_TYPE) != ENTRY_TYPE_HUB:
         _LOGGER.debug("Removed rule entry %s; clearing statistics", entry.entry_id)
-        device_slug = slugify(entry.title)
+        ent_reg = er.async_get(hass)
         statistic_ids = [
-            f"sensor.{device_slug}_{suffix}"
-            for suffix in (
-                "cooldown_remaining",
-                "enforcement_count_today",
-                "enforcement_count_total",
-            )
+            entity.entity_id
+            for entity in er.async_entries_for_config_entry(ent_reg, entry.entry_id)
+            if entity.entity_id.startswith("sensor.")
         ]
         await recorder.async_clear_statistics(hass, statistic_ids)
         _LOGGER.debug(
