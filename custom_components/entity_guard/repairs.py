@@ -61,4 +61,3 @@ async def async_check_missing_flag_entities(hass: HomeAssistant, entry_id: str) 
         issue_id = f"{entry_id}_missing_flags"
         _LOGGER.debug("Flag validation passed for rule %s", entry.entry_id)
         async_delete_issue(hass, DOMAIN, issue_id)
-

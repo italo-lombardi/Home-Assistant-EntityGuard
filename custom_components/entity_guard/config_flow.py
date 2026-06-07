@@ -1075,8 +1075,6 @@ class EntityGuardOptionsFlow(OptionsFlow):
                     _LOGGER.debug("Flag action: save without changes")
                     return self._save()
 
-
-
         flags = self._working.get(CONF_FLAGS, [])
         summary = (
             ", ".join(
