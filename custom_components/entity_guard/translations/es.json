@@ -379,7 +379,7 @@
   "issues": {
     "flag_entity_missing": {
       "title": "Entidad de indicador faltante en la regla '{rule_name}'",
-      "description": "The following flag entity/entities no longer exist but are referenced in the rule: {missing_entities}. The rule will not enforce when these flags cannot be evaluated. Update or remove the rule to resolve this issue."
+      "description": "Las siguientes entidades de indicador ya no existen pero se hace referencia a ellas en la regla: {missing_entities}. La regla no se aplicará cuando estos indicadores no se puedan evaluar. Actualiza o elimina la regla para resolver este problema."
     }
   }
 }

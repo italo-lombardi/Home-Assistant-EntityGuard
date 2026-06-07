@@ -379,7 +379,7 @@
   "issues": {
     "flag_entity_missing": {
       "title": "Vlag-entiteit ontbreekt in regel '{rule_name}'",
-      "description": "The following flag entity/entities no longer exist but are referenced in the rule: {missing_entities}. The rule will not enforce when these flags cannot be evaluated. Update or remove the rule to resolve this issue."
+      "description": "De volgende vlag-entiteiten bestaan niet meer, maar worden in de regel verwezen: {missing_entities}. De regel wordt niet afgedwongen wanneer deze vlaggen niet kunnen worden geëvalueerd. Werk de regel bij of verwijder deze om dit probleem op te lossen."
     }
   }
 }
