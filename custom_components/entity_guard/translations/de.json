@@ -172,13 +172,13 @@
           "delay_seconds": "Verzögerung (Sekunden)"
         }
       },
-      “edit_flags”: {
-        “title”: “Flag-Bedingungen bearbeiten”,
-        “description”: “Aktuelle Flags: {summary}\n\n{current_state}. Wähle „add” zum Anhängen, „replace” zum Ersetzen aller, „clear” zum Entfernen aller oder „save”, um unverändert zu lassen.”,
-        “data”: {
-          “entity”: “Flag-Entität”,
-          “match_state”: “Erforderlicher Status”,
-          “action”: “Aktion”
+      "edit_flags": {
+        "title": "Flag-Bedingungen bearbeiten",
+        "description": "Aktuelle Flags: {summary}\n\n{current_state}. Wähle „add“ zum Anhängen, „clear“ zum Entfernen aller oder „save“, um unverändert zu lassen.",
+        "data": {
+          "entity": "Flag-Entität",
+          "match_state": "Erforderlicher Status",
+          "action": "Aktion"
         }
       },
       "edit_advanced": {
@@ -297,9 +297,8 @@
     },
     "flag_action": {
       "options": {
-        "save": "Ohne Änderungen beenden",
+        "save": "Ohne Änderungen speichern",
         "add": "Flag hinzufügen",
-        "replace": "Alle Flags ersetzen",
         "clear": "Alle Flags löschen"
       }
     }
