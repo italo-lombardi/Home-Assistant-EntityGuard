@@ -298,7 +298,7 @@
     "flag_action": {
       "options": {
         "save": "Afslut uden ændringer",
-        "add": "Tilføj flagg",
+        "add": "Tilføj flag",
         "replace": "Erstat alle flagg",
         "clear": "Ryd alle flagg"
       }

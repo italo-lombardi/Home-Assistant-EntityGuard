@@ -5,7 +5,11 @@ from __future__ import annotations
 import logging
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.issue_registry import async_create_issue, async_delete_issue
+from homeassistant.helpers.issue_registry import (
+    IssueSeverity,
+    async_create_issue,
+    async_delete_issue,
+)
 
 from .const import DOMAIN
 
@@ -25,20 +29,19 @@ async def async_check_missing_flag_entities(hass: HomeAssistant, entry_id: str) 
     try:
         config = parse_rule_config(entry)
     except Exception:  # noqa: BLE001
-        _LOGGER.debug("Could not parse config for entry %s", entry_id)
+        _LOGGER.exception("Could not parse config for entry %s", entry_id)
         return
 
     if not config.flags:
-        _LOGGER.debug("No flags configured for rule %s", entry.entry_id)
+        _LOGGER.debug("No flags configured for rule %s", entry_id)
         return
 
-    missing_flags: list[str] = []
-    for flag in config.flags:
-        if hass.states.get(flag.entity) is None:
-            missing_flags.append(flag.entity)
+    missing_flags: list[str] = [
+        flag.entity for flag in config.flags if hass.states.get(flag.entity) is None
+    ]
 
+    issue_id = f"{entry_id}_missing_flags"
     if missing_flags:
-        issue_id = f"{entry_id}_missing_flags"
         _LOGGER.warning(
             "Flag entities missing for rule '%s': %s",
             entry.title,
@@ -47,17 +50,15 @@ async def async_check_missing_flag_entities(hass: HomeAssistant, entry_id: str) 
         async_create_issue(
             hass,
             DOMAIN,
-            ISSUE_FLAG_ENTITY_MISSING,
+            issue_id,
             is_fixable=False,
-            severity="warning",
-            translation_key="flag_entity_missing",
+            severity=IssueSeverity.WARNING,
+            translation_key=ISSUE_FLAG_ENTITY_MISSING,
             translation_placeholders={
                 "rule_name": entry.title,
                 "missing_entities": ", ".join(missing_flags),
             },
-            issue_id=issue_id,
         )
     else:
-        issue_id = f"{entry_id}_missing_flags"
-        _LOGGER.debug("Flag validation passed for rule %s", entry.entry_id)
+        _LOGGER.debug("Flag validation passed for rule %s", entry_id)
         async_delete_issue(hass, DOMAIN, issue_id)

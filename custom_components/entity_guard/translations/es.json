@@ -298,7 +298,7 @@
     "flag_action": {
       "options": {
         "save": "Salir sin cambios",
-        "add": "Anadir marca",
+        "add": "Añadir marca",
         "replace": "Reemplazar todas las marcas",
         "clear": "Borrar todas las marcas"
       }

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.components.lovelace.resources import ResourceStorageCollection
-from homeassistant.components import recorder
+from homeassistant.components.recorder import get_instance as recorder_get_instance
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -136,8 +136,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             config.target_entities,
             config.mode,
         )
-        await async_check_missing_flag_entities(hass, entry.entry_id)
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS_RULE)
+
+        # Defer flag-entity check until HA is fully started so dependent integrations
+        # have populated their states; otherwise we'd raise false-positive missing-flag
+        # repair issues on every restart.
+        async def _deferred_flag_check(_event=None) -> None:
+            await async_check_missing_flag_entities(hass, entry.entry_id)
+
+        if hass.is_running:
+            await _deferred_flag_check()
+        else:
+            from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+
+            hass.bus.async_listen_once(
+                EVENT_HOMEASSISTANT_STARTED, _deferred_flag_check
+            )
+
         # Sync device-registry name to entry.title (handles renames).
         device_reg = dr.async_get(hass)
         device = device_reg.async_get_device(identifiers={(DOMAIN, entry.entry_id)})
@@ -201,7 +216,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         if not statistic_ids:
             _LOGGER.debug("No sensor statistics found for rule %s", entry.entry_id)
             return
-        await recorder.async_clear_statistics(hass, statistic_ids)
+        recorder_get_instance(hass).async_clear_statistics(statistic_ids)
         _LOGGER.debug(
             "Cleared %d statistic(s) for rule %s", len(statistic_ids), entry.entry_id
         )

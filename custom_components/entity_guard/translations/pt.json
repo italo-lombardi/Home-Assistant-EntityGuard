@@ -297,10 +297,10 @@
     },
     "flag_action": {
       "options": {
-        "save": "Sair sem alteracoes",
+        "save": "Sair sem alterações",
         "add": "Adicionar condicao",
-        "replace": "Substituir todas as condicoes",
-        "clear": "Limpar todas as condicoes"
+        "replace": "Substituir todas as condições",
+        "clear": "Limpar todas as condições"
       }
     }
   },

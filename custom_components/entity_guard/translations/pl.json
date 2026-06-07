@@ -297,7 +297,7 @@
     },
     "flag_action": {
       "options": {
-        "save": "Wyjdz bez zmian",
+        "save": "Wyjdź bez zmian",
         "add": "Dodaj flage",
         "replace": "Zastap wszystkie flagi",
         "clear": "Wyczysc wszystkie flagi"

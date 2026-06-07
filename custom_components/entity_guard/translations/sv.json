@@ -297,7 +297,7 @@
     },
     "flag_action": {
       "options": {
-        "save": "Avsluta utan andringar",
+        "save": "Avsluta utan ändringar",
         "add": "Lagg till flagga",
         "replace": "Ersatt alla flaggor",
         "clear": "Rensa alla flaggor"

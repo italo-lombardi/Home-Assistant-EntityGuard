@@ -5,27 +5,32 @@
 ### Added
 
 - **Flag replacement action**: New 'replace' button in options→edit_flags to delete all existing conditions and save only the new one
-- **Repair issue detection**: Proactive validation on rule startup detects missing flag entities and creates repair issues (non-fixable warning, user must update or remove rule)
+- **Repair issue detection**: Proactive validation detects missing flag entities and creates repair issues (non-fixable warning, user must update or remove rule). Check is deferred until HA is fully started to avoid false positives during startup
 - **Missing flag entity repair**: New repair flow in Settings → System → Repairs displays missing flag entities with rule context
 - **Logging for debugging**: Added debug/info/warning logs to flag action dispatch, repair creation/deletion, and statistics cleanup for easier troubleshooting
 
 ### Fixed
 
-- **Statistics cleanup robustness**: Rule removal now uses entity registry lookup instead of suffix reconstruction to clear orphaned statistics (cooldown_remaining, enforcement_count_today, enforcement_count_total). Handles user-renamed entities correctly
+- **Statistics cleanup runtime fix**: Use `recorder.get_instance(hass).async_clear_statistics(ids)` instead of non-existent `recorder.async_clear_statistics`. The previous attempt would `AttributeError` at runtime — never actually cleared stats
+- **Statistics cleanup robustness**: Rule removal now uses entity registry lookup instead of suffix reconstruction. Handles user-renamed entities correctly
 - **Edge case guard**: Added check for empty statistics list to prevent silent failures during statistics cleanup
-- **Config flow UX**: Improved error recovery in flag editor when validation fails
-- **Flag action dispatch**: Refactored to match/case for clarity and reduced nesting
+- **Repair issue creation**: Use `IssueSeverity.WARNING` enum and proper positional `issue_id` argument (previous code passed `issue_id` both positionally and as kwarg → `TypeError`)
+- **Translation diacritics**: Restored proper accents in es/pt/nb/pl/sv translations that were stripped during smart-quote fix
+- **da.json typo**: "Tilføj flagg" (Norwegian) → "Tilføj flag" (Danish)
+- **Exception logging in repairs**: Use `_LOGGER.exception` instead of `_LOGGER.debug` to preserve traceback
 
 ### Changed
 
-- **UI labels**: Renamed 'Save without changes' → 'Exit without changes' in flag conditions editor for clarity
-- **Translations**: Updated all 11 language files (da, de, en, es, fr, it, nb, nl, pl, pt, sv) with new strings and repair issue messages
+- **UI label**: 'Save without changes' → 'Exit without changes' for clarity
+- **Flag action dispatch**: Refactored if/elif chain to match/case for readability
+- **Code formatting**: Entire codebase formatted with ruff
 - **Manifest**: Now declares `recorder` in `after_dependencies` (previously implicit)
 
 ### Technical
 
 - Fixed JSON translation formatting (placeholder quotes must use double quotes per Home Assistant standards)
-- Test coverage: Fixed test mocking for entity registry lookups in statistics cleanup
+- Test coverage: Fixed test mocking for entity registry lookups + recorder instance in statistics cleanup
+- Repair check deferred via `EVENT_HOMEASSISTANT_STARTED` listener to avoid false-positive missing-flag warnings on restart
 
 ## [0.1.1] — 2026-06-01
 

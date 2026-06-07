@@ -107,6 +107,14 @@ async def test_remove_rule_entry_clears_statistics(
         type("Entity", (), {"entity_id": "sensor.test_rule_enforcement_count_total"})(),
     ]
 
+    mock_recorder_instance = type("Recorder", (), {})()
+    mock_clear = AsyncMock()
+    # Real async_clear_statistics is sync (@callback) — use MagicMock semantics.
+    from unittest.mock import MagicMock
+
+    mock_clear = MagicMock()
+    mock_recorder_instance.async_clear_statistics = mock_clear
+
     with (
         patch(
             "custom_components.entity_guard.er.async_get",
@@ -116,18 +124,17 @@ async def test_remove_rule_entry_clears_statistics(
             return_value=entities,
         ),
         patch(
-            "custom_components.entity_guard.recorder.async_clear_statistics",
-            new_callable=AsyncMock,
-        ) as mock_clear,
+            "custom_components.entity_guard.recorder_get_instance",
+            return_value=mock_recorder_instance,
+        ),
     ):
         await async_remove_entry(hass, rule_entry)
 
     mock_clear.assert_called_once()
-    call_args = mock_clear.call_args
-    assert call_args[0][0] == hass
-    statistic_ids = call_args[0][1]
+    statistic_ids = mock_clear.call_args[0][0]
     assert len(statistic_ids) == 3
     assert all(isinstance(id, str) for id in statistic_ids)
+    assert all(id.startswith("sensor.") for id in statistic_ids)
 
 
 async def test_remove_hub_entry_skips_statistics(
@@ -136,9 +143,8 @@ async def test_remove_hub_entry_skips_statistics(
     """Hub removal does not clear statistics."""
     hub_entry.add_to_hass(hass)
     with patch(
-        "custom_components.entity_guard.recorder", autospec=True
-    ) as mock_recorder:
-        mock_recorder.async_clear_statistics = AsyncMock()
+        "custom_components.entity_guard.recorder_get_instance"
+    ) as mock_get_instance:
         await async_remove_entry(hass, hub_entry)
 
-    mock_recorder.async_clear_statistics.assert_not_called()
+    mock_get_instance.assert_not_called()
