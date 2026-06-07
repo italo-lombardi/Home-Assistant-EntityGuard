@@ -198,6 +198,9 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
             for entity in er.async_entries_for_config_entry(ent_reg, entry.entry_id)
             if entity.entity_id.startswith("sensor.")
         ]
+        if not statistic_ids:
+            _LOGGER.debug("No sensor statistics found for rule %s", entry.entry_id)
+            return
         await recorder.async_clear_statistics(hass, statistic_ids)
         _LOGGER.debug(
             "Cleared %d statistic(s) for rule %s", len(statistic_ids), entry.entry_id
