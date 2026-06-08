@@ -12,7 +12,7 @@
 
 Enforce desired entity state in Home Assistant via declarative rules. Replaces N hand-written auto-off / auto-lock / kill-switch automations with a single rule each, with built-in cooldowns, rate limiting, persistence, and a custom dashboard card.
 
-![Entity Guard banner](custom_components/entity_guard/docs/00_banner.png)
+![Entity Guard banner](assets/00_banner.png)
 
 ---
 
@@ -68,7 +68,7 @@ Adding the integration takes you straight into rule creation. The **Entity Guard
 | Target entities | One or more entities the rule will enforce |
 | Mode | `state` (force a specific state) or `attribute` (clamp a numeric attribute) |
 
-![Step 1: Rule Basics](custom_components/entity_guard/docs/02_rule_basics.png)
+![Step 1: Rule Basics](assets/02_rule_basics.png)
 
 ### Step 2a: State Mode
 
@@ -78,7 +78,7 @@ Adding the integration takes you straight into rule creation. The **Entity Guard
 | Target state | `off` | State to force the entity into |
 | Delay (seconds) | `0` | Wait this long after the trigger before enforcing (0-86400) |
 
-![Step 2a: State Mode](custom_components/entity_guard/docs/03a_state_mode.png)
+![Step 2a: State Mode](assets/03a_state_mode.png)
 
 ### Step 2b: Attribute Mode
 
@@ -90,7 +90,7 @@ Adding the integration takes you straight into rule creation. The **Entity Guard
 | Target value | Value to clamp the attribute to when the threshold is crossed |
 | Delay (seconds) | Wait this long before enforcing (0-86400) |
 
-![Step 2b: Attribute Mode](custom_components/entity_guard/docs/03b_attribute_mode.png)
+![Step 2b: Attribute Mode](assets/03b_attribute_mode.png)
 
 ### Step 3: Flags (optional)
 
@@ -98,7 +98,7 @@ Define a list of `(flag entity, match state)` conditions. The rule only fires wh
 
 Example: a curfew flag (`input_boolean.kids_curfew == "on"`) AND a presence flag (`person.parent == "not_home"`).
 
-![Step 3: Flags](custom_components/entity_guard/docs/04_flags.png)
+![Step 3: Flags](assets/04_flags.png)
 
 When editing a rule's flags via **Configure → Edit flag conditions**, you have four actions:
 
@@ -117,19 +117,19 @@ If a flag entity is later deleted from Home Assistant, Entity Guard surfaces a *
 | Debounce (seconds) | `60` | Window during which a re-trigger is ignored (0-86400) |
 | Max enforcements per minute | `10` | Auto-suppresses the rule for 15 minutes if exceeded |
 
-![Step 4: Advanced](custom_components/entity_guard/docs/05_advanced.png)
+![Step 4: Advanced](assets/05_advanced.png)
 
 ### Step 5: Safety Acknowledgment (cover / lock / climate only)
 
 If any target entity is in the `cover`, `lock`, or `climate` domain, you must check the safety acknowledgment box before the rule can be saved. This is a deliberate seatbelt against rules that physically move things.
 
-![Step 5: Safety Acknowledgment](custom_components/entity_guard/docs/06_safety_ack.png)
+![Step 5: Safety Acknowledgment](assets/06_safety_ack.png)
 
 ### Step 6: Preview
 
 Review the assembled rule before saving. Confirm to create the config entry. The Entity Guard Hub is created automatically alongside your first rule.
 
-![Step 6: Preview](custom_components/entity_guard/docs/07_preview.png)
+![Step 6: Preview](assets/07_preview.png)
 
 ---
 
@@ -290,27 +290,27 @@ The card shows:
 
 **Normal state — rule armed, all entities compliant**
 
-![Card: armed state](custom_components/entity_guard/docs/10_card_idle.png)
+![Card: armed state](assets/10_card_idle.png)
 
 **Active enforcement — entity non-compliant**
 
-![Card: active enforcement](custom_components/entity_guard/docs/11_card_active.png)
+![Card: active enforcement](assets/11_card_active.png)
 
 **Suppressed state**
 
-![Card: suppressed](custom_components/entity_guard/docs/12_card_suppressed.png)
+![Card: suppressed](assets/12_card_suppressed.png)
 
 **Actions panel open**
 
-![Card: actions](custom_components/entity_guard/docs/13_card_actions.png)
+![Card: actions](assets/13_card_actions.png)
 
 **Card editor**
 
-![Card editor](custom_components/entity_guard/docs/14_card_editor.png)
+![Card editor](assets/14_card_editor.png)
 
 ### Dashboard Example
 
-![Dashboard with multiple rules](custom_components/entity_guard/docs/15_dashboard.png)
+![Dashboard with multiple rules](assets/15_dashboard.png)
 
 ---
 

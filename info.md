@@ -24,7 +24,7 @@ rule_id: <config_entry_id>
 
 The card auto-registers when the integration loads. No manual resource configuration needed.
 
-![Entity Guard card](https://raw.githubusercontent.com/italo-lombardi/Home-Assistant-EntityGuard/main/custom_components/entity_guard/docs/10_card_idle.png)
+![Entity Guard card](https://raw.githubusercontent.com/italo-lombardi/Home-Assistant-EntityGuard/main/assets/10_card_idle.png)
 
 ## Setup
 
