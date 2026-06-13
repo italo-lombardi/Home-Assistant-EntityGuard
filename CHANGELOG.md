@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.1] — 2026-06-13
+
+### Fixed
+
+- **Startup error**: Renamed `repairs.py` → `issue_helpers.py`. Home Assistant auto-discovers any integration file named `repairs.py` as a repairs platform and requires it to implement `async_create_fix_flow`. The file only contains issue-creation utilities (no fix flow), so HA raised `HomeAssistantError: Invalid repairs platform` on every startup.
+
+### Tests
+
+- Added `tests/test_issue_helpers.py` — 6 tests covering missing entry, no flags, all flags present, single missing flag, partial missing, and parse error paths.
+
+---
+
 ## [0.2.0] — 2026-06-08
 
 ### Added

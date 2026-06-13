@@ -2,6 +2,10 @@
 
 Declarative state-enforcement rules. Bind one or more entities to a rule that defines a trigger condition and a desired target state — Entity Guard enforces it automatically, with cooldowns, suppression, rate limiting, and a custom dashboard card.
 
+## What's new in 0.2.1
+
+- Fixed a startup error where HA tried to load `repairs.py` as a repairs platform and raised `HomeAssistantError: Invalid repairs platform` because the file lacks the required `async_create_fix_flow` interface. The file has been renamed to `issue_helpers.py`.
+
 ## Features
 
 - **Multi-entity rules** — one rule binds 1+ target entities, each evaluated independently

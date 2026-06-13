@@ -23,7 +23,7 @@ from .const import (
     ENTRY_TYPE_RULE,
 )
 from .models import parse_rule_config
-from .repairs import async_check_missing_flag_entities
+from .issue_helpers import async_check_missing_flag_entities
 from .rule_engine import RuleEngine, signal_for_rule, signal_master_update
 from .services import async_register_services, async_unload_services
 from .storage import EntityGuardStore
