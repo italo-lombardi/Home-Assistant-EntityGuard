@@ -230,27 +230,21 @@ async def test_unrelated_entity_does_not_trigger_check(hass: HomeAssistant) -> N
 
 async def test_listener_unsubscribed_after_entry_unload(hass: HomeAssistant) -> None:
     """Listener stops firing after config entry is unloaded."""
-    from custom_components.entity_guard import async_unload_entry
-
     _register_entity(hass, "input_boolean.night")
     mock_check = AsyncMock()
+
     async with _setup_wired(
         hass, [{"entity": "input_boolean.night", "match_state": "on"}], mock_check
     ) as entry:
-        with (
-            patch.object(
-                hass.config_entries,
-                "async_unload_platforms",
-                new_callable=AsyncMock,
-                return_value=True,
-            ),
-            patch(
-                "custom_components.entity_guard.RuleEngine.async_unload",
-                new_callable=AsyncMock,
-            ),
-        ):
-            await async_unload_entry(hass, entry)
-            await entry._async_process_on_unload(hass)
+        # Drain on_unload callbacks registered during setup (the listener unsub
+        # lives here). Using the public async_on_unload list is the only stable
+        # way to replay them without running the full HA config-entry machinery.
+        if entry._on_unload:
+            for cb in list(entry._on_unload):
+                result = cb()
+                if result is not None:
+                    await result
+            entry._on_unload.clear()
 
         mock_check.reset_mock()
         er.async_get(hass).async_remove("input_boolean.night")

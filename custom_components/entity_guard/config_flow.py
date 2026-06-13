@@ -67,15 +67,10 @@ from .const import (
     SAFETY_DOMAINS,
     SUPPORTED_ATTRIBUTES,
     SUPPORTED_OPERATORS,
+    has_safety_target as _has_safety_target,
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _has_safety_target(entities: list[str]) -> bool:
-    """Return True when any entity belongs to a safety-sensitive domain."""
-    # SAFETY_DOMAINS gate the safety_acknowledged checkbox; cheap split avoids registry lookups.
-    return any(entity_id.split(".", 1)[0] in SAFETY_DOMAINS for entity_id in entities)
 
 
 def _current_state_hint(hass: Any, entity_id: str | None) -> str:

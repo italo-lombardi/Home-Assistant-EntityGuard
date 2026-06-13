@@ -13,6 +13,7 @@ from custom_components.entity_guard.const import (
     DOMAIN,
     ENTRY_TYPE_RULE,
     STATUS_ARMED,
+    entry_has_safety_target,
     has_safety_target,
     signal_master,
     signal_rule_update,
@@ -89,6 +90,36 @@ def test_has_safety_target_false():
 def test_has_safety_target_empty():
     entry = _make_rule_entry(target_entities=[])
     assert has_safety_target(entry.data.get("target_entities", [])) is False
+
+
+# ---------------------------------------------------------------------------
+# entry_has_safety_target
+# ---------------------------------------------------------------------------
+
+
+def test_entry_has_safety_target_from_data():
+    entry = _make_rule_entry(target_entities=["lock.front_door"])
+    assert entry_has_safety_target(entry) is True
+
+
+def test_entry_has_safety_target_false():
+    entry = _make_rule_entry(target_entities=["light.bedroom"])
+    assert entry_has_safety_target(entry) is False
+
+
+def test_entry_has_safety_target_from_options():
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE},
+        options={"target_entities": ["cover.garage"]},
+        title="Test",
+    )
+    assert entry_has_safety_target(entry) is True
+
+
+def test_entry_has_safety_target_empty():
+    entry = _make_rule_entry(target_entities=[])
+    assert entry_has_safety_target(entry) is False
 
 
 # ---------------------------------------------------------------------------

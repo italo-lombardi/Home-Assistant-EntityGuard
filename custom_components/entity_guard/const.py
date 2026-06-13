@@ -222,7 +222,7 @@ def has_safety_target(entity_ids: list) -> bool:
 
 def entry_has_safety_target(entry) -> bool:
     """Return True if a config entry targets a safety-sensitive domain."""
-    entity_ids = entry.data.get("target_entities") or entry.options.get(
-        "target_entities", []
+    entity_ids = entry.data.get(CONF_TARGET_ENTITIES) or entry.options.get(
+        CONF_TARGET_ENTITIES, []
     )
     return has_safety_target(entity_ids or [])
