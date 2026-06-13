@@ -32,22 +32,13 @@ from .const import (
     MIN_DEBOUNCE_SECONDS,
     MIN_DELAY_SECONDS,
     MIN_RATE_LIMIT,
+    signal_rule_update,
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .rule_engine import RuleEngine
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _signal_for_rule(rule_id: str) -> str:
-    """Return dispatcher signal name for a rule."""
-    try:
-        from . import signal_for_rule  # type: ignore[attr-defined]
-
-        return signal_for_rule(rule_id)
-    except (ImportError, AttributeError):
-        return f"entity_guard_rule_update_{rule_id}"
 
 
 def _device_info(entry: ConfigEntry) -> DeviceInfo:
@@ -119,7 +110,7 @@ class EntityGuardNumberBase(NumberEntity):
         self.async_on_remove(
             async_dispatcher_connect(
                 self.hass,
-                _signal_for_rule(self._engine.config.unique_id),
+                signal_rule_update(self._engine.config.unique_id),
                 self._handle_update,
             )
         )
@@ -156,7 +147,7 @@ class EntityGuardNumberBase(NumberEntity):
         self.hass.config_entries.async_update_entry(self._entry, data=new_data)
 
         async_dispatcher_send(
-            self.hass, _signal_for_rule(self._engine.config.unique_id)
+            self.hass, signal_rule_update(self._engine.config.unique_id)
         )
         self.async_write_ha_state()
 

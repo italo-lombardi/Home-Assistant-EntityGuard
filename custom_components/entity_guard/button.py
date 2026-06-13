@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING
 
 from homeassistant.components.button import ButtonEntity
@@ -14,10 +13,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_ENTRY_TYPE, DOMAIN, ENTRY_TYPE_RULE
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .rule_engine import RuleEngine
-
-_LOGGER = logging.getLogger(__name__)
 
 
 def _device_info(entry: ConfigEntry) -> DeviceInfo:
@@ -82,11 +79,7 @@ class EntityGuardResetButton(EntityGuardButtonBase):
 
     async def async_press(self) -> None:
         """Handle press: clear cooldowns via the engine."""
-        method = getattr(self._engine, "async_reset_cooldowns", None)
-        if method is None:
-            _LOGGER.warning("Engine has no async_reset_cooldowns method")
-            return
-        await method()
+        await self._engine.async_reset_cooldowns()
 
 
 class EntityGuardTestEnforceButton(EntityGuardButtonBase):
@@ -98,11 +91,7 @@ class EntityGuardTestEnforceButton(EntityGuardButtonBase):
 
     async def async_press(self) -> None:
         """Handle press: call test enforcement on the engine."""
-        method = getattr(self._engine, "async_test_enforce", None)
-        if method is None:
-            _LOGGER.warning("Engine has no async_test_enforce method")
-            return
-        await method()
+        await self._engine.async_test_enforce()
 
 
 class EntityGuardClearSuppressionButton(EntityGuardButtonBase):

@@ -86,13 +86,13 @@ def test_describe_loop_detected():
     assert "auto-suppressed" in result["message"]
 
 
-def test_describe_suppressed_with_duration():
+def test_describe_suppressed_with_until():
     registered = {}
     async_describe_events(MagicMock(), lambda d, e, f: registered.update({e: f}))
     result = registered[EVENT_SUPPRESSED](
-        _make_event({"rule_name": "R", "duration_minutes": 30})
+        _make_event({"rule_name": "R", "suppressed_until": "2026-06-13T23:00:00"})
     )
-    assert "30" in result["message"]
+    assert "2026-06-13T23:00:00" in result["message"]
 
 
 def test_describe_suppressed_no_duration():

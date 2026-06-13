@@ -23,32 +23,14 @@ from .const import (
     DOMAIN,
     ENTRY_TYPE_HUB,
     ENTRY_TYPE_RULE,
+    signal_master,
+    signal_rule_update,
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .rule_engine import RuleEngine
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _signal_for_rule(rule_id: str) -> str:
-    """Return dispatcher signal name for a rule."""
-    try:
-        from . import signal_for_rule  # type: ignore[attr-defined]
-
-        return signal_for_rule(rule_id)
-    except (ImportError, AttributeError):
-        return f"entity_guard_rule_update_{rule_id}"
-
-
-def _signal_master() -> str:
-    """Return dispatcher signal name for master updates."""
-    try:
-        from . import signal_master_update  # type: ignore[attr-defined]
-
-        return signal_master_update()
-    except (ImportError, AttributeError):
-        return "entity_guard_master_update"
 
 
 def _rule_device_info(entry: ConfigEntry) -> DeviceInfo:
@@ -126,7 +108,7 @@ class EntityGuardRuleSwitchBase(SwitchEntity):
         self.async_on_remove(
             async_dispatcher_connect(
                 self.hass,
-                _signal_for_rule(self._engine.config.unique_id),
+                signal_rule_update(self._engine.config.unique_id),
                 self._handle_update,
             )
         )
@@ -162,7 +144,7 @@ class EntityGuardEnabledSwitch(EntityGuardRuleSwitchBase):
         """Apply enabled state through the engine."""
         self._engine.set_enabled(value)
         async_dispatcher_send(
-            self.hass, _signal_for_rule(self._engine.config.unique_id)
+            self.hass, signal_rule_update(self._engine.config.unique_id)
         )
         self.async_write_ha_state()
 
@@ -201,7 +183,7 @@ class EntityGuardDebounceEnabledSwitch(EntityGuardRuleSwitchBase):
         self.hass.config_entries.async_update_entry(self._entry, options=new_options)
 
         async_dispatcher_send(
-            self.hass, _signal_for_rule(self._engine.config.unique_id)
+            self.hass, signal_rule_update(self._engine.config.unique_id)
         )
         self.async_write_ha_state()
 
@@ -230,7 +212,7 @@ class EntityGuardMasterEnabledSwitch(SwitchEntity):
     async def async_added_to_hass(self) -> None:
         """Subscribe to master dispatcher updates."""
         self.async_on_remove(
-            async_dispatcher_connect(self.hass, _signal_master(), self._handle_update)
+            async_dispatcher_connect(self.hass, signal_master(), self._handle_update)
         )
         self.async_write_ha_state()
 
@@ -255,5 +237,5 @@ class EntityGuardMasterEnabledSwitch(SwitchEntity):
             options={**self._entry.options, "master_enabled": value},
         )
         self.hass.data.setdefault(DOMAIN, {})["hub_master_enabled"] = value
-        async_dispatcher_send(self.hass, _signal_master())
+        async_dispatcher_send(self.hass, signal_master())
         self.async_write_ha_state()

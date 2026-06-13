@@ -63,11 +63,11 @@ def async_describe_events(
     @callback
     def _describe_suppressed(event: Event) -> dict[str, Any]:
         data = event.data
-        duration = data.get("duration_minutes")
         rule_name = data.get("rule_name") or "Entity Guard"
+        suppressed_until = data.get("suppressed_until")
         message = (
-            f"rule suppressed for {duration} min"
-            if duration is not None
+            f"rule suppressed until {suppressed_until}"
+            if suppressed_until
             else "rule suppressed"
         )
         return {

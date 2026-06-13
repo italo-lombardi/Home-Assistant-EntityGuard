@@ -23,34 +23,16 @@ from .const import (
     CONF_TARGET_ENTITIES,
     DOMAIN,
     ENTRY_TYPE_RULE,
-    SAFETY_DOMAINS,
     STATUS_VALUES,
+    has_safety_target,
+    signal_master,
+    signal_rule_update,
 )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .rule_engine import RuleEngine
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _signal_for_rule(rule_id: str) -> str:
-    """Return dispatcher signal name for a rule."""
-    try:
-        from . import signal_for_rule  # type: ignore[attr-defined]
-
-        return signal_for_rule(rule_id)
-    except (ImportError, AttributeError):
-        return f"entity_guard_rule_update_{rule_id}"
-
-
-def _signal_master() -> str:
-    """Return dispatcher signal name for master updates."""
-    try:
-        from . import signal_master_update  # type: ignore[attr-defined]
-
-        return signal_master_update()
-    except (ImportError, AttributeError):
-        return "entity_guard_master_update"
 
 
 def _device_info(entry: ConfigEntry) -> DeviceInfo:
@@ -61,17 +43,6 @@ def _device_info(entry: ConfigEntry) -> DeviceInfo:
         manufacturer="Entity Guard",
         model="Rule",
     )
-
-
-def _has_safety_target(entry: ConfigEntry) -> bool:
-    """Return True if any target entity is in a safety-sensitive domain."""
-    targets = entry.data.get(CONF_TARGET_ENTITIES) or entry.options.get(
-        CONF_TARGET_ENTITIES, []
-    )
-    for entity_id in targets or []:
-        if isinstance(entity_id, str) and entity_id.split(".", 1)[0] in SAFETY_DOMAINS:
-            return True
-    return False
 
 
 async def async_setup_entry(
@@ -94,7 +65,10 @@ async def async_setup_entry(
         EntityGuardSuppressedUntilSensor(entry, engine),
     ]
 
-    if _has_safety_target(entry):
+    if has_safety_target(
+        entry.data.get(CONF_TARGET_ENTITIES)
+        or entry.options.get(CONF_TARGET_ENTITIES, [])
+    ):
         sensors.append(EntityGuardSafetyStatusSensor(entry, engine))
 
     async_add_entities(sensors)
@@ -125,12 +99,12 @@ class EntityGuardSensor(SensorEntity):
         self.async_on_remove(
             async_dispatcher_connect(
                 self.hass,
-                _signal_for_rule(self._engine.config.unique_id),
+                signal_rule_update(self._engine.config.unique_id),
                 self._handle_update,
             )
         )
         self.async_on_remove(
-            async_dispatcher_connect(self.hass, _signal_master(), self._handle_update)
+            async_dispatcher_connect(self.hass, signal_master(), self._handle_update)
         )
         self.async_write_ha_state()
 

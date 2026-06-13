@@ -1008,7 +1008,7 @@ async def test_flag_change_multi_flag_all_must_match(hass: HomeAssistant):
     hass.states.async_set("binary_sensor.no_water", "off")
     hass.states.async_set("input_boolean.night", "on")
 
-    # Only one flag satisfied — should NOT enforce.
+    # Both flags now satisfied — sweep should enforce.
     hass.states.async_set("binary_sensor.no_water", "on")
     flag_st = hass.states.get("binary_sensor.no_water")
 

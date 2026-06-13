@@ -13,6 +13,9 @@ from custom_components.entity_guard.const import (
     DOMAIN,
     ENTRY_TYPE_RULE,
     STATUS_ARMED,
+    has_safety_target,
+    signal_master,
+    signal_rule_update,
 )
 from custom_components.entity_guard.sensor import (
     EntityGuardCooldownRemainingSensor,
@@ -22,9 +25,6 @@ from custom_components.entity_guard.sensor import (
     EntityGuardSafetyStatusSensor,
     EntityGuardStatusSensor,
     EntityGuardSuppressedUntilSensor,
-    _has_safety_target,
-    _signal_for_rule,
-    _signal_master,
 )
 
 
@@ -63,12 +63,12 @@ def _make_engine(status=STATUS_ARMED, count_today=2, count_total=10):
 
 
 def test_signal_for_rule():
-    sig = _signal_for_rule("my-uid")
+    sig = signal_rule_update("my-uid")
     assert "my-uid" in sig
 
 
 def test_signal_master():
-    assert isinstance(_signal_master(), str)
+    assert isinstance(signal_master(), str)
 
 
 # ---------------------------------------------------------------------------
@@ -78,17 +78,17 @@ def test_signal_master():
 
 def test_has_safety_target_true():
     entry = _make_rule_entry(target_entities=["lock.front_door"])
-    assert _has_safety_target(entry) is True
+    assert has_safety_target(entry.data.get("target_entities", [])) is True
 
 
 def test_has_safety_target_false():
     entry = _make_rule_entry(target_entities=["light.bedroom"])
-    assert _has_safety_target(entry) is False
+    assert has_safety_target(entry.data.get("target_entities", [])) is False
 
 
 def test_has_safety_target_empty():
     entry = _make_rule_entry(target_entities=[])
-    assert _has_safety_target(entry) is False
+    assert has_safety_target(entry.data.get("target_entities", [])) is False
 
 
 # ---------------------------------------------------------------------------

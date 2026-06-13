@@ -12,13 +12,13 @@ from custom_components.entity_guard.const import (
     DOMAIN,
     ENTRY_TYPE_HUB,
     ENTRY_TYPE_RULE,
+    signal_master,
+    signal_rule_update,
 )
 from custom_components.entity_guard.switch import (
     EntityGuardDebounceEnabledSwitch,
     EntityGuardEnabledSwitch,
     EntityGuardMasterEnabledSwitch,
-    _signal_for_rule,
-    _signal_master,
 )
 
 
@@ -51,11 +51,11 @@ def _make_hub_entry(**overrides):
 
 
 def test_signal_for_rule():
-    assert "my-id" in _signal_for_rule("my-id")
+    assert "my-id" in signal_rule_update("my-id")
 
 
 def test_signal_master():
-    assert isinstance(_signal_master(), str)
+    assert isinstance(signal_master(), str)
 
 
 # ---------------------------------------------------------------------------

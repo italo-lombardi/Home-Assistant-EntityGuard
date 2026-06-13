@@ -81,7 +81,6 @@ MAX_RATE_LIMIT = 600
 
 # Behavior
 STARTUP_GRACE_PERIOD_SECONDS = 60
-RECENT_ENFORCEMENTS_BUFFER = 50
 STORE_VERSION = 1
 STORE_SAVE_DELAY_SECONDS = 10
 
@@ -201,3 +200,25 @@ SERVICE_PANIC_STOP = "panic_stop"
 
 # Storage
 STORAGE_KEY = "entity_guard"
+
+
+# Signal name helpers — single source of truth used by all platforms.
+def signal_rule_update(rule_id: str) -> str:
+    """Return dispatcher signal name for a rule."""
+    from . import signal_for_rule  # noqa: PLC0415
+
+    return signal_for_rule(rule_id)
+
+
+def signal_master() -> str:
+    """Return dispatcher signal name for master updates."""
+    from . import signal_master_update  # noqa: PLC0415
+
+    return signal_master_update()
+
+
+def has_safety_target(entity_ids: list) -> bool:
+    """Return True if any entity_id is in a safety-sensitive domain."""
+    return any(
+        isinstance(e, str) and e.split(".", 1)[0] in SAFETY_DOMAINS for e in entity_ids
+    )

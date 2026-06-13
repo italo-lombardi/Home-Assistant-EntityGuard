@@ -12,32 +12,18 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import CONF_ENTRY_TYPE, DOMAIN, ENTRY_TYPE_RULE
+from .const import (
+    CONF_ENTRY_TYPE,
+    DOMAIN,
+    ENTRY_TYPE_RULE,
+    signal_master,
+    signal_rule_update,
+)
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from .rule_engine import RuleEngine
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _signal_for_rule(rule_id: str) -> str:
-    """Return dispatcher signal name for a rule."""
-    try:
-        from . import signal_for_rule  # type: ignore[attr-defined]
-
-        return signal_for_rule(rule_id)
-    except (ImportError, AttributeError):
-        return f"entity_guard_rule_update_{rule_id}"
-
-
-def _signal_master() -> str:
-    """Return dispatcher signal name for master updates."""
-    try:
-        from . import signal_master_update  # type: ignore[attr-defined]
-
-        return signal_master_update()
-    except (ImportError, AttributeError):
-        return "entity_guard_master_update"
 
 
 def _device_info(entry: ConfigEntry) -> DeviceInfo:
@@ -95,12 +81,12 @@ class EntityGuardBinarySensor(BinarySensorEntity):
         self.async_on_remove(
             async_dispatcher_connect(
                 self.hass,
-                _signal_for_rule(self._engine.config.unique_id),
+                signal_rule_update(self._engine.config.unique_id),
                 self._handle_update,
             )
         )
         self.async_on_remove(
-            async_dispatcher_connect(self.hass, _signal_master(), self._handle_update)
+            async_dispatcher_connect(self.hass, signal_master(), self._handle_update)
         )
         self.async_write_ha_state()
 

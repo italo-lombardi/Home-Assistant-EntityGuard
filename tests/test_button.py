@@ -50,13 +50,6 @@ async def test_reset_button_press(hass: HomeAssistant):
     engine.async_reset_cooldowns.assert_awaited_once()
 
 
-async def test_reset_button_press_missing_method():
-    entry = _make_rule_entry()
-    engine = MagicMock(spec=[])  # engine with no methods
-    btn = EntityGuardResetButton(entry, engine)
-    await btn.async_press()  # should not raise
-
-
 # ---------------------------------------------------------------------------
 # EntityGuardTestEnforceButton
 # ---------------------------------------------------------------------------
@@ -68,13 +61,6 @@ async def test_test_enforce_button_press(hass: HomeAssistant):
     btn = EntityGuardTestEnforceButton(entry, engine)
     await btn.async_press()
     engine.async_test_enforce.assert_awaited_once()
-
-
-async def test_test_enforce_button_missing_method():
-    entry = _make_rule_entry()
-    engine = MagicMock(spec=[])
-    btn = EntityGuardTestEnforceButton(entry, engine)
-    await btn.async_press()  # should not raise
 
 
 # ---------------------------------------------------------------------------
