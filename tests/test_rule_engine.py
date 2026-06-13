@@ -1377,3 +1377,81 @@ async def test_flags_matching_clears_conditional(hass: HomeAssistant):
     st = hass.states.get("light.bedroom")
     await engine.async_evaluate("light.bedroom", st)
     assert engine.current_status() != STATUS_CONDITIONAL
+
+
+# ---------------------------------------------------------------------------
+# Coverage gaps
+# ---------------------------------------------------------------------------
+
+
+def test_disabled_status_master_off(hass: HomeAssistant):
+    """_disabled_status returns STATUS_MASTER_DISABLED when master is off."""
+    engine = _make_engine(hass, master=False)
+    assert engine._disabled_status() == STATUS_MASTER_DISABLED
+
+
+def test_disabled_status_master_on(hass: HomeAssistant):
+    """_disabled_status returns STATUS_DISABLED when master is on."""
+    engine = _make_engine(hass, master=True)
+    assert engine._disabled_status() == STATUS_DISABLED
+
+
+async def test_rate_limit_window_pruned_on_enforce(hass: HomeAssistant):
+    """Stale rate-limit entries are pruned when _enforce runs."""
+    from datetime import timedelta
+
+    from homeassistant.util import dt as dt_util
+
+    config = _make_config(target_state="off", max_enforcements_per_minute=10)
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    stale = dt_util.now() - timedelta(seconds=120)
+    engine._state.rate_limit_window = [stale, stale]
+
+    hass.states.async_set("light.bedroom", "on")
+
+    async def _mock_turn_off(call):
+        pass
+
+    hass.services.async_register("light", "turn_off", _mock_turn_off)
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later"
+    ) as mock_later:
+        mock_later.return_value = MagicMock()
+        await engine._enforce("light.bedroom")
+
+    assert len(engine._state.rate_limit_window) == 1  # stale pruned, current appended
+
+
+async def test_cooldown_broadcast_fires_after_enforcement(hass: HomeAssistant):
+    """_broadcast_after_cooldown callback is scheduled when cooldown > 0."""
+
+    config = _make_config(
+        target_state="off", debounce_enabled=True, debounce_seconds=30
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+
+    async def _mock_turn_off(svc_call):
+        pass
+
+    hass.services.async_register("light", "turn_off", _mock_turn_off)
+
+    broadcast_callbacks = []
+
+    def _capture_later(hass_arg, delay, cb):
+        broadcast_callbacks.append(cb)
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=_capture_later,
+    ):
+        await engine._enforce("light.bedroom")
+
+    assert broadcast_callbacks, "async_call_later not called — no cooldown scheduled"
+    # Fire the broadcast callback to exercise lines 505-510
+    broadcast_callbacks[-1](dt_util.now())
