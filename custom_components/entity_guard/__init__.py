@@ -157,10 +157,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         flag_entity_ids = frozenset(f.entity for f in config.flags)
 
         def _on_entity_registry_updated(event) -> None:
-            if event.data.get("entity_id") not in flag_entity_ids:
+            action = event.data.get("action")
+            entity_id = event.data.get("entity_id")
+            _LOGGER.debug(
+                "entity_registry_updated: action=%s entity_id=%s flag_ids=%s",
+                action,
+                entity_id,
+                flag_entity_ids,
+            )
+            if entity_id not in flag_entity_ids:
                 return
-            hass.async_create_task(
-                async_check_missing_flag_entities(hass, entry.entry_id)
+            hass.loop.call_soon_threadsafe(
+                lambda: hass.async_create_task(
+                    async_check_missing_flag_entities(hass, entry.entry_id)
+                )
             )
 
         if flag_entity_ids:
