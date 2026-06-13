@@ -8,6 +8,7 @@
 - **Repair issue uses entity registry**: Missing-flag detection now checks the entity registry (`er.async_get`) instead of `hass.states`. The state machine still has the old state briefly after entity deletion, causing the check to incorrectly pass. The registry is updated synchronously before the event fires, so it is always authoritative.
 - **Live repair detection**: Entity Guard now listens to `entity_registry_updated` events for all flag entities. Repair issues appear immediately when a flag entity is deleted and clear immediately when it is recreated — no restart required.
 - **Logbook suppression message**: `EVENT_SUPPRESSED` payload carries `suppressed_until`, not `duration_minutes`. The describer always fell back to "rule suppressed" with no detail; now shows the suppression timestamp.
+- **Reload error on startup**: `async_listen_once(EVENT_HOMEASSISTANT_STARTED)` unsub registered during first boot is consumed when HA starts. A subsequent reload called the dead unsub causing `ValueError: list.remove(x): x not in list` in `homeassistant.core`. The unsub is now wrapped to swallow the error.
 
 ### Changed
 
@@ -15,7 +16,7 @@
 
 ### Tests
 
-- `tests/test_issue_helpers.py` — 9 tests covering all check paths and live listener wiring (entity remove/create triggers check, unrelated entities do not).
+- `tests/test_issue_helpers.py` — 10 tests covering all check paths, live listener wiring, and listener unsubscribe on entry unload.
 - Test coverage: 98% total; all platform files at 100%.
 
 ---
