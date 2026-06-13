@@ -11,7 +11,7 @@ from homeassistant.components.lovelace.resources import ResourceStorageCollectio
 from homeassistant.components.recorder import get_instance as recorder_get_instance
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -152,25 +152,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
             entry.async_on_unload(unsub)
 
-        # Re-run flag check whenever a flag entity is added, removed, or updated so
-        # repair issues surface and clear immediately without requiring a restart.
+        # flag_entity_ids is computed once at setup. Options edits that reload the
+        # entry re-invoke async_setup_entry, so the frozenset is rebuilt on reload.
         flag_entity_ids = frozenset(f.entity for f in config.flags)
 
+        @callback
         def _on_entity_registry_updated(event) -> None:
-            action = event.data.get("action")
             entity_id = event.data.get("entity_id")
             _LOGGER.debug(
                 "entity_registry_updated: action=%s entity_id=%s flag_ids=%s",
-                action,
+                event.data.get("action"),
                 entity_id,
                 flag_entity_ids,
             )
             if entity_id not in flag_entity_ids:
                 return
-            hass.loop.call_soon_threadsafe(
-                lambda: hass.async_create_task(
-                    async_check_missing_flag_entities(hass, entry.entry_id)
-                )
+            hass.async_create_task(
+                async_check_missing_flag_entities(hass, entry.entry_id)
             )
 
         if flag_entity_ids:
