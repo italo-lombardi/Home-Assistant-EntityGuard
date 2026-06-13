@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, patch
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -150,50 +151,18 @@ async def test_parse_error_returns_early(hass: HomeAssistant) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def _setup_rule_entry_with_flags(hass, flags):
-    """Set up a rule entry via async_setup_entry with the given flags."""
-    from unittest.mock import AsyncMock, patch
+@asynccontextmanager
+async def _setup_wired(hass: HomeAssistant, flags, mock_check):
+    """Set up rule entry with async_check_missing_flag_entities mocked.
 
+    Keeps the mock patch active for the duration of the async with block so
+    listener callbacks fired after setup still hit the mock.
+    """
     from custom_components.entity_guard import async_setup_entry
 
     entry = _rule_entry(flags=flags)
     entry.add_to_hass(hass)
-    with (
-        patch.object(
-            hass.config_entries,
-            "async_forward_entry_setups",
-            new_callable=AsyncMock,
-        ),
-        patch(
-            "custom_components.entity_guard._async_install_card",
-            new_callable=AsyncMock,
-        ),
-        patch(
-            "custom_components.entity_guard.RuleEngine.async_setup",
-            new_callable=AsyncMock,
-        ),
-        patch(
-            "custom_components.entity_guard._async_ensure_hub",
-            new_callable=AsyncMock,
-        ),
-        patch(
-            "custom_components.entity_guard.async_check_missing_flag_entities",
-            new_callable=AsyncMock,
-        ),
-    ):
-        await async_setup_entry(hass, entry)
-    return entry
 
-
-async def test_entity_registry_remove_triggers_check(hass: HomeAssistant) -> None:
-    """Deleting a flag entity fires async_check_missing_flag_entities."""
-    from custom_components.entity_guard import async_setup_entry
-
-    entry = _rule_entry(flags=[{"entity": "input_boolean.night", "match_state": "on"}])
-    entry.add_to_hass(hass)
-    _register_entity(hass, "input_boolean.night")
-
-    mock_check = AsyncMock()
     with (
         patch.object(
             hass.config_entries,
@@ -219,9 +188,17 @@ async def test_entity_registry_remove_triggers_check(hass: HomeAssistant) -> Non
     ):
         await async_setup_entry(hass, entry)
         mock_check.reset_mock()
+        yield entry
 
-        ent_reg = er.async_get(hass)
-        ent_reg.async_remove("input_boolean.night")
+
+async def test_entity_registry_remove_triggers_check(hass: HomeAssistant) -> None:
+    """Deleting a flag entity fires async_check_missing_flag_entities."""
+    _register_entity(hass, "input_boolean.night")
+    mock_check = AsyncMock()
+    async with _setup_wired(
+        hass, [{"entity": "input_boolean.night", "match_state": "on"}], mock_check
+    ) as entry:
+        er.async_get(hass).async_remove("input_boolean.night")
         await hass.async_block_till_done()
 
     mock_check.assert_awaited_once_with(hass, entry.entry_id)
@@ -229,38 +206,10 @@ async def test_entity_registry_remove_triggers_check(hass: HomeAssistant) -> Non
 
 async def test_entity_registry_create_triggers_check(hass: HomeAssistant) -> None:
     """Recreating a flag entity fires async_check_missing_flag_entities."""
-    from custom_components.entity_guard import async_setup_entry
-
-    entry = _rule_entry(flags=[{"entity": "input_boolean.night", "match_state": "on"}])
-    entry.add_to_hass(hass)
-
     mock_check = AsyncMock()
-    with (
-        patch.object(
-            hass.config_entries,
-            "async_forward_entry_setups",
-            new_callable=AsyncMock,
-        ),
-        patch(
-            "custom_components.entity_guard._async_install_card",
-            new_callable=AsyncMock,
-        ),
-        patch(
-            "custom_components.entity_guard.RuleEngine.async_setup",
-            new_callable=AsyncMock,
-        ),
-        patch(
-            "custom_components.entity_guard._async_ensure_hub",
-            new_callable=AsyncMock,
-        ),
-        patch(
-            "custom_components.entity_guard.async_check_missing_flag_entities",
-            mock_check,
-        ),
-    ):
-        await async_setup_entry(hass, entry)
-        mock_check.reset_mock()
-
+    async with _setup_wired(
+        hass, [{"entity": "input_boolean.night", "match_state": "on"}], mock_check
+    ) as entry:
         _register_entity(hass, "input_boolean.night")
         await hass.async_block_till_done()
 
@@ -269,39 +218,42 @@ async def test_entity_registry_create_triggers_check(hass: HomeAssistant) -> Non
 
 async def test_unrelated_entity_does_not_trigger_check(hass: HomeAssistant) -> None:
     """Registry events for non-flag entities don't fire the check."""
-    from custom_components.entity_guard import async_setup_entry
-
-    entry = _rule_entry(flags=[{"entity": "input_boolean.night", "match_state": "on"}])
-    entry.add_to_hass(hass)
-
     mock_check = AsyncMock()
-    with (
-        patch.object(
-            hass.config_entries,
-            "async_forward_entry_setups",
-            new_callable=AsyncMock,
-        ),
-        patch(
-            "custom_components.entity_guard._async_install_card",
-            new_callable=AsyncMock,
-        ),
-        patch(
-            "custom_components.entity_guard.RuleEngine.async_setup",
-            new_callable=AsyncMock,
-        ),
-        patch(
-            "custom_components.entity_guard._async_ensure_hub",
-            new_callable=AsyncMock,
-        ),
-        patch(
-            "custom_components.entity_guard.async_check_missing_flag_entities",
-            mock_check,
-        ),
+    async with _setup_wired(
+        hass, [{"entity": "input_boolean.night", "match_state": "on"}], mock_check
     ):
-        await async_setup_entry(hass, entry)
-        mock_check.reset_mock()
-
         _register_entity(hass, "input_boolean.unrelated")
+        await hass.async_block_till_done()
+
+    mock_check.assert_not_called()
+
+
+async def test_listener_unsubscribed_after_entry_unload(hass: HomeAssistant) -> None:
+    """Listener stops firing after config entry is unloaded."""
+    from custom_components.entity_guard import async_unload_entry
+
+    _register_entity(hass, "input_boolean.night")
+    mock_check = AsyncMock()
+    async with _setup_wired(
+        hass, [{"entity": "input_boolean.night", "match_state": "on"}], mock_check
+    ) as entry:
+        with (
+            patch.object(
+                hass.config_entries,
+                "async_unload_platforms",
+                new_callable=AsyncMock,
+                return_value=True,
+            ),
+            patch(
+                "custom_components.entity_guard.RuleEngine.async_unload",
+                new_callable=AsyncMock,
+            ),
+        ):
+            await async_unload_entry(hass, entry)
+            await entry._async_process_on_unload(hass)
+
+        mock_check.reset_mock()
+        er.async_get(hass).async_remove("input_boolean.night")
         await hass.async_block_till_done()
 
     mock_check.assert_not_called()

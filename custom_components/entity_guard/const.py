@@ -204,17 +204,13 @@ STORAGE_KEY = "entity_guard"
 
 # Signal name helpers — single source of truth used by all platforms.
 def signal_rule_update(rule_id: str) -> str:
-    """Return dispatcher signal name for a rule."""
-    from . import signal_for_rule  # noqa: PLC0415
-
-    return signal_for_rule(rule_id)
+    """Return dispatcher signal name for a per-rule status update."""
+    return f"entity_guard_rule_update_{rule_id}"
 
 
 def signal_master() -> str:
-    """Return dispatcher signal name for master updates."""
-    from . import signal_master_update  # noqa: PLC0415
-
-    return signal_master_update()
+    """Return dispatcher signal name for hub master switch updates."""
+    return "entity_guard_master_update"
 
 
 def has_safety_target(entity_ids: list) -> bool:
@@ -222,3 +218,11 @@ def has_safety_target(entity_ids: list) -> bool:
     return any(
         isinstance(e, str) and e.split(".", 1)[0] in SAFETY_DOMAINS for e in entity_ids
     )
+
+
+def entry_has_safety_target(entry) -> bool:
+    """Return True if a config entry targets a safety-sensitive domain."""
+    entity_ids = entry.data.get("target_entities") or entry.options.get(
+        "target_entities", []
+    )
+    return has_safety_target(entity_ids or [])

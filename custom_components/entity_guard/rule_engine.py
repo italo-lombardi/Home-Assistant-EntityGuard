@@ -49,6 +49,8 @@ from .const import (
     STATUS_PENDING,
     STATUS_STARTING,
     STATUS_SUPPRESSED,
+    signal_master,
+    signal_rule_update,
 )
 from .models import RuleConfig, RuleRuntimeState
 from .storage import EntityGuardStore
@@ -58,12 +60,12 @@ _LOGGER = logging.getLogger(__name__)
 
 def signal_for_rule(rule_id: str) -> str:
     """Dispatcher signal name for a per-rule status update."""
-    return f"entity_guard_rule_update_{rule_id}"
+    return signal_rule_update(rule_id)
 
 
 def signal_master_update() -> str:
     """Dispatcher signal name for hub master switch updates."""
-    return "entity_guard_master_update"
+    return signal_master()
 
 
 class RuleEngine:

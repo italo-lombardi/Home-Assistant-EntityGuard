@@ -20,11 +20,10 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     CONF_ENTRY_TYPE,
-    CONF_TARGET_ENTITIES,
     DOMAIN,
     ENTRY_TYPE_RULE,
     STATUS_VALUES,
-    has_safety_target,
+    entry_has_safety_target,
     signal_master,
     signal_rule_update,
 )
@@ -65,10 +64,7 @@ async def async_setup_entry(
         EntityGuardSuppressedUntilSensor(entry, engine),
     ]
 
-    if has_safety_target(
-        entry.data.get(CONF_TARGET_ENTITIES)
-        or entry.options.get(CONF_TARGET_ENTITIES, [])
-    ):
+    if entry_has_safety_target(entry):
         sensors.append(EntityGuardSafetyStatusSensor(entry, engine))
 
     async_add_entities(sensors)
