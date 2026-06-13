@@ -152,6 +152,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
             entry.async_on_unload(unsub)
 
+        # Re-run flag check whenever a flag entity is added, removed, or updated so
+        # repair issues surface and clear immediately without requiring a restart.
+        flag_entity_ids = frozenset(f.entity for f in config.flags)
+
+        def _on_entity_registry_updated(event) -> None:
+            if event.data.get("entity_id") not in flag_entity_ids:
+                return
+            hass.async_create_task(
+                async_check_missing_flag_entities(hass, entry.entry_id)
+            )
+
+        if flag_entity_ids:
+            unsub_reg = hass.bus.async_listen(
+                er.EVENT_ENTITY_REGISTRY_UPDATED, _on_entity_registry_updated
+            )
+            entry.async_on_unload(unsub_reg)
+
         # Sync device-registry name to entry.title (handles renames).
         device_reg = dr.async_get(hass)
         device = device_reg.async_get_device(identifiers={(DOMAIN, entry.entry_id)})

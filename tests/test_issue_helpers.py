@@ -12,6 +12,7 @@ from custom_components.entity_guard.issue_helpers import (
     async_check_missing_flag_entities,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 
 
 def _rule_entry(**overrides) -> MockConfigEntry:
@@ -34,6 +35,15 @@ def _rule_entry(**overrides) -> MockConfigEntry:
     return MockConfigEntry(domain=DOMAIN, data=data, title="My Rule")
 
 
+def _register_entity(hass: HomeAssistant, entity_id: str) -> None:
+    """Register entity_id in the entity registry so async_get finds it."""
+    domain, object_id = entity_id.split(".", 1)
+    ent_reg = er.async_get(hass)
+    ent_reg.async_get_or_create(
+        domain, "test", object_id, suggested_object_id=object_id
+    )
+
+
 async def test_missing_entry_returns_early(hass: HomeAssistant) -> None:
     await async_check_missing_flag_entities(hass, "nonexistent-entry-id")
 
@@ -53,7 +63,7 @@ async def test_no_flags_returns_early(hass: HomeAssistant) -> None:
 async def test_all_flags_present_deletes_issue(hass: HomeAssistant) -> None:
     entry = _rule_entry(flags=[{"entity": "input_boolean.night", "match_state": "on"}])
     entry.add_to_hass(hass)
-    hass.states.async_set("input_boolean.night", "on")
+    _register_entity(hass, "input_boolean.night")
 
     with (
         patch(
@@ -72,7 +82,7 @@ async def test_all_flags_present_deletes_issue(hass: HomeAssistant) -> None:
 async def test_missing_flag_creates_issue(hass: HomeAssistant) -> None:
     entry = _rule_entry(flags=[{"entity": "input_boolean.night", "match_state": "on"}])
     entry.add_to_hass(hass)
-    # State not set → entity is missing
+    # entity not registered → missing
 
     with (
         patch(
@@ -103,8 +113,8 @@ async def test_partial_flags_missing(hass: HomeAssistant) -> None:
         ]
     )
     entry.add_to_hass(hass)
-    hass.states.async_set("input_boolean.night", "on")
-    # input_boolean.away is missing
+    _register_entity(hass, "input_boolean.night")
+    # input_boolean.away not registered → missing
 
     with patch(
         "custom_components.entity_guard.issue_helpers.async_create_issue"

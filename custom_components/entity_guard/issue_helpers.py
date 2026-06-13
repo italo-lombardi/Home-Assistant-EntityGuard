@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.issue_registry import (
     IssueSeverity,
     async_create_issue,
@@ -35,8 +36,9 @@ async def async_check_missing_flag_entities(hass: HomeAssistant, entry_id: str) 
         _LOGGER.debug("No flags configured for rule %s", entry_id)
         return
 
+    ent_reg = er.async_get(hass)
     missing_flags: list[str] = [
-        flag.entity for flag in config.flags if hass.states.get(flag.entity) is None
+        flag.entity for flag in config.flags if ent_reg.async_get(flag.entity) is None
     ]
 
     issue_id = f"{entry_id}_missing_flags"
