@@ -237,17 +237,15 @@ async def test_listener_unsubscribed_after_entry_unload(hass: HomeAssistant) -> 
         hass, [{"entity": "input_boolean.night", "match_state": "on"}], mock_check
     ) as entry:
         # Drain on_unload callbacks registered during setup (the listener unsub
-        # lives here). Using the public async_on_unload list is the only stable
-        # way to replay them without running the full HA config-entry machinery.
+        # lives here). _on_unload is accessed as a list, not via a private method
+        # call — if HA renames it the test breaks loudly with AttributeError
+        # rather than passing silently.
         if entry._on_unload:
-        # _on_unload is a private list but accessed as a list (not a private
-        # method call) — if HA renames it the test breaks loudly with
-        # AttributeError rather than passing silently.
-        for cb in list(entry._on_unload):
-            result = cb()
-            if result is not None:
-                await result
-        entry._on_unload.clear()
+            for cb in list(entry._on_unload):
+                result = cb()
+                if result is not None:
+                    await result
+            entry._on_unload.clear()
 
         mock_check.reset_mock()
         er.async_get(hass).async_remove("input_boolean.night")
