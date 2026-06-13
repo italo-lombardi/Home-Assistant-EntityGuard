@@ -150,7 +150,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             unsub = hass.bus.async_listen_once(
                 EVENT_HOMEASSISTANT_STARTED, _deferred_flag_check
             )
-            entry.async_on_unload(unsub)
+
+            @callback
+            def _cancel_flag_check_listener() -> None:
+                try:
+                    unsub()
+                except Exception:  # noqa: BLE001
+                    pass
+
+            entry.async_on_unload(_cancel_flag_check_listener)
 
         # flag_entity_ids is computed once at setup. Options edits that reload the
         # entry re-invoke async_setup_entry, so the frozenset is rebuilt on reload.
