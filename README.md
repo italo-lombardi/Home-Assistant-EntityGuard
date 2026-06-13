@@ -5,7 +5,7 @@
 <a href="https://github.com/italo-lombardi/Home-Assistant-EntityGuard"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fanalytics.home-assistant.io%2Fcustom_integrations.json&query=%24.entity_guard.total&label=installs&color=41BDF5" alt="HACS Installs"></a>
 <a href="https://www.home-assistant.io/"><img src="https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg" alt="Home Assistant"></a>
 <a href="https://github.com/italo-lombardi/Home-Assistant-EntityGuard/blob/main/LICENSE"><img src="https://img.shields.io/github/license/italo-lombardi/Home-Assistant-EntityGuard?logo=gnu&logoColor=white" alt="License"></a>
-<img src="https://img.shields.io/badge/coverage-97%25-brightgreen" alt="Test Coverage">
+<img src="https://img.shields.io/badge/coverage-98%25-brightgreen" alt="Test Coverage">
 
 [![Add to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=italo-lombardi&repository=Home-Assistant-EntityGuard&category=integration)
 [![Add to Home Assistant](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=entity_guard)

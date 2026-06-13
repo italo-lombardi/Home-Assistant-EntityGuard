@@ -7,10 +7,16 @@
 - **Startup error**: Renamed `repairs.py` → `issue_helpers.py`. HA auto-discovers any file named `repairs.py` as a repairs platform and requires `async_create_fix_flow`. The file contains only issue-creation utilities, so HA raised `HomeAssistantError: Invalid repairs platform` on every startup.
 - **Repair issue uses entity registry**: Missing-flag detection now checks the entity registry (`er.async_get`) instead of `hass.states`. The state machine still has the old state briefly after entity deletion, causing the check to incorrectly pass. The registry is updated synchronously before the event fires, so it is always authoritative.
 - **Live repair detection**: Entity Guard now listens to `entity_registry_updated` events for all flag entities. Repair issues appear immediately when a flag entity is deleted and clear immediately when it is recreated — no restart required.
+- **Logbook suppression message**: `EVENT_SUPPRESSED` payload carries `suppressed_until`, not `duration_minutes`. The describer always fell back to "rule suppressed" with no detail; now shows the suppression timestamp.
+
+### Changed
+
+- Signal helpers (`signal_rule_update`, `signal_master`, `has_safety_target`) extracted to `const.py` — previously duplicated across 4 platform files.
 
 ### Tests
 
-- `tests/test_issue_helpers.py` — 6 tests covering missing entry, no flags, all flags present (via entity registry), single missing flag, partial missing, and parse error paths.
+- `tests/test_issue_helpers.py` — 9 tests covering all check paths and live listener wiring (entity remove/create triggers check, unrelated entities do not).
+- Test coverage: 98% total; all platform files at 100%.
 
 ---
 
