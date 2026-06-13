@@ -2,7 +2,7 @@
 
 Declarative state-enforcement rules. Bind one or more entities to a rule that defines a trigger condition and a desired target state — Entity Guard enforces it automatically, with cooldowns, suppression, rate limiting, and a custom dashboard card.
 
-## What's new in 0.3.0
+## What's new in 0.2.1
 
 - Fixed startup error: `repairs.py` renamed to `issue_helpers.py` — HA no longer tries to load it as a repairs platform.
 - Repair issues now fire and clear immediately when a flag entity is deleted or recreated — no restart required.
