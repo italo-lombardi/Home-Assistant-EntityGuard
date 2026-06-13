@@ -307,3 +307,111 @@ async def test_register_resource_existing_matches(hass: HomeAssistant):
 
     await _async_register_lovelace_resource(hass, "1.0.0")
     resources.async_create_item.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Coverage gaps
+# ---------------------------------------------------------------------------
+
+
+async def test_setup_rule_entry_startup_not_running_registers_listener(
+    hass: HomeAssistant, rule_entry
+):
+    """When HA is not running, deferred flag check registers a startup listener."""
+
+    rule_entry.add_to_hass(hass)
+
+    with patch.object(
+        type(hass), "is_running", new_callable=lambda: property(lambda self: False)
+    ):
+        with (
+            patch.object(
+                hass.config_entries,
+                "async_forward_entry_setups",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.entity_guard._async_install_card",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.entity_guard.RuleEngine.async_setup",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.entity_guard._async_ensure_hub",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.entity_guard.async_check_missing_flag_entities",
+                new_callable=AsyncMock,
+            ) as mock_check,
+        ):
+            result = await async_setup_entry(hass, rule_entry)
+
+    assert result is True
+    mock_check.assert_not_called()  # deferred, not called yet
+
+
+async def test_unload_rule_entry_with_engine(hass: HomeAssistant, rule_entry) -> None:
+    """Unloading a rule entry with a live engine calls engine.async_unload."""
+    from custom_components.entity_guard import async_unload_entry
+
+    rule_entry.add_to_hass(hass)
+    mock_engine = MagicMock()
+    mock_engine.async_unload = AsyncMock()
+    hass.data.setdefault(DOMAIN, {}).setdefault("engines", {})[rule_entry.entry_id] = (
+        mock_engine
+    )
+
+    with patch.object(
+        hass.config_entries,
+        "async_unload_platforms",
+        new_callable=AsyncMock,
+        return_value=True,
+    ):
+        result = await async_unload_entry(hass, rule_entry)
+
+    assert result is True
+    mock_engine.async_unload.assert_awaited_once()
+
+
+async def test_register_resource_deletes_duplicate(hass: HomeAssistant):
+    """When multiple resources match card filename, extras are deleted."""
+    from homeassistant.components.lovelace.resources import ResourceStorageCollection
+
+    resources = MagicMock(spec=ResourceStorageCollection)
+    resources.loaded = True
+    resources.async_items = MagicMock(
+        return_value=[
+            {"id": "1", "url": "/entity_guard/entity-guard-card.js?v1"},
+            {"id": "2", "url": "/entity_guard/entity-guard-card.js?v2"},
+        ]
+    )
+    resources.async_delete_item = AsyncMock()
+    resources.async_update_item = AsyncMock()
+    lovelace = MagicMock()
+    lovelace.resources = resources
+    hass.data["lovelace"] = lovelace
+
+    await _async_register_lovelace_resource(hass, "2.0.0")
+    resources.async_delete_item.assert_awaited_once_with("2")
+
+
+async def test_register_resource_updates_stale_url(hass: HomeAssistant):
+    """When existing resource URL is stale, it is updated to new version."""
+    from homeassistant.components.lovelace.resources import ResourceStorageCollection
+
+    old_url = "/entity_guard/entity-guard-card.js?automatically-added&0.9.0"
+    resources = MagicMock(spec=ResourceStorageCollection)
+    resources.loaded = True
+    resources.async_items = MagicMock(return_value=[{"id": "x", "url": old_url}])
+    resources.async_update_item = AsyncMock()
+    lovelace = MagicMock()
+    lovelace.resources = resources
+    hass.data["lovelace"] = lovelace
+
+    await _async_register_lovelace_resource(hass, "1.0.0")
+    resources.async_update_item.assert_awaited_once()
+    new_url = resources.async_update_item.call_args[0][1]["url"]
+    assert "1.0.0" in new_url

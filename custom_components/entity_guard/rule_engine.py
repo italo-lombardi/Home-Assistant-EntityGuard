@@ -186,9 +186,7 @@ class RuleEngine:
         """State change listener — schedules async evaluation, deduplicating per entity."""
         entity_id = event.data.get("entity_id")
         new_state = event.data.get("new_state")
-        if (
-            entity_id is None
-        ):  # pragma: no cover — HA always sets entity_id in state events
+        if entity_id is None:
             return
         self._schedule_eval_task(entity_id, new_state)
 
@@ -198,9 +196,7 @@ class RuleEngine:
         if existing is not None and not existing.done():
             existing.cancel()
         task = self._hass.async_create_task(self.async_evaluate(entity_id, new_state))
-        if (
-            task is not None
-        ):  # pragma: no cover — async_create_task always returns a Task
+        if task is not None:
             self._pending_eval_tasks[entity_id] = task
             task.add_done_callback(
                 lambda t, eid=entity_id: self._pending_eval_tasks.pop(eid, None)

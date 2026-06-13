@@ -437,7 +437,10 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
             try:
                 threshold = float(user_input[CONF_THRESHOLD])
                 target_value = float(user_input[CONF_TARGET_VALUE])
-            except (TypeError, ValueError):
+            except (
+                TypeError,
+                ValueError,
+            ):  # pragma: no cover — vol.Coerce(float) in schema prevents this
                 errors["base"] = "invalid_threshold"
             else:
                 if delay is None:
@@ -611,9 +614,14 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
                     raw = user_input.get(CONF_MAX_ENFORCEMENTS_PER_MINUTE)
                     try:
                         rate = int(float(raw))
-                    except (TypeError, ValueError):
+                    except (
+                        TypeError,
+                        ValueError,
+                    ):  # pragma: no cover — schema coerces to number
                         rate = -1
-                    if rate < MIN_RATE_LIMIT or rate > MAX_RATE_LIMIT:
+                    if (
+                        rate < MIN_RATE_LIMIT or rate > MAX_RATE_LIMIT
+                    ):  # pragma: no cover — selector clamps to MIN/MAX
                         errors[CONF_MAX_ENFORCEMENTS_PER_MINUTE] = "invalid_rate"
                     else:
                         self._rule_data[CONF_MAX_ENFORCEMENTS_PER_MINUTE] = rate
@@ -951,7 +959,10 @@ class EntityGuardOptionsFlow(OptionsFlow):
             try:
                 threshold = float(user_input[CONF_THRESHOLD])
                 target_value = float(user_input[CONF_TARGET_VALUE])
-            except (TypeError, ValueError):
+            except (
+                TypeError,
+                ValueError,
+            ):  # pragma: no cover — vol.Coerce(float) in schema prevents this
                 errors["base"] = "invalid_threshold"
             else:
                 if delay is None:

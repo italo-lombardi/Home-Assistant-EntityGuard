@@ -1455,3 +1455,31 @@ async def test_cooldown_broadcast_fires_after_enforcement(hass: HomeAssistant):
     assert broadcast_callbacks, "async_call_later not called — no cooldown scheduled"
     # Fire the broadcast callback to exercise lines 505-510
     broadcast_callbacks[-1](dt_util.now())
+
+
+async def test_unload_cancels_pending_eval_tasks(hass: HomeAssistant):
+    """async_unload cancels any in-flight eval tasks."""
+    engine = _make_engine(hass)
+    engine._store.async_save_now = AsyncMock()
+
+    mock_task = MagicMock()
+    mock_task.cancel = MagicMock()
+    engine._pending_eval_tasks["light.bedroom"] = mock_task
+
+    await engine.async_unload()
+
+    mock_task.cancel.assert_called_once()
+    assert engine._pending_eval_tasks == {}
+
+
+def test_schedule_eval_task_cancels_existing(hass: HomeAssistant):
+    """_schedule_eval_task cancels prior non-done task for same entity."""
+    engine = _make_engine(hass)
+
+    existing = MagicMock()
+    existing.done.return_value = False
+    engine._pending_eval_tasks["light.bedroom"] = existing
+
+    engine._schedule_eval_task("light.bedroom", None)
+
+    existing.cancel.assert_called_once()

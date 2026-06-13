@@ -509,3 +509,73 @@ async def test_options_edit_flags_add_incomplete(
         res["flow_id"], {CONF_FLAG_MATCH_STATE: "on", "action": "add"}
     )
     assert res["errors"]["base"] == "incomplete_flag"
+
+
+# ---------------------------------------------------------------------------
+# Coverage gaps
+# ---------------------------------------------------------------------------
+
+
+async def test_options_edit_entities_safety_redirect(
+    hass: HomeAssistant, options_rule_entry
+):
+    """Changing target to a safety domain redirects to edit_safety step."""
+    res = await hass.config_entries.options.async_init(options_rule_entry.entry_id)
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"], {"next_step_id": "edit_entities"}
+    )
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"], {CONF_TARGET_ENTITIES: ["lock.front_door"]}
+    )
+    assert res["step_id"] == "edit_safety"
+
+
+async def test_options_edit_flags_replace(hass: HomeAssistant, options_rule_entry):
+    """Replace action replaces all flags with the single submitted flag."""
+    res = await hass.config_entries.options.async_init(options_rule_entry.entry_id)
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"], {"next_step_id": "edit_flags"}
+    )
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"],
+        {
+            CONF_FLAG_ENTITY: "input_boolean.night",
+            CONF_FLAG_MATCH_STATE: "on",
+            "action": "replace",
+        },
+    )
+    assert res["type"] == FlowResultType.CREATE_ENTRY
+    assert len(options_rule_entry.data["flags"]) == 1
+    assert (
+        options_rule_entry.data["flags"][0][CONF_FLAG_ENTITY] == "input_boolean.night"
+    )
+
+
+async def test_options_edit_entities_save_non_safety(
+    hass: HomeAssistant, options_rule_entry
+):
+    """Changing entities to non-safety domain saves directly without safety step."""
+    res = await hass.config_entries.options.async_init(options_rule_entry.entry_id)
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"], {"next_step_id": "edit_entities"}
+    )
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"], {CONF_TARGET_ENTITIES: ["switch.outlet"]}
+    )
+    assert res["type"] == FlowResultType.CREATE_ENTRY
+    assert options_rule_entry.data[CONF_TARGET_ENTITIES] == ["switch.outlet"]
+
+
+async def test_options_edit_flags_replace_incomplete(
+    hass: HomeAssistant, options_rule_entry
+):
+    """Replace action with missing entity shows incomplete_flag error."""
+    res = await hass.config_entries.options.async_init(options_rule_entry.entry_id)
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"], {"next_step_id": "edit_flags"}
+    )
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"],
+        {CONF_FLAG_MATCH_STATE: "on", "action": "replace"},
+    )
+    assert res["errors"]["base"] == "incomplete_flag"

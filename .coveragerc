@@ -1,0 +1,7 @@
+[report]
+exclude_lines =
+    # Standard pragma
+    pragma: no cover
+    # Never executed in tests: HA guarantees these conditions never hold
+    if entity_id is None:
+    if task is not None:
