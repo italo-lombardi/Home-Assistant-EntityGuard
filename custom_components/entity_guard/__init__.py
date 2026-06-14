@@ -130,6 +130,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 entry.entry_id,
             )
             return False
+        # Restore persisted per-rule enabled state (written by panic_stop).
+        if not entry.options.get("enabled", True):
+            engine.set_enabled(False)
         hass.data[DOMAIN]["engines"][entry.entry_id] = engine
         _LOGGER.debug(
             "Rule engine ready: rule_id=%s targets=%s mode=%s",
@@ -204,6 +207,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Recreate hub if missing — covers user deleting hub while rules still exist.
         await _async_ensure_hub(hass)
 
+    await async_register_services(hass)
     await _async_install_card(hass)
     _LOGGER.debug("async_setup_entry complete: entry_id=%s", entry.entry_id)
 

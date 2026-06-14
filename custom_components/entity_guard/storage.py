@@ -105,13 +105,24 @@ class EntityGuardStore:
     async def _async_migrate(
         self, raw: dict[str, Any], from_version: int
     ) -> dict[str, Any]:
-        """Migrate storage data to current version."""
+        """Migrate storage data from from_version to STORE_VERSION.
+
+        Each supported migration step must be implemented explicitly.
+        Add an elif block for each version transition before bumping STORE_VERSION.
+        """
         _LOGGER.info(
             "Migrating Entity Guard storage from v%d to v%d",
             from_version,
             STORE_VERSION,
         )
-        return raw
+        # No migrations defined yet — STORE_VERSION is still 1.
+        # When bumping STORE_VERSION, add: if from_version == N: raw = _migrate_N_to_N1(raw)
+        if from_version >= STORE_VERSION:
+            return raw
+        raise NotImplementedError(
+            f"No migration path from storage v{from_version} to v{STORE_VERSION}. "
+            "Implement the migration in EntityGuardStore._async_migrate before bumping STORE_VERSION."
+        )
 
     def _validate_blob(self, blob: Any) -> dict[str, Any]:
         """Coerce a persisted blob to the canonical shape, raising on bad data."""
@@ -154,8 +165,8 @@ class EntityGuardStore:
         """Schedule a debounced save."""
         self._store.async_delay_save(self._data_provider, STORE_SAVE_DELAY_SECONDS)
 
-    async def async_save(self) -> None:
-        """Schedule a debounced save."""
+    def async_save(self) -> None:
+        """Schedule a debounced save (10-second delay). For immediate flush, use async_save_now()."""
         self._schedule_save()
 
     async def async_save_now(self) -> None:

@@ -461,3 +461,51 @@ async def test_deferred_flag_check_fires_on_started_event(
             await hass.async_block_till_done()
 
     mock_check.assert_called_once_with(hass, rule_entry.entry_id)
+
+
+async def test_setup_rule_entry_restores_disabled_from_options(
+    hass: HomeAssistant, rule_entry
+):
+    """When entry.options['enabled']=False, engine.set_enabled(False) is called on setup."""
+    from custom_components.entity_guard import async_setup_entry
+
+    # Set enabled=False in options (written by panic_stop)
+    rule_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        rule_entry, options={**rule_entry.options, "enabled": False}
+    )
+
+    with (
+        patch.object(
+            hass.config_entries,
+            "async_forward_entry_setups",
+            new_callable=AsyncMock,
+        ),
+        patch(
+            "custom_components.entity_guard._async_install_card",
+            new_callable=AsyncMock,
+        ),
+        patch(
+            "custom_components.entity_guard._async_ensure_hub",
+            new_callable=AsyncMock,
+        ),
+        patch(
+            "custom_components.entity_guard.async_register_services",
+            new_callable=AsyncMock,
+        ),
+        patch(
+            "custom_components.entity_guard.RuleEngine.async_setup",
+            new_callable=AsyncMock,
+        ),
+        patch(
+            "custom_components.entity_guard.RuleEngine.set_enabled"
+        ) as mock_set_enabled,
+        patch(
+            "custom_components.entity_guard.async_check_missing_flag_entities",
+            new_callable=AsyncMock,
+        ),
+    ):
+        result = await async_setup_entry(hass, rule_entry)
+
+    assert result is True
+    mock_set_enabled.assert_called_once_with(False)

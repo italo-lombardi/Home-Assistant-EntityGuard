@@ -293,7 +293,7 @@ async def test_async_save_now(hass: HomeAssistant):
 async def test_async_save_delays(hass: HomeAssistant):
     store = EntityGuardStore(hass)
     with patch.object(store._store, "async_delay_save") as mock_delay:
-        await store.async_save()
+        store.async_save()
     mock_delay.assert_called_once()
 
 
@@ -308,15 +308,23 @@ def test_data_provider_returns_deep_copy(hass: HomeAssistant):
 
 
 async def test_async_migrate_logs_and_returns_raw(hass: HomeAssistant):
-    """_async_migrate is called when stored version < STORE_VERSION; returns raw unchanged."""
+    """_async_migrate returns raw when from_version >= STORE_VERSION (no-op path)."""
     from custom_components.entity_guard.storage import EntityGuardStore, STORE_VERSION
 
-    # Build raw with version below current
-    old_version = STORE_VERSION - 1 if STORE_VERSION > 1 else 0
-    raw = {"version": old_version, "rules": {}}
+    raw = {"version": STORE_VERSION, "rules": {}}
     store = EntityGuardStore(hass)
-    result = await store._async_migrate(raw, old_version)
+    result = await store._async_migrate(raw, STORE_VERSION)
     assert result == raw
+
+
+async def test_async_migrate_raises_for_unimplemented_path(hass: HomeAssistant):
+    """_async_migrate raises NotImplementedError for versions with no migration path."""
+    import pytest
+    from custom_components.entity_guard.storage import EntityGuardStore
+
+    store = EntityGuardStore(hass)
+    with pytest.raises(NotImplementedError, match="No migration path"):
+        await store._async_migrate({"version": 0, "rules": {}}, 0)
 
 
 async def test_async_load_triggers_migration(hass: HomeAssistant):

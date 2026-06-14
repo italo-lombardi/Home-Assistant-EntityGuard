@@ -665,7 +665,8 @@ class RuleEngine:
                 "user_id": user_id,
             },
         )
-        self._set_status(STATUS_SUPPRESSED)
+        if self._current_status != STATUS_ERROR:
+            self._set_status(STATUS_SUPPRESSED)
 
     async def async_unsuppress(self) -> None:
         """Clear any active suppression."""

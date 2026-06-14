@@ -156,6 +156,13 @@ async def async_register_services(hass: HomeAssistant) -> None:
                     getattr(engine.config, "name", "?"),
                     err,
                 )
+        # Persist per-rule disabled state to config entry options.
+        for entry_id, eng in list(hass.data.get(DOMAIN, {}).get("engines", {}).items()):
+            rule_entry = hass.config_entries.async_get_entry(entry_id)
+            if rule_entry is not None:
+                hass.config_entries.async_update_entry(
+                    rule_entry, options={**rule_entry.options, "enabled": False}
+                )
 
         hass.data.setdefault(DOMAIN, {})["hub_master_enabled"] = False
         for _hub_entry in hass.config_entries.async_entries(DOMAIN):
