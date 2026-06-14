@@ -221,6 +221,8 @@ class EntityGuardCooldownRemainingSensor(EntityGuardSensor):
 class EntityGuardSafetyStatusSensor(EntityGuardSensor):
     """Sensor reporting safety acknowledgement state."""
 
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = ["acknowledged", "not_acknowledged"]
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, entry: ConfigEntry, engine: RuleEngine) -> None:

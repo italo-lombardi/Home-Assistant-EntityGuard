@@ -88,6 +88,7 @@ class RuleEngine:
         self._pending_enforcements: dict[str, Callable[[], None]] = {}
         self._pending_eval_tasks: dict[str, asyncio.Task] = {}
         self._startup_complete = False
+        self._is_unloaded: bool = False
         self._current_status: str = STATUS_STARTING
         self._flag_entity_ids: frozenset[str] = frozenset(
             f.entity for f in config.flags
@@ -159,6 +160,7 @@ class RuleEngine:
 
     async def async_unload(self) -> None:
         """Cancel listeners and pending enforcement timers."""
+        self._is_unloaded = True
         _LOGGER.debug("Engine unload: rule=%s", self._config.name)
         for unsub in self._unsub_callbacks:
             try:
@@ -241,6 +243,9 @@ class RuleEngine:
             # During grace, ignore target state events; flag changes still re-evaluate.
             if entity_id not in self._flag_entity_ids:
                 return
+
+        if self._current_status == STATUS_ERROR:
+            return
 
         if not self._state.enabled or not self._master_enabled_getter():
             self._apply_idle_status()
@@ -356,6 +361,8 @@ class RuleEngine:
         self._cancel_pending(entity_id)
 
         async def _fire(_now: datetime) -> None:
+            if self._is_unloaded:
+                return
             self._pending_enforcements.pop(entity_id, None)
             current = self._hass.states.get(entity_id)
             if current is None or not self._is_triggered(entity_id, current):
@@ -386,7 +393,13 @@ class RuleEngine:
         for eid in entity_ids:
             self._cancel_pending(eid)
 
-    async def _enforce(self, entity_id: str, *, user_id: str | None = None) -> None:
+    async def _enforce(
+        self,
+        entity_id: str,
+        *,
+        user_id: str | None = None,
+        bypass_rate_limit: bool = False,
+    ) -> None:
         """Rate-limit, lock, and execute the enforcement service call."""
         now = dt_util.now()
 
@@ -397,7 +410,8 @@ class RuleEngine:
                 del self._state.rate_limit_window[:idx]
             # Limit <= 0 means user disabled the rate limit entirely; skip loop protection.
             if (
-                self._config.max_enforcements_per_minute > 0
+                not bypass_rate_limit
+                and self._config.max_enforcements_per_minute > 0
                 and len(self._state.rate_limit_window)
                 >= self._config.max_enforcements_per_minute
             ):
@@ -502,7 +516,7 @@ class RuleEngine:
 
                     @callback
                     def _broadcast_after_cooldown(_now: datetime) -> None:
-                        self._broadcast_status()
+                        self._apply_idle_status()
                         if unsub_holder:
                             try:
                                 self._unsub_callbacks.remove(unsub_holder[0])
@@ -599,7 +613,7 @@ class RuleEngine:
             user_id,
         )
         for entity_id in self._config.target_entities:
-            await self._enforce(entity_id, user_id=user_id)
+            await self._enforce(entity_id, user_id=user_id, bypass_rate_limit=True)
 
     async def async_reset_cooldowns(self) -> None:
         """Clear all per-entity cooldowns immediately."""

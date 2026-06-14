@@ -26,7 +26,7 @@ def async_describe_events(
     @callback
     def _describe_enforced(event: Event) -> dict[str, Any]:
         data = event.data
-        target_state = data.get("target") or data.get("target_state") or "target"
+        target_state = data.get("target") or "target"
         entity_id = data.get("entity_id")
         rule_name = data.get("rule_name") or "Entity Guard"
         return {

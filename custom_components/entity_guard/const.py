@@ -68,7 +68,7 @@ DEFAULT_DEBOUNCE_ENABLED = False
 DEFAULT_DEBOUNCE_SECONDS = 60
 DEFAULT_MAX_ENFORCEMENTS_PER_MINUTE = 10
 DEFAULT_LOOP_SUPPRESS_MINUTES = 15
-DEFAULT_TRIGGER_STATES = ["on"]
+DEFAULT_TRIGGER_STATES: tuple[str, ...] = ("on",)
 DEFAULT_TARGET_STATE = "off"
 
 # Limits
@@ -119,7 +119,7 @@ DOMAIN_SERVICE_MAP: dict[str, dict[str, str]] = {
     "lock": {"locked": "lock.lock", "unlocked": "lock.unlock"},
     "cover": {"open": "cover.open_cover", "closed": "cover.close_cover"},
     "media_player": {"on": "media_player.turn_on", "off": "media_player.turn_off"},
-    "climate": {"on": "climate.turn_on", "off": "climate.turn_off"},
+    "climate": {"off": "climate.turn_off"},
     "fan": {"on": "fan.turn_on", "off": "fan.turn_off"},
     "input_boolean": {"on": "input_boolean.turn_on", "off": "input_boolean.turn_off"},
 }

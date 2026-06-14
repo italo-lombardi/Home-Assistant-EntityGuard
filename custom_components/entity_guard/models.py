@@ -34,6 +34,11 @@ from .const import (
     DEFAULT_MAX_ENFORCEMENTS_PER_MINUTE,
     DEFAULT_TARGET_STATE,
     DEFAULT_TRIGGER_STATES,
+    MAX_DEBOUNCE_SECONDS,
+    MAX_DELAY_SECONDS,
+    MAX_RATE_LIMIT,
+    MIN_DEBOUNCE_SECONDS,
+    MIN_DELAY_SECONDS,
     MODE_STATE,
 )
 
@@ -52,10 +57,13 @@ class Flag:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Flag":
         """Deserialize from dict."""
-        return cls(
-            entity=data[CONF_FLAG_ENTITY],
-            match_state=data[CONF_FLAG_MATCH_STATE],
-        )
+        try:
+            return cls(
+                entity=data[CONF_FLAG_ENTITY],
+                match_state=data[CONF_FLAG_MATCH_STATE],
+            )
+        except KeyError as err:
+            raise ValueError(f"Flag dict missing required key {err}: {data!r}") from err
 
 
 @dataclass
@@ -104,8 +112,48 @@ def parse_rule_config(entry: ConfigEntry) -> RuleConfig:
     raw: dict[str, Any] = {**entry.data, **(entry.options or {})}
 
     flags_raw = raw.get(CONF_FLAGS, []) or []
-    flags = [Flag.from_dict(f) for f in flags_raw]
+    if not isinstance(flags_raw, list):
+        flags_raw = []
+    flags = []
+    for _f in flags_raw:
+        try:
+            flags.append(Flag.from_dict(_f))
+        except (ValueError, TypeError):
+            pass
 
+    _delay = max(
+        MIN_DELAY_SECONDS,
+        min(
+            MAX_DELAY_SECONDS,
+            _to_int_or_default(
+                raw.get(CONF_DELAY_SECONDS, DEFAULT_DELAY_SECONDS),
+                DEFAULT_DELAY_SECONDS,
+            ),
+        ),
+    )
+    _debounce = max(
+        MIN_DEBOUNCE_SECONDS,
+        min(
+            MAX_DEBOUNCE_SECONDS,
+            _to_int_or_default(
+                raw.get(CONF_DEBOUNCE_SECONDS, DEFAULT_DEBOUNCE_SECONDS),
+                DEFAULT_DEBOUNCE_SECONDS,
+            ),
+        ),
+    )
+    _max_enf = max(
+        0,
+        min(
+            MAX_RATE_LIMIT,
+            _to_int_or_default(
+                raw.get(
+                    CONF_MAX_ENFORCEMENTS_PER_MINUTE,
+                    DEFAULT_MAX_ENFORCEMENTS_PER_MINUTE,
+                ),
+                DEFAULT_MAX_ENFORCEMENTS_PER_MINUTE,
+            ),
+        ),
+    )
     return RuleConfig(
         name=raw.get(CONF_RULE_NAME, entry.title),
         unique_id=raw.get(CONF_RULE_ID, entry.entry_id),
@@ -113,26 +161,15 @@ def parse_rule_config(entry: ConfigEntry) -> RuleConfig:
         mode=raw.get(CONF_MODE, MODE_STATE),
         trigger_states=list(raw.get(CONF_TRIGGER_STATES, DEFAULT_TRIGGER_STATES)),
         target_state=raw.get(CONF_TARGET_STATE, DEFAULT_TARGET_STATE),
-        delay_seconds=_to_int_or_default(
-            raw.get(CONF_DELAY_SECONDS, DEFAULT_DELAY_SECONDS),
-            DEFAULT_DELAY_SECONDS,
-        ),
+        delay_seconds=_delay,
         attribute=raw.get(CONF_ATTRIBUTE),
         operator=raw.get(CONF_OPERATOR),
         threshold=_to_float_or_none(raw.get(CONF_THRESHOLD)),
         target_value=_to_float_or_none(raw.get(CONF_TARGET_VALUE)),
         flags=flags,
         debounce_enabled=bool(raw.get(CONF_DEBOUNCE_ENABLED, DEFAULT_DEBOUNCE_ENABLED)),
-        debounce_seconds=_to_int_or_default(
-            raw.get(CONF_DEBOUNCE_SECONDS, DEFAULT_DEBOUNCE_SECONDS),
-            DEFAULT_DEBOUNCE_SECONDS,
-        ),
-        max_enforcements_per_minute=_to_int_or_default(
-            raw.get(
-                CONF_MAX_ENFORCEMENTS_PER_MINUTE, DEFAULT_MAX_ENFORCEMENTS_PER_MINUTE
-            ),
-            DEFAULT_MAX_ENFORCEMENTS_PER_MINUTE,
-        ),
+        debounce_seconds=_debounce,
+        max_enforcements_per_minute=_max_enf,
         safety_acknowledged=bool(raw.get(CONF_SAFETY_ACKNOWLEDGED, False)),
     )
 

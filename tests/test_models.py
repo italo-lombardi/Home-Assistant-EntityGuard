@@ -196,3 +196,46 @@ def test_to_int_or_default():
     assert _to_int_or_default("7", 99) == 7
     assert _to_int_or_default(None, 99) == 99
     assert _to_int_or_default("bad", 99) == 99
+
+
+def test_flag_from_dict_missing_key_raises_value_error():
+    with pytest.raises(ValueError, match="missing required key"):
+        Flag.from_dict({"entity": "light.x"})  # match_state missing
+
+
+def test_parse_rule_config_non_list_flags_treated_as_empty():
+    entry = MockConfigEntry(
+        domain="entity_guard",
+        data={
+            "entry_type": "rule",
+            "rule_id": "uid",
+            "rule_name": "R",
+            "target_entities": ["light.x"],
+            "mode": "state",
+            "trigger_states": ["on"],
+            "target_state": "off",
+            "flags": "not-a-list",
+        },
+        title="R",
+    )
+    config = parse_rule_config(entry)
+    assert config.flags == []
+
+
+def test_parse_rule_config_skips_corrupt_flag():
+    entry = MockConfigEntry(
+        domain="entity_guard",
+        data={
+            "entry_type": "rule",
+            "rule_id": "uid",
+            "rule_name": "R",
+            "target_entities": ["light.x"],
+            "mode": "state",
+            "trigger_states": ["on"],
+            "target_state": "off",
+            "flags": [{"entity": "light.x"}],  # missing match_state
+        },
+        title="R",
+    )
+    config = parse_rule_config(entry)
+    assert config.flags == []

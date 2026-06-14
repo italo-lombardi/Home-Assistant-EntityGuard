@@ -143,9 +143,6 @@ class EntityGuardEnabledSwitch(EntityGuardRuleSwitchBase):
     async def _set_enabled(self, value: bool) -> None:
         """Apply enabled state through the engine."""
         self._engine.set_enabled(value)
-        async_dispatcher_send(
-            self.hass, signal_rule_update(self._engine.config.unique_id)
-        )
         self.async_write_ha_state()
 
 
@@ -172,16 +169,8 @@ class EntityGuardDebounceEnabledSwitch(EntityGuardRuleSwitchBase):
 
     async def _set_debounce(self, value: bool) -> None:
         """Persist debounce_enabled to engine config and config entry."""
-        config = getattr(self._engine, "config", None)
-        if config is not None:
-            try:
-                setattr(config, "debounce_enabled", value)
-            except Exception:  # pragma: no cover - defensive
-                _LOGGER.debug("Failed to update engine config debounce_enabled")
-
         new_options = {**(self._entry.options or {}), CONF_DEBOUNCE_ENABLED: value}
         self.hass.config_entries.async_update_entry(self._entry, options=new_options)
-
         async_dispatcher_send(
             self.hass, signal_rule_update(self._engine.config.unique_id)
         )
@@ -201,8 +190,6 @@ class EntityGuardMasterEnabledSwitch(SwitchEntity):
         self._entry = entry
         self._attr_unique_id = f"{entry.entry_id}_master_enabled"
         self._attr_device_info = _hub_device_info()
-        initial = entry.options.get("master_enabled", True)
-        hass.data.setdefault(DOMAIN, {})["hub_master_enabled"] = initial
 
     @property
     def is_on(self) -> bool:

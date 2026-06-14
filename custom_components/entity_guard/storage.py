@@ -77,6 +77,9 @@ class EntityGuardStore:
             self._data = {"version": STORE_VERSION, "rules": {}}
             return
 
+        raw_version = raw.get("version", 1) if isinstance(raw, dict) else 1
+        if raw_version < STORE_VERSION:
+            raw = await self._async_migrate(raw, raw_version)
         rules_in = raw.get("rules", {}) or {}
         rules_out: dict[str, dict[str, Any]] = {}
 
@@ -98,6 +101,17 @@ class EntityGuardStore:
                 )
 
         self._data = {"version": STORE_VERSION, "rules": rules_out}
+
+    async def _async_migrate(
+        self, raw: dict[str, Any], from_version: int
+    ) -> dict[str, Any]:
+        """Migrate storage data to current version."""
+        _LOGGER.info(
+            "Migrating Entity Guard storage from v%d to v%d",
+            from_version,
+            STORE_VERSION,
+        )
+        return raw
 
     def _validate_blob(self, blob: Any) -> dict[str, Any]:
         """Coerce a persisted blob to the canonical shape, raising on bad data."""
@@ -136,9 +150,13 @@ class EntityGuardStore:
             ),
         }
 
-    async def async_save(self) -> None:
+    def _schedule_save(self) -> None:
         """Schedule a debounced save."""
         self._store.async_delay_save(self._data_provider, STORE_SAVE_DELAY_SECONDS)
+
+    async def async_save(self) -> None:
+        """Schedule a debounced save."""
+        self._schedule_save()
 
     async def async_save_now(self) -> None:
         """Force immediate persist, bypassing the debounce window."""
@@ -156,18 +174,18 @@ class EntityGuardStore:
     def set_rule_state(self, rule_id: str, state: dict[str, Any]) -> None:
         """Replace the persisted blob for a rule and queue a save."""
         self._data["rules"][rule_id] = state
-        self._hass.async_create_task(self.async_save())
+        self._schedule_save()
 
     def delete_rule_state(self, rule_id: str) -> None:
         """Remove a rule's persisted state entirely."""
         if rule_id in self._data["rules"]:
             del self._data["rules"][rule_id]
-            self._hass.async_create_task(self.async_save())
+            self._schedule_save()
 
     def clear_rule_history(self, rule_id: str) -> None:
         """Reset counters/cooldowns for a rule but keep the slot."""
         self._data["rules"][rule_id] = _default_rule_blob()
-        self._hass.async_create_task(self.async_save())
+        self._schedule_save()
 
     @staticmethod
     def runtime_to_blob(state: RuleRuntimeState) -> dict[str, Any]:

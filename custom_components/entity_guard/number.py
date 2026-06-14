@@ -149,7 +149,6 @@ class EntityGuardNumberBase(NumberEntity):
         async_dispatcher_send(
             self.hass, signal_rule_update(self._engine.config.unique_id)
         )
-        self.async_write_ha_state()
 
 
 class EntityGuardDelaySecondsNumber(EntityGuardNumberBase):

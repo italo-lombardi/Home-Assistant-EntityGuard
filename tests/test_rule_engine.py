@@ -1284,7 +1284,7 @@ async def test_threshold_failures_set_error(hass: HomeAssistant):
 
 
 async def test_successful_enforcement_clears_error(hass: HomeAssistant):
-    """A successful enforcement after error must reset counter and status."""
+    """STATUS_ERROR gates async_evaluate — use async_clear_history to exit error state."""
     config = _make_config(target_state="off")
     engine = _make_engine(hass, config)
     engine._startup_complete = True
@@ -1293,11 +1293,18 @@ async def test_successful_enforcement_clears_error(hass: HomeAssistant):
     engine._state.last_error = "previous error"
     engine._set_status(STATUS_ERROR)
 
+    # async_evaluate must return early without calling any service
     hass.services.async_register("light", "turn_off", AsyncMock())
     hass.states.async_set("light.bedroom", "on")
     st = hass.states.get("light.bedroom")
     await engine.async_evaluate("light.bedroom", st)
 
+    # error state unchanged — gated
+    assert engine.current_status() == STATUS_ERROR
+    assert engine.state.consecutive_errors == ERROR_THRESHOLD
+
+    # clear_history resets error state
+    await engine.async_clear_history()
     assert engine.state.consecutive_errors == 0
     assert engine.state.last_error is None
     assert engine.current_status() != STATUS_ERROR
@@ -1483,3 +1490,31 @@ def test_schedule_eval_task_cancels_existing(hass: HomeAssistant):
     engine._schedule_eval_task("light.bedroom", None)
 
     existing.cancel.assert_called_once()
+
+
+async def test_is_unloaded_guard_prevents_fire(hass: HomeAssistant):
+    """If engine is unloaded before _fire runs, enforcement must be skipped."""
+    from unittest.mock import AsyncMock
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    config = _make_config(delay_seconds=1)
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    hass.services.async_register("light", "turn_off", AsyncMock())
+    hass.states.async_set("light.bedroom", "on")
+    st = hass.states.get("light.bedroom")
+
+    # Schedule delayed enforcement
+    await engine.async_evaluate("light.bedroom", st)
+    assert engine._current_status == STATUS_PENDING
+
+    # Mark engine as unloaded before the timer fires
+    engine._is_unloaded = True
+
+    # Fire the timer — should be a no-op
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=2))
+    await hass.async_block_till_done()
+
+    # No enforcement: counters unchanged
+    assert engine.state.enforcement_count_total == 0

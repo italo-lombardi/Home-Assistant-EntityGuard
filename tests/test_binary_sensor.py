@@ -118,11 +118,12 @@ async def test_setup_entry_adds_binary_sensors(hass: HomeAssistant):
     hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
     added = []
     await async_setup_entry(hass, entry, added.extend)
-    assert len(added) == 3
+    assert len(added) == 4
     types = [type(s).__name__ for s in added]
     assert "EntityGuardArmedSensor" in types
     assert "EntityGuardActiveSensor" in types
     assert "EntityGuardInCooldownSensor" in types
+    assert "EntityGuardPendingSensor" in types
 
 
 # ---------------------------------------------------------------------------
@@ -144,3 +145,45 @@ async def test_binary_sensor_async_added_subscribes(hass: HomeAssistant):
     async_dispatcher_send(hass, f"entity_guard_rule_update_{engine.config.unique_id}")
     await hass.async_block_till_done()
     sensor.async_write_ha_state.assert_called()
+
+
+def test_pending_sensor_is_on():
+    from custom_components.entity_guard.binary_sensor import EntityGuardPendingSensor
+    from custom_components.entity_guard.const import STATUS_PENDING
+    from unittest.mock import MagicMock
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from custom_components.entity_guard.const import (
+        DOMAIN,
+        CONF_ENTRY_TYPE,
+        ENTRY_TYPE_RULE,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE}, title="R"
+    )
+    engine = MagicMock()
+    engine.config.unique_id = "uid"
+    engine.current_status.return_value = STATUS_PENDING
+    sensor = EntityGuardPendingSensor(entry, engine)
+    assert sensor.is_on is True
+
+
+def test_pending_sensor_is_off():
+    from custom_components.entity_guard.binary_sensor import EntityGuardPendingSensor
+    from custom_components.entity_guard.const import STATUS_ARMED
+    from unittest.mock import MagicMock
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from custom_components.entity_guard.const import (
+        DOMAIN,
+        CONF_ENTRY_TYPE,
+        ENTRY_TYPE_RULE,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE}, title="R"
+    )
+    engine = MagicMock()
+    engine.config.unique_id = "uid"
+    engine.current_status.return_value = STATUS_ARMED
+    sensor = EntityGuardPendingSensor(entry, engine)
+    assert sensor.is_on is False

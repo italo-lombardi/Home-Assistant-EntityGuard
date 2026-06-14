@@ -32,8 +32,10 @@ async def async_check_missing_flag_entities(hass: HomeAssistant, entry_id: str) 
         _LOGGER.exception("Could not parse config for entry %s", entry_id)
         return
 
+    issue_id = f"{entry_id}_missing_flags"
     if not config.flags:
         _LOGGER.debug("No flags configured for rule %s", entry_id)
+        async_delete_issue(hass, DOMAIN, issue_id)
         return
 
     ent_reg = er.async_get(hass)
@@ -41,7 +43,6 @@ async def async_check_missing_flag_entities(hass: HomeAssistant, entry_id: str) 
         flag.entity for flag in config.flags if ent_reg.async_get(flag.entity) is None
     ]
 
-    issue_id = f"{entry_id}_missing_flags"
     if missing_flags:
         _LOGGER.warning(
             "Flag entities missing for rule '%s': %s",

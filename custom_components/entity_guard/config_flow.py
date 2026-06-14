@@ -396,7 +396,7 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors[CONF_TARGET_STATE] = "empty_target_state"
             elif target.lower() in FORBIDDEN_STATES:
                 errors[CONF_TARGET_STATE] = "forbidden_state"
-            elif target in triggers:
+            elif target.lower() in [t.lower() for t in triggers]:
                 errors[CONF_TARGET_STATE] = "target_in_triggers"
             elif delay is None:
                 errors[CONF_DELAY_SECONDS] = "invalid_delay"
@@ -459,7 +459,7 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
         schema = vol.Schema(
             {
                 vol.Required(
-                    CONF_ATTRIBUTE, default=attr_options[0]
+                    CONF_ATTRIBUTE, default=attr_options[0] if attr_options else None
                 ): selector.SelectSelector(
                     selector.SelectSelectorConfig(
                         options=attr_options,
@@ -911,7 +911,7 @@ class EntityGuardOptionsFlow(OptionsFlow):
                 errors[CONF_TARGET_STATE] = "empty_target_state"
             elif target.lower() in FORBIDDEN_STATES:
                 errors[CONF_TARGET_STATE] = "forbidden_state"
-            elif target in triggers:
+            elif target.lower() in [t.lower() for t in triggers]:
                 errors[CONF_TARGET_STATE] = "target_in_triggers"
             elif delay is None:
                 errors[CONF_DELAY_SECONDS] = "invalid_delay"
@@ -980,7 +980,9 @@ class EntityGuardOptionsFlow(OptionsFlow):
         )
         # Preserve the stored attribute even if it's not in the filtered list
         # (e.g. user changed targets and an old selection no longer matches).
-        current_attr = self._working.get(CONF_ATTRIBUTE, attr_options[0])
+        current_attr = self._working.get(
+            CONF_ATTRIBUTE, attr_options[0] if attr_options else None
+        )
         if current_attr not in attr_options:
             attr_options = [current_attr, *attr_options]
         schema = vol.Schema(

@@ -305,3 +305,33 @@ def test_data_provider_returns_deep_copy(hass: HomeAssistant):
     assert copy1 == copy2
     copy1["rules"]["r1"]["enforcement_count_today"] = 99
     assert store._data["rules"]["r1"]["enforcement_count_today"] == 5
+
+
+async def test_async_migrate_logs_and_returns_raw(hass: HomeAssistant):
+    """_async_migrate is called when stored version < STORE_VERSION; returns raw unchanged."""
+    from custom_components.entity_guard.storage import EntityGuardStore, STORE_VERSION
+
+    # Build raw with version below current
+    old_version = STORE_VERSION - 1 if STORE_VERSION > 1 else 0
+    raw = {"version": old_version, "rules": {}}
+    store = EntityGuardStore(hass)
+    result = await store._async_migrate(raw, old_version)
+    assert result == raw
+
+
+async def test_async_load_triggers_migration(hass: HomeAssistant):
+    """async_load calls _async_migrate when stored version is stale."""
+    from unittest.mock import AsyncMock, patch
+    from custom_components.entity_guard.storage import EntityGuardStore, STORE_VERSION
+
+    store = EntityGuardStore(hass)
+    stale_version = STORE_VERSION - 1 if STORE_VERSION > 1 else 0
+    raw = {"version": stale_version, "rules": {}}
+
+    with patch.object(store._store, "async_load", AsyncMock(return_value=raw)):
+        with patch.object(
+            store, "_async_migrate", AsyncMock(return_value=raw)
+        ) as mock_migrate:
+            await store.async_load()
+            if stale_version < STORE_VERSION:
+                mock_migrate.assert_awaited_once_with(raw, stale_version)

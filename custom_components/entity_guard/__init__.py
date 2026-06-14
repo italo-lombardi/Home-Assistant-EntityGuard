@@ -15,6 +15,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.issue_registry import async_delete_issue
 
 from .const import (
     CONF_ENTRY_TYPE,
@@ -221,13 +222,14 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             await engine.async_unload()
             _LOGGER.debug("Engine unloaded for %s", entry.entry_id)
 
-    if not hass.data.get(DOMAIN, {}).get("engines"):
-        hub_remains = any(
-            e.entry_id != entry.entry_id
-            and e.data.get(CONF_ENTRY_TYPE) == ENTRY_TYPE_HUB
+    remaining_engines = hass.data.get(DOMAIN, {}).get("engines", {})
+    if not remaining_engines:
+        has_hub = any(
+            e.data.get(CONF_ENTRY_TYPE) == ENTRY_TYPE_HUB
             for e in hass.config_entries.async_entries(DOMAIN)
+            if e.entry_id != entry.entry_id
         )
-        if not hub_remains:
+        if not has_hub:
             async_unload_services(hass)
 
     _LOGGER.info("Entry %s unloaded (ok=%s)", entry.entry_id, unload_ok)
@@ -239,6 +241,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Block hub removal while rules still exist; recreate hub immediately if forced."""
     if entry.data.get(CONF_ENTRY_TYPE) != ENTRY_TYPE_HUB:
         _LOGGER.debug("Removed rule entry %s; clearing statistics", entry.entry_id)
+        async_delete_issue(hass, DOMAIN, f"{entry.entry_id}_missing_flags")
         ent_reg = er.async_get(hass)
         statistic_ids = [
             entity.entity_id

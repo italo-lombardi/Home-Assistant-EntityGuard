@@ -126,7 +126,6 @@ async def test_debounce_switch_turn_on(hass: HomeAssistant):
     sw.hass = hass
     sw.async_write_ha_state = MagicMock()
     await sw.async_turn_on()
-    assert engine.config.debounce_enabled is True
     assert entry.options.get("debounce_enabled") is True
 
 
@@ -138,7 +137,7 @@ async def test_debounce_switch_turn_off(hass: HomeAssistant):
     sw.hass = hass
     sw.async_write_ha_state = MagicMock()
     await sw.async_turn_off()
-    assert engine.config.debounce_enabled is False
+    assert entry.options.get("debounce_enabled") is False
 
 
 # ---------------------------------------------------------------------------
@@ -163,6 +162,7 @@ def test_master_switch_is_off(hass: HomeAssistant):
         title="Hub",
     )
     entry.add_to_hass(hass)
+    hass.data.setdefault(DOMAIN, {})["hub_master_enabled"] = False
     sw = EntityGuardMasterEnabledSwitch(hass, entry)
     sw.hass = hass
     assert sw.is_on is False
