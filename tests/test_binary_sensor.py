@@ -149,7 +149,6 @@ async def test_binary_sensor_async_added_subscribes(hass: HomeAssistant):
 
 def test_pending_sensor_is_on():
     from custom_components.entity_guard.binary_sensor import EntityGuardPendingSensor
-    from custom_components.entity_guard.const import STATUS_PENDING
     from unittest.mock import MagicMock
     from pytest_homeassistant_custom_component.common import MockConfigEntry
     from custom_components.entity_guard.const import (
@@ -163,14 +162,13 @@ def test_pending_sensor_is_on():
     )
     engine = MagicMock()
     engine.config.unique_id = "uid"
-    engine.current_status.return_value = STATUS_PENDING
+    engine.is_pending.return_value = True
     sensor = EntityGuardPendingSensor(entry, engine)
     assert sensor.is_on is True
 
 
 def test_pending_sensor_is_off():
     from custom_components.entity_guard.binary_sensor import EntityGuardPendingSensor
-    from custom_components.entity_guard.const import STATUS_ARMED
     from unittest.mock import MagicMock
     from pytest_homeassistant_custom_component.common import MockConfigEntry
     from custom_components.entity_guard.const import (
@@ -184,6 +182,6 @@ def test_pending_sensor_is_off():
     )
     engine = MagicMock()
     engine.config.unique_id = "uid"
-    engine.current_status.return_value = STATUS_ARMED
+    engine.is_pending.return_value = False
     sensor = EntityGuardPendingSensor(entry, engine)
     assert sensor.is_on is False

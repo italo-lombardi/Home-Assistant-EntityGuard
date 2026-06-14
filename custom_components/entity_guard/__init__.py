@@ -24,7 +24,7 @@ from .const import (
     ENTRY_TYPE_RULE,
 )
 from .models import parse_rule_config
-from .issue_helpers import async_check_missing_flag_entities
+from .issue_helpers import async_check_missing_flag_entities, missing_flags_issue_id
 from .rule_engine import RuleEngine, signal_for_rule, signal_master_update
 from .services import async_register_services, async_unload_services
 from .storage import EntityGuardStore
@@ -232,12 +232,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     remaining_engines = hass.data.get(DOMAIN, {}).get("engines", {})
     if not remaining_engines:
-        has_hub = any(
-            e.data.get(CONF_ENTRY_TYPE) == ENTRY_TYPE_HUB
+        remaining_entries = [
+            e
             for e in hass.config_entries.async_entries(DOMAIN)
             if e.entry_id != entry.entry_id
-        )
-        if not has_hub:
+        ]
+        if not remaining_entries:
             async_unload_services(hass)
 
     _LOGGER.info("Entry %s unloaded (ok=%s)", entry.entry_id, unload_ok)
@@ -249,7 +249,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Block hub removal while rules still exist; recreate hub immediately if forced."""
     if entry.data.get(CONF_ENTRY_TYPE) != ENTRY_TYPE_HUB:
         _LOGGER.debug("Removed rule entry %s; clearing statistics", entry.entry_id)
-        async_delete_issue(hass, DOMAIN, f"{entry.entry_id}_missing_flags")
+        async_delete_issue(hass, DOMAIN, missing_flags_issue_id(entry.entry_id))
         ent_reg = er.async_get(hass)
         statistic_ids = [
             entity.entity_id

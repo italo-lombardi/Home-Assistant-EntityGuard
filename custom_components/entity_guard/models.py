@@ -118,8 +118,10 @@ def parse_rule_config(entry: ConfigEntry) -> RuleConfig:
     for _f in flags_raw:
         try:
             flags.append(Flag.from_dict(_f))
-        except (ValueError, TypeError):
-            pass
+        except (ValueError, TypeError) as err:
+            raise ValueError(
+                f"Corrupt flag entry in rule '{raw.get(CONF_RULE_NAME, 'unknown')}': {err!r} — data: {_f!r}"
+            ) from err
 
     _delay = max(
         MIN_DELAY_SECONDS,

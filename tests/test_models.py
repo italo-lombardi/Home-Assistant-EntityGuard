@@ -237,5 +237,5 @@ def test_parse_rule_config_skips_corrupt_flag():
         },
         title="R",
     )
-    config = parse_rule_config(entry)
-    assert config.flags == []
+    with pytest.raises(ValueError, match="Corrupt flag entry"):
+        parse_rule_config(entry)

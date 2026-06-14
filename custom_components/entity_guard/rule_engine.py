@@ -247,6 +247,8 @@ class RuleEngine:
 
     async def async_evaluate(self, entity_id: str, new_state: Any) -> None:
         """Evaluate a state change against the rule and enforce if appropriate."""
+        now = dt_util.now()
+        self._prune_expired_cooldowns(now)
         if not self._startup_complete and entity_id in self._config.target_entities:
             # During grace, ignore target state events; flag changes still re-evaluate.
             if entity_id not in self._flag_entity_ids:
@@ -258,8 +260,6 @@ class RuleEngine:
         if not self._state.enabled or not self._master_enabled_getter():
             self._apply_idle_status()
             return
-
-        now = dt_util.now()
 
         if self._state.suppressed_until and self._state.suppressed_until > now:
             self._set_status(STATUS_SUPPRESSED)
@@ -360,12 +360,15 @@ class RuleEngine:
         """Pick between PENDING, ARMED, and COOLDOWN based on current state."""
         if self._pending_enforcements:
             return STATUS_PENDING
-        expired = [eid for eid, end in self._state.cooldowns.items() if end <= now]
-        for eid in expired:
-            del self._state.cooldowns[eid]
         if any(end > now for end in self._state.cooldowns.values()):
             return STATUS_COOLDOWN
         return STATUS_ARMED
+
+    def _prune_expired_cooldowns(self, now: datetime) -> None:
+        """Remove expired per-entity cooldown entries."""
+        expired = [eid for eid, end in self._state.cooldowns.items() if end <= now]
+        for eid in expired:
+            del self._state.cooldowns[eid]
 
     def _schedule_delayed_enforcement(self, entity_id: str) -> None:
         """Arm a delayed enforcement; cancels any prior pending one for this entity."""
@@ -535,6 +538,8 @@ class RuleEngine:
                     @callback
                     def _broadcast_after_cooldown(_now: datetime) -> None:
                         self._cooldown_broadcast_unsubs.pop(_eid, None)
+                        if self._is_unloaded:
+                            return
                         self._apply_idle_status()
 
                     unsub = async_call_later(
@@ -682,6 +687,7 @@ class RuleEngine:
         self._state.last_error = None
         self._store.clear_rule_history(self._config.unique_id)
         if self._current_status == STATUS_ERROR:
+            self._current_status = STATUS_STARTING  # break sticky before re-derive
             self._apply_idle_status()
         else:
             self._broadcast_status()
@@ -724,6 +730,10 @@ class RuleEngine:
         """Return True if any tracked entity is still in cooldown."""
         return self._current_status == STATUS_COOLDOWN
 
+    def is_pending(self) -> bool:
+        """Return True if a delayed enforcement is queued."""
+        return self._current_status == STATUS_PENDING
+
     def cooldown_remaining_seconds(self) -> float:
         """Return the largest remaining cooldown across tracked entities."""
         now = dt_util.now()
@@ -751,12 +761,15 @@ class RuleEngine:
         """Single source of truth for status when idle.
 
         Priority (highest first):
-          1. Master switch off -> MASTER_DISABLED.
-          2. Per-rule disabled -> DISABLED.
-          3. Active suppression -> SUPPRESSED.
-          4. Conditional flags unmet -> CONDITIONAL.
-          5. Otherwise -> derive ARMED / COOLDOWN.
+          1. STATUS_ERROR sticky -> ERROR.
+          2. Master switch off -> MASTER_DISABLED.
+          3. Per-rule disabled -> DISABLED.
+          4. Active suppression -> SUPPRESSED.
+          5. Conditional flags unmet -> CONDITIONAL.
+          6. Otherwise -> derive ARMED / COOLDOWN.
         """
+        if self._current_status == STATUS_ERROR:
+            return STATUS_ERROR
         if not self._master_enabled_getter():
             return STATUS_MASTER_DISABLED
         if not self._state.enabled:

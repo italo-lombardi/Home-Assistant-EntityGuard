@@ -1548,7 +1548,7 @@ async def test_unload_handles_cooldown_broadcast_unsub_exception(hass: HomeAssis
 
 
 async def test_derive_armed_prunes_expired_cooldowns(hass: HomeAssistant):
-    """_derive_armed_or_cooldown removes expired entries from cooldowns dict."""
+    """_prune_expired_cooldowns removes expired entries from cooldowns dict."""
     from datetime import timedelta
 
     engine = _make_engine(hass)
@@ -1556,9 +1556,8 @@ async def test_derive_armed_prunes_expired_cooldowns(hass: HomeAssistant):
     past = dt_util.now() - timedelta(seconds=10)
     engine._state.cooldowns["light.old"] = past
 
-    result = engine._derive_armed_or_cooldown(dt_util.now())
+    engine._prune_expired_cooldowns(dt_util.now())
 
-    assert result == STATUS_ARMED
     assert "light.old" not in engine._state.cooldowns
 
 
@@ -1631,3 +1630,62 @@ async def test_cooldown_broadcast_prior_timer_exception_swallowed(hass: HomeAssi
         await engine._enforce("light.bedroom")
 
     broken.assert_called_once()
+
+
+def test_is_pending_true(hass: HomeAssistant):
+    """is_pending returns True when status is STATUS_PENDING."""
+    engine = _make_engine(hass)
+    engine._set_status(STATUS_PENDING)
+    assert engine.is_pending() is True
+
+
+def test_is_pending_false(hass: HomeAssistant):
+    """is_pending returns False when status is not STATUS_PENDING."""
+    engine = _make_engine(hass)
+    engine._set_status(STATUS_ARMED)
+    assert engine.is_pending() is False
+
+
+async def test_derive_idle_status_sticky_error(hass: HomeAssistant):
+    """_derive_idle_status returns STATUS_ERROR when current status is ERROR."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._set_status(STATUS_ERROR)
+    result = engine._derive_idle_status()
+    assert result == STATUS_ERROR
+
+
+async def test_cooldown_broadcast_is_unloaded_guard(hass: HomeAssistant):
+    """_broadcast_after_cooldown returns early if engine is unloaded."""
+    from unittest.mock import AsyncMock as _AsyncMock
+
+    config = _make_config(
+        target_state="off", debounce_enabled=True, debounce_seconds=30
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    hass.services.async_register("light", "turn_off", _AsyncMock())
+    hass.states.async_set("light.bedroom", "on")
+
+    captured_cb = []
+
+    def _capture_later(hass_arg, delay, cb):
+        captured_cb.append(cb)
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=_capture_later,
+    ):
+        await engine._enforce("light.bedroom")
+
+    assert captured_cb, "no cooldown broadcast timer scheduled"
+
+    # Mark engine unloaded then fire the callback — _apply_idle_status must NOT be called
+    engine._is_unloaded = True
+    original_status = engine.current_status()
+    captured_cb[-1](dt_util.now())  # fire the callback
+
+    # Status must not change (engine is unloaded)
+    assert engine.current_status() == original_status

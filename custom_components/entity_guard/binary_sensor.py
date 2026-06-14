@@ -16,7 +16,6 @@ from .const import (
     CONF_ENTRY_TYPE,
     DOMAIN,
     ENTRY_TYPE_RULE,
-    STATUS_PENDING,
     signal_master,
     signal_rule_update,
 )
@@ -147,4 +146,4 @@ class EntityGuardPendingSensor(EntityGuardBinarySensor):
     @property
     def is_on(self) -> bool:
         """Return True if a delayed enforcement is queued."""
-        return self._engine.current_status() == STATUS_PENDING
+        return bool(self._engine.is_pending())
