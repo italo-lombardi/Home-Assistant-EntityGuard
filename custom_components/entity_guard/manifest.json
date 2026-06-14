@@ -10,6 +10,6 @@
     "iot_class": "calculated",
     "issue_tracker": "https://github.com/italo-lombardi/Home-Assistant-EntityGuard/issues",
     "requirements": [],
-    "version": "0.2.1"
+    "version": "0.2.2"
 }
 
