@@ -148,16 +148,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if hass.is_running:
             await _deferred_flag_check()
         else:
+            _flag_check_done = False
+
+            async def _deferred_flag_check_once(_event=None) -> None:
+                nonlocal _flag_check_done
+                _flag_check_done = True
+                await async_check_missing_flag_entities(hass, entry.entry_id)
+
             unsub = hass.bus.async_listen_once(
-                EVENT_HOMEASSISTANT_STARTED, _deferred_flag_check
+                EVENT_HOMEASSISTANT_STARTED, _deferred_flag_check_once
             )
 
             @callback
             def _cancel_flag_check_listener() -> None:  # pragma: no cover
-                try:
-                    unsub()
-                except Exception:  # noqa: BLE001
-                    pass
+                if not _flag_check_done:
+                    try:
+                        unsub()
+                    except Exception:  # noqa: BLE001
+                        pass
 
             entry.async_on_unload(_cancel_flag_check_listener)
 

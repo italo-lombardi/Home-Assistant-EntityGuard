@@ -415,3 +415,49 @@ async def test_register_resource_updates_stale_url(hass: HomeAssistant):
     resources.async_update_item.assert_awaited_once()
     new_url = resources.async_update_item.call_args[0][1]["url"]
     assert "1.0.0" in new_url
+
+
+async def test_deferred_flag_check_fires_on_started_event(
+    hass: HomeAssistant, rule_entry
+):
+    """When homeassistant_started fires, _deferred_flag_check_once must run."""
+    from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+    from custom_components.entity_guard import async_setup_entry
+
+    rule_entry.add_to_hass(hass)
+
+    with patch.object(
+        type(hass), "is_running", new_callable=lambda: property(lambda self: False)
+    ):
+        with (
+            patch.object(
+                hass.config_entries,
+                "async_forward_entry_setups",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.entity_guard._async_install_card",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.entity_guard.RuleEngine.async_setup",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.entity_guard._async_ensure_hub",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "custom_components.entity_guard.async_check_missing_flag_entities",
+                new_callable=AsyncMock,
+            ) as mock_check,
+        ):
+            result = await async_setup_entry(hass, rule_entry)
+            assert result is True
+            mock_check.assert_not_called()
+
+            # Fire the startup event — listener should call async_check_missing_flag_entities
+            hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
+            await hass.async_block_till_done()
+
+    mock_check.assert_called_once_with(hass, rule_entry.entry_id)
