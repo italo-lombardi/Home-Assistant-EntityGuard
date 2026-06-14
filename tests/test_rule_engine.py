@@ -1518,3 +1518,116 @@ async def test_is_unloaded_guard_prevents_fire(hass: HomeAssistant):
 
     # No enforcement: counters unchanged
     assert engine.state.enforcement_count_total == 0
+
+
+async def test_unload_cancels_cooldown_broadcast_unsubs(hass: HomeAssistant):
+    """async_unload cancels pending cooldown broadcast timers."""
+    engine = _make_engine(hass)
+    engine._store.async_save_now = AsyncMock()
+
+    cancel_mock = MagicMock()
+    engine._cooldown_broadcast_unsubs["light.bedroom"] = cancel_mock
+
+    await engine.async_unload()
+
+    cancel_mock.assert_called_once()
+    assert engine._cooldown_broadcast_unsubs == {}
+
+
+async def test_unload_handles_cooldown_broadcast_unsub_exception(hass: HomeAssistant):
+    """async_unload swallows exceptions when cancelling cooldown broadcast timers."""
+    engine = _make_engine(hass)
+    engine._store.async_save_now = AsyncMock()
+
+    broken = MagicMock(side_effect=RuntimeError("boom"))
+    engine._cooldown_broadcast_unsubs["light.bedroom"] = broken
+
+    # Must not raise
+    await engine.async_unload()
+    assert engine._cooldown_broadcast_unsubs == {}
+
+
+async def test_derive_armed_prunes_expired_cooldowns(hass: HomeAssistant):
+    """_derive_armed_or_cooldown removes expired entries from cooldowns dict."""
+    from datetime import timedelta
+
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    past = dt_util.now() - timedelta(seconds=10)
+    engine._state.cooldowns["light.old"] = past
+
+    result = engine._derive_armed_or_cooldown(dt_util.now())
+
+    assert result == STATUS_ARMED
+    assert "light.old" not in engine._state.cooldowns
+
+
+async def test_cooldown_broadcast_cancels_prior_timer(hass: HomeAssistant):
+    """Re-enforcing the same entity cancels the prior cooldown broadcast timer."""
+    from unittest.mock import AsyncMock as _AsyncMock
+
+    config = _make_config(
+        target_state="off", debounce_enabled=True, debounce_seconds=30
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    hass.services.async_register("light", "turn_off", _AsyncMock())
+    hass.states.async_set("light.bedroom", "on")
+
+    call_count = 0
+    cancel_mocks = []
+
+    def _capture_later(hass_arg, delay, cb):
+        nonlocal call_count
+        call_count += 1
+        m = MagicMock()
+        cancel_mocks.append(m)
+        return m
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=_capture_later,
+    ):
+        # First enforcement — schedules timer
+        await engine._enforce("light.bedroom")
+        assert len(cancel_mocks) == 1
+        first_cancel = cancel_mocks[0]
+
+        # Second enforcement for same entity — prior timer must be cancelled
+        engine._state.cooldowns["light.bedroom"] = dt_util.now() + __import__(
+            "datetime"
+        ).timedelta(seconds=30)
+        await engine._enforce("light.bedroom")
+
+    first_cancel.assert_called_once()
+
+
+async def test_cooldown_broadcast_prior_timer_exception_swallowed(hass: HomeAssistant):
+    """Exception from cancelling prior cooldown broadcast timer is swallowed."""
+    from unittest.mock import AsyncMock as _AsyncMock
+
+    config = _make_config(
+        target_state="off", debounce_enabled=True, debounce_seconds=30
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    hass.services.async_register("light", "turn_off", _AsyncMock())
+    hass.states.async_set("light.bedroom", "on")
+
+    # Plant a broken prior unsub
+    broken = MagicMock(side_effect=RuntimeError("cancel failed"))
+    engine._cooldown_broadcast_unsubs["light.bedroom"] = broken
+
+    def _capture_later(hass_arg, delay, cb):
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=_capture_later,
+    ):
+        # Must not raise despite broken unsub
+        await engine._enforce("light.bedroom")
+
+    broken.assert_called_once()

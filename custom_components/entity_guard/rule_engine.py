@@ -93,6 +93,7 @@ class RuleEngine:
         self._flag_entity_ids: frozenset[str] = frozenset(
             f.entity for f in config.flags
         )
+        self._cooldown_broadcast_unsubs: dict[str, Callable[[], None]] = {}
 
     @property
     def config(self) -> RuleConfig:
@@ -179,6 +180,13 @@ class RuleEngine:
         for task in list(self._pending_eval_tasks.values()):
             task.cancel()
         self._pending_eval_tasks.clear()
+
+        for cancel in list(self._cooldown_broadcast_unsubs.values()):
+            try:
+                cancel()
+            except Exception:  # noqa: BLE001
+                pass
+        self._cooldown_broadcast_unsubs.clear()
 
         self._persist()
         await self._store.async_save_now()
@@ -352,6 +360,9 @@ class RuleEngine:
         """Pick between PENDING, ARMED, and COOLDOWN based on current state."""
         if self._pending_enforcements:
             return STATUS_PENDING
+        expired = [eid for eid, end in self._state.cooldowns.items() if end <= now]
+        for eid in expired:
+            del self._state.cooldowns[eid]
         if any(end > now for end in self._state.cooldowns.values()):
             return STATUS_COOLDOWN
         return STATUS_ARMED
@@ -512,22 +523,24 @@ class RuleEngine:
             if cooldown_end is not None:
                 remaining = (cooldown_end - dt_util.now()).total_seconds()
                 if remaining > 0:
-                    unsub_holder: list[Callable[[], None]] = []
+                    old_unsub = self._cooldown_broadcast_unsubs.pop(entity_id, None)
+                    if old_unsub is not None:
+                        try:
+                            old_unsub()
+                        except Exception:  # noqa: BLE001
+                            pass
+
+                    _eid = entity_id
 
                     @callback
                     def _broadcast_after_cooldown(_now: datetime) -> None:
+                        self._cooldown_broadcast_unsubs.pop(_eid, None)
                         self._apply_idle_status()
-                        if unsub_holder:
-                            try:
-                                self._unsub_callbacks.remove(unsub_holder[0])
-                            except ValueError:  # pragma: no cover
-                                pass
 
                     unsub = async_call_later(
                         self._hass, remaining, _broadcast_after_cooldown
                     )
-                    unsub_holder.append(unsub)
-                    self._unsub_callbacks.append(unsub)
+                    self._cooldown_broadcast_unsubs[entity_id] = unsub
         else:
             self._set_status(self._derive_armed_or_cooldown(dt_util.now()))
 
