@@ -2188,3 +2188,82 @@ def test_handle_suppression_expired_short_circuits_when_unloaded(hass: HomeAssis
     engine._suppression_timer_unsub = MagicMock()
     engine._handle_suppression_expired(dt_util.now())
     assert engine._suppression_timer_unsub is None
+
+
+# ---------------------------------------------------------------------------
+# EG-4 regression: reset/clear paths must preserve suppression + re-arm timer
+# ---------------------------------------------------------------------------
+
+
+async def test_reset_cooldowns_preserves_suppression_and_rearms_timer(
+    hass: HomeAssistant,
+):
+    """async_reset_cooldowns mid-suppression must NOT drop suppressed_until and must
+    re-arm the EG-4 expiry timer (regression: prior cancel-only path lost it)."""
+    config = _make_config()
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    arm_calls: list = []
+    cancel_mocks: list = []
+
+    def _capture(hass_arg, cb, when):
+        m = MagicMock()
+        cancel_mocks.append(m)
+        arm_calls.append((cb, when))
+        return m
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_track_point_in_time",
+        side_effect=_capture,
+    ):
+        await engine.async_suppress(duration_minutes=5)
+        assert len(arm_calls) == 1
+        first = cancel_mocks[0]
+
+        await engine.async_reset_cooldowns()
+
+    # State preserved.
+    assert engine.state.suppressed_until is not None
+    assert engine.state.suppression_reason == "manual"
+    # Old timer cancelled, new timer armed.
+    first.assert_called_once()
+    assert len(arm_calls) == 2
+    assert engine._suppression_timer_unsub is not None
+    engine._cancel_suppression_timer()
+
+
+async def test_clear_history_preserves_suppression_and_rearms_timer(
+    hass: HomeAssistant,
+):
+    """async_clear_history mid-suppression must NOT drop suppressed_until and must
+    re-arm the EG-4 expiry timer."""
+    config = _make_config()
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    arm_calls: list = []
+    cancel_mocks: list = []
+
+    def _capture(hass_arg, cb, when):
+        m = MagicMock()
+        cancel_mocks.append(m)
+        arm_calls.append((cb, when))
+        return m
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_track_point_in_time",
+        side_effect=_capture,
+    ):
+        await engine.async_suppress(duration_minutes=5)
+        assert len(arm_calls) == 1
+        first = cancel_mocks[0]
+
+        await engine.async_clear_history()
+
+    assert engine.state.suppressed_until is not None
+    assert engine.state.suppression_reason == "manual"
+    first.assert_called_once()
+    assert len(arm_calls) == 2
+    assert engine._suppression_timer_unsub is not None
+    engine._cancel_suppression_timer()

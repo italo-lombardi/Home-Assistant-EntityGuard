@@ -689,7 +689,12 @@ class RuleEngine:
         self._schedule_suppression_timer()
 
     async def async_reset_cooldowns(self) -> None:
-        """Clear all per-entity cooldowns immediately."""
+        """Clear all per-entity cooldowns immediately.
+
+        Suppression state is preserved (use async_unsuppress to clear it). The
+        EG-4 expiry timer is re-armed so a pending suppression window still
+        fires its expiry callback after this reset.
+        """
         _LOGGER.info("Resetting cooldowns for rule '%s'", self._config.name)
         self._state.cooldowns.clear()
         for cancel in list(self._cooldown_broadcast_unsubs.values()):
@@ -698,8 +703,8 @@ class RuleEngine:
             except Exception:  # noqa: BLE001
                 pass
         self._cooldown_broadcast_unsubs.clear()
-        # Force evaluate / reset paths must clear any pending suppression timer (EG-4).
-        self._cancel_suppression_timer()
+        # Re-arm suppression timer so EG-4 expiry callback survives this reset.
+        self._schedule_suppression_timer()
         # Resetting also clears the recovery counter so a fresh window starts.
         self._state.consecutive_success_count = 0
         self._persist()
@@ -741,7 +746,12 @@ class RuleEngine:
         self._apply_idle_status()
 
     async def async_clear_history(self) -> None:
-        """Reset persisted counters and cooldowns."""
+        """Reset persisted counters and cooldowns.
+
+        Suppression state is preserved (use async_unsuppress to clear it). The
+        EG-4 expiry timer is re-armed so a pending suppression window still
+        fires its expiry callback after history is cleared.
+        """
         _LOGGER.info("Clearing history for rule '%s'", self._config.name)
         self._state.cooldowns.clear()
         for cancel in list(self._cooldown_broadcast_unsubs.values()):
@@ -750,7 +760,8 @@ class RuleEngine:
             except Exception:  # noqa: BLE001
                 pass
         self._cooldown_broadcast_unsubs.clear()
-        self._cancel_suppression_timer()
+        # Re-arm suppression timer so EG-4 expiry callback survives this clear.
+        self._schedule_suppression_timer()
         self._state.enforcement_count_today = 0
         self._state.enforcement_count_total = 0
         self._state.last_enforced = None

@@ -12,6 +12,16 @@
 - `ERROR_RECOVERY_SUCCESS_THRESHOLD` constant in `const.py` (default `3`).
 - `RuleRuntimeState.consecutive_success_count` (transient — not persisted; ERROR is sticky across restarts so the recovery window starts fresh on next launch).
 
+### Changed
+
+- **Side effect of EG-6**: removing the `STATUS_ERROR` early-return in `async_evaluate` means the full enforcement path now runs during the recovery window. User-observable consequences:
+  - `entity_guard_enforced` events fire on each recovery success — automations bound to this event will see extra firings that the old sticky-ERROR path suppressed.
+  - `enforcement_count_today` / `enforcement_count_total` sensors tick during recovery while the status sensor still reads `error`.
+  - `rate_limit_window` is populated during recovery, so loop protection can trigger from `STATUS_ERROR` (previously impossible).
+  - Per-entity cooldowns are scheduled during recovery (the post-cooldown broadcast then restores `STATUS_ERROR` if the recovery threshold has not yet been met).
+  - Real service calls execute during recovery — intended (recovery requires real enforcement) but the downstream side-effect is now observable in ERROR.
+- **`async_reset_cooldowns` / `async_clear_history`**: preserve `suppressed_until` and re-arm the EG-4 expiry timer. Previously the cancel-only path (introduced in 0.3.0-pre) silently broke the EG-4 fix when a user invoked Clear History / Reset Cooldowns mid-suppression. Use `async_unsuppress` (or the Clear Suppression button) to clear suppression state explicitly.
+
 ### Tests
 
 - 5 new tests for the spec acceptance criteria: `test_error_auto_recovers_after_3_successes`, `test_error_resets_counter_on_failure`, `test_suppression_state_clears_on_timer_expiry`, `test_suppression_timer_cancelled_on_early_state_change`, `test_force_evaluate_clears_pending_suppression_timer`.
