@@ -559,8 +559,19 @@ class RuleEngine:
 
             self._persist()
 
+        # Pick the post-enforce status once and emit a single _set_status so the
+        # dispatcher fires exactly one update — avoids ENFORCING→ARMED→ERROR
+        # flicker on each non-final recovery success (EG-6).
+        if was_in_error and not recovered_from_error:
+            post_status = STATUS_ERROR
+        elif self._config.debounce_enabled and self._config.debounce_seconds > 0:
+            post_status = STATUS_COOLDOWN
+        else:
+            post_status = self._derive_armed_or_cooldown(dt_util.now())
+        self._set_status(post_status)
+
+        # Arm the cooldown-expiry broadcast (independent of status flicker).
         if self._config.debounce_enabled and self._config.debounce_seconds > 0:
-            self._set_status(STATUS_COOLDOWN)
             cooldown_end = self._state.cooldowns.get(entity_id)
             if cooldown_end is not None:
                 remaining = (cooldown_end - now).total_seconds()
@@ -585,14 +596,6 @@ class RuleEngine:
                         self._hass, remaining, _broadcast_after_cooldown
                     )
                     self._cooldown_broadcast_unsubs[entity_id] = unsub
-        else:
-            self._set_status(self._derive_armed_or_cooldown(dt_util.now()))
-
-        # If we were in ERROR and recovery threshold not yet met, restore ERROR so
-        # the sensor reflects the still-tentative state. The success counter will
-        # carry over to the next evaluation (EG-6).
-        if was_in_error and not recovered_from_error:
-            self._set_status(STATUS_ERROR)
 
     async def _trigger_loop_protection(self, entity_id: str) -> None:
         """Auto-suppress on rate-limit breach and notify the user."""

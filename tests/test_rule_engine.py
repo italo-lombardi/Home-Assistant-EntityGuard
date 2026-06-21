@@ -2267,3 +2267,42 @@ async def test_clear_history_preserves_suppression_and_rearms_timer(
     assert len(arm_calls) == 2
     assert engine._suppression_timer_unsub is not None
     engine._cancel_suppression_timer()
+
+
+async def test_error_recovery_no_double_broadcast(hass: HomeAssistant):
+    """During a non-final ERROR-recovery success, status must transition
+    ENFORCING → ERROR in a single dispatcher broadcast — not flicker through
+    ARMED/COOLDOWN first."""
+    config = _make_config(target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    # Plant rule in ERROR with one prior success already in the window.
+    engine._state.consecutive_errors = ERROR_THRESHOLD
+    engine._state.consecutive_success_count = 1
+    engine._set_status(STATUS_ERROR)
+
+    async def _ok(call):
+        pass
+
+    hass.services.async_register("light", "turn_off", _ok)
+    hass.states.async_set("light.bedroom", "on")
+    st = hass.states.get("light.bedroom")
+
+    broadcasts: list[str] = []
+    original = engine._set_status
+
+    def _record(status: str) -> None:
+        broadcasts.append(status)
+        original(status)
+
+    engine._set_status = _record  # type: ignore[assignment]
+
+    await engine.async_evaluate("light.bedroom", st)
+
+    # Recovery threshold not met (2 < 3): expect ENFORCING then ERROR; ARMED
+    # must NOT appear in between.
+    assert "armed" not in broadcasts, f"flicker through armed: {broadcasts}"
+    assert "cooldown" not in broadcasts, f"flicker through cooldown: {broadcasts}"
+    assert engine.current_status() == STATUS_ERROR
+    assert engine.state.consecutive_success_count == 2
