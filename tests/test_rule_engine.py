@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
 from custom_components.entity_guard.const import (
+    ERROR_RECOVERY_SUCCESS_THRESHOLD,
     ERROR_THRESHOLD,
     MODE_ATTRIBUTE,
     MODE_STATE,
@@ -1284,7 +1285,7 @@ async def test_threshold_failures_set_error(hass: HomeAssistant):
 
 
 async def test_successful_enforcement_clears_error(hass: HomeAssistant):
-    """STATUS_ERROR gates async_evaluate — use async_clear_history to exit error state."""
+    """async_clear_history must exit error state regardless of evaluate path."""
     config = _make_config(target_state="off")
     engine = _make_engine(hass, config)
     engine._startup_complete = True
@@ -1293,17 +1294,7 @@ async def test_successful_enforcement_clears_error(hass: HomeAssistant):
     engine._state.last_error = "previous error"
     engine._set_status(STATUS_ERROR)
 
-    # async_evaluate must return early without calling any service
-    hass.services.async_register("light", "turn_off", AsyncMock())
-    hass.states.async_set("light.bedroom", "on")
-    st = hass.states.get("light.bedroom")
-    await engine.async_evaluate("light.bedroom", st)
-
-    # error state unchanged — gated
-    assert engine.current_status() == STATUS_ERROR
-    assert engine.state.consecutive_errors == ERROR_THRESHOLD
-
-    # clear_history resets error state
+    # clear_history resets error state synchronously
     await engine.async_clear_history()
     assert engine.state.consecutive_errors == 0
     assert engine.state.last_error is None
@@ -1988,3 +1979,66 @@ async def test_fire_identity_check_preserves_newer_timer(hass: HomeAssistant):
     assert engine._pending_enforcements.get("light.bedroom") is new_cancel, (
         "_fire popped the newer timer's cancel handle (identity check not working)"
     )
+
+
+# ---------------------------------------------------------------------------
+# EG-6: STATUS_ERROR auto-recovery after consecutive successes
+# ---------------------------------------------------------------------------
+
+
+async def test_error_auto_recovers_after_3_successes(hass: HomeAssistant):
+    """ERROR_RECOVERY_SUCCESS_THRESHOLD consecutive successful enforcements must
+    transition the rule back from STATUS_ERROR to ARMED (or COOLDOWN/SUPPRESSED)."""
+    config = _make_config(target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    # Plant the rule into ERROR with the underlying condition cleared.
+    engine._state.consecutive_errors = ERROR_THRESHOLD
+    engine._state.last_error = "device offline"
+    engine._set_status(STATUS_ERROR)
+
+    async def _ok(call):
+        pass
+
+    hass.services.async_register("light", "turn_off", _ok)
+    hass.states.async_set("light.bedroom", "on")
+    st = hass.states.get("light.bedroom")
+
+    # First N-1 successes hold the ERROR status (recovery still pending).
+    for i in range(ERROR_RECOVERY_SUCCESS_THRESHOLD - 1):
+        await engine.async_evaluate("light.bedroom", st)
+        assert engine.current_status() == STATUS_ERROR, (
+            f"recovered too early at iter {i}"
+        )
+        assert engine.state.consecutive_success_count == i + 1
+
+    # Threshold-th success triggers recovery.
+    await engine.async_evaluate("light.bedroom", st)
+    assert engine.current_status() != STATUS_ERROR
+    assert engine.state.consecutive_success_count == 0
+    assert engine.state.consecutive_errors == 0
+    assert engine.state.last_error is None
+
+
+async def test_error_resets_counter_on_failure(hass: HomeAssistant):
+    """A failure during the recovery window must reset consecutive_success_count
+    to 0 and keep the rule in STATUS_ERROR."""
+    config = _make_config(target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    engine._state.consecutive_errors = ERROR_THRESHOLD
+    engine._state.consecutive_success_count = 1  # one prior success in the window
+    engine._set_status(STATUS_ERROR)
+
+    async def _fail(call):
+        raise RuntimeError("still broken")
+
+    hass.services.async_register("light", "turn_off", _fail)
+    hass.states.async_set("light.bedroom", "on")
+    st = hass.states.get("light.bedroom")
+    await engine.async_evaluate("light.bedroom", st)
+
+    assert engine.state.consecutive_success_count == 0
+    assert engine.current_status() == STATUS_ERROR

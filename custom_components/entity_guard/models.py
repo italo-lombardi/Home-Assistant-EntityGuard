@@ -103,6 +103,9 @@ class RuleRuntimeState:
     suppression_reason: str | None = None
     consecutive_errors: int = 0
     last_error: str | None = None
+    # Successful enforcements since entering STATUS_ERROR. Transient: not persisted —
+    # ERROR is sticky until recovery, and after a restart the rule re-enters fresh state.
+    consecutive_success_count: int = 0
     reentrance_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
 

@@ -27,6 +27,7 @@ from .const import (
     DEFAULT_LOOP_SUPPRESS_MINUTES,
     DOMAIN,
     DOMAIN_SERVICE_MAP,
+    ERROR_RECOVERY_SUCCESS_THRESHOLD,
     ERROR_THRESHOLD,
     EVENT_ENFORCED,
     EVENT_LOOP_DETECTED,
@@ -254,9 +255,6 @@ class RuleEngine:
             if entity_id not in self._flag_entity_ids:
                 return
 
-        if self._current_status == STATUS_ERROR:
-            return
-
         if not self._state.enabled or not self._master_enabled_getter():
             self._apply_idle_status()
             return
@@ -439,6 +437,9 @@ class RuleEngine:
                 await self._trigger_loop_protection(entity_id)
                 return
 
+            # Capture before _set_status(STATUS_ENFORCING) so the success path can
+            # detect ERROR→OK recovery (EG-6).
+            was_in_error = self._current_status == STATUS_ERROR
             self._set_status(STATUS_ENFORCING)
 
             service_call = self._resolve_service(entity_id)
@@ -490,6 +491,8 @@ class RuleEngine:
                 )
                 self._state.consecutive_errors += 1
                 self._state.last_error = str(err)
+                # Reset recovery counter on any failure (EG-6).
+                self._state.consecutive_success_count = 0
                 self._persist()
                 if self._state.consecutive_errors >= ERROR_THRESHOLD:
                     self._set_status(STATUS_ERROR)
@@ -501,8 +504,29 @@ class RuleEngine:
             self._state.enforcement_count_total += 1
             self._state.last_enforced = now
             self._state.rate_limit_window.append(now)
-            self._state.consecutive_errors = 0
-            self._state.last_error = None
+            # Track consecutive successes for STATUS_ERROR auto-recovery (EG-6).
+            # While still in ERROR, do NOT zero consecutive_errors / last_error — they
+            # remain visible on the status sensor until the recovery threshold is met.
+            recovered_from_error = False
+            if was_in_error:
+                self._state.consecutive_success_count += 1
+                if (
+                    self._state.consecutive_success_count
+                    >= ERROR_RECOVERY_SUCCESS_THRESHOLD
+                ):
+                    _LOGGER.info(
+                        "Rule '%s' auto-recovered from STATUS_ERROR after %d successes",
+                        self._config.name,
+                        self._state.consecutive_success_count,
+                    )
+                    self._state.consecutive_success_count = 0
+                    self._state.consecutive_errors = 0
+                    self._state.last_error = None
+                    recovered_from_error = True
+            else:
+                self._state.consecutive_success_count = 0
+                self._state.consecutive_errors = 0
+                self._state.last_error = None
 
             if self._config.debounce_enabled and self._config.debounce_seconds > 0:
                 self._state.cooldowns[entity_id] = now + timedelta(
@@ -555,6 +579,12 @@ class RuleEngine:
                     self._cooldown_broadcast_unsubs[entity_id] = unsub
         else:
             self._set_status(self._derive_armed_or_cooldown(dt_util.now()))
+
+        # If we were in ERROR and recovery threshold not yet met, restore ERROR so
+        # the sensor reflects the still-tentative state. The success counter will
+        # carry over to the next evaluation (EG-6).
+        if was_in_error and not recovered_from_error:
+            self._set_status(STATUS_ERROR)
 
     async def _trigger_loop_protection(self, entity_id: str) -> None:
         """Auto-suppress on rate-limit breach and notify the user."""
@@ -650,6 +680,8 @@ class RuleEngine:
             except Exception:  # noqa: BLE001
                 pass
         self._cooldown_broadcast_unsubs.clear()
+        # Resetting also clears the recovery counter so a fresh window starts (EG-6).
+        self._state.consecutive_success_count = 0
         self._persist()
         self._apply_idle_status()
 
@@ -705,6 +737,7 @@ class RuleEngine:
         self._state.rate_limit_window.clear()
         self._state.consecutive_errors = 0
         self._state.last_error = None
+        self._state.consecutive_success_count = 0
         self._store.clear_rule_history(self._config.unique_id)
         if self._current_status == STATUS_ERROR:
             self._current_status = STATUS_STARTING  # break sticky before re-derive

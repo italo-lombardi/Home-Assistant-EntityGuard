@@ -111,6 +111,8 @@ STATUS_VALUES = [
 
 # Error tracking
 ERROR_THRESHOLD = 3
+# Number of consecutive successful enforcements required to auto-recover from STATUS_ERROR.
+ERROR_RECOVERY_SUCCESS_THRESHOLD = 3
 
 # Domain service map for state mode enforcement
 DOMAIN_SERVICE_MAP: dict[str, dict[str, str]] = {
