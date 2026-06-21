@@ -9,7 +9,7 @@
 
 ### Changed
 
-- During error-recovery, enforcement events and counters tick normally — automations bound to `entity_guard_enforced` will see firings while the status sensor still reads `error`.
+- During error-recovery, enforcement events and counters tick normally — automations bound to `entity_guard_enforced` will see firings while the status sensor still reads `error`. Loop protection can also trigger from `error` if a misconfigured rule thrashes during recovery.
 - Clear History and Reset Cooldowns no longer cancel active suppression. Use Clear Suppression (or `entity_guard.unsuppress`) to end suppression early.
 
 ### Tests
