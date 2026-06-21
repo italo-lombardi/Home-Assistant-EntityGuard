@@ -675,20 +675,17 @@ class RuleEngine:
     async def async_test_enforce(self, user_id: str | None = None) -> None:
         """Force an enforcement run against every target entity.
 
-        Force-evaluate side-effect: cancels any pending suppression timer so a
-        stale expiry callback can't fire after the user manually drove the rule
-        (EG-4).
+        Suppression-expiry timer is re-armed after the loop so any stale
+        callback queued before manual enforcement is replaced (EG-4).
         """
         _LOGGER.info(
             "Test enforce invoked on rule '%s' (user_id=%s)",
             self._config.name,
             user_id,
         )
-        self._cancel_suppression_timer()
         for entity_id in self._config.target_entities:
             await self._enforce(entity_id, user_id=user_id, bypass_rate_limit=True)
-        # Re-arm the timer in case suppression remained active (test_enforce does
-        # not clear suppression state itself).
+        # _schedule_suppression_timer self-cancels any prior handle before arming.
         self._schedule_suppression_timer()
 
     async def async_reset_cooldowns(self) -> None:
