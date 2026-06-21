@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.3.0] — 2026-06-21
+
+### Fixed
+
+- **EG-6 — Sticky `STATUS_ERROR` on transient failures**: Once `consecutive_errors` crossed `ERROR_THRESHOLD` the rule was permanently in `STATUS_ERROR` until restart or `clear_history`, even after the underlying condition cleared. The engine now tracks `consecutive_success_count`; after `ERROR_RECOVERY_SUCCESS_THRESHOLD` (3) consecutive successful enforcements the rule auto-recovers to `ARMED` / `COOLDOWN` / `SUPPRESSED` per the priority ladder. Any failure during the recovery window resets the counter to 0 and keeps the rule in `STATUS_ERROR`. The `STATUS_ERROR` early-return in `async_evaluate` was removed so real triggers can drive the recovery path; loop protection and the per-rule re-entrance lock are unchanged.
+- **EG-4 — Stuck-suppressed UI glitch**: When a suppression window expired with no follow-up state event, the sensor stayed on `STATUS_SUPPRESSED` until the next triggering event. Suppression now schedules a one-shot `async_track_point_in_time` callback at `suppressed_until`; when it fires the engine clears suppression state and broadcasts a fresh status without waiting for an event. The timer is cancelled and re-scheduled by `async_suppress` / `async_unsuppress` / `async_clear_history` / `async_reset_cooldowns` / `async_test_enforce` / `set_enabled` / `async_unload`, and is restored on engine setup if a persisted suppression window is still in the future.
+
+### Added
+
+- `ERROR_RECOVERY_SUCCESS_THRESHOLD` constant in `const.py` (default `3`).
+- `RuleRuntimeState.consecutive_success_count` (transient — not persisted; ERROR is sticky across restarts so the recovery window starts fresh on next launch).
+
+### Tests
+
+- 5 new tests for the spec acceptance criteria: `test_error_auto_recovers_after_3_successes`, `test_error_resets_counter_on_failure`, `test_suppression_state_clears_on_timer_expiry`, `test_suppression_timer_cancelled_on_early_state_change`, `test_force_evaluate_clears_pending_suppression_timer`.
+- 4 supporting tests covering the suppression-timer helpers (cancel-exception swallow, unloaded short-circuit, expired-window short-circuit, post-unload `_handle_suppression_expired`).
+- `test_successful_enforcement_clears_error` updated to reflect the dropped `STATUS_ERROR` evaluate-gate.
+- Existing tests touching `async_suppress` updated to cancel the new timer at teardown.
+- Full suite: 441 passed, 1 skipped. Coverage 99% (rule_engine 99%).
+
+---
+
 ## [0.2.2] — 2026-06-15
 
 ### Fixed
