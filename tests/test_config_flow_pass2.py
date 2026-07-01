@@ -467,3 +467,118 @@ async def test_create_flow_skips_hub_when_present(hass: HomeAssistant, hub_entry
     )
     res = await hass.config_entries.flow.async_configure(res["flow_id"], {})
     assert res["type"] == FlowResultType.CREATE_ENTRY
+
+
+# ---------------------------------------------------------------------------
+# Branch coverage: missing branches
+# ---------------------------------------------------------------------------
+
+
+async def test_hub_import_aborts_with_rule_entry_present(
+    hass: HomeAssistant, hub_entry, rule_entry
+):
+    """Hub import loop iterates past a rule entry before finding the hub (306->305 branch)."""
+    rule_entry.add_to_hass(hass)  # non-hub entry first
+    hub_entry.add_to_hass(hass)  # hub entry after
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": "import"}, data={}
+    )
+    assert result["type"] == FlowResultType.ABORT
+    assert result["reason"] == "single_instance_allowed"
+
+
+async def test_flags_step_partial_entity_only(hass: HomeAssistant):
+    """Flags step with entity but no match_state shows incomplete_flag (548 True branch)."""
+    from custom_components.entity_guard.const import (
+        CONF_FLAG_ENTITY,
+        CONF_FLAG_MATCH_STATE,
+    )
+
+    res = await _begin_state(hass, "FlagsPartial")
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"],
+        {CONF_TRIGGER_STATES: ["on"], CONF_TARGET_STATE: "off", CONF_DELAY_SECONDS: 0},
+    )
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"],
+        {"add_flags": True, "custom_rate_limit": False, "add_debounce": False},
+    )
+    # Submit entity but no match_state → incomplete_flag
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"],
+        {
+            CONF_FLAG_ENTITY: "input_boolean.night",
+            CONF_FLAG_MATCH_STATE: "",
+            "add_another": False,
+        },
+    )
+    assert res["errors"]["base"] == "incomplete_flag"
+
+
+async def test_advanced_debounce_only_no_rate_limit(hass: HomeAssistant):
+    """Advanced step with only debounce enabled skips rate-limit block (612->631, 639->649 branches)."""
+    res = await _begin_state(hass, "DebounceOnly")
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"],
+        {CONF_TRIGGER_STATES: ["on"], CONF_TARGET_STATE: "off", CONF_DELAY_SECONDS: 0},
+    )
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"],
+        {"add_flags": False, "custom_rate_limit": False, "add_debounce": True},
+    )
+    # Advanced step shown with only debounce field
+    assert res["step_id"] == "advanced"
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"],
+        {CONF_DEBOUNCE_SECONDS: 30},
+    )
+    # Advanced done → preview step
+    assert res["step_id"] == "preview"
+    res = await hass.config_entries.flow.async_configure(res["flow_id"], {})
+    assert res["type"] == FlowResultType.CREATE_ENTRY
+
+
+async def test_advanced_rate_limit_disabled_sets_zero(hass: HomeAssistant):
+    """Advanced step with rate_limit_enabled=False sets max_enforcements=0 (631->634 branch)."""
+    from custom_components.entity_guard.const import CONF_RATE_LIMIT_ENABLED
+
+    res = await _begin_state(hass, "RateOff")
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"],
+        {CONF_TRIGGER_STATES: ["on"], CONF_TARGET_STATE: "off", CONF_DELAY_SECONDS: 0},
+    )
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"],
+        {"add_flags": False, "custom_rate_limit": True, "add_debounce": False},
+    )
+    assert res["step_id"] == "advanced"
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"],
+        {CONF_RATE_LIMIT_ENABLED: False, CONF_MAX_ENFORCEMENTS_PER_MINUTE: 5},
+    )
+    # Advanced done → preview
+    assert res["step_id"] == "preview"
+    res = await hass.config_entries.flow.async_configure(res["flow_id"], {})
+    assert res["type"] == FlowResultType.CREATE_ENTRY
+    # Rate limit disabled → sentinel 0
+    assert res["data"][CONF_MAX_ENFORCEMENTS_PER_MINUTE] == 0
+
+
+async def test_options_ensure_hub_iterates_past_rule_entry(
+    hass: HomeAssistant, hub_entry, rule_entry
+):
+    """Create flow _async_ensure_hub iterates past rule entry to find hub (724->723 branch)."""
+    rule_entry.add_to_hass(hass)  # non-hub entry first
+    hub_entry.add_to_hass(hass)
+
+    res = await _begin_state(hass, "EnsureHubIter")
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"],
+        {CONF_TRIGGER_STATES: ["on"], CONF_TARGET_STATE: "off", CONF_DELAY_SECONDS: 0},
+    )
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"],
+        {"add_flags": False, "custom_rate_limit": False, "add_debounce": False},
+    )
+    res = await hass.config_entries.flow.async_configure(res["flow_id"], {})
+    assert res["type"] == FlowResultType.CREATE_ENTRY

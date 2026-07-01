@@ -165,6 +165,35 @@ async def test_async_setup_disabled_rule_never_shows_starting(hass: HomeAssistan
     assert engine.current_status() == STATUS_DISABLED
 
 
+async def test_async_setup_master_disabled_never_shows_starting(hass: HomeAssistant):
+    """Master-disabled rule must show MASTER_DISABLED immediately, not STATUS_STARTING."""
+    engine = _make_engine(hass, master=False)
+    with (
+        patch(
+            "custom_components.entity_guard.rule_engine.async_track_state_change_event"
+        ),
+        patch("custom_components.entity_guard.rule_engine.async_track_time_change"),
+        patch("custom_components.entity_guard.rule_engine.async_call_later"),
+    ):
+        await engine.async_setup()
+    assert engine.current_status() == STATUS_MASTER_DISABLED
+
+
+async def test_async_setup_no_watched_entities_skips_track(hass: HomeAssistant):
+    """Engine with no targets and no flags must not call async_track_state_change_event."""
+    config = _make_config(target_entities=[], flags=[])
+    engine = _make_engine(hass, config)
+    with (
+        patch(
+            "custom_components.entity_guard.rule_engine.async_track_state_change_event"
+        ) as mock_track,
+        patch("custom_components.entity_guard.rule_engine.async_track_time_change"),
+        patch("custom_components.entity_guard.rule_engine.async_call_later"),
+    ):
+        await engine.async_setup()
+    mock_track.assert_not_called()
+
+
 async def test_async_unload_cleans_up(hass: HomeAssistant):
     engine = _make_engine(hass)
     cancel_mock = MagicMock()
@@ -612,7 +641,7 @@ async def test_async_clear_history_swallows_cancel_error(hass: HomeAssistant):
 # ---------------------------------------------------------------------------
 
 
-async def test_async_test_enforce_skipped_when_disabled(hass: HomeAssistant):
+async def test_async_test_enforce_status_restored_when_disabled(hass: HomeAssistant):
     config = _make_config(target_state="off")
     engine = _make_engine(hass, config)
     engine._startup_complete = True
@@ -621,7 +650,11 @@ async def test_async_test_enforce_skipped_when_disabled(hass: HomeAssistant):
     hass.states.async_set("light.bedroom", "on")
 
     called = []
-    hass.services.async_register("light", "turn_off", lambda c: called.append(c))
+
+    async def _mock_turn_off(call):
+        called.append(call)
+
+    hass.services.async_register("light", "turn_off", _mock_turn_off)
     await engine.async_test_enforce()
 
     # Service fires (user can validate rule is correct) but status stays DISABLED.
@@ -2348,3 +2381,201 @@ async def test_error_recovery_no_double_broadcast(hass: HomeAssistant):
     assert "cooldown" not in broadcasts, f"flicker through cooldown: {broadcasts}"
     assert engine.current_status() == STATUS_ERROR
     assert engine.state.consecutive_success_count == 2
+
+
+# ---------------------------------------------------------------------------
+# Branch coverage: missing branches
+# ---------------------------------------------------------------------------
+
+
+def test_maybe_reset_skipped_when_date_matches(hass: HomeAssistant):
+    """_maybe_reset_today_counter must not reset counters when date is today (261->exit)."""
+    engine = _make_engine(hass)
+    today = dt_util.now().date()
+    engine._state.today_reset_date = today
+    engine._state.enforcement_count_today = 7
+    engine._maybe_reset_today_counter()
+    assert engine._state.enforcement_count_today == 7
+
+
+async def test_evaluate_flag_entity_allowed_during_grace(hass: HomeAssistant):
+    """During startup grace, entity in both target_entities and flag_entity_ids falls through (271->274 branch)."""
+    # Entity is BOTH a target and a flag → during grace, we don't early-return for it
+    config = _make_config(
+        target_entities=["light.bedroom"],
+        flags=[Flag(entity="light.bedroom", match_state="on")],
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = False
+    hass.states.async_set("light.bedroom", "on")
+    st = hass.states.get("light.bedroom")
+    # entity_id IS in target_entities AND in flag_entity_ids → must NOT early-return
+    await engine.async_evaluate("light.bedroom", st)
+    # Reaches enabled check → disabled=False → proceeds to suppression check etc.
+    assert engine.current_status() != STATUS_STARTING  # status updated
+
+
+async def test_fire_flag_mismatch_different_cancel_handle(hass: HomeAssistant):
+    """_fire: flags fail + pending_enforcements has different handle → don't pop (399->401 else branch)."""
+    config = _make_config(
+        target_state="off",
+        delay_seconds=1,
+        flags=[Flag(entity="input_boolean.night", match_state="on")],
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+    hass.states.async_set("input_boolean.night", "off")  # flags fail
+
+    fires = []
+
+    def _capture_later(_hass, _delay, cb):
+        fires.append(cb)
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=_capture_later,
+    ):
+        engine._schedule_delayed_enforcement("light.bedroom")
+
+    # Replace the cancel handle with a different one AFTER scheduling
+    # so the identity check in _fire fails and it does NOT pop
+    different = MagicMock()
+    engine._pending_enforcements["light.bedroom"] = different
+
+    assert fires
+    fires[0](dt_util.now())
+    await hass.async_block_till_done()
+    # Different handle: pending_enforcements still has `different` (not popped)
+    assert engine._pending_enforcements.get("light.bedroom") is different
+
+
+async def test_fire_not_triggered_different_cancel_handle(hass: HomeAssistant):
+    """_fire: not triggered + different cancel handle → don't pop (395->397 else branch)."""
+    config = _make_config(target_state="off", delay_seconds=1)
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "off")  # already off → not triggered
+
+    fires = []
+
+    def _capture_later(_hass, _delay, cb):
+        fires.append(cb)
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=_capture_later,
+    ):
+        engine._schedule_delayed_enforcement("light.bedroom")
+
+    # Replace cancel handle with a different one so identity check fails
+    different = MagicMock()
+    engine._pending_enforcements["light.bedroom"] = different
+
+    assert fires
+    fires[0](dt_util.now())
+    await hass.async_block_till_done()
+    # Different handle: not popped
+    assert engine._pending_enforcements.get("light.bedroom") is different
+
+
+async def test_cooldown_broadcast_no_cooldown_entry(hass: HomeAssistant):
+    """debounce_enabled but service fails → no cooldown entry → skip broadcast arm (582->exit)."""
+    config = _make_config(
+        target_state="off", debounce_enabled=True, debounce_seconds=30
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+
+    async def _fail(call):
+        raise Exception("svc error")
+
+    hass.services.async_register("light", "turn_off", _fail)
+    await engine._enforce("light.bedroom")
+    # Service failed → cooldown not set → broadcast timer not armed
+    assert "light.bedroom" not in engine._cooldown_broadcast_unsubs
+
+
+async def test_cooldown_broadcast_expired_entry_skipped(hass: HomeAssistant):
+    """debounce cooldown_end in the past → remaining <= 0 → skip timer (584->exit)."""
+    config = _make_config(
+        target_state="off", debounce_enabled=True, debounce_seconds=30
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+
+    async def _ok(call):
+        pass
+
+    hass.services.async_register("light", "turn_off", _ok)
+    # Plant an already-expired cooldown so remaining <= 0 before enforce runs
+    # (override the cooldown that _enforce would set by patching timedelta addition)
+    from datetime import timedelta as _td
+    import custom_components.entity_guard.rule_engine as _re_mod
+
+    original_timedelta = _td
+
+    class _ZeroTD:
+        """Returns a timedelta of 0 regardless of seconds kwarg."""
+
+        def __new__(cls, seconds=0, **kw):  # noqa: ARG003
+            return original_timedelta(seconds=0)
+
+    with patch.object(_re_mod, "timedelta", _ZeroTD):
+        await engine._enforce("light.bedroom")
+
+    # Cooldown was set to now+0s → remaining=0 → timer not armed
+    assert "light.bedroom" not in engine._cooldown_broadcast_unsubs
+
+
+async def test_suppress_when_in_error_skips_apply_idle(hass: HomeAssistant):
+    """async_suppress while STATUS_ERROR must not call _apply_idle_status (754->exit)."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._current_status = STATUS_ERROR
+    await engine.async_suppress(duration_minutes=1, user_id=None)
+    # Status must stay ERROR — _apply_idle_status not called
+    assert engine.current_status() == STATUS_ERROR
+    engine._cancel_suppression_timer()  # clean up lingering timer
+
+
+def test_cooldown_remaining_multiple_picks_max(hass: HomeAssistant):
+    """cooldown_remaining_seconds picks largest — exercises both if-taken and if-skipped branches (847->845)."""
+    engine = _make_engine(hass)
+    now = dt_util.now()
+    # First entry is the MAX (delta > remaining → updates remaining)
+    # Second entry is smaller (delta <= remaining → 847->845 branch taken)
+    engine._state.cooldowns = {
+        "light.a": now + timedelta(seconds=30),  # MAX — first
+        "light.b": now + timedelta(seconds=10),  # smaller — 847->845 branch
+    }
+    remaining = engine.cooldown_remaining_seconds()
+    assert remaining >= 28  # at least 28s (timing slack)
+
+
+def test_derive_idle_status_now_provided(hass: HomeAssistant):
+    """_derive_idle_status with now=None triggers dt_util.now() call; with now provided skips it (881->883 branch)."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    # now=None → triggers dt_util.now() call internally
+    result_none = engine._derive_idle_status(now=None)
+    assert result_none in (STATUS_ARMED, STATUS_CONDITIONAL, STATUS_COOLDOWN)
+    # now provided → skips dt_util.now() call (881->883 branch)
+    result_now = engine._derive_idle_status(now=dt_util.now())
+    assert result_now in (STATUS_ARMED, STATUS_CONDITIONAL, STATUS_COOLDOWN)
+
+
+async def test_handle_suppression_expired_still_in_window(hass: HomeAssistant):
+    """_handle_suppression_expired when suppressed_until is still in the future (948->953)."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._is_unloaded = False
+    # Suppression still active
+    engine._state.suppressed_until = dt_util.now() + timedelta(seconds=60)
+    engine._handle_suppression_expired(dt_util.now())
+    # Suppression NOT cleared; status reflects suppressed
+    assert engine._state.suppressed_until is not None

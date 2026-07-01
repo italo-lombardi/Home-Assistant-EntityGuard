@@ -368,3 +368,30 @@ async def test_async_load_migration_not_implemented_resets_and_notifies(
     # get_rule_state returns a default blob (no crash, no old data)
     blob = store.get_rule_state("r1")
     assert blob["enforcement_count_today"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Branch coverage: missing branches
+# ---------------------------------------------------------------------------
+
+
+def test_delete_rule_state_noop_when_missing(hass: HomeAssistant):
+    """delete_rule_state with unknown rule_id is a no-op (208->exit branch)."""
+    store = EntityGuardStore(hass)
+    store._data = {"rules": {}}
+    store.delete_rule_state("nonexistent")  # must not raise
+    assert store._data["rules"] == {}
+
+
+def test_blob_to_runtime_skips_bad_cooldown_timestamp(hass: HomeAssistant):
+    """blob_to_runtime skips cooldown entries with unparseable timestamp (246->244 branch)."""
+    blob = {"cooldowns": {"light.x": "not-a-date"}, "rate_limit_window": []}
+    state = EntityGuardStore.blob_to_runtime(blob)
+    assert "light.x" not in state.cooldowns
+
+
+def test_blob_to_runtime_skips_bad_rate_window_timestamp(hass: HomeAssistant):
+    """blob_to_runtime skips rate_limit_window entries with unparseable timestamp (252->250 branch)."""
+    blob = {"cooldowns": {}, "rate_limit_window": ["not-a-date"]}
+    state = EntityGuardStore.blob_to_runtime(blob)
+    assert state.rate_limit_window == []

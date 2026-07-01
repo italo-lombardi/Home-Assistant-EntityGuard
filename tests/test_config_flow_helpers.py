@@ -372,6 +372,19 @@ def test_build_summary_hass_no_state_keeps_id(hass: HomeAssistant):
     assert "light.missing" in summary
 
 
+def test_build_summary_unknown_mode_skips_rule_line():
+    """_build_summary with unknown mode must not emit a Rule line (132->139 branch)."""
+    data = {
+        CONF_RULE_NAME: "Test",
+        CONF_TARGET_ENTITIES: ["light.x"],
+        CONF_MODE: "unknown_mode",
+        CONF_DELAY_SECONDS: 0,
+        CONF_FLAGS: [],
+    }
+    summary = _build_summary(data)
+    assert "**Rule:**" not in summary
+
+
 # ---------------------------------------------------------------------------
 # _current_state_hint
 # ---------------------------------------------------------------------------

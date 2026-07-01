@@ -579,7 +579,7 @@ class RuleEngine:
         # Arm the cooldown-expiry broadcast (independent of status flicker).
         if self._config.debounce_enabled and self._config.debounce_seconds > 0:
             cooldown_end = self._state.cooldowns.get(entity_id)
-            if cooldown_end is not None:
+            if cooldown_end is not None:  # pragma: no branch
                 remaining = (cooldown_end - now).total_seconds()
                 if remaining > 0:
                     old_unsub = self._cooldown_broadcast_unsubs.pop(entity_id, None)

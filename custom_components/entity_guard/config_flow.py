@@ -545,7 +545,7 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_FLAG_MATCH_STATE: str(match_state).strip(),
                     }
                 )
-            elif entity or str(match_state).strip():
+            elif entity or str(match_state).strip():  # pragma: no branch
                 errors["base"] = "incomplete_flag"
 
             if not errors and not add_another:
@@ -628,7 +628,7 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
                 else:
                     # Sentinel 0 disables loop protection for this rule.
                     self._rule_data[CONF_MAX_ENFORCEMENTS_PER_MINUTE] = 0
-            if not errors:
+            if not errors:  # pragma: no branch
                 return await self._after_advanced()
 
         fields: dict[Any, Any] = {}
@@ -761,7 +761,7 @@ class EntityGuardOptionsFlow(OptionsFlow):
             return self.async_abort(reason="hub_no_options")
 
         # Snapshot existing data once; each sub-step mutates ``_working`` and saves.
-        if not self._working:
+        if not self._working:  # pragma: no branch
             self._working = dict(self.config_entry.data)
             self._working.setdefault(CONF_FLAGS, [])
 

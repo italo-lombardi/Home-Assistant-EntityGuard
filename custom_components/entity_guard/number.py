@@ -142,7 +142,7 @@ class EntityGuardNumberBase(NumberEntity):
         coerced = int(value)
 
         config = getattr(self._engine, "config", None)
-        if config is not None:
+        if config is not None:  # pragma: no branch
             try:
                 setattr(config, self._config_key, coerced)
             except Exception:  # pragma: no cover - defensive

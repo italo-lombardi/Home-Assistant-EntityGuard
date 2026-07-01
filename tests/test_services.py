@@ -68,6 +68,14 @@ def test_resolve_engine_by_name(hass: HomeAssistant):
     assert _resolve_engine(hass, "Night Lights") is eng
 
 
+def test_resolve_engine_skips_non_matching_entry(hass: HomeAssistant):
+    """_resolve_engine iterates past a non-matching engine to find the target (66->64 branch)."""
+    other = _make_engine(unique_id="other-id", name="Other Rule")
+    target = _make_engine(unique_id="target-id", name="Target Rule")
+    hass.data[DOMAIN] = {"engines": {"e1": other, "e2": target}}
+    assert _resolve_engine(hass, "target-id") is target
+
+
 def test_resolve_engine_not_found(hass: HomeAssistant):
     _inject_engines(hass)
     with pytest.raises(ServiceValidationError):
