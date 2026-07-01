@@ -149,6 +149,22 @@ async def test_async_setup_subscribes(hass: HomeAssistant):
     mock_track.assert_called_once()
 
 
+async def test_async_setup_disabled_rule_never_shows_starting(hass: HomeAssistant):
+    """Disabled rule must show DISABLED immediately after setup, not STATUS_STARTING."""
+    config = _make_config()
+    engine = _make_engine(hass, config)
+    engine._store.get_rule_state.return_value = {"enabled": False}
+    with (
+        patch(
+            "custom_components.entity_guard.rule_engine.async_track_state_change_event"
+        ),
+        patch("custom_components.entity_guard.rule_engine.async_track_time_change"),
+        patch("custom_components.entity_guard.rule_engine.async_call_later"),
+    ):
+        await engine.async_setup()
+    assert engine.current_status() == STATUS_DISABLED
+
+
 async def test_async_unload_cleans_up(hass: HomeAssistant):
     engine = _make_engine(hass)
     cancel_mock = MagicMock()
@@ -582,9 +598,35 @@ async def test_async_clear_history(hass: HomeAssistant):
     assert engine.state.enforcement_count_total == 0
 
 
+async def test_async_clear_history_swallows_cancel_error(hass: HomeAssistant):
+    engine = _make_engine(hass)
+    engine._cooldown_broadcast_unsubs["light.x"] = MagicMock(
+        side_effect=RuntimeError("boom")
+    )
+    await engine.async_clear_history()  # must not raise
+    assert engine._cooldown_broadcast_unsubs == {}
+
+
 # ---------------------------------------------------------------------------
 # async_test_enforce
 # ---------------------------------------------------------------------------
+
+
+async def test_async_test_enforce_skipped_when_disabled(hass: HomeAssistant):
+    config = _make_config(target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    engine._state.enabled = False
+    engine._current_status = STATUS_DISABLED
+    hass.states.async_set("light.bedroom", "on")
+
+    called = []
+    hass.services.async_register("light", "turn_off", lambda c: called.append(c))
+    await engine.async_test_enforce()
+
+    # Service fires (user can validate rule is correct) but status stays DISABLED.
+    assert len(called) == 1
+    assert engine.current_status() == STATUS_DISABLED
 
 
 async def test_async_test_enforce(hass: HomeAssistant):

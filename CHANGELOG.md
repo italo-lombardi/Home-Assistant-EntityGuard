@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.4] — 2026-07-01
+
+### Fixed
+
+- **Disabled rule shows `starting` on reload**: when a rule's `Enabled` switch was off, any config reload (e.g. changing debounce toggle) briefly flashed `starting` status before settling to `disabled`. The engine now derives the correct `disabled`/`master_disabled` status at the first broadcast during `async_setup`, so the UI never transiently shows `starting` for a disabled rule.
+- **Test Enforce ignores `Enabled` switch**: pressing Test Enforce while the rule's `Enabled` switch was off would run enforcement, set status to `armed`/`enforcing`, and leave it there until the next evaluation. The `Enabled` switch is now the highest-priority gate: Test Enforce still calls the service (so the rule can be validated while disabled) but immediately restores `disabled`/`master_disabled` status after the run.
+
+### Tests
+
+- 3 new tests: `test_async_setup_disabled_rule_never_shows_starting`, `test_async_test_enforce_skipped_when_disabled`, `test_async_clear_history_swallows_cancel_error`.
+- Full suite: 447 passed, 1 skipped. Line coverage 100%, branch coverage 99%.
+
+---
+
 ## [0.2.3] — 2026-06-21
 
 ### Fixed

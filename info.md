@@ -2,11 +2,10 @@
 
 Declarative state-enforcement rules. Bind one or more entities to a rule that defines a trigger condition and a desired target state — Entity Guard enforces it automatically, with cooldowns, suppression, rate limiting, and a custom dashboard card.
 
-## What's new in 0.2.1
+## What's new in 0.2.4
 
-- Fixed startup error: `repairs.py` renamed to `issue_helpers.py` — HA no longer tries to load it as a repairs platform.
-- Repair issues now fire and clear immediately when a flag entity is deleted or recreated — no restart required.
-- Missing-flag detection uses the entity registry (authoritative on delete) instead of `hass.states`.
+- **Disabled rule no longer flashes `starting`** on config reload — status is `disabled` immediately when the `Enabled` switch is off.
+- **Test Enforce respects `Enabled` switch** — pressing Test Enforce while disabled still calls the service (so you can validate the rule) but status stays `disabled`/`master_disabled` throughout.
 
 ## Features
 

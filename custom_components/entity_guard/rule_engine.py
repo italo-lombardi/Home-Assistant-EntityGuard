@@ -166,7 +166,13 @@ class RuleEngine:
             )
         )
 
-        self._broadcast_status()
+        # Immediately reflect disabled/master-disabled state so the UI never
+        # shows STATUS_STARTING when the rule is off. For enabled rules we
+        # still broadcast STARTING (startup grace not yet complete).
+        if not self._state.enabled or not self._master_enabled_getter():
+            self._apply_idle_status()
+        else:
+            self._broadcast_status()
 
     async def async_unload(self) -> None:
         """Cancel listeners and pending enforcement timers."""
@@ -677,16 +683,25 @@ class RuleEngine:
 
         Suppression-expiry timer is re-armed after the loop so any stale
         callback queued before manual enforcement is replaced (EG-4).
+
+        When the rule or master switch is disabled the service call still fires
+        (so the user can validate the rule is correct) but status is restored to
+        DISABLED/MASTER_DISABLED afterwards so the UI never leaves the disabled state.
         """
+        disabled = not self._state.enabled or not self._master_enabled_getter()
         _LOGGER.info(
-            "Test enforce invoked on rule '%s' (user_id=%s)",
+            "Test enforce invoked on rule '%s' (user_id=%s, disabled=%s)",
             self._config.name,
             user_id,
+            disabled,
         )
         for entity_id in self._config.target_entities:
             await self._enforce(entity_id, user_id=user_id, bypass_rate_limit=True)
         # _schedule_suppression_timer self-cancels any prior handle before arming.
         self._schedule_suppression_timer()
+        if disabled:
+            # Restore correct disabled status — _enforce may have set ENFORCING/ARMED.
+            self._apply_idle_status()
 
     async def async_reset_cooldowns(self) -> None:
         """Clear all per-entity cooldowns immediately.
