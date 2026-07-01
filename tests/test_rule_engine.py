@@ -732,11 +732,12 @@ async def test_async_test_enforce_status_restored_when_disabled(hass: HomeAssist
 async def test_async_test_enforce_no_intermediate_broadcast_when_disabled(
     hass: HomeAssistant,
 ):
-    """Bug 1: with N targets, _apply_idle_status runs after each enforce when disabled.
+    """Bug 1: per-entity _apply_idle_status restores DISABLED between entities.
 
-    The loop calls _apply_idle_status() per-entity so status snaps back to DISABLED
-    between entities. We verify this by confirming that the LAST broadcast before
-    each subsequent _enforce call is DISABLED (not ARMED/ENFORCING).
+    Expected broadcast sequence for 2 targets:
+      [ENFORCING, ARMED, DISABLED, ENFORCING, ARMED, DISABLED]
+    The single-post-loop call (old bug) would produce:
+      [ENFORCING, ARMED, ENFORCING, ARMED, DISABLED]
     """
     config = _make_config(
         target_entities=["light.a", "light.b"],
@@ -749,7 +750,6 @@ async def test_async_test_enforce_no_intermediate_broadcast_when_disabled(
     hass.states.async_set("light.a", "on")
     hass.states.async_set("light.b", "on")
 
-    # Record ALL status transitions
     all_broadcasts: list[str] = []
     original = engine._set_status
 
@@ -765,21 +765,37 @@ async def test_async_test_enforce_no_intermediate_broadcast_when_disabled(
     hass.services.async_register("light", "turn_off", _ok)
     await engine.async_test_enforce()
 
-    # Final status must be DISABLED
     assert engine.current_status() == STATUS_DISABLED
-    # DISABLED must appear between each entity's broadcasts (i.e. after ENFORCING/ARMED)
-    # Pattern expected: [ENFORCING, ARMED, DISABLED, ENFORCING, ARMED, DISABLED]
-    # Key invariant: DISABLED must appear before any second ENFORCING/ARMED
-    if len(all_broadcasts) > 1:
-        # Find any ENFORCING or ARMED broadcast after the first enforce
-        first_disabled = next(
-            (i for i, s in enumerate(all_broadcasts) if s == STATUS_DISABLED), None
-        )
-        assert first_disabled is not None, f"DISABLED never broadcast: {all_broadcasts}"
-        # Check no non-disabled status appears at the very end (final state is disabled)
-        assert all_broadcasts[-1] == STATUS_DISABLED, (
-            f"final broadcast not DISABLED: {all_broadcasts}"
-        )
+    # Exact sequence: ENFORCING → ARMED → DISABLED for each entity, then no trailing non-DISABLED.
+    assert all_broadcasts == [
+        STATUS_ENFORCING,
+        STATUS_ARMED,
+        STATUS_DISABLED,
+        STATUS_ENFORCING,
+        STATUS_ARMED,
+        STATUS_DISABLED,
+    ], f"unexpected broadcast sequence: {all_broadcasts}"
+
+
+async def test_async_test_enforce_disabled_rule_in_error_stays_disabled(
+    hass: HomeAssistant,
+):
+    """Bug 3: disabled rule in STATUS_ERROR must show DISABLED after test-enforce, not ERROR."""
+    config = _make_config(target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    engine._state.enabled = False
+    engine._current_status = STATUS_ERROR  # sticky error
+    hass.states.async_set("light.bedroom", "on")
+
+    async def _ok(call):
+        pass
+
+    hass.services.async_register("light", "turn_off", _ok)
+    await engine.async_test_enforce()
+
+    # disabled check now beats ERROR sticky in _derive_idle_status
+    assert engine.current_status() == STATUS_DISABLED
 
 
 async def test_async_test_enforce(hass: HomeAssistant):
@@ -2113,6 +2129,37 @@ async def test_clear_history_cancels_broadcast_unsubs(hass: HomeAssistant):
     await engine.async_clear_history()
 
     cancel_mock.assert_called_once()
+    assert engine._cooldown_broadcast_unsubs == {}
+
+
+async def test_apply_idle_status_cancels_cooldown_timers_when_disabled(
+    hass: HomeAssistant,
+):
+    """C5: _apply_idle_status must cancel cooldown-broadcast timers when deriving DISABLED."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._state.enabled = False
+    cancel_mock = MagicMock()
+    engine._cooldown_broadcast_unsubs["light.bedroom"] = cancel_mock
+
+    engine._apply_idle_status()
+
+    cancel_mock.assert_called_once()
+    assert engine._cooldown_broadcast_unsubs == {}
+
+
+async def test_apply_idle_status_cancel_exception_swallowed_when_disabled(
+    hass: HomeAssistant,
+):
+    """C5: exception from cancelling cooldown timer must be swallowed."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._state.enabled = False
+    engine._cooldown_broadcast_unsubs["light.bedroom"] = MagicMock(
+        side_effect=RuntimeError("boom")
+    )
+
+    engine._apply_idle_status()  # must not raise
     assert engine._cooldown_broadcast_unsubs == {}
 
 

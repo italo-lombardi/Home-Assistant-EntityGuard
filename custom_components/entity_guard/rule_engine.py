@@ -235,7 +235,9 @@ class RuleEngine:
         self._state.enforcement_count_today = 0
         self._state.today_reset_date = dt_util.now().date()
         self._persist()
+        # Use _apply_idle_status so disabled/master-off rules never emit STATUS_STARTING.
         self._broadcast_status()
+        self._apply_idle_status()
 
     @callback
     def _handle_startup_grace_done(self, _now: datetime) -> None:
@@ -796,7 +798,17 @@ class RuleEngine:
         self._store.clear_rule_history(self._config.unique_id)
         if self._current_status == STATUS_ERROR:
             self._current_status = STATUS_STARTING  # break sticky before re-derive
-        self._apply_idle_status()
+        try:
+            # Always broadcast so counter sensors refresh, then re-derive status.
+            self._broadcast_status()
+            self._apply_idle_status()
+        except Exception:  # noqa: BLE001  # pragma: no cover
+            # Ensure sentinel STATUS_STARTING is never left stranded if derivation fails.
+            if self._current_status == STATUS_STARTING:
+                self._current_status = (
+                    STATUS_DISABLED if not self._state.enabled else STATUS_ARMED
+                )
+            raise
 
     def set_enabled(self, enabled: bool) -> None:
         """Toggle the rule's enabled flag (driven by per-rule switch entity)."""
@@ -872,19 +884,19 @@ class RuleEngine:
         """Single source of truth for status when idle.
 
         Priority (highest first):
-          1. STATUS_ERROR sticky -> ERROR.
-          2. Master switch off -> MASTER_DISABLED.
-          3. Per-rule disabled -> DISABLED.
+          1. Master switch off -> MASTER_DISABLED.
+          2. Per-rule disabled -> DISABLED.
+          3. STATUS_ERROR sticky -> ERROR (only when rule is active).
           4. Active suppression -> SUPPRESSED.
           5. Conditional flags unmet -> CONDITIONAL.
           6. Otherwise -> derive ARMED / COOLDOWN.
         """
-        if self._current_status == STATUS_ERROR:
-            return STATUS_ERROR
         if not self._master_enabled_getter():
             return STATUS_MASTER_DISABLED
         if not self._state.enabled:
             return STATUS_DISABLED
+        if self._current_status == STATUS_ERROR:
+            return STATUS_ERROR
         if now is None:
             now = dt_util.now()
         if self._state.suppressed_until and self._state.suppressed_until > now:
@@ -898,6 +910,14 @@ class RuleEngine:
         status = self._derive_idle_status(now)
         if status in (STATUS_DISABLED, STATUS_MASTER_DISABLED):
             self._cancel_pending_for_entities(self._config.target_entities)
+            # Cancel cooldown-broadcast timers — they would fire later and emit a
+            # redundant signal for a rule that is inactive (C5).
+            for unsub in list(self._cooldown_broadcast_unsubs.values()):
+                try:
+                    unsub()
+                except Exception:  # noqa: BLE001
+                    pass
+            self._cooldown_broadcast_unsubs.clear()
         self._set_status(status)
 
     def _broadcast_status(self) -> None:
