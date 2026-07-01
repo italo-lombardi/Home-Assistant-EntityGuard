@@ -200,6 +200,11 @@ Review the assembled rule before saving. Confirm to create the config entry. The
 | `entity_guard.clear_history` | Clear cooldowns, counters, and last-enforced for a rule. |
 | `entity_guard.panic_stop` | Disable every rule, suppress 60 min, turn off the master switch. |
 
+> **Suppress vs Unsuppress**: `unsuppress` has a dedicated button on each rule's device page and card.
+> `suppress` requires a service call (Developer Tools → Services, or an automation) because it takes a
+> `duration_minutes` parameter — buttons cannot accept input. Use the card's **Suppress 1h** button for
+> a quick 60-minute suppress, or call the service directly for a custom duration.
+
 ---
 
 ## Events

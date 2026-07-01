@@ -962,6 +962,18 @@ def test_handle_midnight_resets_today_counter(hass: HomeAssistant):
     assert engine.state.enforcement_count_today == 0
 
 
+def test_handle_midnight_disabled_rule_stays_disabled(hass: HomeAssistant):
+    """_handle_midnight on disabled rule must not emit STATUS_STARTING (Bug 4 regression)."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._state.enabled = False
+    engine._current_status = STATUS_DISABLED
+    engine.state.enforcement_count_today = 5
+    engine._handle_midnight(MagicMock())
+    assert engine.state.enforcement_count_today == 0
+    assert engine.current_status() == STATUS_DISABLED
+
+
 # ---------------------------------------------------------------------------
 # _handle_startup_grace_done
 # ---------------------------------------------------------------------------

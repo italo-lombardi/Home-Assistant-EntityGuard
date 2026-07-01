@@ -235,7 +235,8 @@ class RuleEngine:
         self._state.enforcement_count_today = 0
         self._state.today_reset_date = dt_util.now().date()
         self._persist()
-        # Use _apply_idle_status so disabled/master-off rules never emit STATUS_STARTING.
+        # _broadcast_status() first so counter sensors refresh unconditionally,
+        # then _apply_idle_status() re-derives correct status (handles disabled/master-off).
         self._broadcast_status()
         self._apply_idle_status()
 
