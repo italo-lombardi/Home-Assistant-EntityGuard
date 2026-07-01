@@ -251,6 +251,8 @@ class RuleEngine:
         # on STATUS_STARTING after grace.
         self._apply_idle_status()
 
+        if not self._state.enabled or not self._master_enabled_getter():
+            return
         for entity_id in self._config.target_entities:
             current = self._hass.states.get(entity_id)
             self._schedule_eval_task(entity_id, current)
@@ -266,14 +268,15 @@ class RuleEngine:
         """Evaluate a state change against the rule and enforce if appropriate."""
         now = dt_util.now()
         self._prune_expired_cooldowns(now)
-        if not self._startup_complete and entity_id in self._config.target_entities:
-            # During grace, ignore target state events; flag changes still re-evaluate.
-            if entity_id not in self._flag_entity_ids:
-                return
 
         if not self._state.enabled or not self._master_enabled_getter():
             self._apply_idle_status()
             return
+
+        if not self._startup_complete and entity_id in self._config.target_entities:
+            # During grace, ignore target state events; flag changes still re-evaluate.
+            if entity_id not in self._flag_entity_ids:
+                return
 
         if self._state.suppressed_until and self._state.suppressed_until > now:
             self._set_status(STATUS_SUPPRESSED)
@@ -388,6 +391,9 @@ class RuleEngine:
 
         async def _fire(_now: datetime) -> None:
             if self._is_unloaded:
+                return
+            if not self._state.enabled or not self._master_enabled_getter():
+                self._apply_idle_status()
                 return
             current = self._hass.states.get(entity_id)
             if current is None or not self._is_triggered(entity_id, current):
@@ -579,7 +585,7 @@ class RuleEngine:
         # Arm the cooldown-expiry broadcast (independent of status flicker).
         if self._config.debounce_enabled and self._config.debounce_seconds > 0:
             cooldown_end = self._state.cooldowns.get(entity_id)
-            if cooldown_end is not None:  # pragma: no branch
+            if cooldown_end is not None:
                 remaining = (cooldown_end - now).total_seconds()
                 if remaining > 0:
                     old_unsub = self._cooldown_broadcast_unsubs.pop(entity_id, None)
@@ -686,7 +692,8 @@ class RuleEngine:
 
         When the rule or master switch is disabled the service call still fires
         (so the user can validate the rule is correct) but status is restored to
-        DISABLED/MASTER_DISABLED afterwards so the UI never leaves the disabled state.
+        DISABLED/MASTER_DISABLED after each enforce so the UI never leaves the
+        disabled state between entities.
         """
         disabled = not self._state.enabled or not self._master_enabled_getter()
         _LOGGER.info(
@@ -697,11 +704,13 @@ class RuleEngine:
         )
         for entity_id in self._config.target_entities:
             await self._enforce(entity_id, user_id=user_id, bypass_rate_limit=True)
+            if disabled:
+                # Restore correct disabled status after each enforce so
+                # intermediate ENFORCING/ARMED/COOLDOWN transitions never
+                # appear in HA history for a rule that should be inactive.
+                self._apply_idle_status()
         # _schedule_suppression_timer self-cancels any prior handle before arming.
         self._schedule_suppression_timer()
-        if disabled:
-            # Restore correct disabled status — _enforce may have set ENFORCING/ARMED.
-            self._apply_idle_status()
 
     async def async_reset_cooldowns(self) -> None:
         """Clear all per-entity cooldowns immediately.
@@ -787,9 +796,7 @@ class RuleEngine:
         self._store.clear_rule_history(self._config.unique_id)
         if self._current_status == STATUS_ERROR:
             self._current_status = STATUS_STARTING  # break sticky before re-derive
-            self._apply_idle_status()
-        else:
-            self._broadcast_status()
+        self._apply_idle_status()
 
     def set_enabled(self, enabled: bool) -> None:
         """Toggle the rule's enabled flag (driven by per-rule switch entity)."""

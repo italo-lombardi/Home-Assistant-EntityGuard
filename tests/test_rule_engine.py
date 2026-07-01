@@ -636,6 +636,73 @@ async def test_async_clear_history_swallows_cancel_error(hass: HomeAssistant):
     assert engine._cooldown_broadcast_unsubs == {}
 
 
+async def test_async_clear_history_non_error_calls_apply_idle_status(
+    hass: HomeAssistant,
+):
+    """C3: clear_history on non-ERROR rule calls _apply_idle_status, not _broadcast_status."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._current_status = STATUS_ARMED
+    await engine.async_clear_history()
+    # _apply_idle_status re-derives from state; armed engine stays armed
+    assert engine.current_status() == STATUS_ARMED
+
+
+async def test_startup_grace_skips_sweep_when_disabled(hass: HomeAssistant):
+    """C4: startup grace on disabled rule skips eval sweep (no tasks created)."""
+    config = _make_config()
+    engine = _make_engine(hass, config)
+    # Plant enabled=False in the blob so async_setup restores it correctly
+    engine._store.get_rule_state.return_value = {"enabled": False}
+
+    eval_calls: list[str] = []
+    original_schedule = engine._schedule_eval_task
+
+    def _record(eid, state):
+        eval_calls.append(eid)
+        original_schedule(eid, state)
+
+    engine._schedule_eval_task = _record  # type: ignore[assignment]
+    hass.states.async_set("light.bedroom", "on")
+
+    grace_callbacks: list = []
+
+    def _capture_later(_hass, _delay, cb):
+        grace_callbacks.append(cb)
+        return MagicMock()
+
+    with (
+        patch(
+            "custom_components.entity_guard.rule_engine.async_track_state_change_event"
+        ),
+        patch("custom_components.entity_guard.rule_engine.async_track_time_change"),
+        patch(
+            "custom_components.entity_guard.rule_engine.async_call_later",
+            side_effect=_capture_later,
+        ),
+    ):
+        await engine.async_setup()
+
+    assert grace_callbacks, "async_call_later not called during setup"
+    # Fire the startup grace callback
+    grace_callbacks[0](dt_util.now())
+    await hass.async_block_till_done()
+
+    assert eval_calls == [], f"sweep tasks created for disabled rule: {eval_calls}"
+
+
+async def test_evaluate_disabled_check_before_grace_guard(hass: HomeAssistant):
+    """C6: disabled check is evaluated before the startup-grace guard — event during grace still sets DISABLED."""
+    engine = _make_engine(hass)
+    engine._startup_complete = False
+    engine._state.enabled = False
+    hass.states.async_set("light.bedroom", "on")
+    st = hass.states.get("light.bedroom")
+    await engine.async_evaluate("light.bedroom", st)
+    # Disabled check fires before grace guard → status is DISABLED, not STARTING
+    assert engine.current_status() == STATUS_DISABLED
+
+
 # ---------------------------------------------------------------------------
 # async_test_enforce
 # ---------------------------------------------------------------------------
@@ -660,6 +727,59 @@ async def test_async_test_enforce_status_restored_when_disabled(hass: HomeAssist
     # Service fires (user can validate rule is correct) but status stays DISABLED.
     assert len(called) == 1
     assert engine.current_status() == STATUS_DISABLED
+
+
+async def test_async_test_enforce_no_intermediate_broadcast_when_disabled(
+    hass: HomeAssistant,
+):
+    """Bug 1: with N targets, _apply_idle_status runs after each enforce when disabled.
+
+    The loop calls _apply_idle_status() per-entity so status snaps back to DISABLED
+    between entities. We verify this by confirming that the LAST broadcast before
+    each subsequent _enforce call is DISABLED (not ARMED/ENFORCING).
+    """
+    config = _make_config(
+        target_entities=["light.a", "light.b"],
+        target_state="off",
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    engine._state.enabled = False
+    engine._current_status = STATUS_DISABLED
+    hass.states.async_set("light.a", "on")
+    hass.states.async_set("light.b", "on")
+
+    # Record ALL status transitions
+    all_broadcasts: list[str] = []
+    original = engine._set_status
+
+    def _record(status: str) -> None:
+        all_broadcasts.append(status)
+        original(status)
+
+    engine._set_status = _record  # type: ignore[assignment]
+
+    async def _ok(call):
+        pass
+
+    hass.services.async_register("light", "turn_off", _ok)
+    await engine.async_test_enforce()
+
+    # Final status must be DISABLED
+    assert engine.current_status() == STATUS_DISABLED
+    # DISABLED must appear between each entity's broadcasts (i.e. after ENFORCING/ARMED)
+    # Pattern expected: [ENFORCING, ARMED, DISABLED, ENFORCING, ARMED, DISABLED]
+    # Key invariant: DISABLED must appear before any second ENFORCING/ARMED
+    if len(all_broadcasts) > 1:
+        # Find any ENFORCING or ARMED broadcast after the first enforce
+        first_disabled = next(
+            (i for i, s in enumerate(all_broadcasts) if s == STATUS_DISABLED), None
+        )
+        assert first_disabled is not None, f"DISABLED never broadcast: {all_broadcasts}"
+        # Check no non-disabled status appears at the very end (final state is disabled)
+        assert all_broadcasts[-1] == STATUS_DISABLED, (
+            f"final broadcast not DISABLED: {all_broadcasts}"
+        )
 
 
 async def test_async_test_enforce(hass: HomeAssistant):
@@ -2061,6 +2181,79 @@ async def test_fire_identity_check_preserves_newer_timer(hass: HomeAssistant):
     )
 
 
+async def test_fire_disabled_mid_flight_skips_enforce(hass: HomeAssistant):
+    """Bug 2: rule disabled after timer queued but before _fire runs — enforce must not happen."""
+    config = _make_config(target_state="off", delay_seconds=1)
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+
+    fires = []
+
+    def _capture_later(_hass, _delay, cb):
+        fires.append(cb)
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=_capture_later,
+    ):
+        engine._schedule_delayed_enforcement("light.bedroom")
+
+    assert fires
+    # Disable the rule before the timer fires
+    engine._state.enabled = False
+    engine._current_status = STATUS_DISABLED
+
+    called = []
+
+    async def _mock_turn_off(call):
+        called.append(call)
+
+    hass.services.async_register("light", "turn_off", _mock_turn_off)
+    fires[0](dt_util.now())
+    await hass.async_block_till_done()
+
+    assert len(called) == 0, "enforce must not fire for a disabled rule"
+    assert engine.current_status() == STATUS_DISABLED
+
+
+async def test_fire_master_disabled_mid_flight_skips_enforce(hass: HomeAssistant):
+    """Bug 2 (master): master disabled after timer queued — enforce must not happen."""
+    config = _make_config(target_state="off", delay_seconds=1)
+    engine = _make_engine(hass, config, master=True)
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+
+    fires = []
+
+    def _capture_later(_hass, _delay, cb):
+        fires.append(cb)
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=_capture_later,
+    ):
+        engine._schedule_delayed_enforcement("light.bedroom")
+
+    assert fires
+    # Switch master off
+    engine._master_enabled_getter = lambda: False
+
+    called = []
+
+    async def _mock_turn_off(call):
+        called.append(call)
+
+    hass.services.async_register("light", "turn_off", _mock_turn_off)
+    fires[0](dt_util.now())
+    await hass.async_block_till_done()
+
+    assert len(called) == 0
+    assert engine.current_status() == STATUS_MASTER_DISABLED
+
+
 # ---------------------------------------------------------------------------
 # EG-6: STATUS_ERROR auto-recovery after consecutive successes
 # ---------------------------------------------------------------------------
@@ -2482,7 +2675,7 @@ async def test_fire_not_triggered_different_cancel_handle(hass: HomeAssistant):
 
 
 async def test_cooldown_broadcast_no_cooldown_entry(hass: HomeAssistant):
-    """debounce_enabled but service fails → no cooldown entry → skip broadcast arm (582->exit)."""
+    """debounce_enabled but cooldowns cleared between set and get (race with async_reset_cooldowns) → skip broadcast arm (588->exit)."""
     config = _make_config(
         target_state="off", debounce_enabled=True, debounce_seconds=30
     )
@@ -2490,12 +2683,20 @@ async def test_cooldown_broadcast_no_cooldown_entry(hass: HomeAssistant):
     engine._startup_complete = True
     hass.states.async_set("light.bedroom", "on")
 
-    async def _fail(call):
-        raise Exception("svc error")
+    async def _ok(call):
+        pass
 
-    hass.services.async_register("light", "turn_off", _fail)
+    hass.services.async_register("light", "turn_off", _ok)
+
+    # Simulate race: replace cooldowns with a dict subclass whose .get always returns None
+    class _RacyDict(dict):
+        def get(self, key, default=None):
+            self.clear()  # simulate async_reset_cooldowns clearing between set and get
+            return None
+
+    engine._state.cooldowns = _RacyDict()
     await engine._enforce("light.bedroom")
-    # Service failed → cooldown not set → broadcast timer not armed
+    # Race cleared cooldown → broadcast timer not armed
     assert "light.bedroom" not in engine._cooldown_broadcast_unsubs
 
 

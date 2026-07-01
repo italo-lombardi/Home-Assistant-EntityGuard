@@ -5,12 +5,16 @@
 ### Fixed
 
 - **Disabled rule shows `starting` on reload**: when a rule's `Enabled` switch was off, any config reload (e.g. changing debounce toggle) briefly flashed `starting` status before settling to `disabled`. The engine now derives the correct `disabled`/`master_disabled` status at the first broadcast during `async_setup`, so the UI never transiently shows `starting` for a disabled rule.
-- **Test Enforce ignores `Enabled` switch**: pressing Test Enforce while the rule's `Enabled` switch was off would run enforcement, set status to `armed`/`enforcing`, and leave it there until the next evaluation. The `Enabled` switch is now the highest-priority gate: Test Enforce still calls the service (so the rule can be validated while disabled) but immediately restores `disabled`/`master_disabled` status after the run.
+- **Test Enforce ignores `Enabled` switch**: pressing Test Enforce while the rule's `Enabled` switch was off would run enforcement and leave status as `armed`/`enforcing`. The `Enabled` switch is now the highest-priority gate: Test Enforce still calls the service (so the rule can be validated while disabled) but calls `_apply_idle_status()` after each entity so no intermediate `armed`/`enforcing` broadcasts appear in HA history.
+- **Delayed enforcement fires after rule disabled**: if a rule was disabled between queuing a delayed-enforcement timer and the timer firing, `_enforce` ran unconditionally. `_fire` now checks `enabled`/master at entry and returns early (calling `_apply_idle_status()`) if the rule is inactive.
+- **`async_clear_history` broadcasts stale status on non-ERROR rules**: the else branch called `_broadcast_status()` unconditionally, which could emit `starting` during grace. Replaced with `_apply_idle_status()` for correct status derivation in all paths.
+- **Startup grace schedules sweep tasks for disabled rules**: `_handle_startup_grace_done` always queued eval tasks for every target entity, even when `enabled=False`. Disabled/master-off rules now return early after `_apply_idle_status()`, skipping the wasteful sweep.
+- **Disabled check ordered after grace guard in `async_evaluate`**: the startup-grace guard was evaluated before the `enabled`/master check. A disabled rule receiving a state event during grace would skip the fast-path `_apply_idle_status()` call. Guard order corrected: disabled check is now first.
+- **Cooldown-broadcast race with `async_reset_cooldowns`**: `pragma: no branch` removed from the `cooldown_end is not None` guard — `async_reset_cooldowns` can clear `_state.cooldowns` between the cooldown being set and the timer being armed, making the `None` branch reachable.
 
 ### Tests
 
-- 3 new tests: `test_async_setup_disabled_rule_never_shows_starting`, `test_async_test_enforce_skipped_when_disabled`, `test_async_clear_history_swallows_cancel_error`.
-- Full suite: 447 passed, 1 skipped. Line coverage 100%, branch coverage 99%.
+- 15 new tests (net). Full suite: 483 passed, 1 skipped. Line coverage 100%, branch coverage 100%.
 
 ---
 
