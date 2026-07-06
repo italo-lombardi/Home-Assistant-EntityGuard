@@ -149,7 +149,7 @@ Review the assembled rule before saving. Confirm to create the config entry. The
 | `binary_sensor.<rule>_armed` | Rule is watching (flag matched, master/enabled on) |
 | `binary_sensor.<rule>_active` | Service call currently in flight |
 | `binary_sensor.<rule>_in_cooldown` | Cooldown active for at least one bound entity |
-| `binary_sensor.<rule>_recently_enforced` | ON for 30 s after any enforcement; pulses off→on on repeated enforce. Attribute: `rule_name` |
+| `binary_sensor.<rule>_recently_enforced` | ON for 30 s after any enforcement; pulses off→on on repeated enforce. Attributes: `rule_name`, `target_entities`, `target`, `delay_seconds` |
 | `sensor.<rule>_status` | Enum: `error` > `disabled` > `suppressed` > `enforcing` > `cooldown` > `armed` > `conditional` > `starting` > `pending` |
 | `sensor.<rule>_last_enforced` | Timestamp of the last successful enforcement |
 | `sensor.<rule>_enforcement_count_today` | Resets at local midnight |
@@ -365,7 +365,8 @@ automation:
       data:
         message: >
           {{ state_attr('binary_sensor.my_rule_recently_enforced', 'rule_name') }}
-          just enforced
+          enforced {{ state_attr('binary_sensor.my_rule_recently_enforced', 'target_entities') | join(', ') }}
+          → {{ state_attr('binary_sensor.my_rule_recently_enforced', 'target') }}
 ```
 
 ---

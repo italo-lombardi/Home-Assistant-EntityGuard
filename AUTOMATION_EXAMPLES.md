@@ -156,7 +156,14 @@ automation:
 
 `binary_sensor.<rule>_recently_enforced` stays ON for 30 seconds after enforcement; pulses off→on on repeated enforcements so each one re-triggers.
 
-The sensor exposes a `rule_name` attribute — no need to hardcode the name or cross-reference another entity.
+The sensor exposes these attributes — no need for a separate event listener:
+
+| Attribute | Example value |
+|-----------|---------------|
+| `rule_name` | `"Balcony Light OFF"` |
+| `target_entities` | `["light.balcony_light"]` |
+| `target` | `"off"` (state mode) or `64` (attribute mode) |
+| `delay_seconds` | `0` |
 
 ```yaml
 automation:
@@ -170,7 +177,8 @@ automation:
       data:
         message: >
           {{ state_attr('binary_sensor.balcony_light_off_rule_recently_enforced', 'rule_name') }}
-          just enforced
+          enforced {{ state_attr('binary_sensor.balcony_light_off_rule_recently_enforced', 'target_entities') | join(', ') }}
+          → {{ state_attr('binary_sensor.balcony_light_off_rule_recently_enforced', 'target') }}
 ```
 
 To handle **any rule** with a single automation, listen to the event instead (see [Notify when any rule enforces](#notify-when-any-rule-enforces-all-rules)).

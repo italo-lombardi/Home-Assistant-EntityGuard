@@ -262,5 +262,5 @@ def test_recently_enforced_sensor_extra_state_attributes():
     attrs = sensor.extra_state_attributes
     assert attrs["rule_name"] == "Balcony Rule"
     assert attrs["target_entities"] == ["light.balcony"]
-    assert attrs["target_state"] == "off"
+    assert attrs["target"] == "off"
     assert attrs["delay_seconds"] == 10
