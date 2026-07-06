@@ -4,7 +4,7 @@
 
 ### Added
 
-- **`binary_sensor.<rule>_recently_enforced`**: turns `on` for 30 seconds after any enforcement — including Test Enforce. On repeated enforcements while already `on`, pulses `off → on` so each enforcement re-triggers automations. Resets immediately when Reset Cooldowns or Clear History is called. Enabled by default.
+- **`binary_sensor.<rule>_recently_enforced`**: turns `on` for 30 seconds after any enforcement — including Test Enforce. On repeated enforcements while already `on`, pulses `off → on` so each enforcement re-triggers automations. Resets immediately when Reset Cooldowns or Clear History is called. Enabled by default. Exposes a `rule_name` state attribute for use in automation templates (`state_attr(..., 'rule_name')`).
 - **`sensor.<rule>_rule_id`** (hidden by default, diagnostic): exposes the rule's stable config-entry ID. Use this in automation `event_data` filters instead of `rule_name` so renames never break automations.
 - **`AUTOMATION_EXAMPLES.md`**: copy-paste automation library covering notifications, rule control, enforcement reactions, loop-detection handling, dashboard counters, and a full event-payload reference.
 

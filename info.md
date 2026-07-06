@@ -4,7 +4,7 @@ Declarative state-enforcement rules. Bind one or more entities to a rule that de
 
 ## What's new in 0.2.5
 
-- **`binary_sensor.<rule>_recently_enforced`** — turns `on` for 30 s after any enforcement and pulses `off → on` on repeated fires, so automations re-trigger reliably. Enabled by default.
+- **`binary_sensor.<rule>_recently_enforced`** — turns `on` for 30 s after any enforcement and pulses `off → on` on repeated fires, so automations re-trigger reliably. Enabled by default. Exposes `rule_name` attribute for automation templates.
 - **`sensor.<rule>_rule_id`** — stable config-entry ID for rename-safe automation filtering. Enable in entity registry.
 - **Automation examples** — see [AUTOMATION_EXAMPLES.md](https://github.com/italo-lombardi/Home-Assistant-EntityGuard/blob/main/AUTOMATION_EXAMPLES.md) for a full copy-paste library.
 
