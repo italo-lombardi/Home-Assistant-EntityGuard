@@ -244,6 +244,7 @@ def test_recently_enforced_sensor_extra_state_attributes():
         DOMAIN,
         CONF_ENTRY_TYPE,
         ENTRY_TYPE_RULE,
+        MODE_STATE,
     )
 
     entry = MockConfigEntry(
@@ -251,6 +252,15 @@ def test_recently_enforced_sensor_extra_state_attributes():
     )
     engine = MagicMock()
     engine.config.unique_id = "uid"
+    engine.config.mode = MODE_STATE
+    engine.config.target_entities = ["light.balcony"]
+    engine.config.target_state = "off"
+    engine.config.target_value = None
+    engine.config.delay_seconds = 10
     engine.is_recently_enforced.return_value = True
     sensor = EntityGuardRecentlyEnforcedSensor(entry, engine)
-    assert sensor.extra_state_attributes == {"rule_name": "Balcony Rule"}
+    attrs = sensor.extra_state_attributes
+    assert attrs["rule_name"] == "Balcony Rule"
+    assert attrs["target_entities"] == ["light.balcony"]
+    assert attrs["target_state"] == "off"
+    assert attrs["delay_seconds"] == 10
