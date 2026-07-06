@@ -159,6 +159,8 @@ automation:
 
 `binary_sensor.<rule>_recently_enforced` stays ON for 30 seconds after enforcement; pulses off→on on repeated enforcements so each one re-triggers.
 
+The sensor exposes a `rule_name` attribute — no need to hardcode the name or cross-reference another entity.
+
 ```yaml
 automation:
   alias: React to balcony rule enforcement
@@ -169,8 +171,12 @@ automation:
   action:
     - service: notify.mobile_app_my_phone
       data:
-        message: "Balcony rule just enforced"
+        message: >
+          {{ state_attr('binary_sensor.balcony_light_off_rule_recently_enforced', 'rule_name') }}
+          just enforced
 ```
+
+To handle **any rule** with a single automation, listen to the event instead (see [Notify when any rule enforces](#notify-when-any-rule-enforces-all-rules)).
 
 ### Flash a light when any rule enforces
 

@@ -161,3 +161,8 @@ class EntityGuardRecentlyEnforcedSensor(EntityGuardBinarySensor):
     def is_on(self) -> bool:
         """Return True if enforcement fired within the last 30 seconds."""
         return bool(self._engine.is_recently_enforced())
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str]:
+        """Expose rule name for use in automation templates."""
+        return {"rule_name": self._engine.config.name}

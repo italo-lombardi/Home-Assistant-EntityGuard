@@ -2026,7 +2026,9 @@ async def test_cooldown_remaining_uses_pre_service_now(hass: HomeAssistant):
     # A cooldown broadcast timer must have been scheduled (delay > 0).
     # If remaining used post-call now it would be negative and no timer would be scheduled.
     # captured_delays also includes the recently_enforced timer, so filter it out.
-    cooldown_delays = [d for d in captured_delays if d != RECENTLY_ENFORCED_WINDOW_SECONDS]
+    cooldown_delays = [
+        d for d in captured_delays if d != RECENTLY_ENFORCED_WINDOW_SECONDS
+    ]
     assert len(cooldown_delays) == 1, "cooldown broadcast timer was not scheduled"
     assert cooldown_delays[0] > 0, f"expected positive delay, got {cooldown_delays[0]}"
 

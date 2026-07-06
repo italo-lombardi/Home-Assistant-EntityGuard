@@ -981,7 +981,9 @@ class RuleEngine:
         if self._recently_enforced:
             # Already on — pulse off so automations re-trigger on the rising edge.
             self._recently_enforced = False
-            async_dispatcher_send(self._hass, signal_rule_update(self._config.unique_id))
+            async_dispatcher_send(
+                self._hass, signal_rule_update(self._config.unique_id)
+            )
 
         self._recently_enforced = True
 
@@ -998,7 +1000,9 @@ class RuleEngine:
         self._recently_enforced_unsub = async_call_later(
             self._hass,
             RECENTLY_ENFORCED_WINDOW_SECONDS,
-            HassJob(_clear, "entity_guard_recently_enforced_reset", cancel_on_shutdown=True),
+            HassJob(
+                _clear, "entity_guard_recently_enforced_reset", cancel_on_shutdown=True
+            ),
         )
 
     def _schedule_suppression_timer(self) -> None:

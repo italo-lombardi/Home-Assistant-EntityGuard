@@ -361,7 +361,9 @@ automation:
   action:
     - service: notify.mobile_app_my_phone
       data:
-        message: "Rule just enforced"
+        message: >
+          {{ state_attr('binary_sensor.my_rule_recently_enforced', 'rule_name') }}
+          just enforced
 ```
 
 ---
