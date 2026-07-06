@@ -822,9 +822,8 @@ class RuleEngine:
             self._broadcast_status()
             prev_status = self._current_status
             self._apply_idle_status()
-            # If status didn't change and recently_enforced was True, _apply_idle_status
-            # already fired a second broadcast via _set_status — this covers the case
-            # where skip-if-same would have suppressed the signal for the binary sensor.
+            # Status didn't change → _set_status skip-if-same guard suppressed the
+            # broadcast → fire explicitly so recently_enforced binary sensor refreshes.
             if had_recently_enforced and self._current_status == prev_status:
                 self._broadcast_status()
         except Exception:  # noqa: BLE001  # pragma: no cover
