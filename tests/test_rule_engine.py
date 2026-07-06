@@ -18,7 +18,6 @@ from custom_components.entity_guard.const import (
     OPERATOR_GT,
     OPERATOR_LE,
     OPERATOR_LT,
-    RECENTLY_ENFORCED_WINDOW_SECONDS,
     STATUS_ARMED,
     STATUS_COOLDOWN,
     STATUS_DISABLED,
