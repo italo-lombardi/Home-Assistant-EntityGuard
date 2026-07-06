@@ -802,6 +802,7 @@ class RuleEngine:
                 pass
         self._cooldown_broadcast_unsubs.clear()
         self._cancel_recently_enforced_timer()
+        had_recently_enforced = self._recently_enforced
         self._recently_enforced = False
         # Re-arm suppression timer so EG-4 expiry callback survives this clear.
         self._schedule_suppression_timer()
@@ -817,8 +818,12 @@ class RuleEngine:
             self._current_status = STATUS_STARTING  # break sticky before re-derive
         try:
             # Always broadcast so counter sensors refresh, then re-derive status.
-            self._broadcast_status()
+            prev_status = self._current_status
             self._apply_idle_status()
+            # If status didn't change and recently_enforced was True, emit the
+            # targeted broadcast now (skip-if-same guard would have suppressed it).
+            if had_recently_enforced and self._current_status == prev_status:
+                self._broadcast_status()
         except Exception:  # noqa: BLE001  # pragma: no cover
             # Ensure sentinel STATUS_STARTING is never left stranded if derivation fails.
             if self._current_status == STATUS_STARTING:

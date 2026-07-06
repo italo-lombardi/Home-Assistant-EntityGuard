@@ -165,4 +165,4 @@ class EntityGuardRecentlyEnforcedSensor(EntityGuardBinarySensor):
     @property
     def extra_state_attributes(self) -> dict[str, str]:
         """Expose rule name for use in automation templates."""
-        return {"rule_name": self._engine.config.name}
+        return {"rule_name": self._entry.title}

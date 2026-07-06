@@ -1986,7 +1986,7 @@ async def test_cooldown_remaining_uses_pre_service_now(hass: HomeAssistant):
     engine = _make_engine(hass, config)
     engine._startup_complete = True
 
-    captured_delays: list[float] = []
+    captured_calls: list[tuple[float, object]] = []
 
     async def _slow_service(call):
         pass
@@ -1995,7 +1995,7 @@ async def test_cooldown_remaining_uses_pre_service_now(hass: HomeAssistant):
     hass.states.async_set("light.bedroom", "on")
 
     def _capture_call_later(hass_arg, delay, cb):
-        captured_delays.append(delay)
+        captured_calls.append((delay, cb))
         return MagicMock()
 
     with patch(
@@ -2025,12 +2025,16 @@ async def test_cooldown_remaining_uses_pre_service_now(hass: HomeAssistant):
 
     # A cooldown broadcast timer must have been scheduled (delay > 0).
     # If remaining used post-call now it would be negative and no timer would be scheduled.
-    # captured_delays also includes the recently_enforced timer, so filter it out.
-    cooldown_delays = [
-        d for d in captured_delays if d != RECENTLY_ENFORCED_WINDOW_SECONDS
+    # Filter to cooldown broadcast timer by job name — robust against delay value coincidence.
+    cooldown_calls = [
+        (delay, cb)
+        for delay, cb in captured_calls
+        if not (hasattr(cb, "name") and "recently_enforced" in cb.name)
     ]
-    assert len(cooldown_delays) == 1, "cooldown broadcast timer was not scheduled"
-    assert cooldown_delays[0] > 0, f"expected positive delay, got {cooldown_delays[0]}"
+    assert len(cooldown_calls) == 1, "cooldown broadcast timer was not scheduled"
+    assert cooldown_calls[0][0] > 0, (
+        f"expected positive delay, got {cooldown_calls[0][0]}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -2992,3 +2996,22 @@ async def test_arm_recently_enforced_timer_noop_when_unloaded(hass: HomeAssistan
 
     # Unloaded: _clear returned early, flag unchanged
     assert engine._recently_enforced is True
+
+
+async def test_clear_history_broadcasts_when_recently_enforced_and_status_unchanged(
+    hass: HomeAssistant,
+):
+    """Broadcast fires when recently_enforced=True and status stays same after clear_history."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._current_status = STATUS_ARMED
+    engine._recently_enforced = True
+
+    broadcasts = []
+    original = engine._broadcast_status
+    engine._broadcast_status = lambda: broadcasts.append(1) or original()
+
+    await engine.async_clear_history()
+
+    assert engine._recently_enforced is False
+    assert len(broadcasts) >= 1

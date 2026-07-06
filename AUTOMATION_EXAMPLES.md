@@ -86,26 +86,23 @@ automation:
 
 ```yaml
 automation:
-  alias: EG — disable kids TV rule at night
-  trigger:
-    - platform: time
-      at: "22:00:00"
-  action:
-    - service: switch.turn_off
-      target:
-        entity_id: switch.kids_tv_off_rule_enabled
+  - alias: EG — disable kids TV rule at night
+    trigger:
+      - platform: time
+        at: "22:00:00"
+    action:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.kids_tv_off_rule_enabled
 
----
-
-automation:
-  alias: EG — re-enable kids TV rule in the morning
-  trigger:
-    - platform: time
-      at: "07:00:00"
-  action:
-    - service: switch.turn_on
-      target:
-        entity_id: switch.kids_tv_off_rule_enabled
+  - alias: EG — re-enable kids TV rule in the morning
+    trigger:
+      - platform: time
+        at: "07:00:00"
+    action:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.kids_tv_off_rule_enabled
 ```
 
 ### Suppress a rule when someone arrives home

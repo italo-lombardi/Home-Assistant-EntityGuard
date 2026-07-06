@@ -247,11 +247,10 @@ def test_recently_enforced_sensor_extra_state_attributes():
     )
 
     entry = MockConfigEntry(
-        domain=DOMAIN, data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE}, title="R"
+        domain=DOMAIN, data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE}, title="Balcony Rule"
     )
     engine = MagicMock()
     engine.config.unique_id = "uid"
-    engine.config.name = "Balcony Rule"
     engine.is_recently_enforced.return_value = True
     sensor = EntityGuardRecentlyEnforcedSensor(entry, engine)
     assert sensor.extra_state_attributes == {"rule_name": "Balcony Rule"}
