@@ -314,7 +314,7 @@ async def test_recently_enforced_sensor_target_entity_names_with_hass(
 async def test_recently_enforced_subscribes_to_target_entity_changes(
     hass: HomeAssistant,
 ):
-    """Re-writes state when a target entity state changes (for friendly name refresh)."""
+    """Re-writes state when a target entity registry entry changes (for friendly name refresh)."""
     from custom_components.entity_guard.binary_sensor import (
         EntityGuardRecentlyEnforcedSensor,
     )
@@ -326,8 +326,11 @@ async def test_recently_enforced_subscribes_to_target_entity_changes(
         ENTRY_TYPE_RULE,
         MODE_STATE,
     )
+    from homeassistant.helpers.entity_registry import async_get as async_get_er
 
-    hass.states.async_set("light.balcony", "off", {"friendly_name": "Balcony Light"})
+    er = async_get_er(hass)
+    er.async_get_or_create("light", "test", "balcony", suggested_object_id="balcony")
+
     entry = MockConfigEntry(
         domain=DOMAIN, data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE}, title="R"
     )
@@ -346,8 +349,8 @@ async def test_recently_enforced_subscribes_to_target_entity_changes(
 
     await sensor.async_added_to_hass()
 
-    # Simulate target entity state change — sensor should re-write
-    hass.states.async_set("light.balcony", "on", {"friendly_name": "Balcony Light"})
+    # Simulate entity registry update (e.g. rename) — sensor should re-write
+    er.async_update_entity("light.balcony", name="Balcony Light")
     await hass.async_block_till_done()
     sensor.async_write_ha_state.assert_called()
 

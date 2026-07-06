@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.event import async_track_entity_registry_updated_event
 
 from .const import (
     CONF_ENTRY_TYPE,
@@ -165,7 +165,7 @@ class EntityGuardRecentlyEnforcedSensor(EntityGuardBinarySensor):
         target_entities = list(self._engine.config.target_entities or [])
         if target_entities:
             self.async_on_remove(
-                async_track_state_change_event(
+                async_track_entity_registry_updated_event(
                     self.hass, target_entities, self._handle_update
                 )
             )
