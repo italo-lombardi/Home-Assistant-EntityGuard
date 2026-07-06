@@ -11,7 +11,6 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
 
 from .const import (
     CONF_ENTRY_TYPE,
@@ -57,21 +56,6 @@ async def async_setup_entry(
             EntityGuardRecentlyEnforcedSensor(entry, engine),
         ]
     )
-
-    # Migration: clear disabled_by=integration on recently_enforced if it was
-    # registered when _attr_entity_registry_enabled_default was False. Only
-    # clears the integration-set flag; user-disabled entries are left alone.
-    er = async_get_entity_registry(hass)
-    uid = f"{entry.entry_id}_recently_enforced"
-    entity_entry = er.async_get_entity_id("binary_sensor", DOMAIN, uid)
-    if entity_entry:
-        reg_entry = er.async_get(entity_entry)
-        if (
-            reg_entry
-            and reg_entry.disabled_by
-            and reg_entry.disabled_by.value == "integration"
-        ):
-            er.async_update_entity(entity_entry, disabled_by=None)
 
 
 class EntityGuardBinarySensor(BinarySensorEntity):
