@@ -313,6 +313,12 @@
       },
       "in_cooldown": {
         "name": "In Abklingzeit"
+      },
+      "pending": {
+        "name": "Ausstehend"
+      },
+      "recently_enforced": {
+        "name": "Kürzlich durchgesetzt"
       }
     },
     "sensor": {
@@ -336,6 +342,9 @@
       },
       "suppressed_until": {
         "name": "Unterdrückt bis"
+      },
+      "rule_id": {
+        "name": "Regel-ID"
       }
     },
     "switch": {

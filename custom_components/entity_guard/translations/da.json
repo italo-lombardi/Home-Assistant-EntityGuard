@@ -314,6 +314,12 @@
       },
       "in_cooldown": {
         "name": "I nedkøling"
+      },
+      "pending": {
+        "name": "Afventer"
+      },
+      "recently_enforced": {
+        "name": "Nyligt håndhævet"
       }
     },
     "sensor": {
@@ -337,6 +343,9 @@
       },
       "suppressed_until": {
         "name": "Undertrykt indtil"
+      },
+      "rule_id": {
+        "name": "Regel-ID"
       }
     },
     "switch": {
