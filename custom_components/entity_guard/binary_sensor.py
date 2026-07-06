@@ -167,9 +167,20 @@ class EntityGuardRecentlyEnforcedSensor(EntityGuardBinarySensor):
     def extra_state_attributes(self) -> dict[str, object]:
         """Expose rule context for use in automation templates."""
         cfg = self._engine.config
+        entities = list(cfg.target_entities or [])
+        names = []
+        if self.hass:
+            for eid in entities:
+                state = self.hass.states.get(eid)
+                names.append(
+                    state.attributes.get("friendly_name", eid) if state else eid
+                )
+        else:
+            names = list(entities)
         return {
             "rule_name": self._entry.title,
-            "target_entities": list(cfg.target_entities or []),
+            "target_entities": entities,
+            "target_entity_names": names,
             "target": cfg.target_state if cfg.mode == MODE_STATE else cfg.target_value,
             "delay_seconds": cfg.delay_seconds,
         }

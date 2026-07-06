@@ -259,8 +259,44 @@ def test_recently_enforced_sensor_extra_state_attributes():
     engine.config.delay_seconds = 10
     engine.is_recently_enforced.return_value = True
     sensor = EntityGuardRecentlyEnforcedSensor(entry, engine)
+    # hass=None → target_entity_names falls back to entity IDs
+    sensor.hass = None
     attrs = sensor.extra_state_attributes
     assert attrs["rule_name"] == "Balcony Rule"
     assert attrs["target_entities"] == ["light.balcony"]
+    assert attrs["target_entity_names"] == ["light.balcony"]
     assert attrs["target"] == "off"
     assert attrs["delay_seconds"] == 10
+
+
+async def test_recently_enforced_sensor_target_entity_names_with_hass(
+    hass: HomeAssistant,
+):
+    from custom_components.entity_guard.binary_sensor import (
+        EntityGuardRecentlyEnforcedSensor,
+    )
+    from unittest.mock import MagicMock
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from custom_components.entity_guard.const import (
+        DOMAIN,
+        CONF_ENTRY_TYPE,
+        ENTRY_TYPE_RULE,
+        MODE_STATE,
+    )
+
+    hass.states.async_set("light.balcony", "on", {"friendly_name": "Balcony Light"})
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE}, title="R"
+    )
+    engine = MagicMock()
+    engine.config.unique_id = "uid"
+    engine.config.mode = MODE_STATE
+    engine.config.target_entities = ["light.balcony", "light.missing"]
+    engine.config.target_state = "off"
+    engine.config.target_value = None
+    engine.config.delay_seconds = 0
+    engine.is_recently_enforced.return_value = True
+    sensor = EntityGuardRecentlyEnforcedSensor(entry, engine)
+    sensor.hass = hass
+    attrs = sensor.extra_state_attributes
+    assert attrs["target_entity_names"] == ["Balcony Light", "light.missing"]
