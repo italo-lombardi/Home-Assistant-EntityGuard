@@ -286,7 +286,7 @@ async def test_recently_enforced_sensor_target_entity_names_with_hass(
 
     # Entity with friendly_name in state attributes
     hass.states.async_set("light.balcony", "on", {"friendly_name": "Balcony Light"})
-    # Entity with no friendly_name — state.name generated from entity_id
+    # Entity with no friendly_name — falls back to entity_id
     hass.states.async_set("light.kitchen", "off", {})
 
     entry = MockConfigEntry(
@@ -303,8 +303,7 @@ async def test_recently_enforced_sensor_target_entity_names_with_hass(
     sensor = EntityGuardRecentlyEnforcedSensor(entry, engine)
     sensor.hass = hass
     attrs = sensor.extra_state_attributes
-    # friendly_name set → "Balcony Light"; no friendly_name → state.name generates from id
     assert attrs["target_entity_names"][0] == "Balcony Light"
-    assert attrs["target_entity_names"][1] == "kitchen"  # HA generates from entity_id
-    # missing entity → falls back to entity_id
+    assert attrs["target_entity_names"][1] == "light.kitchen"  # no friendly_name → entity_id
+    # missing entity → entity_id
     assert attrs["target_entity_names"][2] == "light.missing"

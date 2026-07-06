@@ -172,7 +172,9 @@ class EntityGuardRecentlyEnforcedSensor(EntityGuardBinarySensor):
         if self.hass:
             for eid in entities:
                 state = self.hass.states.get(eid)
-                names.append(state.name if state else eid)
+                names.append(
+                    state.attributes.get("friendly_name", eid) if state else eid
+                )
         else:
             names = list(entities)
         return {
