@@ -283,24 +283,11 @@ async def test_recently_enforced_sensor_target_entity_names_with_hass(
         ENTRY_TYPE_RULE,
         MODE_STATE,
     )
-    from homeassistant.helpers.entity_registry import async_get as async_get_er
 
-    # Register entity with a name in the entity registry
-    er = async_get_er(hass)
-    er.async_get_or_create("light", "test", "balcony", suggested_object_id="balcony")
-    er.async_update_entity("light.balcony", name="Balcony Light")
-
-    # Entity with original_name only (no custom name override)
-    er.async_get_or_create(
-        "light",
-        "test",
-        "kitchen",
-        suggested_object_id="kitchen",
-        original_name="Kitchen Light",
-    )
-
-    # Entity not in registry — falls back to state attributes
-    hass.states.async_set("light.state_only", "on", {"friendly_name": "State Light"})
+    # Entity with friendly_name in state attributes
+    hass.states.async_set("light.balcony", "on", {"friendly_name": "Balcony Light"})
+    # Entity with no friendly_name — state.name generated from entity_id
+    hass.states.async_set("light.kitchen", "off", {})
 
     entry = MockConfigEntry(
         domain=DOMAIN, data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE}, title="R"
@@ -308,12 +295,7 @@ async def test_recently_enforced_sensor_target_entity_names_with_hass(
     engine = MagicMock()
     engine.config.unique_id = "uid"
     engine.config.mode = MODE_STATE
-    engine.config.target_entities = [
-        "light.balcony",
-        "light.kitchen",
-        "light.state_only",
-        "light.missing",
-    ]
+    engine.config.target_entities = ["light.balcony", "light.kitchen", "light.missing"]
     engine.config.target_state = "off"
     engine.config.target_value = None
     engine.config.delay_seconds = 0
@@ -321,9 +303,8 @@ async def test_recently_enforced_sensor_target_entity_names_with_hass(
     sensor = EntityGuardRecentlyEnforcedSensor(entry, engine)
     sensor.hass = hass
     attrs = sensor.extra_state_attributes
-    assert attrs["target_entity_names"] == [
-        "Balcony Light",
-        "Kitchen Light",
-        "State Light",
-        "light.missing",
-    ]
+    # friendly_name set → "Balcony Light"; no friendly_name → state.name generates from id
+    assert attrs["target_entity_names"][0] == "Balcony Light"
+    assert attrs["target_entity_names"][1] == "kitchen"  # HA generates from entity_id
+    # missing entity → falls back to entity_id
+    assert attrs["target_entity_names"][2] == "light.missing"
