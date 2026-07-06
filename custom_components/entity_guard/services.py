@@ -54,14 +54,14 @@ LIST_RULES_SCHEMA = vol.Schema({})
 PANIC_STOP_SCHEMA = vol.Schema({})
 
 
-def _iter_engines(hass: HomeAssistant) -> list[Any]:
-    """Return all rule engines."""
-    return list(_engines_map(hass).values())
-
-
 def _engines_map(hass: HomeAssistant) -> dict[str, Any]:
     """Return the entry_id → engine mapping."""
     return hass.data.get(DOMAIN, {}).get("engines", {})
+
+
+def _iter_engines(hass: HomeAssistant) -> list[Any]:
+    """Return all rule engines."""
+    return list(_engines_map(hass).values())
 
 
 def _resolve_engine(hass: HomeAssistant, rule_id: str) -> Any:
