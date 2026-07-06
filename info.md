@@ -2,11 +2,11 @@
 
 Declarative state-enforcement rules. Bind one or more entities to a rule that defines a trigger condition and a desired target state — Entity Guard enforces it automatically, with cooldowns, suppression, rate limiting, and a custom dashboard card.
 
-## What's new in 0.2.5
+## What's new in 0.2.6
 
-- **`binary_sensor.<rule>_recently_enforced`** — turns `on` for 30 s after any enforcement and pulses `off → on` on repeated fires, so automations re-trigger reliably. Enabled by default. Exposes `rule_name` attribute for automation templates.
-- **`sensor.<rule>_rule_id`** — stable config-entry ID for rename-safe automation filtering. Enable in entity registry.
-- **Automation examples** — see [AUTOMATION_EXAMPLES.md](https://github.com/italo-lombardi/Home-Assistant-EntityGuard/blob/main/AUTOMATION_EXAMPLES.md) for a full copy-paste library.
+- **Service fast-path fix** — card-triggered suppress/unsuppress now resolves rules by config-entry ID correctly (previously missed the `entry_id` key and threw `ServiceValidationError`).
+- **README** — added Step 2c (Optional Features) section; corrected card screenshot labels.
+- **Automation examples** — added "enforce once" pattern (disable rule after first fire, re-arm at sunrise or on occupancy).
 
 ## Features
 

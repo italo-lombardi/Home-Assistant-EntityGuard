@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.2.6] — 2026-07-06
+
+### Fixed
+
+- **`_resolve_engine` fast path**: service calls from the Lovelace card pass the HA config-entry ID (`entry_id`) directly. The previous implementation iterated all engines scanning `unique_id` / `name`, missing the `entry_id` key entirely. Added `_engines_map` helper and an O(1) `entry_id` lookup before the linear scan — card-triggered suppress/unsuppress now resolves correctly without falling through to a `ServiceValidationError`.
+
+### Changed
+
+- **README**: added Step 2c (Optional Features) section documenting debounce, loop-protection, and flag-condition toggles in the config flow. Corrected card screenshot labels (idle / armed).
+- **AUTOMATION_EXAMPLES.md**: added "enforce once — disable rule after first enforcement" pattern with re-arm variants (sunrise, occupancy).
+
+### Tests
+
+- Full suite: 502 passed, 1 skipped. Line coverage 100%, branch coverage 100%.
+
+---
+
 ## [0.2.5] — 2026-07-06
 
 ### Added

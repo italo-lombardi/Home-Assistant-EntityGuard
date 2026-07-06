@@ -105,6 +105,57 @@ automation:
           entity_id: switch.kids_tv_off_rule_enabled
 ```
 
+### Enforce once — disable rule after first enforcement
+
+Useful when you want a rule to fire exactly once (e.g. turn off the balcony light after occupancy clears for the first time) and stay dormant until you re-arm it manually.
+
+Trigger on the `entity_guard_enforced` event and turn off the rule's enabled switch. The rule stays disabled until you flip the switch back on — either manually or via another automation.
+
+```yaml
+automation:
+  alias: EG — balcony light rule fires once
+  trigger:
+    - platform: event
+      event_type: entity_guard_enforced
+      event_data:
+        rule_id: "01KSXDM1GN9WGQCSTFAX0Y1HNS"   # replace with your rule_id
+  action:
+    - service: switch.turn_off
+      target:
+        entity_id: switch.balcony_light_off_rule_enabled
+```
+
+To re-arm automatically the next morning (so it fires once per day):
+
+```yaml
+automation:
+  alias: EG — re-arm balcony rule at sunrise
+  trigger:
+    - platform: sun
+      event: sunrise
+  action:
+    - service: switch.turn_on
+      target:
+        entity_id: switch.balcony_light_off_rule_enabled
+```
+
+To re-arm when occupancy returns (so it fires once per occupancy session):
+
+```yaml
+automation:
+  alias: EG — re-arm balcony rule when occupied
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.balcony_occupancy
+      to: "on"
+  action:
+    - service: switch.turn_on
+      target:
+        entity_id: switch.balcony_light_off_rule_enabled
+```
+
+> **Tip:** The rule switch entity id follows the pattern `switch.<rule_name_slug>_enabled`. If unsure, find it in **Settings → Devices & Services → Entity Guard → your rule**.
+
 ### Suppress a rule when someone arrives home
 
 ```yaml

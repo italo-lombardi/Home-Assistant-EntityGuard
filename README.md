@@ -94,6 +94,18 @@ Adding the integration takes you straight into rule creation. The **Entity Guard
 
 ![Step 2b: Attribute Mode](assets/03b_attribute_mode.png)
 
+### Step 2c: Optional Features
+
+Tick any features to configure. Each ticked option adds a follow-up screen. Skip all to go straight to review.
+
+| Option | Description |
+|--------|-------------|
+| Add extra conditions | Require flag conditions (e.g. only enforce when nobody is home, only after sunset). Leave unticked to enforce every time the trigger fires. |
+| Customize loop protection | Auto-suppresses the rule if it fires more than 10 times/min by default. Tick to set your own limit, or to disable loop protection entirely. |
+| Enable debounce | Ignore quick back-and-forth changes. The rule only acts if the trigger stays the same for the debounce window. |
+
+![Step 2c: Optional Features](assets/03c_optional_features.png)
+
 ### Step 3: Flags (optional)
 
 Define a list of `(flag entity, match state)` conditions. The rule only fires when **all** flags match. Unavailable flag entities count as a mismatch (fail-safe).
@@ -297,13 +309,13 @@ The card shows:
 - Optional **Conditions** section (`show_conditions: true`) — lists each flag with current vs required state; useful when status is `conditional`
 - Optional action buttons (Test Enforce, Reset Cooldowns when active, Clear History, Suppress 1h)
 
-**Normal state — rule armed, all entities compliant**
+**Normal state — rule idle**
 
-![Card: armed state](assets/10_card_idle.png)
+![Card: idle state](assets/10_card_idle.png)
 
-**Active enforcement — entity non-compliant**
+**Armed state — rule watching**
 
-![Card: active enforcement](assets/11_card_active.png)
+![Card: armed state](assets/11_card_armed.png)
 
 **Suppressed state**
 

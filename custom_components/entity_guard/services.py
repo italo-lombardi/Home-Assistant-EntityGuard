@@ -59,9 +59,18 @@ def _iter_engines(hass: HomeAssistant) -> list[Any]:
     return list(hass.data.get(DOMAIN, {}).get("engines", {}).values())
 
 
+def _engines_map(hass: HomeAssistant) -> dict[str, Any]:
+    """Return the entry_id → engine mapping."""
+    return hass.data.get(DOMAIN, {}).get("engines", {})
+
+
 def _resolve_engine(hass: HomeAssistant, rule_id: str) -> Any:
-    """Resolve an engine by unique_id or rule name."""
-    for engine in _iter_engines(hass):
+    """Resolve an engine by entry_id, unique_id, or rule name."""
+    engines = _engines_map(hass)
+    # Fast path: card passes HA config-entry ID (entry_id) directly.
+    if rule_id in engines:
+        return engines[rule_id]
+    for engine in engines.values():
         config = engine.config
         if config.unique_id == rule_id or config.name == rule_id:
             return engine
