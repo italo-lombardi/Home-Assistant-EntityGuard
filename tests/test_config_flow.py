@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
@@ -35,9 +33,3 @@ async def test_hub_import_single_instance_aborts(
     assert result["type"] == FlowResultType.ABORT
     assert result["reason"] == "single_instance_allowed"
 
-
-@pytest.mark.skip(
-    reason="pending integration: end-to-end rule flow exercises rule_engine"
-)
-async def test_create_state_rule_end_to_end(hass: HomeAssistant) -> None:
-    """End-to-end: create a state-mode rule via the multi-step flow."""

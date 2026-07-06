@@ -76,6 +76,13 @@ def test_resolve_engine_skips_non_matching_entry(hass: HomeAssistant):
     assert _resolve_engine(hass, "target-id") is target
 
 
+def test_resolve_engine_by_entry_id(hass: HomeAssistant):
+    """entry_id key differs from unique_id — fast path must hit it."""
+    eng = _make_engine(unique_id="uid-xyz", name="Some Rule")
+    hass.data.setdefault(DOMAIN, {})["engines"] = {"entry-abc": eng}
+    assert _resolve_engine(hass, "entry-abc") is eng
+
+
 def test_resolve_engine_not_found(hass: HomeAssistant):
     _inject_engines(hass)
     with pytest.raises(ServiceValidationError):
