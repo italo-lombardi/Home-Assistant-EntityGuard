@@ -314,12 +314,6 @@
       },
       "in_cooldown": {
         "name": "I nedkylning"
-      },
-      "pending": {
-        "name": "Pending"
-      },
-      "recently_enforced": {
-        "name": "Recently enforced"
       }
     },
     "sensor": {
@@ -343,9 +337,6 @@
       },
       "suppressed_until": {
         "name": "Undertryckt till"
-      },
-      "rule_id": {
-        "name": "Rule ID"
       }
     },
     "switch": {

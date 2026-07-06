@@ -736,16 +736,20 @@ class RuleEngine:
                 pass
         self._cooldown_broadcast_unsubs.clear()
         self._cancel_recently_enforced_timer()
+        had_recently_enforced = self._recently_enforced
         self._recently_enforced = False
         # Re-arm suppression timer so EG-4 expiry callback survives this reset.
         self._schedule_suppression_timer()
         # Resetting also clears the recovery counter so a fresh window starts.
         self._state.consecutive_success_count = 0
         self._persist()
-        # Unconditional broadcast so recently_enforced sensor refreshes even when
-        # status is already ARMED (skip-if-same guard in _set_status would suppress it).
-        self._broadcast_status()
+        prev_status = self._current_status
         self._apply_idle_status()
+        # If status didn't change (e.g. already ARMED) and recently_enforced was True,
+        # _set_status skip-if-same guard suppressed the broadcast — fire it now so
+        # sensors reflecting recently_enforced refresh.
+        if had_recently_enforced and self._current_status == prev_status:
+            self._broadcast_status()
 
     async def async_suppress(
         self, duration_minutes: float, user_id: str | None = None
