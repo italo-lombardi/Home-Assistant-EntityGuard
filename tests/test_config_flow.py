@@ -32,4 +32,3 @@ async def test_hub_import_single_instance_aborts(
 
     assert result["type"] == FlowResultType.ABORT
     assert result["reason"] == "single_instance_allowed"
-
