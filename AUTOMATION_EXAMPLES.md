@@ -162,6 +162,7 @@ The sensor exposes these attributes — no need for a separate event listener:
 |-----------|---------------|
 | `rule_name` | `"Balcony Light OFF"` |
 | `target_entities` | `["light.balcony_light"]` |
+| `target_entity_names` | `["Balcony Light"]` |
 | `target` | `"off"` (state mode) or `64` (attribute mode) |
 | `delay_seconds` | `0` |
 

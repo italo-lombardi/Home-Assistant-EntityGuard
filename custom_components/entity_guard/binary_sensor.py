@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
 
 from .const import (
     CONF_ENTRY_TYPE,
@@ -170,11 +171,18 @@ class EntityGuardRecentlyEnforcedSensor(EntityGuardBinarySensor):
         entities = list(cfg.target_entities or [])
         names = []
         if self.hass:
+            er = async_get_entity_registry(self.hass)
             for eid in entities:
-                state = self.hass.states.get(eid)
-                names.append(
-                    state.attributes.get("friendly_name", eid) if state else eid
-                )
+                entry = er.async_get(eid)
+                if entry and entry.name:
+                    names.append(entry.name)
+                elif entry and entry.original_name:
+                    names.append(entry.original_name)
+                else:
+                    state = self.hass.states.get(eid)
+                    names.append(
+                        state.attributes.get("friendly_name", eid) if state else eid
+                    )
         else:
             names = list(entities)
         return {
