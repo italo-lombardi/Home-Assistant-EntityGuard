@@ -62,6 +62,7 @@ async def async_setup_entry(
         EntityGuardEnforcementCountTotalSensor(entry, engine),
         EntityGuardCooldownRemainingSensor(entry, engine),
         EntityGuardSuppressedUntilSensor(entry, engine),
+        EntityGuardRuleIdSensor(entry, engine),
     ]
 
     if entry_has_safety_target(entry):
@@ -256,3 +257,19 @@ class EntityGuardSuppressedUntilSensor(EntityGuardSensor):
     def extra_state_attributes(self) -> dict[str, str | None]:
         """Return suppression metadata."""
         return {"reason": self._engine.state.suppression_reason}
+
+
+class EntityGuardRuleIdSensor(EntityGuardSensor):
+    """Diagnostic sensor exposing the rule's config entry ID."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
+
+    def __init__(self, entry: ConfigEntry, engine: RuleEngine) -> None:
+        """Initialize the rule ID sensor."""
+        super().__init__(entry, engine, "rule_id", "rule_id")
+
+    @property
+    def native_value(self) -> str:
+        """Return the config entry ID (stable rule identifier)."""
+        return self._entry.entry_id

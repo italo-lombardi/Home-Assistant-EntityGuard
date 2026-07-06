@@ -2,11 +2,11 @@
 
 Declarative state-enforcement rules. Bind one or more entities to a rule that defines a trigger condition and a desired target state — Entity Guard enforces it automatically, with cooldowns, suppression, rate limiting, and a custom dashboard card.
 
-## What's new in 0.2.4
+## What's new in 0.2.5
 
-- **Disabled rule no longer flashes `starting`** on config reload — status is `disabled` immediately when the `Enabled` switch is off.
-- **Test Enforce respects `Enabled` switch** — pressing Test Enforce while disabled still calls the service (so you can validate the rule) but status stays `disabled`/`master_disabled` throughout, with no intermediate `armed`/`enforcing` broadcasts.
-- **Delayed enforcement respects `Enabled` switch** — if the rule is disabled after a delayed-enforcement timer is queued, the timer fires a no-op instead of enforcing.
+- **`binary_sensor.<rule>_recently_enforced`** — turns `on` for 30 s after any enforcement and pulses `off → on` on repeated fires, so automations re-trigger reliably. Enabled by default.
+- **`sensor.<rule>_rule_id`** — stable config-entry ID for rename-safe automation filtering. Enable in entity registry.
+- **Automation examples** — see [AUTOMATION_EXAMPLES.md](https://github.com/italo-lombardi/Home-Assistant-EntityGuard/blob/main/AUTOMATION_EXAMPLES.md) for a full copy-paste library.
 
 ## Features
 

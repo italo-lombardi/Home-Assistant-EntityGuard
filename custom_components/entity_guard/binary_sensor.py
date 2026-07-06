@@ -53,6 +53,7 @@ async def async_setup_entry(
             EntityGuardActiveSensor(entry, engine),
             EntityGuardInCooldownSensor(entry, engine),
             EntityGuardPendingSensor(entry, engine),
+            EntityGuardRecentlyEnforcedSensor(entry, engine),
         ]
     )
 
@@ -147,3 +148,16 @@ class EntityGuardPendingSensor(EntityGuardBinarySensor):
     def is_on(self) -> bool:
         """Return True if a delayed enforcement is queued."""
         return bool(self._engine.is_pending())
+
+
+class EntityGuardRecentlyEnforcedSensor(EntityGuardBinarySensor):
+    """Binary sensor that stays ON for 30 seconds after any enforcement."""
+
+    def __init__(self, entry: ConfigEntry, engine: RuleEngine) -> None:
+        """Initialize the recently enforced sensor."""
+        super().__init__(entry, engine, "recently_enforced", "recently_enforced")
+
+    @property
+    def is_on(self) -> bool:
+        """Return True if enforcement fired within the last 30 seconds."""
+        return bool(self._engine.is_recently_enforced())

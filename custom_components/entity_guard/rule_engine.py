@@ -10,7 +10,7 @@ from typing import Any, Callable
 
 from homeassistant.components import persistent_notification
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.core import Context, Event, HomeAssistant, callback
+from homeassistant.core import Context, Event, HassJob, HomeAssistant, callback
 from homeassistant.helpers.dispatcher import (
     async_dispatcher_connect,
     async_dispatcher_send,
@@ -40,6 +40,7 @@ from .const import (
     OPERATOR_GT,
     OPERATOR_LE,
     OPERATOR_LT,
+    RECENTLY_ENFORCED_WINDOW_SECONDS,
     STARTUP_GRACE_PERIOD_SECONDS,
     STATUS_ARMED,
     STATUS_CONDITIONAL,
@@ -96,6 +97,8 @@ class RuleEngine:
             f.entity for f in config.flags
         )
         self._cooldown_broadcast_unsubs: dict[str, Callable[[], None]] = {}
+        self._recently_enforced: bool = False
+        self._recently_enforced_unsub: Callable[[], None] | None = None
         # One-shot suppression-expiry timer (EG-4). Cancelled and replaced when
         # suppression is set, cleared, or the rule's lifecycle changes.
         self._suppression_timer_unsub: Callable[[], None] | None = None
@@ -204,6 +207,7 @@ class RuleEngine:
         self._cooldown_broadcast_unsubs.clear()
 
         self._cancel_suppression_timer()
+        self._cancel_recently_enforced_timer()
 
         self._persist()
         await self._store.async_save_now()
@@ -572,6 +576,7 @@ class RuleEngine:
                 },
             )
 
+            self._arm_recently_enforced()
             self._persist()
 
         # Pick the post-enforce status once and emit a single _set_status so the
@@ -730,11 +735,16 @@ class RuleEngine:
             except Exception:  # noqa: BLE001
                 pass
         self._cooldown_broadcast_unsubs.clear()
+        self._cancel_recently_enforced_timer()
+        self._recently_enforced = False
         # Re-arm suppression timer so EG-4 expiry callback survives this reset.
         self._schedule_suppression_timer()
         # Resetting also clears the recovery counter so a fresh window starts.
         self._state.consecutive_success_count = 0
         self._persist()
+        # Unconditional broadcast so recently_enforced sensor refreshes even when
+        # status is already ARMED (skip-if-same guard in _set_status would suppress it).
+        self._broadcast_status()
         self._apply_idle_status()
 
     async def async_suppress(
@@ -787,6 +797,8 @@ class RuleEngine:
             except Exception:  # noqa: BLE001
                 pass
         self._cooldown_broadcast_unsubs.clear()
+        self._cancel_recently_enforced_timer()
+        self._recently_enforced = False
         # Re-arm suppression timer so EG-4 expiry callback survives this clear.
         self._schedule_suppression_timer()
         self._state.enforcement_count_today = 0
@@ -857,6 +869,10 @@ class RuleEngine:
     def is_pending(self) -> bool:
         """Return True if a delayed enforcement is queued."""
         return self._current_status == STATUS_PENDING
+
+    def is_recently_enforced(self) -> bool:
+        """Return True if enforcement fired within the last 30 seconds."""
+        return self._recently_enforced
 
     def cooldown_remaining_seconds(self) -> float:
         """Return the largest remaining cooldown across tracked entities."""
@@ -947,6 +963,43 @@ class RuleEngine:
         except Exception:  # noqa: BLE001
             _LOGGER.debug("Suppression timer cancel failed", exc_info=True)
         self._suppression_timer_unsub = None
+
+    def _cancel_recently_enforced_timer(self) -> None:
+        """Cancel any pending recently-enforced reset timer."""
+        if self._recently_enforced_unsub is None:
+            return
+        try:
+            self._recently_enforced_unsub()
+        except Exception:  # noqa: BLE001
+            pass
+        self._recently_enforced_unsub = None
+
+    def _arm_recently_enforced(self) -> None:
+        """Set recently_enforced flag and schedule a 30s reset."""
+        self._cancel_recently_enforced_timer()
+
+        if self._recently_enforced:
+            # Already on — pulse off so automations re-trigger on the rising edge.
+            self._recently_enforced = False
+            async_dispatcher_send(self._hass, signal_rule_update(self._config.unique_id))
+
+        self._recently_enforced = True
+
+        @callback
+        def _clear(_now: datetime) -> None:
+            self._recently_enforced_unsub = None
+            if self._is_unloaded:
+                return
+            self._recently_enforced = False
+            async_dispatcher_send(
+                self._hass, signal_rule_update(self._config.unique_id)
+            )
+
+        self._recently_enforced_unsub = async_call_later(
+            self._hass,
+            RECENTLY_ENFORCED_WINDOW_SECONDS,
+            HassJob(_clear, "entity_guard_recently_enforced_reset", cancel_on_shutdown=True),
+        )
 
     def _schedule_suppression_timer(self) -> None:
         """Schedule an expiry callback to refresh UI when suppression ends (EG-4).

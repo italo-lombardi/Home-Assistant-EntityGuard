@@ -18,6 +18,7 @@ from custom_components.entity_guard.const import (
     OPERATOR_GT,
     OPERATOR_LE,
     OPERATOR_LT,
+    RECENTLY_ENFORCED_WINDOW_SECONDS,
     STATUS_ARMED,
     STATUS_COOLDOWN,
     STATUS_DISABLED,
@@ -1805,10 +1806,11 @@ async def test_cooldown_broadcast_cancels_prior_timer(hass: HomeAssistant):
         "custom_components.entity_guard.rule_engine.async_call_later",
         side_effect=_capture_later,
     ):
-        # First enforcement — schedules timer
+        # First enforcement — schedules cooldown timer + recently_enforced timer
         await engine._enforce("light.bedroom")
-        assert len(cancel_mocks) == 1
-        first_cancel = cancel_mocks[0]
+        assert len(cancel_mocks) == 2
+        # Grab the cooldown unsub directly — robust against call-order changes.
+        first_cooldown_cancel = engine._cooldown_broadcast_unsubs["light.bedroom"]
 
         # Second enforcement for same entity — prior timer must be cancelled
         engine._state.cooldowns["light.bedroom"] = dt_util.now() + __import__(
@@ -1816,7 +1818,7 @@ async def test_cooldown_broadcast_cancels_prior_timer(hass: HomeAssistant):
         ).timedelta(seconds=30)
         await engine._enforce("light.bedroom")
 
-    first_cancel.assert_called_once()
+    first_cooldown_cancel.assert_called_once()
 
 
 async def test_cooldown_broadcast_prior_timer_exception_swallowed(hass: HomeAssistant):
@@ -2023,8 +2025,10 @@ async def test_cooldown_remaining_uses_pre_service_now(hass: HomeAssistant):
 
     # A cooldown broadcast timer must have been scheduled (delay > 0).
     # If remaining used post-call now it would be negative and no timer would be scheduled.
-    assert len(captured_delays) == 1, "cooldown broadcast timer was not scheduled"
-    assert captured_delays[0] > 0, f"expected positive delay, got {captured_delays[0]}"
+    # captured_delays also includes the recently_enforced timer, so filter it out.
+    cooldown_delays = [d for d in captured_delays if d != RECENTLY_ENFORCED_WINDOW_SECONDS]
+    assert len(cooldown_delays) == 1, "cooldown broadcast timer was not scheduled"
+    assert cooldown_delays[0] > 0, f"expected positive delay, got {cooldown_delays[0]}"
 
 
 # ---------------------------------------------------------------------------

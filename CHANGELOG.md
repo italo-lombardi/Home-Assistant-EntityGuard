@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.5] — 2026-07-06
+
+### Added
+
+- **`binary_sensor.<rule>_recently_enforced`**: turns `on` for 30 seconds after any enforcement — including Test Enforce. On repeated enforcements while already `on`, pulses `off → on` so each enforcement re-triggers automations. Resets immediately when Reset Cooldowns or Clear History is called. Enabled by default.
+- **`sensor.<rule>_rule_id`** (hidden by default, diagnostic): exposes the rule's stable config-entry ID. Use this in automation `event_data` filters instead of `rule_name` so renames never break automations.
+- **`AUTOMATION_EXAMPLES.md`**: copy-paste automation library covering notifications, rule control, enforcement reactions, loop-detection handling, dashboard counters, and a full event-payload reference.
+
+### Fixed
+
+- **`async_reset_cooldowns` left `recently_enforced` stale**: cancelling cooldowns cleared the flag but did not broadcast, so the binary sensor stayed `on` indefinitely when status was already `ARMED` (skip-if-same guard blocked the signal). An unconditional `_broadcast_status()` call now precedes `_apply_idle_status()` in the reset path, mirroring `async_clear_history`.
+
+### Tests
+
+- 4 new tests. Full suite: 487 passed, 1 skipped. Line coverage 100%, branch coverage 100%.
+
+---
+
 ## [0.2.4] — 2026-07-01
 
 ### Fixed

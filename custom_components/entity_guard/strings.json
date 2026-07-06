@@ -313,6 +313,12 @@
       },
       "in_cooldown": {
         "name": "In cooldown"
+      },
+      "pending": {
+        "name": "Pending"
+      },
+      "recently_enforced": {
+        "name": "Recently enforced"
       }
     },
     "sensor": {
@@ -336,6 +342,9 @@
       },
       "suppressed_until": {
         "name": "Suppressed until"
+      },
+      "rule_id": {
+        "name": "Rule ID"
       }
     },
     "switch": {

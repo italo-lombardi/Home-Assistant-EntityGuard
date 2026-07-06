@@ -118,12 +118,13 @@ async def test_setup_entry_adds_binary_sensors(hass: HomeAssistant):
     hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
     added = []
     await async_setup_entry(hass, entry, added.extend)
-    assert len(added) == 4
+    assert len(added) == 5
     types = [type(s).__name__ for s in added]
     assert "EntityGuardArmedSensor" in types
     assert "EntityGuardActiveSensor" in types
     assert "EntityGuardInCooldownSensor" in types
     assert "EntityGuardPendingSensor" in types
+    assert "EntityGuardRecentlyEnforcedSensor" in types
 
 
 # ---------------------------------------------------------------------------
