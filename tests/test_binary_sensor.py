@@ -186,3 +186,72 @@ def test_pending_sensor_is_off():
     engine.is_pending.return_value = False
     sensor = EntityGuardPendingSensor(entry, engine)
     assert sensor.is_on is False
+
+
+def test_recently_enforced_sensor_is_on():
+    from custom_components.entity_guard.binary_sensor import (
+        EntityGuardRecentlyEnforcedSensor,
+    )
+    from unittest.mock import MagicMock
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from custom_components.entity_guard.const import (
+        DOMAIN,
+        CONF_ENTRY_TYPE,
+        ENTRY_TYPE_RULE,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE}, title="R"
+    )
+    engine = MagicMock()
+    engine.config.unique_id = "uid"
+    engine.config.name = "My Rule"
+    engine.is_recently_enforced.return_value = True
+    sensor = EntityGuardRecentlyEnforcedSensor(entry, engine)
+    assert sensor.is_on is True
+
+
+def test_recently_enforced_sensor_is_off():
+    from custom_components.entity_guard.binary_sensor import (
+        EntityGuardRecentlyEnforcedSensor,
+    )
+    from unittest.mock import MagicMock
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from custom_components.entity_guard.const import (
+        DOMAIN,
+        CONF_ENTRY_TYPE,
+        ENTRY_TYPE_RULE,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE}, title="R"
+    )
+    engine = MagicMock()
+    engine.config.unique_id = "uid"
+    engine.config.name = "My Rule"
+    engine.is_recently_enforced.return_value = False
+    sensor = EntityGuardRecentlyEnforcedSensor(entry, engine)
+    assert sensor.is_on is False
+
+
+def test_recently_enforced_sensor_extra_state_attributes():
+    from custom_components.entity_guard.binary_sensor import (
+        EntityGuardRecentlyEnforcedSensor,
+    )
+    from unittest.mock import MagicMock
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from custom_components.entity_guard.const import (
+        DOMAIN,
+        CONF_ENTRY_TYPE,
+        ENTRY_TYPE_RULE,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE}, title="R"
+    )
+    engine = MagicMock()
+    engine.config.unique_id = "uid"
+    engine.config.name = "Balcony Rule"
+    engine.is_recently_enforced.return_value = True
+    sensor = EntityGuardRecentlyEnforcedSensor(entry, engine)
+    assert sensor.extra_state_attributes == {"rule_name": "Balcony Rule"}

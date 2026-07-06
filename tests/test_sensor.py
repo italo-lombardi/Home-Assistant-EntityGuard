@@ -310,3 +310,25 @@ async def test_sensor_async_added_subscribes(hass: HomeAssistant):
     async_dispatcher_send(hass, f"entity_guard_rule_update_{engine.config.unique_id}")
     await hass.async_block_till_done()
     sensor.async_write_ha_state.assert_called()
+
+
+def test_rule_id_sensor_native_value():
+    from custom_components.entity_guard.sensor import EntityGuardRuleIdSensor
+    from unittest.mock import MagicMock
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+    from custom_components.entity_guard.const import (
+        DOMAIN,
+        CONF_ENTRY_TYPE,
+        ENTRY_TYPE_RULE,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE},
+        title="R",
+        entry_id="abc123",
+    )
+    engine = MagicMock()
+    engine.config.unique_id = "uid"
+    sensor = EntityGuardRuleIdSensor(entry, engine)
+    assert sensor.native_value == "abc123"

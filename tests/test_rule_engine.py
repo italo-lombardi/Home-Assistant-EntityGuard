@@ -2845,3 +2845,150 @@ async def test_handle_suppression_expired_still_in_window(hass: HomeAssistant):
     engine._handle_suppression_expired(dt_util.now())
     # Suppression NOT cleared; status reflects suppressed
     assert engine._state.suppressed_until is not None
+
+
+# ---------------------------------------------------------------------------
+# recently_enforced: _arm_recently_enforced pulse + timer callback
+# ---------------------------------------------------------------------------
+
+
+async def test_arm_recently_enforced_pulse_when_already_on(hass: HomeAssistant):
+    """Pulse off→on when recently_enforced is already True."""
+    from unittest.mock import patch
+
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._recently_enforced = True
+
+    flag_values = []
+
+    def _capture_send(_hass, _signal):
+        flag_values.append(engine._recently_enforced)
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_dispatcher_send",
+        side_effect=_capture_send,
+    ):
+        engine._arm_recently_enforced()
+
+    # First dispatch is the pulse-off (flag=False at time of dispatch)
+    assert flag_values[0] is False
+    # After arm, flag is True
+    assert engine._recently_enforced is True
+
+
+async def test_arm_recently_enforced_timer_clears_flag(hass: HomeAssistant):
+    """Timer callback sets recently_enforced=False and dispatches."""
+    from unittest.mock import patch
+
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+
+    captured_cb = []
+
+    def _capture_later(_hass, _delay, job):
+        # Store the callback (HassJob wraps it); return a cancel mock
+        captured_cb.append(job)
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=_capture_later,
+    ):
+        engine._arm_recently_enforced()
+        assert engine._recently_enforced is True
+
+    assert captured_cb
+    # Invoke the HassJob target directly to simulate timer fire
+    captured_cb[0].target(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert engine._recently_enforced is False
+
+
+# ---------------------------------------------------------------------------
+# async_reset_cooldowns: conditional broadcast when status unchanged
+# ---------------------------------------------------------------------------
+
+
+async def test_reset_cooldowns_broadcasts_when_recently_enforced_and_status_unchanged(
+    hass: HomeAssistant,
+):
+    """Broadcast fires when recently_enforced=True and status stays the same."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._current_status = STATUS_ARMED
+    engine._recently_enforced = True
+
+    broadcasts = []
+    original = engine._broadcast_status
+    engine._broadcast_status = lambda: broadcasts.append(1) or original()
+
+    await engine.async_reset_cooldowns()
+
+    assert engine._recently_enforced is False
+    assert len(broadcasts) >= 1
+
+
+async def test_reset_cooldowns_no_extra_broadcast_when_recently_enforced_false(
+    hass: HomeAssistant,
+):
+    """No extra broadcast when recently_enforced is already False."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._current_status = STATUS_ARMED
+    engine._recently_enforced = False
+
+    broadcasts = []
+    original = engine._broadcast_status
+    engine._broadcast_status = lambda: broadcasts.append(1) or original()
+
+    await engine.async_reset_cooldowns()
+
+    # _apply_idle_status → _set_status same status → skip-if-same → no broadcast
+    assert len(broadcasts) == 0
+
+
+async def test_is_recently_enforced_returns_flag(hass: HomeAssistant):
+    """is_recently_enforced() returns the _recently_enforced flag value."""
+    engine = _make_engine(hass)
+    assert engine.is_recently_enforced() is False
+    engine._recently_enforced = True
+    assert engine.is_recently_enforced() is True
+
+
+async def test_cancel_recently_enforced_timer_swallows_exception(hass: HomeAssistant):
+    """_cancel_recently_enforced_timer swallows exceptions from the unsub call."""
+    engine = _make_engine(hass)
+    engine._recently_enforced_unsub = MagicMock(side_effect=RuntimeError("boom"))
+    engine._cancel_recently_enforced_timer()  # must not raise
+    assert engine._recently_enforced_unsub is None
+
+
+async def test_arm_recently_enforced_timer_noop_when_unloaded(hass: HomeAssistant):
+    """Timer _clear callback is a no-op when engine is already unloaded."""
+    from unittest.mock import patch
+
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._recently_enforced = False
+
+    captured_cb = []
+
+    def _capture_later(_hass, _delay, job):
+        captured_cb.append(job)
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=_capture_later,
+    ):
+        engine._arm_recently_enforced()
+
+    engine._is_unloaded = True
+    engine._recently_enforced = True  # set it so we can verify it's NOT cleared
+    captured_cb[0].target(dt_util.now())
+    await hass.async_block_till_done()
+
+    # Unloaded: _clear returned early, flag unchanged
+    assert engine._recently_enforced is True
