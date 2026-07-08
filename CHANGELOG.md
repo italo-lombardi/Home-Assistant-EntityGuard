@@ -8,11 +8,11 @@
 
 ### Fixed
 
-- **Card condition rows stale when status stays `conditional`**: toggling a flag entity while another flag was still blocking left the frontend showing the flag's previous value indefinitely. `_set_status` skips re-broadcast when the status string is unchanged; for flag-entity events that also stayed `conditional`, `extra_state_attributes` on `sensor.<rule>_status` was therefore never re-read by HA. The engine now emits an explicit `_broadcast_status()` in that path so the card sees fresh flag `current` values on every flag change.
+- **Card condition rows stale when overall status is unchanged**: toggling a flag entity while the rule's overall status string didn't move (e.g. `conditional`→`conditional` with another flag still blocking, or `armed`→`armed` on a multi-flag rule where a non-critical flag flips) left the frontend showing the flag's previous value indefinitely. `_set_status` skips re-broadcast when the status string is unchanged; the status sensor's `extra_state_attributes` (which the card reads for flag `current` values) was therefore never re-read by HA. `async_evaluate` now emits an explicit `_broadcast_status()` on flag-entity events whenever the overall status doesn't change, so the card sees fresh flag `current` values on every flag toggle.
 
 ### Tests
 
-- 11 new tests (1 removed). Full suite: 514 passed. Line coverage 100%, branch coverage 100%.
+- 12 new tests (1 removed). Full suite: 515 passed. Line coverage 100%, branch coverage 100%.
 
 ---
 

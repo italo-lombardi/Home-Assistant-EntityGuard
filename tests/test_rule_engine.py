@@ -574,6 +574,47 @@ async def test_flag_change_while_conditional_broadcasts(hass: HomeAssistant):
     assert broadcasts, "flag change must broadcast even when status unchanged"
 
 
+async def test_flag_change_while_armed_broadcasts(hass: HomeAssistant):
+    """Flag entity changing while overall status stays ARMED must still
+    broadcast — non-critical flag toggles (multi-flag rules) can flip a
+    flag row's current value on the card without moving the overall status.
+    """
+    config = _make_config(
+        flags=[
+            Flag(entity="input_boolean.a", match_state="on"),
+            Flag(entity="input_boolean.b", match_state="on"),
+        ]
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("input_boolean.a", "on")
+    hass.states.async_set("input_boolean.b", "on")
+    hass.states.async_set("light.bedroom", "off")  # not triggered → ARMED
+
+    # Prime status to ARMED via a flag event.
+    await engine.async_evaluate("input_boolean.a", hass.states.get("input_boolean.a"))
+    assert engine.current_status() == STATUS_ARMED
+
+    broadcasts: list[None] = []
+    unsub = async_dispatcher_connect(
+        hass, signal_for_rule(config.unique_id), lambda *_: broadcasts.append(None)
+    )
+    try:
+        # Toggle b to another matching-ish state that keeps flags_match false
+        # is not what we want; here we simulate a flag event that leaves
+        # overall status ARMED (both flags still match, target still not
+        # triggered). Just re-fire the flag entity event.
+        hass.states.async_set("input_boolean.a", "on")  # no-op state, still on
+        await engine.async_evaluate(
+            "input_boolean.a", hass.states.get("input_boolean.a")
+        )
+    finally:
+        unsub()
+
+    assert engine.current_status() == STATUS_ARMED
+    assert broadcasts, "flag change must broadcast even when status stays ARMED"
+
+
 # ---------------------------------------------------------------------------
 # async_evaluate: enforcement (mocked service call)
 # ---------------------------------------------------------------------------

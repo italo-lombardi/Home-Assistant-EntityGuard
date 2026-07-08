@@ -311,11 +311,14 @@ class RuleEngine:
         if not self._flags_match():
             prev_status = self._current_status
             self._set_status(STATUS_CONDITIONAL)
-            # Flag entity changed but overall status stayed CONDITIONAL: status
-            # sensor won't rebroadcast, so the frontend card would keep showing
-            # stale flag values. Force a refresh so extra_state_attributes
-            # (flag current values) reach the UI.
-            if entity_id in self._flag_entity_ids and prev_status == STATUS_CONDITIONAL:
+            # Flag entity changed but overall status unchanged: _set_status dedupes
+            # the broadcast, so the status sensor's extra_state_attributes (which
+            # the card reads for flag current values) never reaches the UI. Force
+            # a refresh so the frontend sees fresh flag values.
+            if (
+                entity_id in self._flag_entity_ids
+                and prev_status == self._current_status
+            ):
                 self._broadcast_status()
             self._cancel_pending_for_entities(self._config.target_entities)
             return
@@ -324,7 +327,13 @@ class RuleEngine:
 
         # Flag entity change: flags just became satisfied — sweep all targets.
         if entity_id in flag_entity_ids:
+            prev_status = self._current_status
             self._set_status(self._derive_armed_or_cooldown(now))
+            # Same stale-attr guard as the CONDITIONAL path above: if the overall
+            # status didn't move (e.g. already ARMED, non-critical flag flipped),
+            # the flag row on the card would otherwise show stale values.
+            if prev_status == self._current_status:
+                self._broadcast_status()
             for target in self._config.target_entities:
                 if target == entity_id:
                     continue  # handled below as a target if also a target entity
