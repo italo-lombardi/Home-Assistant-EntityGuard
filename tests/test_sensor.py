@@ -221,6 +221,21 @@ def test_count_total_sensor_attrs_when_since_set():
     assert attrs["counter_days"] == 3
 
 
+def test_count_total_sensor_attrs_naive_since_coerced_utc():
+    """A tz-naive counter_total_since must be coerced (no TypeError)."""
+
+    entry = _make_rule_entry()
+    engine = _make_engine()
+    naive = datetime(2025, 1, 1, 12, 0, 0)  # no tz
+    engine.state.counter_total_since = naive
+    sensor = EntityGuardEnforcementCountTotalSensor(entry, engine)
+    attrs = sensor.extra_state_attributes
+    # Coerced to UTC → isoformat now includes offset
+    assert attrs["counter_since"].endswith("+00:00")
+    assert isinstance(attrs["counter_days"], int)
+    assert attrs["counter_days"] >= 0
+
+
 def test_cooldown_remaining_sensor():
     entry = _make_rule_entry()
     engine = _make_engine()

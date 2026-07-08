@@ -213,6 +213,11 @@ class EntityGuardEnforcementCountTotalSensor(EntityGuardSensor):
         since = self._engine.state.counter_total_since
         if since is None:
             return {"counter_since": None, "counter_days": None}
+        # Defensive: if a persisted value came back naive (e.g. externally
+        # edited blob), coerce to UTC so subtraction with dt_util.now() never
+        # raises. Normal writes always emit tz-aware isoformat strings.
+        if since.tzinfo is None:
+            since = since.replace(tzinfo=dt_util.UTC)
         return {
             "counter_since": since.isoformat(),
             "counter_days": max(0, (dt_util.now() - since).days),

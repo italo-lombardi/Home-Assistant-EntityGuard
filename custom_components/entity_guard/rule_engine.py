@@ -839,9 +839,11 @@ class RuleEngine:
         self._state.consecutive_success_count = 0
         self._state.counter_total_since = dt_util.now()
         self._store.clear_rule_history(self._config.unique_id)
-        # Immediately re-persist so counter_total_since (the reset timestamp) is
-        # written back over the default blob just placed by clear_rule_history.
+        # Re-persist over the default blob just placed by clear_rule_history so
+        # the reset timestamp lands in the persisted dict, then flush the store
+        # to disk so the reset survives an immediate HA crash.
         self._persist()
+        await self._store.async_save_now()
         if self._current_status == STATUS_ERROR:
             self._current_status = STATUS_STARTING  # break sticky before re-derive
         try:
