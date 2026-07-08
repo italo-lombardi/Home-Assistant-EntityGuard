@@ -531,6 +531,50 @@ async def test_evaluate_flags_not_matched(hass: HomeAssistant):
     assert engine.current_status() == STATUS_CONDITIONAL
 
 
+async def test_flag_change_while_conditional_broadcasts(hass: HomeAssistant):
+    """Flag entity changing while overall status stays CONDITIONAL must still
+    broadcast so the frontend can re-read fresh flag values from the status
+    sensor's extra_state_attributes.
+    """
+    config = _make_config(
+        flags=[
+            Flag(entity="binary_sensor.presence", match_state="off"),
+            Flag(entity="input_boolean.wfh", match_state="off"),
+        ]
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    # Presence stays "on" — status will remain CONDITIONAL through the toggle.
+    hass.states.async_set("binary_sensor.presence", "on")
+    hass.states.async_set("input_boolean.wfh", "off")
+    hass.states.async_set("light.bedroom", "on")
+
+    # Prime status to CONDITIONAL.
+    await engine.async_evaluate(
+        "input_boolean.wfh", hass.states.get("input_boolean.wfh")
+    )
+    assert engine.current_status() == STATUS_CONDITIONAL
+
+    broadcasts: list[None] = []
+
+    def _capture(*_args: object) -> None:
+        broadcasts.append(None)
+
+    from homeassistant.helpers.dispatcher import async_dispatcher_connect
+
+    unsub = async_dispatcher_connect(hass, signal_for_rule(config.unique_id), _capture)
+    try:
+        hass.states.async_set("input_boolean.wfh", "on")
+        await engine.async_evaluate(
+            "input_boolean.wfh", hass.states.get("input_boolean.wfh")
+        )
+    finally:
+        unsub()
+
+    assert engine.current_status() == STATUS_CONDITIONAL
+    assert broadcasts, "flag change must broadcast even when status unchanged"
+
+
 # ---------------------------------------------------------------------------
 # async_evaluate: enforcement (mocked service call)
 # ---------------------------------------------------------------------------
@@ -625,6 +669,60 @@ async def test_async_clear_history(hass: HomeAssistant):
     await engine.async_clear_history()
     assert engine.state.enforcement_count_today == 0
     assert engine.state.enforcement_count_total == 0
+
+
+async def test_async_clear_history_resets_counter_since(hass: HomeAssistant):
+    """Clear History must stamp counter_total_since with the reset moment."""
+    engine = _make_engine(hass)
+    old = dt_util.now() - timedelta(days=10)
+    engine.state.counter_total_since = old
+    engine.state.enforcement_count_total = 42
+    await engine.async_clear_history()
+    assert engine.state.counter_total_since is not None
+    assert engine.state.counter_total_since > old
+
+
+async def test_maybe_backfill_counter_since_uses_entry_created_at(
+    hass: HomeAssistant,
+):
+    """On first setup, counter_total_since is backfilled from entry.created_at."""
+    engine = _make_engine(hass)
+    created = dt_util.now() - timedelta(days=5)
+    engine._entry = MagicMock(created_at=created)
+    engine.state.counter_total_since = None
+    engine._maybe_backfill_counter_since()
+    assert engine.state.counter_total_since == created
+
+
+async def test_maybe_backfill_counter_since_falls_back_to_now(hass: HomeAssistant):
+    """When entry has no created_at, backfill uses dt_util.now()."""
+    engine = _make_engine(hass)
+    engine._entry = MagicMock(spec=[])  # no created_at attr
+    engine.state.counter_total_since = None
+    before = dt_util.now()
+    engine._maybe_backfill_counter_since()
+    after = dt_util.now()
+    assert engine.state.counter_total_since is not None
+    assert before <= engine.state.counter_total_since <= after
+
+
+async def test_maybe_backfill_counter_since_no_entry(hass: HomeAssistant):
+    """When entry is None, backfill still populates counter_total_since."""
+    engine = _make_engine(hass)
+    engine._entry = None
+    engine.state.counter_total_since = None
+    engine._maybe_backfill_counter_since()
+    assert engine.state.counter_total_since is not None
+
+
+async def test_maybe_backfill_counter_since_preserves_existing(hass: HomeAssistant):
+    """Backfill must not overwrite an already-set counter_total_since."""
+    engine = _make_engine(hass)
+    engine._entry = MagicMock(created_at=dt_util.now())
+    original = dt_util.now() - timedelta(days=30)
+    engine.state.counter_total_since = original
+    engine._maybe_backfill_counter_since()
+    assert engine.state.counter_total_since == original
 
 
 async def test_async_clear_history_swallows_cancel_error(hass: HomeAssistant):

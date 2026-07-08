@@ -2,6 +2,11 @@
 
 Declarative state-enforcement rules. Bind one or more entities to a rule that defines a trigger condition and a desired target state — Entity Guard enforces it automatically, with cooldowns, suppression, rate limiting, and a custom dashboard card.
 
+## What's new in 0.2.7
+
+- **`counter_since` / `counter_days` attributes** on the total-enforcements sensor. Card templates can now show "156 enforcements · since Mar 12 (118 days)". Backfilled from rule creation on upgrade; reset by **Clear History**.
+- **Card condition rows now refresh live** when flags change while status stays `conditional` (previously the row's `current` value could go stale until status transitioned).
+
 ## What's new in 0.2.5
 
 - **`binary_sensor.<rule>_recently_enforced`** — turns `on` for 30 s after any enforcement and pulses `off → on` on repeated fires, so automations re-trigger reliably. Enabled by default. Exposes `rule_name` attribute for automation templates.

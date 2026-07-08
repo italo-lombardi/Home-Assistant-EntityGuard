@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from typing import Any, Callable
 
 from homeassistant.components import persistent_notification
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import Context, Event, HassJob, HomeAssistant, callback
 from homeassistant.helpers.dispatcher import (
@@ -80,12 +81,14 @@ class RuleEngine:
         config: RuleConfig,
         store: EntityGuardStore,
         master_enabled_getter: Callable[[], bool],
+        entry: ConfigEntry | None = None,
     ) -> None:
         """Initialize the engine."""
         self._hass = hass
         self._config = config
         self._store = store
         self._master_enabled_getter = master_enabled_getter
+        self._entry = entry
         self._state: RuleRuntimeState = RuleRuntimeState()
         self._unsub_callbacks: list[Callable[[], None]] = []
         self._pending_enforcements: dict[str, Callable[[], None]] = {}
@@ -135,6 +138,7 @@ class RuleEngine:
             )
 
         self._maybe_reset_today_counter()
+        self._maybe_backfill_counter_since()
 
         # Restore suppression-expiry timer if a persisted suppression window is still
         # in the future (EG-4). Older expiry is cleared lazily on the next evaluation.
@@ -271,6 +275,19 @@ class RuleEngine:
             self._state.enforcement_count_today = 0
             self._state.today_reset_date = today
 
+    def _maybe_backfill_counter_since(self) -> None:
+        """Populate counter_total_since on first load / upgrade.
+
+        Priority: ConfigEntry.created_at (rule creation) → dt_util.now() (fresh
+        install without created_at). Only runs when the persisted value is None,
+        so a genuine reset via async_clear_history is never overwritten.
+        """
+        if self._state.counter_total_since is not None:
+            return
+        created = getattr(self._entry, "created_at", None) if self._entry else None
+        self._state.counter_total_since = created or dt_util.now()
+        self._persist()
+
     async def async_evaluate(self, entity_id: str, new_state: Any) -> None:
         """Evaluate a state change against the rule and enforce if appropriate."""
         now = dt_util.now()
@@ -292,7 +309,14 @@ class RuleEngine:
             self._clear_suppression_state()
 
         if not self._flags_match():
+            prev_status = self._current_status
             self._set_status(STATUS_CONDITIONAL)
+            # Flag entity changed but overall status stayed CONDITIONAL: status
+            # sensor won't rebroadcast, so the frontend card would keep showing
+            # stale flag values. Force a refresh so extra_state_attributes
+            # (flag current values) reach the UI.
+            if entity_id in self._flag_entity_ids and prev_status == STATUS_CONDITIONAL:
+                self._broadcast_status()
             self._cancel_pending_for_entities(self._config.target_entities)
             return
 
@@ -813,7 +837,11 @@ class RuleEngine:
         self._state.consecutive_errors = 0
         self._state.last_error = None
         self._state.consecutive_success_count = 0
+        self._state.counter_total_since = dt_util.now()
         self._store.clear_rule_history(self._config.unique_id)
+        # Immediately re-persist so counter_total_since (the reset timestamp) is
+        # written back over the default blob just placed by clear_rule_history.
+        self._persist()
         if self._current_status == STATUS_ERROR:
             self._current_status = STATUS_STARTING  # break sticky before re-derive
         try:

@@ -138,6 +138,28 @@ def test_blob_to_runtime_bad_date():
     assert state.today_reset_date is None
 
 
+def test_default_blob_includes_counter_total_since():
+    blob = _default_rule_blob()
+    assert "counter_total_since" in blob
+    assert blob["counter_total_since"] is None
+
+
+def test_counter_total_since_roundtrip():
+    now = datetime(2025, 5, 1, 12, 0, 0, tzinfo=dt_util.UTC)
+    state = RuleRuntimeState(counter_total_since=now)
+    blob = EntityGuardStore.runtime_to_blob(state)
+    assert blob["counter_total_since"] == now.isoformat()
+    restored = EntityGuardStore.blob_to_runtime(blob)
+    assert restored.counter_total_since == now
+
+
+def test_blob_to_runtime_counter_total_since_bad_type():
+    """Non-string persisted value is dropped to None (defensive)."""
+    blob = {**_default_rule_blob(), "counter_total_since": 12345}
+    state = EntityGuardStore.blob_to_runtime(blob)
+    assert state.counter_total_since is None
+
+
 def test_roundtrip():
     now = datetime(2025, 6, 1, 8, 30, 0, tzinfo=dt_util.UTC)
     original = RuleRuntimeState(

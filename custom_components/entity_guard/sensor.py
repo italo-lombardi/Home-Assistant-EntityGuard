@@ -17,6 +17,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_ENTRY_TYPE,
@@ -200,6 +201,22 @@ class EntityGuardEnforcementCountTotalSensor(EntityGuardSensor):
     def native_value(self) -> int:
         """Return total enforcement count."""
         return int(self._engine.state.enforcement_count_total or 0)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, object]:
+        """Return counter start metadata.
+
+        `counter_since` is when the current total-counter window opened —
+        either rule creation (first setup) or the last Clear History reset.
+        `counter_days` is a convenience derived value for card templates.
+        """
+        since = self._engine.state.counter_total_since
+        if since is None:
+            return {"counter_since": None, "counter_days": None}
+        return {
+            "counter_since": since.isoformat(),
+            "counter_days": max(0, (dt_util.now() - since).days),
+        }
 
 
 class EntityGuardCooldownRemainingSensor(EntityGuardSensor):

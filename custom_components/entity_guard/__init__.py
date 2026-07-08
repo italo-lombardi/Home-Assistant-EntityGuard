@@ -121,7 +121,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.info("Setting up rule entry %s (%s)", entry.entry_id, entry.title)
         config = parse_rule_config(entry)
         store = hass.data[DOMAIN]["storage"]
-        engine = RuleEngine(hass, config, store, _master_enabled_getter(hass))
+        engine = RuleEngine(hass, config, store, _master_enabled_getter(hass), entry)
         try:
             await engine.async_setup()
         except Exception:  # noqa: BLE001

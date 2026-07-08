@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import MagicMock
 
 from homeassistant.core import HomeAssistant
@@ -54,6 +54,7 @@ def _make_engine(status=STATUS_ARMED, count_today=2, count_total=10):
     engine.state.last_enforced = None
     engine.state.suppressed_until = None
     engine.state.suppression_reason = None
+    engine.state.counter_total_since = None
     engine.cooldown_remaining_seconds.return_value = 0.0
     return engine
 
@@ -196,6 +197,28 @@ def test_count_total_sensor():
     engine = _make_engine(count_total=42)
     sensor = EntityGuardEnforcementCountTotalSensor(entry, engine)
     assert sensor.native_value == 42
+
+
+def test_count_total_sensor_attrs_when_since_none():
+    entry = _make_rule_entry()
+    engine = _make_engine()
+    engine.state.counter_total_since = None
+    sensor = EntityGuardEnforcementCountTotalSensor(entry, engine)
+    attrs = sensor.extra_state_attributes
+    assert attrs == {"counter_since": None, "counter_days": None}
+
+
+def test_count_total_sensor_attrs_when_since_set():
+    from homeassistant.util import dt as dt_util
+
+    entry = _make_rule_entry()
+    engine = _make_engine()
+    since = dt_util.now() - timedelta(days=3, hours=2)
+    engine.state.counter_total_since = since
+    sensor = EntityGuardEnforcementCountTotalSensor(entry, engine)
+    attrs = sensor.extra_state_attributes
+    assert attrs["counter_since"] == since.isoformat()
+    assert attrs["counter_days"] == 3
 
 
 def test_cooldown_remaining_sensor():

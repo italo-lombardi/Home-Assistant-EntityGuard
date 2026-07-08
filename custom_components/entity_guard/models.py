@@ -106,6 +106,11 @@ class RuleRuntimeState:
     # Successful enforcements since entering STATUS_ERROR. Transient: not persisted —
     # ERROR is sticky until recovery, and after a restart the rule re-enters fresh state.
     consecutive_success_count: int = 0
+    # Timestamp of when the persistent total counter window opened. Backfilled from
+    # ConfigEntry.created_at on first setup after upgrade; reset to now() whenever
+    # async_clear_history zeros enforcement_count_total. None only until the first
+    # backfill runs (e.g. entry without created_at on old HA cores).
+    counter_total_since: datetime | None = None
     reentrance_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
 

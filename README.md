@@ -173,7 +173,7 @@ Review the assembled rule before saving. Confirm to create the config entry. The
 | Entity | Description |
 |--------|-------------|
 | `sensor.<rule>_rule_id` | Stable config-entry ID — use in automations instead of rule name |
-| `sensor.<rule>_enforcement_count_total` | Lifetime enforcement count |
+| `sensor.<rule>_enforcement_count_total` | Lifetime enforcement count. Attributes: `counter_since` (ISO timestamp when the window opened — rule creation or last Clear History), `counter_days` (whole days from `counter_since` to now) |
 | `sensor.<rule>_cooldown_remaining` | Seconds left on current cooldown |
 | `sensor.<rule>_safety_status` | Visible only for cover/lock/climate rules |
 | `sensor.<rule>_suppressed_until` | Timestamp when suppression ends |

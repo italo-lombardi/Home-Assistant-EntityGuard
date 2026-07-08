@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.2.7] — 2026-07-08
+
+### Added
+
+- **`counter_since` / `counter_days` attributes** on `sensor.<rule>_enforcements_total`. `counter_since` is the ISO timestamp of when the total counter window opened — either rule creation (backfilled from `ConfigEntry.created_at`) or the last **Clear History** action. `counter_days` is the whole-day difference from `counter_since` to now, useful for card templates (e.g. "156 enforcements · 118 days").
+
+### Fixed
+
+- **Card condition rows stale when status stays `conditional`**: toggling a flag entity while another flag was still blocking left the frontend showing the flag's previous value indefinitely. `_set_status` skips re-broadcast when the status string is unchanged; for flag-entity events that also stayed `conditional`, `extra_state_attributes` on `sensor.<rule>_status` was therefore never re-read by HA. The engine now emits an explicit `_broadcast_status()` in that path so the card sees fresh flag `current` values on every flag change.
+
+### Tests
+
+- 10 new tests. Full suite: 514 passed. Line coverage 100%, branch coverage 100%.
+
+---
+
 ## [0.2.5] — 2026-07-06
 
 ### Added
