@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.util import dt as dt_util
 
 from custom_components.entity_guard.const import (
@@ -559,8 +560,6 @@ async def test_flag_change_while_conditional_broadcasts(hass: HomeAssistant):
 
     def _capture(*_args: object) -> None:
         broadcasts.append(None)
-
-    from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
     unsub = async_dispatcher_connect(hass, signal_for_rule(config.unique_id), _capture)
     try:
