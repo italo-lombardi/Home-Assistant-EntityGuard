@@ -260,17 +260,6 @@ def test_get_missing_returns_default(hass: HomeAssistant):
     assert blob == _default_rule_blob()
 
 
-def test_clear_rule_history(hass: HomeAssistant):
-    store = EntityGuardStore(hass)
-    with patch.object(hass, "async_create_task"):
-        blob = _default_rule_blob()
-        blob["enforcement_count_total"] = 99
-        store.set_rule_state("r1", blob)
-        store.clear_rule_history("r1")
-        after = store.get_rule_state("r1")
-        assert after["enforcement_count_total"] == 0
-
-
 # ---------------------------------------------------------------------------
 # _validate_blob bad types
 # ---------------------------------------------------------------------------

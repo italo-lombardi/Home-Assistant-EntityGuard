@@ -12,7 +12,7 @@
 
 ### Tests
 
-- 10 new tests. Full suite: 514 passed. Line coverage 100%, branch coverage 100%.
+- 11 new tests (1 removed). Full suite: 514 passed. Line coverage 100%, branch coverage 100%.
 
 ---
 

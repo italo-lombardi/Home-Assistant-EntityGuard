@@ -215,11 +215,6 @@ class EntityGuardStore:
             del self._data["rules"][rule_id]
             self._schedule_save()
 
-    def clear_rule_history(self, rule_id: str) -> None:
-        """Reset counters/cooldowns for a rule but keep the slot."""
-        self._data["rules"][rule_id] = _default_rule_blob()
-        self._schedule_save()
-
     @staticmethod
     def runtime_to_blob(state: RuleRuntimeState) -> dict[str, Any]:
         """Serialize a RuleRuntimeState to a JSON-friendly blob."""

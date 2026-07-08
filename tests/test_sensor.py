@@ -226,14 +226,16 @@ def test_count_total_sensor_attrs_naive_since_coerced_utc():
 
     entry = _make_rule_entry()
     engine = _make_engine()
-    naive = datetime(2025, 1, 1, 12, 0, 0)  # no tz
+    from homeassistant.util import dt as dt_util
+
+    # Build a naive datetime whose UTC-coerced value is exactly 5 days before
+    # dt_util.now(). Guarantees counter_days == 5 regardless of local tz.
+    naive = (dt_util.utcnow() - timedelta(days=5, hours=1)).replace(tzinfo=None)
     engine.state.counter_total_since = naive
     sensor = EntityGuardEnforcementCountTotalSensor(entry, engine)
     attrs = sensor.extra_state_attributes
-    # Coerced to UTC → isoformat now includes offset
     assert attrs["counter_since"].endswith("+00:00")
-    assert isinstance(attrs["counter_days"], int)
-    assert attrs["counter_days"] >= 0
+    assert attrs["counter_days"] == 5
 
 
 def test_cooldown_remaining_sensor():
