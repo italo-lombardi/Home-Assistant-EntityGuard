@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Attributmode",
-        "description": "Når attributten på en målentitet krydser tærsklen, begrænses den tilbage til målværdien efter den valgfrie forsinkelse.",
+        "description": "Vælg hvilken attribut denne regel skal håndhæve.",
         "data": {
           "attribute": "Attribut"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Rediger attributmode",
-        "description": "Choose which attribute this rule should enforce.",
+        "description": "Vælg hvilken attribut denne regel skal håndhæve.",
         "data": {
           "attribute": "Attribut"
         }

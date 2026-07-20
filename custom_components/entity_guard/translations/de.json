@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Attributmodus",
-        "description": "Wenn das Attribut einer Zielentität den Schwellenwert über- oder unterschreitet, wird es nach der optionalen Verzögerung auf den Zielwert zurückgesetzt.",
+        "description": "Wähle aus, welches Attribut diese Regel durchsetzen soll.",
         "data": {
           "attribute": "Attribut"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Attributmodus bearbeiten",
-        "description": "Choose which attribute this rule should enforce.",
+        "description": "Wähle aus, welches Attribut diese Regel durchsetzen soll.",
         "data": {
           "attribute": "Attribut"
         }

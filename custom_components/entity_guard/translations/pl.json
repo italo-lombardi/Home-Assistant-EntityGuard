@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Tryb atrybutu",
-        "description": "Gdy atrybut dowolnej encji docelowej przekroczy próg, zostanie ograniczony do wartości docelowej po opcjonalnym opóźnieniu.",
+        "description": "Wybierz, który atrybut ma egzekwować ta reguła.",
         "data": {
           "attribute": "Atrybut"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Edytuj tryb atrybutu",
-        "description": "Choose which attribute this rule should enforce.",
+        "description": "Wybierz, który atrybut ma egzekwować ta reguła.",
         "data": {
           "attribute": "Atrybut"
         }

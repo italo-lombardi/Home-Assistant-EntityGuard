@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Attribuutmodus",
-        "description": "Wanneer het attribuut van een doelentiteit de drempelwaarde overschrijdt, wordt het na de optionele vertraging teruggezet naar de doelwaarde.",
+        "description": "Kies welk attribuut deze regel moet afdwingen.",
         "data": {
           "attribute": "Attribuut"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Attribuutmodus bewerken",
-        "description": "Choose which attribute this rule should enforce.",
+        "description": "Kies welk attribuut deze regel moet afdwingen.",
         "data": {
           "attribute": "Attribuut"
         }

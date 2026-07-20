@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Attributläge",
-        "description": "När attributet på någon målentitet passerar tröskelvärdet, begränsa det tillbaka till målvärdet efter den valfria fördröjningen.",
+        "description": "Välj vilket attribut den här regeln ska upprätthålla.",
         "data": {
           "attribute": "Attribut"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Redigera attributläge",
-        "description": "Choose which attribute this rule should enforce.",
+        "description": "Välj vilket attribut den här regeln ska upprätthålla.",
         "data": {
           "attribute": "Attribut"
         }

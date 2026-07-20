@@ -55,4 +55,3 @@ jobs:
           pip install pytest pytest-homeassistant-custom-component
       - name: Run tests
         run: pytest tests/ --tb=short -q
-        continue-on-error: true

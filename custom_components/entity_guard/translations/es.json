@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Modo Atributo",
-        "description": "Cuando el atributo de cualquier entidad objetivo cruce el umbral, ajústalo de vuelta al valor objetivo tras el retardo opcional.",
+        "description": "Elige qué atributo debe aplicar esta regla.",
         "data": {
           "attribute": "Atributo"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Editar modo Atributo",
-        "description": "Choose which attribute this rule should enforce.",
+        "description": "Elige qué atributo debe aplicar esta regla.",
         "data": {
           "attribute": "Atributo"
         }

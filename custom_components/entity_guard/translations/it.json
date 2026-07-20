@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Modalità Attributo",
-        "description": "Quando l'attributo di una qualsiasi entità di destinazione supera la soglia, riportalo al valore di destinazione dopo il ritardo opzionale.",
+        "description": "Scegli quale attributo questa regola deve applicare.",
         "data": {
           "attribute": "Attributo"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Modifica modalità Attributo",
-        "description": "Choose which attribute this rule should enforce.",
+        "description": "Scegli quale attributo questa regola deve applicare.",
         "data": {
           "attribute": "Attributo"
         }

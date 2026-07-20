@@ -120,6 +120,8 @@ If the light is on and its current color differs from the target beyond a small 
 
 ![Step 2b: RGB color parameters](assets/03c_attribute_params_rgb.png)
 
+![Step 2b: Color temperature parameters](assets/03c_attribute_params_kelvin.png)
+
 ### Step 2c: Optional Features
 
 Tick any features to configure. Each ticked option adds a follow-up screen. Skip all to go straight to review.

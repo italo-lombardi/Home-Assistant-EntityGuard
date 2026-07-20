@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Attributtmodus",
-        "description": "Når attributtet på en målenhet krysser terskelen, settes det tilbake til målverdien etter en valgfri forsinkelse.",
+        "description": "Velg hvilket attributt denne regelen skal håndheve.",
         "data": {
           "attribute": "Attributt"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Rediger attributtmodus",
-        "description": "Choose which attribute this rule should enforce.",
+        "description": "Velg hvilket attributt denne regelen skal håndheve.",
         "data": {
           "attribute": "Attributt"
         }

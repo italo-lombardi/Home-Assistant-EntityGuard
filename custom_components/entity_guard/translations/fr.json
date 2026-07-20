@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Mode Attribut",
-        "description": "Lorsque l'attribut d'une entité cible franchit le seuil, le ramener à la valeur cible après le délai facultatif.",
+        "description": "Choisissez l'attribut que cette règle doit appliquer.",
         "data": {
           "attribute": "Attribut"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Modifier le mode Attribut",
-        "description": "Choose which attribute this rule should enforce.",
+        "description": "Choisissez l'attribut que cette règle doit appliquer.",
         "data": {
           "attribute": "Attribut"
         }

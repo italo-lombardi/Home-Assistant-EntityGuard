@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Modo de atributo",
-        "description": "Quando o atributo numa entidade alvo ultrapassar o limiar, repõe-no ao valor alvo após o atraso opcional.",
+        "description": "Escolhe qual atributo esta regra deve aplicar.",
         "data": {
           "attribute": "Atributo"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Editar modo de atributo",
-        "description": "Choose which attribute this rule should enforce.",
+        "description": "Escolhe qual atributo esta regra deve aplicar.",
         "data": {
           "attribute": "Atributo"
         }
