@@ -1182,7 +1182,13 @@ def _normalize_rgb_color(value: Any) -> tuple[int, int, int] | None:
 
 
 def _normalize_kelvin(value: Any) -> int | None:
-    """Normalize a Kelvin value to an int."""
+    """Normalize a Kelvin value to an int.
+
+    Intentionally not range-checked: this runs at comparison time on both the
+    configured target (already validated on load by models._to_kelvin_or_none)
+    and the live device state, which we can't control — a device reporting an
+    out-of-range Kelvin should still be compared, not silently ignored.
+    """
     try:
         return int(value)
     except (TypeError, ValueError):
