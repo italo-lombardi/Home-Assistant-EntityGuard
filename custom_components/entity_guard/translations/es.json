@@ -94,8 +94,8 @@
         "description": "Revise su regla a continuación. Haga clic en **Enviar** para crearla, o use la flecha hacia atrás para hacer cambios.\n\n---\n\n{summary}"
       },
       "attribute_params": {
-        "title": "Attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Parámetros del atributo",
+        "description": "Configura los valores de aplicación para el atributo seleccionado.",
         "data": {
           "operator": "Operador",
           "threshold": "Umbral",
@@ -197,8 +197,8 @@
         }
       },
       "edit_attribute_params": {
-        "title": "Edit attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Editar parámetros del atributo",
+        "description": "Configura los valores de aplicación para el atributo seleccionado.",
         "data": {
           "operator": "Operador",
           "threshold": "Umbral",

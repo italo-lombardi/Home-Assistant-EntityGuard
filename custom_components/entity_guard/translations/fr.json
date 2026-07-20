@@ -94,8 +94,8 @@
         "description": "Vérifiez votre règle ci-dessous. Cliquez sur **Soumettre** pour la créer, ou utilisez la flèche de retour pour modifier.\n\n---\n\n{summary}"
       },
       "attribute_params": {
-        "title": "Attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Paramètres de l'attribut",
+        "description": "Configurez les valeurs d'application pour l'attribut sélectionné.",
         "data": {
           "operator": "Opérateur",
           "threshold": "Seuil",
@@ -197,8 +197,8 @@
         }
       },
       "edit_attribute_params": {
-        "title": "Edit attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Modifier les paramètres de l'attribut",
+        "description": "Configurez les valeurs d'application pour l'attribut sélectionné.",
         "data": {
           "operator": "Opérateur",
           "threshold": "Seuil",
@@ -331,7 +331,7 @@
         "name": "Armée"
       },
       "active": {
-        "name": "Active"
+        "name": "Actif"
       },
       "in_cooldown": {
         "name": "En récupération"

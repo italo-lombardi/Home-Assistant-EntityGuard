@@ -94,10 +94,10 @@
         "description": "Gennemse din regel nedenfor. Klik på **Send** for at oprette den, eller brug tilbagepilen for at foretage ændringer.\n\n---\n\n{summary}"
       },
       "attribute_params": {
-        "title": "Attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Attributparametre",
+        "description": "Konfigurer håndhævelsesværdier for det valgte attribut.",
         "data": {
-          "operator": "Operator",
+          "operator": "Operatør",
           "threshold": "Tærskel",
           "target_value": "Målværdi",
           "delay_seconds": "Forsinkelse (sekunder)"
@@ -197,10 +197,10 @@
         }
       },
       "edit_attribute_params": {
-        "title": "Edit attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Rediger attributparametre",
+        "description": "Konfigurer håndhævelsesværdier for det valgte attribut.",
         "data": {
-          "operator": "Operator",
+          "operator": "Operatør",
           "threshold": "Tærskel",
           "target_value": "Målværdi",
           "delay_seconds": "Forsinkelse (sekunder)"

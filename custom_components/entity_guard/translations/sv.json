@@ -94,8 +94,8 @@
         "description": "Granska din regel nedan. Klicka på **Skicka** för att skapa den, eller använd bakåtpilen för att göra ändringar.\n\n---\n\n{summary}"
       },
       "attribute_params": {
-        "title": "Attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Attributparametrar",
+        "description": "Konfigurera tillämpningsvärden för det valda attributet.",
         "data": {
           "operator": "Operator",
           "threshold": "Tröskelvärde",
@@ -197,8 +197,8 @@
         }
       },
       "edit_attribute_params": {
-        "title": "Edit attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Redigera attributparametrar",
+        "description": "Konfigurera tillämpningsvärden för det valda attributet.",
         "data": {
           "operator": "Operator",
           "threshold": "Tröskelvärde",

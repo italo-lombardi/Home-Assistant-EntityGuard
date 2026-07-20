@@ -94,8 +94,8 @@
         "description": "Reveja a sua regra abaixo. Clique em **Submeter** para a criar, ou use a seta para trás para fazer alterações.\n\n---\n\n{summary}"
       },
       "attribute_params": {
-        "title": "Attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Parâmetros do atributo",
+        "description": "Configura os valores de aplicação para o atributo selecionado.",
         "data": {
           "operator": "Operador",
           "threshold": "Limiar",
@@ -197,8 +197,8 @@
         }
       },
       "edit_attribute_params": {
-        "title": "Edit attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Editar parâmetros do atributo",
+        "description": "Configura os valores de aplicação para o atributo selecionado.",
         "data": {
           "operator": "Operador",
           "threshold": "Limiar",

@@ -94,8 +94,8 @@
         "description": "Überprüfe deine Regel unten. Klicke auf **Senden**, um sie zu erstellen, oder verwende den Zurück-Pfeil, um Änderungen vorzunehmen.\n\n---\n\n{summary}"
       },
       "attribute_params": {
-        "title": "Attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Attributparameter",
+        "description": "Konfiguriere die Durchsetzungswerte für das ausgewählte Attribut.",
         "data": {
           "operator": "Operator",
           "threshold": "Schwellenwert",
@@ -197,8 +197,8 @@
         }
       },
       "edit_attribute_params": {
-        "title": "Edit attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Attributparameter bearbeiten",
+        "description": "Konfiguriere die Durchsetzungswerte für das ausgewählte Attribut.",
         "data": {
           "operator": "Operator",
           "threshold": "Schwellenwert",

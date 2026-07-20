@@ -94,8 +94,8 @@
         "description": "Se gjennom regelen din nedenfor. Klikk **Send inn** for å opprette den, eller bruk tilbakepilen for å gjøre endringer.\n\n---\n\n{summary}"
       },
       "attribute_params": {
-        "title": "Attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Attributtparametere",
+        "description": "Konfigurer håndhevingsverdier for det valgte attributtet.",
         "data": {
           "operator": "Operator",
           "threshold": "Terskel",
@@ -197,8 +197,8 @@
         }
       },
       "edit_attribute_params": {
-        "title": "Edit attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Rediger attributtparametere",
+        "description": "Konfigurer håndhevingsverdier for det valgte attributtet.",
         "data": {
           "operator": "Operator",
           "threshold": "Terskel",

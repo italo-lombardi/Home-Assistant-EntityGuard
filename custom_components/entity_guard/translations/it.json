@@ -94,8 +94,8 @@
         "description": "Rivedi la tua regola qui sotto. Clicca **Invia** per crearla, oppure usa la freccia indietro per apportare modifiche.\n\n---\n\n{summary}"
       },
       "attribute_params": {
-        "title": "Attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Parametri dell'attributo",
+        "description": "Configura i valori di applicazione per l'attributo selezionato.",
         "data": {
           "operator": "Operatore",
           "threshold": "Soglia",
@@ -197,8 +197,8 @@
         }
       },
       "edit_attribute_params": {
-        "title": "Edit attribute parameters",
-        "description": "Configure enforcement values for the selected attribute.",
+        "title": "Modifica parametri dell'attributo",
+        "description": "Configura i valori di applicazione per l'attributo selezionato.",
         "data": {
           "operator": "Operatore",
           "threshold": "Soglia",
@@ -334,7 +334,7 @@
         "name": "Attiva"
       },
       "in_cooldown": {
-        "name": "In cooldown"
+        "name": "In pausa"
       },
       "pending": {
         "name": "In attesa"
