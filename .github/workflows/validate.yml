@@ -52,6 +52,6 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements_test.txt 2>/dev/null || true
-          pip install pytest pytest-homeassistant-custom-component
+          pip install pytest pytest-cov pytest-homeassistant-custom-component
       - name: Run tests
-        run: pytest tests/ --tb=short -q
+        run: pytest tests/ --tb=short -q --cov=custom_components/entity_guard --cov-report=term-missing --cov-fail-under=100
