@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Attribuutmodus",
-        "description": "Kies welk attribuut deze regel moet afdwingen.",
+        "description": "Kies welk attribuut deze regel moet afdwingen. Numerieke attributen worden teruggezet naar een doelwaarde; kleurattributen komen overeen met een doelkleur.",
         "data": {
           "attribute": "Attribuut"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Attribuutmodus bewerken",
-        "description": "Kies welk attribuut deze regel moet afdwingen.",
+        "description": "Kies welk attribuut deze regel moet afdwingen. Numerieke attributen worden teruggezet naar een doelwaarde; kleurattributen komen overeen met een doelkleur.",
         "data": {
           "attribute": "Attribuut"
         }

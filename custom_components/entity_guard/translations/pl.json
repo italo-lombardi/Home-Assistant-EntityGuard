@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Tryb atrybutu",
-        "description": "Wybierz, który atrybut ma egzekwować ta reguła.",
+        "description": "Wybierz, który atrybut ma egzekwować ta reguła. Atrybuty numeryczne są ograniczane do wartości docelowej; atrybuty koloru dopasowują się do koloru docelowego.",
         "data": {
           "attribute": "Atrybut"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Edytuj tryb atrybutu",
-        "description": "Wybierz, który atrybut ma egzekwować ta reguła.",
+        "description": "Wybierz, który atrybut ma egzekwować ta reguła. Atrybuty numeryczne są ograniczane do wartości docelowej; atrybuty koloru dopasowują się do koloru docelowego.",
         "data": {
           "attribute": "Atrybut"
         }

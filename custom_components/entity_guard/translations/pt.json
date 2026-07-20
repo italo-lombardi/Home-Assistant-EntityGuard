@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Modo de atributo",
-        "description": "Escolhe qual atributo esta regra deve aplicar.",
+        "description": "Escolhe qual atributo esta regra deve aplicar. Os atributos numéricos são ajustados a um valor alvo; os atributos de cor correspondem a uma cor alvo.",
         "data": {
           "attribute": "Atributo"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Editar modo de atributo",
-        "description": "Escolhe qual atributo esta regra deve aplicar.",
+        "description": "Escolhe qual atributo esta regra deve aplicar. Os atributos numéricos são ajustados a um valor alvo; os atributos de cor correspondem a uma cor alvo.",
         "data": {
           "attribute": "Atributo"
         }

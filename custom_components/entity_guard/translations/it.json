@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Modalità Attributo",
-        "description": "Scegli quale attributo questa regola deve applicare.",
+        "description": "Scegli quale attributo questa regola deve applicare. Gli attributi numerici vengono riportati a un valore di destinazione; gli attributi di colore corrispondono a un colore di destinazione.",
         "data": {
           "attribute": "Attributo"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Modifica modalità Attributo",
-        "description": "Scegli quale attributo questa regola deve applicare.",
+        "description": "Scegli quale attributo questa regola deve applicare. Gli attributi numerici vengono riportati a un valore di destinazione; gli attributi di colore corrispondono a un colore di destinazione.",
         "data": {
           "attribute": "Attributo"
         }

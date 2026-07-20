@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Attribute mode",
-        "description": "Choose which attribute this rule should enforce.",
+        "description": "Choose which attribute this rule should enforce. Numeric attributes clamp to a target; color attributes match a target color.",
         "data": {
           "attribute": "Attribute"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Edit attribute mode",
-        "description": "Choose which attribute this rule should enforce.",
+        "description": "Choose which attribute this rule should enforce. Numeric attributes clamp to a target; color attributes match a target color.",
         "data": {
           "attribute": "Attribute"
         }

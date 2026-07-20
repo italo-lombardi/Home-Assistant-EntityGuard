@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Attributmodus",
-        "description": "Wähle aus, welches Attribut diese Regel durchsetzen soll.",
+        "description": "Wähle aus, welches Attribut diese Regel durchsetzen soll. Numerische Attribute werden auf einen Zielwert begrenzt; Farbattribute gleichen einer Zielfarbe.",
         "data": {
           "attribute": "Attribut"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Attributmodus bearbeiten",
-        "description": "Wähle aus, welches Attribut diese Regel durchsetzen soll.",
+        "description": "Wähle aus, welches Attribut diese Regel durchsetzen soll. Numerische Attribute werden auf einen Zielwert begrenzt; Farbattribute gleichen einer Zielfarbe.",
         "data": {
           "attribute": "Attribut"
         }

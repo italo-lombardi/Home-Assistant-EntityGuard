@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Mode Attribut",
-        "description": "Choisissez l'attribut que cette règle doit appliquer.",
+        "description": "Choisissez l'attribut que cette règle doit appliquer. Les attributs numériques sont ramenés à une valeur cible ; les attributs de couleur correspondent à une couleur cible.",
         "data": {
           "attribute": "Attribut"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Modifier le mode Attribut",
-        "description": "Choisissez l'attribut que cette règle doit appliquer.",
+        "description": "Choisissez l'attribut que cette règle doit appliquer. Les attributs numériques sont ramenés à une valeur cible ; les attributs de couleur correspondent à une couleur cible.",
         "data": {
           "attribute": "Attribut"
         }

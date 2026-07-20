@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Attributläge",
-        "description": "Välj vilket attribut den här regeln ska upprätthålla.",
+        "description": "Välj vilket attribut den här regeln ska upprätthålla. Numeriska attribut begränsas till ett målvärde; färgattribut matchar en målfärg.",
         "data": {
           "attribute": "Attribut"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Redigera attributläge",
-        "description": "Välj vilket attribut den här regeln ska upprätthålla.",
+        "description": "Välj vilket attribut den här regeln ska upprätthålla. Numeriska attribut begränsas till ett målvärde; färgattribut matchar en målfärg.",
         "data": {
           "attribute": "Attribut"
         }

@@ -32,7 +32,7 @@
       },
       "attribute": {
         "title": "Attributmode",
-        "description": "Vælg hvilken attribut denne regel skal håndhæve.",
+        "description": "Vælg hvilken attribut denne regel skal håndhæve. Numeriske attributter begrænses til en målværdi; farveattributter matcher en målfarve.",
         "data": {
           "attribute": "Attribut"
         },
@@ -174,7 +174,7 @@
       },
       "edit_attribute": {
         "title": "Rediger attributmode",
-        "description": "Vælg hvilken attribut denne regel skal håndhæve.",
+        "description": "Vælg hvilken attribut denne regel skal håndhæve. Numeriske attributter begrænses til en målværdi; farveattributter matcher en målfarve.",
         "data": {
           "attribute": "Attribut"
         }
