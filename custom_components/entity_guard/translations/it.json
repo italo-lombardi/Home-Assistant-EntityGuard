@@ -34,18 +34,10 @@
         "title": "Modalità Attributo",
         "description": "Quando l'attributo di una qualsiasi entità di destinazione supera la soglia, riportalo al valore di destinazione dopo il ritardo opzionale.",
         "data": {
-          "attribute": "Attributo",
-          "operator": "Operatore",
-          "threshold": "Soglia",
-          "target_value": "Valore di destinazione",
-          "delay_seconds": "Ritardo (secondi)"
+          "attribute": "Attributo"
         },
         "data_description": {
-          "attribute": "Attributo da monitorare.",
-          "operator": "Operatore di confronto. L'uguaglianza non è intenzionalmente supportata (precisione dei float).",
-          "threshold": "Valore numerico confrontato con l'attributo in tempo reale.",
-          "target_value": "Valore a cui impostare l'attributo quando la regola si attiva.",
-          "delay_seconds": "Attendi questo tempo dopo un'attivazione prima di applicare la regola. 0 = immediato. Massimo 86400 (24h)."
+          "attribute": "Attributo da monitorare."
         }
       },
       "extras": {
@@ -100,6 +92,22 @@
       "preview": {
         "title": "Rivedi e crea",
         "description": "Rivedi la tua regola qui sotto. Clicca **Invia** per crearla, oppure usa la freccia indietro per apportare modifiche.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operatore",
+          "threshold": "Soglia",
+          "target_value": "Valore di destinazione",
+          "delay_seconds": "Ritardo (secondi)"
+        },
+        "data_description": {
+          "operator": "Operatore di confronto. L'uguaglianza non è intenzionalmente supportata (precisione dei float).",
+          "threshold": "Valore numerico confrontato con l'attributo in tempo reale.",
+          "target_value": "Valore a cui impostare l'attributo quando la regola si attiva.",
+          "delay_seconds": "Attendi questo tempo dopo un'attivazione prima di applicare la regola. 0 = immediato. Massimo 86400 (24h)."
+        }
       }
     },
     "error": {
@@ -166,12 +174,9 @@
       },
       "edit_attribute": {
         "title": "Modifica modalità Attributo",
+        "description": "Choose which attribute this rule should enforce.",
         "data": {
-          "attribute": "Attributo",
-          "operator": "Operatore",
-          "threshold": "Soglia",
-          "target_value": "Valore di destinazione",
-          "delay_seconds": "Ritardo (secondi)"
+          "attribute": "Attributo"
         }
       },
       "edit_flags": {
@@ -189,6 +194,16 @@
           "debounce_enabled": "Abilita debounce",
           "debounce_seconds": "Finestra di debounce (secondi)",
           "max_enforcements_per_minute": "Numero massimo di applicazioni al minuto"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Edit attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operatore",
+          "threshold": "Soglia",
+          "target_value": "Valore di destinazione",
+          "delay_seconds": "Ritardo (secondi)"
         }
       }
     },

@@ -320,9 +320,9 @@ def _attribute_schema(
             and len(target_value_default) == 3
             else [255, 255, 255]
         )
-        schema[
-            vol.Required(CONF_TARGET_VALUE, default=rgb_default)
-        ] = _rgb_color_selector()
+        schema[vol.Required(CONF_TARGET_VALUE, default=rgb_default)] = (
+            _rgb_color_selector()
+        )
     elif current_attr == ATTR_COLOR_TEMP_KELVIN:
         kelvin_default = (
             target_value_default
@@ -330,9 +330,9 @@ def _attribute_schema(
             and not isinstance(target_value_default, bool)
             else 2700
         )
-        schema[
-            vol.Required(CONF_TARGET_VALUE, default=kelvin_default)
-        ] = _color_temp_kelvin_selector()
+        schema[vol.Required(CONF_TARGET_VALUE, default=kelvin_default)] = (
+            _color_temp_kelvin_selector()
+        )
     else:
         schema[
             vol.Required(
@@ -344,7 +344,9 @@ def _attribute_schema(
                 translation_key="operator",
             )
         )
-        schema[vol.Required(CONF_THRESHOLD, default=threshold_default)] = _number_selector()
+        schema[vol.Required(CONF_THRESHOLD, default=threshold_default)] = (
+            _number_selector()
+        )
         schema[
             vol.Required(
                 CONF_TARGET_VALUE,

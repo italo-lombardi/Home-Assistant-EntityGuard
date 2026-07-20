@@ -36,9 +36,11 @@ from .const import (
     DEFAULT_MAX_ENFORCEMENTS_PER_MINUTE,
     DEFAULT_TARGET_STATE,
     DEFAULT_TRIGGER_STATES,
+    MAX_COLOR_TEMP_KELVIN,
     MAX_DEBOUNCE_SECONDS,
     MAX_DELAY_SECONDS,
     MAX_RATE_LIMIT,
+    MIN_COLOR_TEMP_KELVIN,
     MIN_DEBOUNCE_SECONDS,
     MIN_DELAY_SECONDS,
     MODE_STATE,
@@ -223,7 +225,7 @@ def _parse_target_value(attribute: Any, value: Any) -> Any | None:
     if attribute == ATTR_RGB_COLOR:
         return _to_rgb_color_or_none(value)
     if attribute == ATTR_COLOR_TEMP_KELVIN:
-        return _to_int_or_none(value)
+        return _to_kelvin_or_none(value)
     return _to_float_or_none(value)
 
 
@@ -241,3 +243,13 @@ def _to_int_or_none(value: Any) -> int | None:
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def _to_kelvin_or_none(value: Any) -> int | None:
+    """Coerce to an int Kelvin value within the supported range, else None."""
+    kelvin = _to_int_or_none(value)
+    if kelvin is None:
+        return None
+    if kelvin < MIN_COLOR_TEMP_KELVIN or kelvin > MAX_COLOR_TEMP_KELVIN:
+        return None
+    return kelvin

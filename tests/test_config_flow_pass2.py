@@ -492,7 +492,9 @@ async def test_options_edit_attribute_preserves_unknown_attr(hass: HomeAssistant
     assert CONF_ATTRIBUTE in schema_keys
 
 
-async def test_options_edit_attribute_params_schema_by_selected_attribute(hass: HomeAssistant):
+async def test_options_edit_attribute_params_schema_by_selected_attribute(
+    hass: HomeAssistant,
+):
     for attr in (ATTR_RGB_COLOR, ATTR_COLOR_TEMP_KELVIN, "brightness"):
         e = _attr_entry(hass, f"AttrSchema-{attr}")
         res = await hass.config_entries.options.async_init(e.entry_id)

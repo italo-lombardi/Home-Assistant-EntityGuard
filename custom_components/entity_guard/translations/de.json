@@ -34,18 +34,10 @@
         "title": "Attributmodus",
         "description": "Wenn das Attribut einer Zielentität den Schwellenwert über- oder unterschreitet, wird es nach der optionalen Verzögerung auf den Zielwert zurückgesetzt.",
         "data": {
-          "attribute": "Attribut",
-          "operator": "Operator",
-          "threshold": "Schwellenwert",
-          "target_value": "Zielwert",
-          "delay_seconds": "Verzögerung (Sekunden)"
+          "attribute": "Attribut"
         },
         "data_description": {
-          "attribute": "Zu überwachendes Attribut.",
-          "operator": "Vergleichsoperator. Gleichheit wird absichtlich nicht unterstützt (Gleitkomma-Genauigkeit).",
-          "threshold": "Numerischer Wert, der mit dem aktuellen Attribut verglichen wird.",
-          "target_value": "Wert, auf den das Attribut gesetzt wird, wenn die Regel auslöst.",
-          "delay_seconds": "Wartezeit nach einem Auslöser, bevor durchgesetzt wird. 0 = sofort. Max. 86400 (24 Std.)."
+          "attribute": "Zu überwachendes Attribut."
         }
       },
       "extras": {
@@ -100,6 +92,22 @@
       "preview": {
         "title": "Überprüfen und erstellen",
         "description": "Überprüfe deine Regel unten. Klicke auf **Senden**, um sie zu erstellen, oder verwende den Zurück-Pfeil, um Änderungen vorzunehmen.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operator",
+          "threshold": "Schwellenwert",
+          "target_value": "Zielwert",
+          "delay_seconds": "Verzögerung (Sekunden)"
+        },
+        "data_description": {
+          "operator": "Vergleichsoperator. Gleichheit wird absichtlich nicht unterstützt (Gleitkomma-Genauigkeit).",
+          "threshold": "Numerischer Wert, der mit dem aktuellen Attribut verglichen wird.",
+          "target_value": "Wert, auf den das Attribut gesetzt wird, wenn die Regel auslöst.",
+          "delay_seconds": "Wartezeit nach einem Auslöser, bevor durchgesetzt wird. 0 = sofort. Max. 86400 (24 Std.)."
+        }
       }
     },
     "error": {
@@ -166,12 +174,9 @@
       },
       "edit_attribute": {
         "title": "Attributmodus bearbeiten",
+        "description": "Choose which attribute this rule should enforce.",
         "data": {
-          "attribute": "Attribut",
-          "operator": "Operator",
-          "threshold": "Schwellenwert",
-          "target_value": "Zielwert",
-          "delay_seconds": "Verzögerung (Sekunden)"
+          "attribute": "Attribut"
         }
       },
       "edit_flags": {
@@ -189,6 +194,16 @@
           "debounce_enabled": "Entprellung aktivieren",
           "debounce_seconds": "Entprellungs-Fenster (Sekunden)",
           "max_enforcements_per_minute": "Max. Durchsetzungen pro Minute"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Edit attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operator",
+          "threshold": "Schwellenwert",
+          "target_value": "Zielwert",
+          "delay_seconds": "Verzögerung (Sekunden)"
         }
       }
     },
@@ -305,6 +320,7 @@
       "options": {
         "save": "Ohne Änderungen speichern",
         "add": "Flag hinzufügen",
+        "replace": "Alle Flags ersetzen",
         "clear": "Alle Flags löschen"
       }
     }

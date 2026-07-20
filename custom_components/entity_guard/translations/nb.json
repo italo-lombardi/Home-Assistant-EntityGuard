@@ -34,18 +34,10 @@
         "title": "Attributtmodus",
         "description": "Når attributtet på en målenhet krysser terskelen, settes det tilbake til målverdien etter en valgfri forsinkelse.",
         "data": {
-          "attribute": "Attributt",
-          "operator": "Operator",
-          "threshold": "Terskel",
-          "target_value": "Målverdi",
-          "delay_seconds": "Forsinkelse (sekunder)"
+          "attribute": "Attributt"
         },
         "data_description": {
-          "attribute": "Attributt som skal overvåkes.",
-          "operator": "Sammenligningsoperator. Likhet støttes med vilje ikke (flyttallspresisjon).",
-          "threshold": "Numerisk verdi som sammenlignes med det aktive attributtet.",
-          "target_value": "Verdi attributtet settes til når regelen utløses.",
-          "delay_seconds": "Vent så lenge etter en utløser før håndheving. 0 = umiddelbart. Maks 86400 (24t)."
+          "attribute": "Attributt som skal overvåkes."
         }
       },
       "extras": {
@@ -100,6 +92,22 @@
       "preview": {
         "title": "Gjennomgå og opprett",
         "description": "Se gjennom regelen din nedenfor. Klikk **Send inn** for å opprette den, eller bruk tilbakepilen for å gjøre endringer.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operator",
+          "threshold": "Terskel",
+          "target_value": "Målverdi",
+          "delay_seconds": "Forsinkelse (sekunder)"
+        },
+        "data_description": {
+          "operator": "Sammenligningsoperator. Likhet støttes med vilje ikke (flyttallspresisjon).",
+          "threshold": "Numerisk verdi som sammenlignes med det aktive attributtet.",
+          "target_value": "Verdi attributtet settes til når regelen utløses.",
+          "delay_seconds": "Vent så lenge etter en utløser før håndheving. 0 = umiddelbart. Maks 86400 (24t)."
+        }
       }
     },
     "error": {
@@ -166,12 +174,9 @@
       },
       "edit_attribute": {
         "title": "Rediger attributtmodus",
+        "description": "Choose which attribute this rule should enforce.",
         "data": {
-          "attribute": "Attributt",
-          "operator": "Operator",
-          "threshold": "Terskel",
-          "target_value": "Målverdi",
-          "delay_seconds": "Forsinkelse (sekunder)"
+          "attribute": "Attributt"
         }
       },
       "edit_flags": {
@@ -189,6 +194,16 @@
           "debounce_enabled": "Aktiver debounce",
           "debounce_seconds": "Debounce-vindu (sekunder)",
           "max_enforcements_per_minute": "Maks håndhevinger per minutt"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Edit attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operator",
+          "threshold": "Terskel",
+          "target_value": "Målverdi",
+          "delay_seconds": "Forsinkelse (sekunder)"
         }
       }
     },

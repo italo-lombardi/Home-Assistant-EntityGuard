@@ -34,18 +34,10 @@
         "title": "Tryb atrybutu",
         "description": "Gdy atrybut dowolnej encji docelowej przekroczy próg, zostanie ograniczony do wartości docelowej po opcjonalnym opóźnieniu.",
         "data": {
-          "attribute": "Atrybut",
-          "operator": "Operator",
-          "threshold": "Próg",
-          "target_value": "Wartość docelowa",
-          "delay_seconds": "Opóźnienie (sekundy)"
+          "attribute": "Atrybut"
         },
         "data_description": {
-          "attribute": "Atrybut do monitorowania.",
-          "operator": "Operator porównania. Równość celowo nie jest obsługiwana (precyzja liczb zmiennoprzecinkowych).",
-          "threshold": "Wartość liczbowa porównywana z bieżącym atrybutem.",
-          "target_value": "Wartość, na którą atrybut zostanie ustawiony, gdy reguła zadziała.",
-          "delay_seconds": "Czas oczekiwania po wyzwoleniu przed wymuszeniem. 0 = natychmiast. Maks. 86400 (24h)."
+          "attribute": "Atrybut do monitorowania."
         }
       },
       "extras": {
@@ -100,6 +92,22 @@
       "preview": {
         "title": "Sprawdź i utwórz",
         "description": "Przejrzyj swoją regułę poniżej. Kliknij **Wyślij**, aby ją utworzyć, lub użyj strzałki wstecz, aby wprowadzić zmiany.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operator",
+          "threshold": "Próg",
+          "target_value": "Wartość docelowa",
+          "delay_seconds": "Opóźnienie (sekundy)"
+        },
+        "data_description": {
+          "operator": "Operator porównania. Równość celowo nie jest obsługiwana (precyzja liczb zmiennoprzecinkowych).",
+          "threshold": "Wartość liczbowa porównywana z bieżącym atrybutem.",
+          "target_value": "Wartość, na którą atrybut zostanie ustawiony, gdy reguła zadziała.",
+          "delay_seconds": "Czas oczekiwania po wyzwoleniu przed wymuszeniem. 0 = natychmiast. Maks. 86400 (24h)."
+        }
       }
     },
     "error": {
@@ -166,12 +174,9 @@
       },
       "edit_attribute": {
         "title": "Edytuj tryb atrybutu",
+        "description": "Choose which attribute this rule should enforce.",
         "data": {
-          "attribute": "Atrybut",
-          "operator": "Operator",
-          "threshold": "Próg",
-          "target_value": "Wartość docelowa",
-          "delay_seconds": "Opóźnienie (sekundy)"
+          "attribute": "Atrybut"
         }
       },
       "edit_flags": {
@@ -189,6 +194,16 @@
           "debounce_enabled": "Włącz debouncing",
           "debounce_seconds": "Okno debouncingu (sekundy)",
           "max_enforcements_per_minute": "Maks. wymuszeń na minutę"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Edit attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operator",
+          "threshold": "Próg",
+          "target_value": "Wartość docelowa",
+          "delay_seconds": "Opóźnienie (sekundy)"
         }
       }
     },

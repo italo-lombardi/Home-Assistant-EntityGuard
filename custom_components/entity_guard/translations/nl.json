@@ -34,18 +34,10 @@
         "title": "Attribuutmodus",
         "description": "Wanneer het attribuut van een doelentiteit de drempelwaarde overschrijdt, wordt het na de optionele vertraging teruggezet naar de doelwaarde.",
         "data": {
-          "attribute": "Attribuut",
-          "operator": "Operator",
-          "threshold": "Drempelwaarde",
-          "target_value": "Doelwaarde",
-          "delay_seconds": "Vertraging (seconden)"
+          "attribute": "Attribuut"
         },
         "data_description": {
-          "attribute": "Attribuut om te bewaken.",
-          "operator": "Vergelijkingsoperator. Gelijkheid wordt opzettelijk niet ondersteund (precisie van floats).",
-          "threshold": "Numerieke waarde die wordt vergeleken met het live attribuut.",
-          "target_value": "Waarde waarop het attribuut wordt ingesteld wanneer de regel wordt geactiveerd.",
-          "delay_seconds": "Wacht zo lang na een trigger voordat de regel afdwingt. 0 = direct. Max 86400 (24u)."
+          "attribute": "Attribuut om te bewaken."
         }
       },
       "extras": {
@@ -100,6 +92,22 @@
       "preview": {
         "title": "Bekijken en aanmaken",
         "description": "Bekijk je regel hieronder. Klik op **Verzenden** om hem aan te maken, of gebruik de terugknop om wijzigingen aan te brengen.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operator",
+          "threshold": "Drempelwaarde",
+          "target_value": "Doelwaarde",
+          "delay_seconds": "Vertraging (seconden)"
+        },
+        "data_description": {
+          "operator": "Vergelijkingsoperator. Gelijkheid wordt opzettelijk niet ondersteund (precisie van floats).",
+          "threshold": "Numerieke waarde die wordt vergeleken met het live attribuut.",
+          "target_value": "Waarde waarop het attribuut wordt ingesteld wanneer de regel wordt geactiveerd.",
+          "delay_seconds": "Wacht zo lang na een trigger voordat de regel afdwingt. 0 = direct. Max 86400 (24u)."
+        }
       }
     },
     "error": {
@@ -166,12 +174,9 @@
       },
       "edit_attribute": {
         "title": "Attribuutmodus bewerken",
+        "description": "Choose which attribute this rule should enforce.",
         "data": {
-          "attribute": "Attribuut",
-          "operator": "Operator",
-          "threshold": "Drempelwaarde",
-          "target_value": "Doelwaarde",
-          "delay_seconds": "Vertraging (seconden)"
+          "attribute": "Attribuut"
         }
       },
       "edit_flags": {
@@ -189,6 +194,16 @@
           "debounce_enabled": "Debounce inschakelen",
           "debounce_seconds": "Debounce-venster (seconden)",
           "max_enforcements_per_minute": "Max afdwingingen per minuut"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Edit attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operator",
+          "threshold": "Drempelwaarde",
+          "target_value": "Doelwaarde",
+          "delay_seconds": "Vertraging (seconden)"
         }
       }
     },

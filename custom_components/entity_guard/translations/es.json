@@ -34,18 +34,10 @@
         "title": "Modo Atributo",
         "description": "Cuando el atributo de cualquier entidad objetivo cruce el umbral, ajústalo de vuelta al valor objetivo tras el retardo opcional.",
         "data": {
-          "attribute": "Atributo",
-          "operator": "Operador",
-          "threshold": "Umbral",
-          "target_value": "Valor objetivo",
-          "delay_seconds": "Retardo (segundos)"
+          "attribute": "Atributo"
         },
         "data_description": {
-          "attribute": "Atributo a monitorizar.",
-          "operator": "Operador de comparación. La igualdad no se admite intencionadamente (precisión de coma flotante).",
-          "threshold": "Valor numérico comparado con el atributo en vivo.",
-          "target_value": "Valor al que se establecerá el atributo cuando se dispare la regla.",
-          "delay_seconds": "Esperar este tiempo tras un disparador antes de actuar. 0 = inmediato. Máx. 86400 (24h)."
+          "attribute": "Atributo a monitorizar."
         }
       },
       "extras": {
@@ -100,6 +92,22 @@
       "preview": {
         "title": "Revisar y crear",
         "description": "Revise su regla a continuación. Haga clic en **Enviar** para crearla, o use la flecha hacia atrás para hacer cambios.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operador",
+          "threshold": "Umbral",
+          "target_value": "Valor objetivo",
+          "delay_seconds": "Retardo (segundos)"
+        },
+        "data_description": {
+          "operator": "Operador de comparación. La igualdad no se admite intencionadamente (precisión de coma flotante).",
+          "threshold": "Valor numérico comparado con el atributo en vivo.",
+          "target_value": "Valor al que se establecerá el atributo cuando se dispare la regla.",
+          "delay_seconds": "Esperar este tiempo tras un disparador antes de actuar. 0 = inmediato. Máx. 86400 (24h)."
+        }
       }
     },
     "error": {
@@ -166,12 +174,9 @@
       },
       "edit_attribute": {
         "title": "Editar modo Atributo",
+        "description": "Choose which attribute this rule should enforce.",
         "data": {
-          "attribute": "Atributo",
-          "operator": "Operador",
-          "threshold": "Umbral",
-          "target_value": "Valor objetivo",
-          "delay_seconds": "Retardo (segundos)"
+          "attribute": "Atributo"
         }
       },
       "edit_flags": {
@@ -189,6 +194,16 @@
           "debounce_enabled": "Habilitar antirrebote",
           "debounce_seconds": "Ventana de antirrebote (segundos)",
           "max_enforcements_per_minute": "Máx. actuaciones por minuto"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Edit attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operador",
+          "threshold": "Umbral",
+          "target_value": "Valor objetivo",
+          "delay_seconds": "Retardo (segundos)"
         }
       }
     },

@@ -34,18 +34,10 @@
         "title": "Attributläge",
         "description": "När attributet på någon målentitet passerar tröskelvärdet, begränsa det tillbaka till målvärdet efter den valfria fördröjningen.",
         "data": {
-          "attribute": "Attribut",
-          "operator": "Operator",
-          "threshold": "Tröskelvärde",
-          "target_value": "Målvärde",
-          "delay_seconds": "Fördröjning (sekunder)"
+          "attribute": "Attribut"
         },
         "data_description": {
-          "attribute": "Attribut att övervaka.",
-          "operator": "Jämförelseoperator. Likhet stöds avsiktligen inte (flyttalsprecision).",
-          "threshold": "Numeriskt värde som jämförs mot det aktuella attributet.",
-          "target_value": "Värde som attributet sätts till när regeln utlöses.",
-          "delay_seconds": "Vänta så här länge efter en utlösare innan tillämpning. 0 = omedelbart. Max 86400 (24h)."
+          "attribute": "Attribut att övervaka."
         }
       },
       "extras": {
@@ -100,6 +92,22 @@
       "preview": {
         "title": "Granska och skapa",
         "description": "Granska din regel nedan. Klicka på **Skicka** för att skapa den, eller använd bakåtpilen för att göra ändringar.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operator",
+          "threshold": "Tröskelvärde",
+          "target_value": "Målvärde",
+          "delay_seconds": "Fördröjning (sekunder)"
+        },
+        "data_description": {
+          "operator": "Jämförelseoperator. Likhet stöds avsiktligen inte (flyttalsprecision).",
+          "threshold": "Numeriskt värde som jämförs mot det aktuella attributet.",
+          "target_value": "Värde som attributet sätts till när regeln utlöses.",
+          "delay_seconds": "Vänta så här länge efter en utlösare innan tillämpning. 0 = omedelbart. Max 86400 (24h)."
+        }
       }
     },
     "error": {
@@ -166,12 +174,9 @@
       },
       "edit_attribute": {
         "title": "Redigera attributläge",
+        "description": "Choose which attribute this rule should enforce.",
         "data": {
-          "attribute": "Attribut",
-          "operator": "Operator",
-          "threshold": "Tröskelvärde",
-          "target_value": "Målvärde",
-          "delay_seconds": "Fördröjning (sekunder)"
+          "attribute": "Attribut"
         }
       },
       "edit_flags": {
@@ -189,6 +194,16 @@
           "debounce_enabled": "Aktivera avstudsning",
           "debounce_seconds": "Avstudsningsfönster (sekunder)",
           "max_enforcements_per_minute": "Max tillämpningar per minut"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Edit attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operator",
+          "threshold": "Tröskelvärde",
+          "target_value": "Målvärde",
+          "delay_seconds": "Fördröjning (sekunder)"
         }
       }
     },

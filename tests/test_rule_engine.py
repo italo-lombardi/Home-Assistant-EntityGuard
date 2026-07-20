@@ -357,13 +357,17 @@ async def test_is_triggered_attribute_non_numeric(hass: HomeAssistant):
 
 
 async def test_color_trigger_decision_missing_target_returns_false(hass: HomeAssistant):
-    config = _make_config(mode=MODE_ATTRIBUTE, attribute=ATTR_RGB_COLOR, target_value=None)
+    config = _make_config(
+        mode=MODE_ATTRIBUTE, attribute=ATTR_RGB_COLOR, target_value=None
+    )
     engine = _make_engine(hass, config)
     st = _state("on", {"rgb_color": [1, 2, 3]})
     assert engine._color_trigger_decision(st) == (False, None)
 
 
-async def test_color_trigger_decision_missing_attribute_returns_false(hass: HomeAssistant):
+async def test_color_trigger_decision_missing_attribute_returns_false(
+    hass: HomeAssistant,
+):
     config = _make_config(mode=MODE_ATTRIBUTE, attribute=None, target_value=[255, 0, 0])
     engine = _make_engine(hass, config)
     st = _state("on", {"rgb_color": [1, 2, 3]})
@@ -381,7 +385,9 @@ async def test_color_trigger_decision_missing_current_value_skips(hass: HomeAssi
     assert engine._color_trigger_decision(st) == (False, "attribute_unavailable")
 
 
-async def test_color_trigger_decision_missing_current_rgb_value_skips(hass: HomeAssistant):
+async def test_color_trigger_decision_missing_current_rgb_value_skips(
+    hass: HomeAssistant,
+):
     config = _make_config(
         mode=MODE_ATTRIBUTE,
         attribute=ATTR_RGB_COLOR,
@@ -392,7 +398,9 @@ async def test_color_trigger_decision_missing_current_rgb_value_skips(hass: Home
     assert engine._color_trigger_decision(st) == (False, "attribute_unavailable")
 
 
-async def test_color_trigger_decision_missing_kelvin_target_returns_false(hass: HomeAssistant):
+async def test_color_trigger_decision_missing_kelvin_target_returns_false(
+    hass: HomeAssistant,
+):
     config = _make_config(
         mode=MODE_ATTRIBUTE,
         attribute=ATTR_COLOR_TEMP_KELVIN,

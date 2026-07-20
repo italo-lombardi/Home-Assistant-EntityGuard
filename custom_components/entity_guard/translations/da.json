@@ -34,18 +34,10 @@
         "title": "Attributmode",
         "description": "Når attributten på en målentitet krydser tærsklen, begrænses den tilbage til målværdien efter den valgfrie forsinkelse.",
         "data": {
-          "attribute": "Attribut",
-          "operator": "Operator",
-          "threshold": "Tærskel",
-          "target_value": "Målværdi",
-          "delay_seconds": "Forsinkelse (sekunder)"
+          "attribute": "Attribut"
         },
         "data_description": {
-          "attribute": "Attribut der skal overvåges.",
-          "operator": "Sammenligningsoperator. Lighed understøttes bevidst ikke (flydende kommatals-præcision).",
-          "threshold": "Numerisk værdi der sammenlignes med den aktuelle attribut.",
-          "target_value": "Værdi attributten skal sættes til, når reglen udløses.",
-          "delay_seconds": "Vent så lang tid efter en udløser før der håndhæves. 0 = øjeblikkeligt. Maks. 86400 (24t)."
+          "attribute": "Attribut der skal overvåges."
         }
       },
       "extras": {
@@ -100,6 +92,22 @@
       "preview": {
         "title": "Gennemse og opret",
         "description": "Gennemse din regel nedenfor. Klik på **Send** for at oprette den, eller brug tilbagepilen for at foretage ændringer.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operator",
+          "threshold": "Tærskel",
+          "target_value": "Målværdi",
+          "delay_seconds": "Forsinkelse (sekunder)"
+        },
+        "data_description": {
+          "operator": "Sammenligningsoperator. Lighed understøttes bevidst ikke (flydende kommatals-præcision).",
+          "threshold": "Numerisk værdi der sammenlignes med den aktuelle attribut.",
+          "target_value": "Værdi attributten skal sættes til, når reglen udløses.",
+          "delay_seconds": "Vent så lang tid efter en udløser før der håndhæves. 0 = øjeblikkeligt. Maks. 86400 (24t)."
+        }
       }
     },
     "error": {
@@ -166,12 +174,9 @@
       },
       "edit_attribute": {
         "title": "Rediger attributmode",
+        "description": "Choose which attribute this rule should enforce.",
         "data": {
-          "attribute": "Attribut",
-          "operator": "Operator",
-          "threshold": "Tærskel",
-          "target_value": "Målværdi",
-          "delay_seconds": "Forsinkelse (sekunder)"
+          "attribute": "Attribut"
         }
       },
       "edit_flags": {
@@ -189,6 +194,16 @@
           "debounce_enabled": "Aktivér debounce",
           "debounce_seconds": "Debounce-vindue (sekunder)",
           "max_enforcements_per_minute": "Maks. håndhævelser i minuttet"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Edit attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operator",
+          "threshold": "Tærskel",
+          "target_value": "Målværdi",
+          "delay_seconds": "Forsinkelse (sekunder)"
         }
       }
     },

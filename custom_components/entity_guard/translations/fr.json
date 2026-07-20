@@ -34,18 +34,10 @@
         "title": "Mode Attribut",
         "description": "Lorsque l'attribut d'une entité cible franchit le seuil, le ramener à la valeur cible après le délai facultatif.",
         "data": {
-          "attribute": "Attribut",
-          "operator": "Opérateur",
-          "threshold": "Seuil",
-          "target_value": "Valeur cible",
-          "delay_seconds": "Délai (secondes)"
+          "attribute": "Attribut"
         },
         "data_description": {
-          "attribute": "Attribut à surveiller.",
-          "operator": "Opérateur de comparaison. L'égalité n'est volontairement pas prise en charge (précision des nombres flottants).",
-          "threshold": "Valeur numérique comparée à l'attribut en temps réel.",
-          "target_value": "Valeur à laquelle l'attribut sera défini lorsque la règle se déclenche.",
-          "delay_seconds": "Attendre cette durée après un déclenchement avant d'appliquer. 0 = immédiat. Maximum 86400 (24 h)."
+          "attribute": "Attribut à surveiller."
         }
       },
       "extras": {
@@ -100,6 +92,22 @@
       "preview": {
         "title": "Réviser et créer",
         "description": "Vérifiez votre règle ci-dessous. Cliquez sur **Soumettre** pour la créer, ou utilisez la flèche de retour pour modifier.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Opérateur",
+          "threshold": "Seuil",
+          "target_value": "Valeur cible",
+          "delay_seconds": "Délai (secondes)"
+        },
+        "data_description": {
+          "operator": "Opérateur de comparaison. L'égalité n'est volontairement pas prise en charge (précision des nombres flottants).",
+          "threshold": "Valeur numérique comparée à l'attribut en temps réel.",
+          "target_value": "Valeur à laquelle l'attribut sera défini lorsque la règle se déclenche.",
+          "delay_seconds": "Attendre cette durée après un déclenchement avant d'appliquer. 0 = immédiat. Maximum 86400 (24 h)."
+        }
       }
     },
     "error": {
@@ -166,12 +174,9 @@
       },
       "edit_attribute": {
         "title": "Modifier le mode Attribut",
+        "description": "Choose which attribute this rule should enforce.",
         "data": {
-          "attribute": "Attribut",
-          "operator": "Opérateur",
-          "threshold": "Seuil",
-          "target_value": "Valeur cible",
-          "delay_seconds": "Délai (secondes)"
+          "attribute": "Attribut"
         }
       },
       "edit_flags": {
@@ -189,6 +194,16 @@
           "debounce_enabled": "Activer l'anti-rebond",
           "debounce_seconds": "Fenêtre d'anti-rebond (secondes)",
           "max_enforcements_per_minute": "Nombre maximal d'applications par minute"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Edit attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Opérateur",
+          "threshold": "Seuil",
+          "target_value": "Valeur cible",
+          "delay_seconds": "Délai (secondes)"
         }
       }
     },

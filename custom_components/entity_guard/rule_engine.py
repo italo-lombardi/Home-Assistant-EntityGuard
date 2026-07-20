@@ -393,7 +393,9 @@ class RuleEngine:
         triggered, _skip_reason = self._trigger_decision(entity_id, new_state)
         return triggered
 
-    def _trigger_decision(self, entity_id: str, new_state: Any) -> tuple[bool, str | None]:
+    def _trigger_decision(
+        self, entity_id: str, new_state: Any
+    ) -> tuple[bool, str | None]:
         """Return trigger result and optional skip reason."""
         if new_state is None:
             return False, None
@@ -1187,9 +1189,7 @@ def _normalize_kelvin(value: Any) -> int | None:
         return None
 
 
-def _rgb_matches(
-    current: tuple[int, int, int], target: tuple[int, int, int]
-) -> bool:
+def _rgb_matches(current: tuple[int, int, int], target: tuple[int, int, int]) -> bool:
     """Return True when every RGB channel is within tolerance."""
     return all(
         abs(current_channel - target_channel) <= COLOR_RGB_TOLERANCE

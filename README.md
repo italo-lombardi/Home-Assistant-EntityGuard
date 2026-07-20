@@ -232,11 +232,21 @@ Every rule action fires a Home Assistant event:
 | Event | Fired when |
 |-------|------------|
 | `entity_guard_enforced` | Successful enforcement |
-| `entity_guard_skipped` | Enforcement skipped (target unavailable, flag mismatch) |
+| `entity_guard_skipped` | Enforcement skipped (see `reason` below) |
 | `entity_guard_loop_detected` | Rate limit hit; rule auto-suppressed |
 | `entity_guard_suppressed` | Suppress service called |
 
 All four are described in the Logbook.
+
+`entity_guard_skipped` carries a `reason` field:
+
+| `reason` | Meaning |
+|----------|---------|
+| `no_service_mapping` | No service known for the target's domain/attribute |
+| `service_call_failed` | The enforcing service call raised (also sets `error`) |
+| `light_off` | Color rule: target light is off (not turned on to enforce color) |
+| `light_unavailable` | Color rule: target light is `unavailable`/`unknown` |
+| `attribute_unavailable` | Color rule: target's color attribute is missing/unreadable |
 
 ---
 

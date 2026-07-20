@@ -34,18 +34,10 @@
         "title": "Modo de atributo",
         "description": "Quando o atributo numa entidade alvo ultrapassar o limiar, repõe-no ao valor alvo após o atraso opcional.",
         "data": {
-          "attribute": "Atributo",
-          "operator": "Operador",
-          "threshold": "Limiar",
-          "target_value": "Valor alvo",
-          "delay_seconds": "Atraso (segundos)"
+          "attribute": "Atributo"
         },
         "data_description": {
-          "attribute": "Atributo a monitorizar.",
-          "operator": "Operador de comparação. A igualdade não é suportada intencionalmente (precisão de vírgula flutuante).",
-          "threshold": "Valor numérico comparado com o atributo em tempo real.",
-          "target_value": "Valor para o qual o atributo será definido quando a regra disparar.",
-          "delay_seconds": "Aguarda este tempo após um gatilho antes de aplicar. 0 = imediato. Máximo 86400 (24h)."
+          "attribute": "Atributo a monitorizar."
         }
       },
       "extras": {
@@ -100,6 +92,22 @@
       "preview": {
         "title": "Rever e criar",
         "description": "Reveja a sua regra abaixo. Clique em **Submeter** para a criar, ou use a seta para trás para fazer alterações.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operador",
+          "threshold": "Limiar",
+          "target_value": "Valor alvo",
+          "delay_seconds": "Atraso (segundos)"
+        },
+        "data_description": {
+          "operator": "Operador de comparação. A igualdade não é suportada intencionalmente (precisão de vírgula flutuante).",
+          "threshold": "Valor numérico comparado com o atributo em tempo real.",
+          "target_value": "Valor para o qual o atributo será definido quando a regra disparar.",
+          "delay_seconds": "Aguarda este tempo após um gatilho antes de aplicar. 0 = imediato. Máximo 86400 (24h)."
+        }
       }
     },
     "error": {
@@ -166,12 +174,9 @@
       },
       "edit_attribute": {
         "title": "Editar modo de atributo",
+        "description": "Choose which attribute this rule should enforce.",
         "data": {
-          "attribute": "Atributo",
-          "operator": "Operador",
-          "threshold": "Limiar",
-          "target_value": "Valor alvo",
-          "delay_seconds": "Atraso (segundos)"
+          "attribute": "Atributo"
         }
       },
       "edit_flags": {
@@ -189,6 +194,16 @@
           "debounce_enabled": "Ativar debounce",
           "debounce_seconds": "Janela de debounce (segundos)",
           "max_enforcements_per_minute": "Máximo de aplicações por minuto"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Edit attribute parameters",
+        "description": "Configure enforcement values for the selected attribute.",
+        "data": {
+          "operator": "Operador",
+          "threshold": "Limiar",
+          "target_value": "Valor alvo",
+          "delay_seconds": "Atraso (segundos)"
         }
       }
     },

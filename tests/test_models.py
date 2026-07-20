@@ -254,6 +254,17 @@ def test_to_int_or_none_invalid():
     assert _to_int_or_none("bad") is None
 
 
+def test_to_kelvin_or_none_range():
+    from custom_components.entity_guard.models import _to_kelvin_or_none
+
+    assert _to_kelvin_or_none(2700) == 2700  # in range
+    assert _to_kelvin_or_none(2000) == 2000  # lower bound
+    assert _to_kelvin_or_none(6500) == 6500  # upper bound
+    assert _to_kelvin_or_none(1999) is None  # below range
+    assert _to_kelvin_or_none(6501) is None  # above range
+    assert _to_kelvin_or_none("bad") is None  # non-int
+
+
 def test_flag_from_dict_missing_key_raises_value_error():
     with pytest.raises(ValueError, match="missing required key"):
         Flag.from_dict({"entity": "light.x"})  # match_state missing

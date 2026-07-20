@@ -6,6 +6,14 @@
 
 - **Color enforcement for light entities**: attribute mode now supports `rgb_color` and `color_temp_kelvin` in addition to the existing numeric clamp attributes. Color rules use a tolerance-aware match model and call `light.turn_on` only when the light is already on and its current color differs materially from the configured target.
 
+### Changed
+
+- Out-of-range `color_temp_kelvin` targets (outside 2000–6500 K) are now rejected on load, matching the RGB channel range check — a bad hand-edited/imported value leaves the rule inert instead of sending an invalid Kelvin to `light.turn_on`.
+
+### Docs
+
+- Documented the `entity_guard_skipped` `reason` values, including the color-specific `light_off`, `light_unavailable`, and `attribute_unavailable` reasons.
+
 ### Tests
 
 - Added coverage for color target parsing, config-flow creation/editing, tolerance boundaries, skipped enforcement on off/unavailable lights, and debounce behavior for color rules.
