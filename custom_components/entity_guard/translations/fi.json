@@ -1,0 +1,415 @@
+{
+  "title": "Entity Guard",
+  "config": {
+    "step": {
+      "rule": {
+        "title": "Uusi sääntö — perusteet",
+        "description": "Nimeä sääntö, valitse kohdeentiteetit, joita valvotaan, ja valitse säännön tila.",
+        "data": {
+          "rule_name": "Säännön nimi",
+          "target_entities": "Kohdeentiteetit",
+          "mode": "Säännön tila"
+        },
+        "data_description": {
+          "rule_name": "Käyttöliittymässä näytettävä näyttönimi. Sen on oltava yksilöllinen.",
+          "target_entities": "Yksi tai useampi entiteetti, jota tämä sääntö valvoo.",
+          "mode": "Tilatila pakottaa tietyn tilan. Attribuuttitila rajaa numeeriset attribuutit tai vastaa värikohdetta."
+        }
+      },
+      "state": {
+        "title": "Tilatila",
+        "description": "Kun jokin kohdeentiteetti siirtyy johonkin laukaisutilaan, pakota se takaisin kohdetilaan valinnaisen viiveen jälkeen.",
+        "data": {
+          "trigger_states": "Laukaisutilat",
+          "target_state": "Kohdetila",
+          "delay_seconds": "Viive (sekuntia)"
+        },
+        "data_description": {
+          "trigger_states": "Luettelo tiloista, jotka aktivoivat valvonnan (esim. on, open, unlocked). Kirjoita lisätäksesi omia arvoja.",
+          "target_state": "Tila, johon entiteetti pakotetaan (esim. off, closed, locked).",
+          "delay_seconds": "Odota tämän verran laukaisun jälkeen ennen valvonnan käynnistymistä. 0 = välitön. Enintään 86400 (24 h)."
+        }
+      },
+      "attribute": {
+        "title": "Attribuuttitila",
+        "description": "Valitse, mitä attribuuttia tämän säännön tulee valvoa. Numeeriset attribuutit rajataan kohteeseen; väriattribuutit vastaavat kohdeväriä.",
+        "data": {
+          "attribute": "Attribuutti"
+        },
+        "data_description": {
+          "attribute": "Valvottava ja pakotettava attribuutti."
+        }
+      },
+      "extras": {
+        "title": "Valinnaiset ominaisuudet",
+        "description": "Valitse haluamasi määritettävät ominaisuudet. Jokainen valittu vaihtoehto lisää jatkonäytön. Ohita ne kaikki siirtyäksesi suoraan tarkasteluun.",
+        "data": {
+          "add_flags": "Lisää ehtoja",
+          "custom_rate_limit": "Mukauta silmukkasuojaus",
+          "add_debounce": "Ota käyttöön viivevakautus"
+        },
+        "data_description": {
+          "add_flags": "Valitse vaatiaksesi lisäehtoja (esim. valvo vain kun kukaan ei ole kotona, vain auringonlaskun jälkeen). Jätä valitsematta valvoaksesi joka kerta, kun laukaisu tapahtuu.",
+          "custom_rate_limit": "Silmukkasuojaus estää säännön automaattisesti, jos se laukeaa yli 10 kertaa minuutissa (oletus). Jätä valitsematta käyttääksesi oletusta. Valitse asettaaksesi oman arvon tai poistaaksesi silmukkasuojauksen kokonaan myöhemmällä näytöllä.",
+          "add_debounce": "Valitse ohittaaksesi nopeat edestakaiset muutokset. Sääntö toimii vain, jos laukaisu pysyy samana myöhemmällä näytöllä asettamasi ajan. Jätä valitsematta toimiaksesi jokaisen muutoksen kohdalla."
+        }
+      },
+      "flags": {
+        "title": "Ehdot (valinnainen)",
+        "description": "Lisäehdot, joiden kaikkien on oltava tosia, jotta sääntö toimii.\n\nEsimerkkejä:\n  • person.alice = not_home — vain kun Alice on poissa\n  • input_boolean.guest_mode = off — vain kun ei ole vieraita\n  • sun.sun = below_horizon — vain auringonlaskun jälkeen\n  • binary_sensor.work_hours = on — vain työaikana\n\nEhdon lisääminen: valitse entiteetti, kirjoita tila, jossa sen on oltava, ja napsauta Lähetä.\n\nJos et halua ehtoa juuri nyt, jätä molemmat kentät tyhjiksi ja napsauta Lähetä ohittaaksesi.\n\nToistaiseksi lisätyt ehdot ({count}): {summary}\n\n{current_state}\n\nValitse 'Lisää toinen' ketjuttaaksesi lisää — kaikkien on täsmättävä, jotta sääntö laukeaa.",
+        "data": {
+          "entity": "Ehtoentiteetti",
+          "match_state": "Vaadittu tila",
+          "add_another": "Lisää toinen ehto tämän jälkeen"
+        },
+        "data_description": {
+          "entity": "Valitse entiteetti, jonka tila toimii ehtona (esim. person.alice, input_boolean.guest_mode, sun.sun).",
+          "match_state": "Tila, jossa entiteetin on oltava, jotta sääntö laukeaa (esim. 'on', 'home', 'not_home', 'below_horizon').",
+          "add_another": "Valitse lisätäksesi lisää ehtoja. Jätä valitsematta lopettaaksesi."
+        }
+      },
+      "advanced": {
+        "title": "Lisäasetukset",
+        "description": "Aseta vaihtoehdot, jotka valitsit edellisellä näytöllä. Oletusnopeusraja on {default_rate} valvontatoimenpidettä minuutissa.",
+        "data": {
+          "debounce_seconds": "Viivevakautusikkuna (sekuntia)",
+          "rate_limit_enabled": "Käytä silmukkasuojausta",
+          "max_enforcements_per_minute": "Enimmäisvalvontatoimet minuutissa"
+        },
+        "data_description": {
+          "debounce_seconds": "Ikkuna sekunteina. Vähintään 0, enintään 86400 (24 h). Näytetään vain, kun viivevakautus otettiin käyttöön edellisessä vaiheessa.",
+          "rate_limit_enabled": "Valitse pitääksesi silmukkasuojauksen päällä (suositeltavaa). Poista valinta poistaaksesi sen käytöstä tälle säännölle — karkaavia silmukoita ei pysäytetä automaattisesti.",
+          "max_enforcements_per_minute": "Kuinka monta valvontatoimenpidettä minuutissa sallitaan ennen kuin sääntö estää itsensä automaattisesti 15 minuutiksi. Vähintään 1, enintään 600. Ohitetaan, kun silmukkasuojaus on yllä valitsematta."
+        }
+      },
+      "safety": {
+        "title": "Turvallisuuden vahvistus",
+        "description": "Tämä sääntö kohdistuu turvallisuuskriittisiin entiteetteihin ({entities}). Sinun on nimenomaisesti vahvistettava riski jatkaaksesi.",
+        "data": {
+          "safety_acknowledged": "Ymmärrän, että tämä sääntö liikuttaa fyysistä laitteistoa, ja hyväksyn riskin."
+        }
+      },
+      "preview": {
+        "title": "Tarkastele ja luo",
+        "description": "Tarkastele sääntöäsi alla. Napsauta **Lähetä** luodaksesi sen tai käytä takaisin-nuolta tehdäksesi muutoksia.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Attribuuttiparametrit",
+        "description": "Määritä valvonta-arvot valitulle attribuutille.",
+        "data": {
+          "operator": "Operaattori",
+          "threshold": "Kynnysarvo",
+          "target_value": "Kohdearvo",
+          "delay_seconds": "Viive (sekuntia)"
+        },
+        "data_description": {
+          "operator": "Numeeristen rajaussääntöjen vertailuoperaattori.",
+          "threshold": "Elävään attribuuttiin verrattava numeerinen arvo. Käytetään vain numeerisissa rajaussäännöissä.",
+          "target_value": "Pakotettava arvo. Numeeriset attribuutit rajataan tähän arvoon; väriattribuuttien on vastattava sitä.",
+          "delay_seconds": "Odota tämän verran laukaisun jälkeen ennen valvonnan käynnistymistä. 0 = välitön. Enintään 86400 (24 h)."
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "Säännön nimi ei voi olla tyhjä.",
+      "empty_target_entities": "Valitse vähintään yksi kohdeentiteetti.",
+      "empty_trigger_states": "Anna vähintään yksi laukaisutila.",
+      "empty_target_state": "Kohdetila ei voi olla tyhjä.",
+      "invalid_threshold": "Kynnysarvon ja kohdearvon on oltava numeerisia.",
+      "invalid_delay": "Viiveen on oltava kokonaisluku välillä 0–86400 sekuntia (24 h).",
+      "invalid_rate": "Enimmäisvalvontatoimien minuutissa on oltava kokonaisluku välillä 1–600.",
+      "target_in_triggers": "Kohdetila ei voi olla myös laukaisutila — se loisi valvontasilmukan.",
+      "forbidden_state": "Tiloja 'unavailable', 'unknown' ja 'none' ei voi käyttää laukaisuina tai kohteina.",
+      "incomplete_flag": "Sekä ehtoentiteetti että vaadittu tila on asetettava.",
+      "safety_not_acknowledged": "Sinun on vahvistettava turvallisuusriski jatkaaksesi.",
+      "name_already_exists": "Tämänniminen sääntö on jo olemassa.",
+      "invalid_rgb_color": "RGB-värin on oltava luettelo kolmesta arvosta välillä 0–255.",
+      "invalid_color_temp_kelvin": "Värilämpötilan on oltava välillä 2000 K – 6500 K."
+    },
+    "abort": {
+      "single_instance_allowed": "Vain yksi Entity Guard -keskitin voidaan määrittää.",
+      "name_already_exists": "Tämänniminen sääntö on jo olemassa.",
+      "already_configured": "Tämä sääntö on jo määritetty."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Muokkaa sääntöä",
+        "description": "{summary}\n\nValitse, mitä muutetaan.",
+        "menu_options": {
+          "edit_basics": "Muokkaa nimeä",
+          "edit_mode": "Muokkaa tilakohtaisia asetuksia",
+          "edit_entities": "Lisää tai poista kohdeentiteettejä",
+          "edit_flags": "Muokkaa ehtoja",
+          "edit_advanced": "Muokkaa viivevakautusta ja nopeusrajaa"
+        }
+      },
+      "edit_basics": {
+        "title": "Muokkaa nimeä",
+        "data": {
+          "rule_name": "Säännön nimi"
+        }
+      },
+      "edit_entities": {
+        "title": "Muokkaa kohdeentiteettejä",
+        "data": {
+          "target_entities": "Kohdeentiteetit"
+        }
+      },
+      "edit_safety": {
+        "title": "Turvallisuuden vahvistus",
+        "description": "Uusia turvallisuuskriittisiä entiteettejä lisättiin. Vahvista uudelleen tallentaaksesi.",
+        "data": {
+          "safety_acknowledged": "Ymmärrän, että tämä sääntö liikuttaa fyysistä laitteistoa, ja hyväksyn riskin."
+        }
+      },
+      "edit_state": {
+        "title": "Muokkaa tilatilaa",
+        "data": {
+          "trigger_states": "Laukaisutilat",
+          "target_state": "Kohdetila",
+          "delay_seconds": "Viive (sekuntia)"
+        }
+      },
+      "edit_attribute": {
+        "title": "Muokkaa attribuuttitilaa",
+        "description": "Valitse, mitä attribuuttia tämän säännön tulee valvoa. Numeeriset attribuutit rajataan kohteeseen; väriattribuutit vastaavat kohdeväriä.",
+        "data": {
+          "attribute": "Attribuutti"
+        }
+      },
+      "edit_flags": {
+        "title": "Muokkaa ehtoja",
+        "description": "Nykyiset ehdot: {summary}.\n\n{current_state}\n\nValitse 'lisää' liittääksesi, 'korvaa' korvataksesi kaikki, 'tyhjennä' poistaaksesi kaikki tai 'tallenna' jättääksesi ennalleen.",
+        "data": {
+          "entity": "Ehtoentiteetti",
+          "match_state": "Vaadittu tila",
+          "action": "Toiminto"
+        }
+      },
+      "edit_advanced": {
+        "title": "Muokkaa lisäasetuksia",
+        "data": {
+          "debounce_enabled": "Ota käyttöön viivevakautus",
+          "debounce_seconds": "Viivevakautusikkuna (sekuntia)",
+          "max_enforcements_per_minute": "Enimmäisvalvontatoimet minuutissa"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Muokkaa attribuuttiparametreja",
+        "description": "Määritä valvonta-arvot valitulle attribuutille.",
+        "data": {
+          "operator": "Operaattori",
+          "threshold": "Kynnysarvo",
+          "target_value": "Kohdearvo",
+          "delay_seconds": "Viive (sekuntia)"
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "Säännön nimi ei voi olla tyhjä.",
+      "empty_target_entities": "Valitse vähintään yksi kohdeentiteetti.",
+      "empty_trigger_states": "Anna vähintään yksi laukaisutila.",
+      "empty_target_state": "Kohdetila ei voi olla tyhjä.",
+      "invalid_threshold": "Kynnysarvon ja kohdearvon on oltava numeerisia.",
+      "invalid_delay": "Viiveen on oltava kokonaisluku välillä 0–86400 sekuntia (24 h).",
+      "invalid_rate": "Enimmäisvalvontatoimien minuutissa on oltava kokonaisluku välillä 1–600.",
+      "target_in_triggers": "Kohdetila ei voi olla myös laukaisutila — se loisi valvontasilmukan.",
+      "forbidden_state": "Tiloja 'unavailable', 'unknown' ja 'none' ei voi käyttää laukaisuina tai kohteina.",
+      "incomplete_flag": "Sekä ehtoentiteetti että vaadittu tila on asetettava.",
+      "safety_not_acknowledged": "Sinun on vahvistettava turvallisuusriski jatkaaksesi.",
+      "name_already_exists": "Tämänniminen sääntö on jo olemassa.",
+      "invalid_rgb_color": "RGB-värin on oltava luettelo kolmesta arvosta välillä 0–255.",
+      "invalid_color_temp_kelvin": "Värilämpötilan on oltava välillä 2000 K – 6500 K."
+    },
+    "abort": {
+      "name_already_exists": "Tämänniminen sääntö on jo olemassa.",
+      "hub_no_options": "Entity Guard -keskittimellä ei ole muokattavia asetuksia."
+    }
+  },
+  "exceptions": {
+    "rule_not_found": {
+      "message": "Ei löytynyt Entity Guard -sääntöä, joka vastaa arvoa {rule_id}."
+    }
+  },
+  "services": {
+    "suppress": {
+      "name": "Estä sääntö",
+      "description": "Estä Entity Guard -sääntö tilapäisesti. Sääntö jatkuu automaattisesti keston jälkeen.",
+      "fields": {
+        "rule_id": {
+          "name": "Sääntö",
+          "description": "Säännön UUID tai säännön nimi (määritysmerkinnän otsikko)."
+        },
+        "duration_minutes": {
+          "name": "Kesto (minuuttia)",
+          "description": "Kuinka kauan sääntö estetään (1–1440 minuuttia)."
+        }
+      }
+    },
+    "unsuppress": {
+      "name": "Poista säännön esto",
+      "description": "Jatka estettyä Entity Guard -sääntöä välittömästi.",
+      "fields": {
+        "rule_id": {
+          "name": "Sääntö",
+          "description": "Säännön UUID tai säännön nimi (määritysmerkinnän otsikko)."
+        }
+      }
+    },
+    "list_rules": {
+      "name": "Luettele säännöt",
+      "description": "Palauta jokaisen Entity Guard -säännön määritys ja nykyinen tila."
+    },
+    "clear_history": {
+      "name": "Tyhjennä säännön historia",
+      "description": "Tyhjennä säännön tallennettu valvontahistoria (laskurit, viimeksi valvottu, jäähdytysajat).",
+      "fields": {
+        "rule_id": {
+          "name": "Sääntö",
+          "description": "Säännön UUID tai säännön nimi (määritysmerkinnän otsikko)."
+        }
+      }
+    },
+    "panic_stop": {
+      "name": "Hätäpysäytys",
+      "description": "Hätäsammutus — poista kaikki säännöt käytöstä, tyhjennä kaikki jäähdytysajat, estä 60 minuutiksi ja sammuta keskittimen pääkytkin."
+    }
+  },
+  "selector": {
+    "status": {
+      "options": {
+        "error": "Virhe",
+        "disabled": "Poistettu käytöstä",
+        "master_disabled": "Pääkytkin pois päältä",
+        "suppressed": "Estetty",
+        "enforcing": "Valvotaan",
+        "cooldown": "Jäähdytys",
+        "armed": "Aktivoitu",
+        "conditional": "Odottaa ehtoja",
+        "starting": "Käynnistyy",
+        "pending": "Valvonta alkamassa"
+      }
+    },
+    "mode": {
+      "options": {
+        "state": "Tila",
+        "attribute": "Attribuutti"
+      }
+    },
+    "attribute": {
+      "options": {
+        "brightness": "Kirkkaus",
+        "volume_level": "Äänenvoimakkuus",
+        "temperature": "Lämpötila",
+        "percentage": "Prosenttiosuus",
+        "rgb_color": "RGB-väri",
+        "color_temp_kelvin": "Värilämpötila (Kelvin)"
+      }
+    },
+    "operator": {
+      "options": {
+        "lt": "Pienempi kuin (<)",
+        "lte": "Pienempi tai yhtä suuri (<=)",
+        "gt": "Suurempi kuin (>)",
+        "gte": "Suurempi tai yhtä suuri (>=)"
+      }
+    },
+    "flag_action": {
+      "options": {
+        "save": "Poistu ilman muutoksia",
+        "add": "Lisää ehto",
+        "replace": "Korvaa kaikki ehdot",
+        "clear": "Tyhjennä kaikki ehdot"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "armed": {
+        "name": "Aktivoitu"
+      },
+      "active": {
+        "name": "Aktiivinen"
+      },
+      "in_cooldown": {
+        "name": "Jäähdytyksessä"
+      },
+      "pending": {
+        "name": "Odottaa"
+      },
+      "recently_enforced": {
+        "name": "Äskettäin valvottu"
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Tila"
+      },
+      "last_enforced": {
+        "name": "Viimeksi valvottu"
+      },
+      "enforcement_count_today": {
+        "name": "Valvontatoimet tänään"
+      },
+      "enforcement_count_total": {
+        "name": "Valvontatoimet yhteensä"
+      },
+      "cooldown_remaining": {
+        "name": "Jäähdytystä jäljellä"
+      },
+      "safety_status": {
+        "name": "Turvallisuustila"
+      },
+      "suppressed_until": {
+        "name": "Estetty asti"
+      },
+      "rule_id": {
+        "name": "Säännön tunnus"
+      }
+    },
+    "switch": {
+      "enabled": {
+        "name": "Käytössä"
+      },
+      "debounce_enabled": {
+        "name": "Viivevakautus käytössä"
+      },
+      "master_enabled": {
+        "name": "Pääkytkin käytössä"
+      }
+    },
+    "number": {
+      "delay_seconds": {
+        "name": "Viive (sekuntia)"
+      },
+      "debounce_seconds": {
+        "name": "Viivevakautus (sekuntia)"
+      },
+      "max_enforcements_per_minute": {
+        "name": "Enimmäisvalvontatoimet minuutissa"
+      }
+    },
+    "button": {
+      "reset": {
+        "name": "Nollaa jäähdytysajat"
+      },
+      "test_enforce": {
+        "name": "Testaa valvonta"
+      },
+      "clear_suppression": {
+        "name": "Poista esto"
+      },
+      "clear_history": {
+        "name": "Tyhjennä historia (laskurit)"
+      }
+    }
+  },
+  "issues": {
+    "flag_entity_missing": {
+      "title": "Ehtoentiteetti puuttuu säännöstä \"{rule_name}\"",
+      "description": "Seuraava(t) ehtoentiteetti/-entiteetit ei(vät) ole enää olemassa, mutta siihen/niihin viitataan säännössä: {missing_entities}. Sääntö ei valvo, kun näitä ehtoja ei voida arvioida. Päivitä tai poista sääntö ratkaistaksesi tämän ongelman."
+    }
+  }
+}

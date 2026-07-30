@@ -1,0 +1,415 @@
+{
+  "title": "Entity Guard",
+  "config": {
+    "step": {
+      "rule": {
+        "title": "Nauja taisyklė — pagrindai",
+        "description": "Suteikite taisyklei pavadinimą, pasirinkite tikslines esybes, kurioms bus taikoma, ir pasirinkite taisyklės režimą.",
+        "data": {
+          "rule_name": "Taisyklės pavadinimas",
+          "target_entities": "Tikslinės esybės",
+          "mode": "Taisyklės režimas"
+        },
+        "data_description": {
+          "rule_name": "Rodomas pavadinimas naudotojo sąsajoje. Turi būti unikalus.",
+          "target_entities": "Viena ar daugiau esybių, kurioms ši taisyklė bus taikoma.",
+          "mode": "Būsenos režimas priverstinai nustato konkrečią būseną. Atributo režimas apriboja skaitines atributų reikšmes arba atitinka spalvos tikslą."
+        }
+      },
+      "state": {
+        "title": "Būsenos režimas",
+        "description": "Kai bet kuri tikslinė esybė pereina į vieną iš aktyvinimo būsenų, priverstinai grąžinkite ją į tikslinę būseną po pasirinktinio delsimo.",
+        "data": {
+          "trigger_states": "Aktyvinimo būsenos",
+          "target_state": "Tikslinė būsena",
+          "delay_seconds": "Delsimas (sekundės)"
+        },
+        "data_description": {
+          "trigger_states": "Būsenų, kurios aktyvina taikymą, sąrašas (pvz., on, open, unlocked). Rašykite, kad pridėtumėte pasirinktines reikšmes.",
+          "target_state": "Būsena, į kurią esybė bus priverstinai nustatyta (pvz., off, closed, locked).",
+          "delay_seconds": "Palaukite tiek laiko po aktyvinimo prieš taikydami. 0 = iškart. Daugiausia 86400 (24 val.)."
+        }
+      },
+      "attribute": {
+        "title": "Atributo režimas",
+        "description": "Pasirinkite, kurį atributą ši taisyklė turi taikyti. Skaitiniai atributai apribojami iki tikslo; spalvų atributai atitinka tikslinę spalvą.",
+        "data": {
+          "attribute": "Atributas"
+        },
+        "data_description": {
+          "attribute": "Stebimas ir taikomas atributas."
+        }
+      },
+      "extras": {
+        "title": "Papildomos funkcijos",
+        "description": "Pažymėkite bet kurias funkcijas, kurias norite konfigūruoti. Kiekviena pažymėta parinktis prideda tolesnį ekraną. Praleiskite jas visas, kad pereitumėte tiesiai į peržiūrą.",
+        "data": {
+          "add_flags": "Pridėti papildomas sąlygas",
+          "custom_rate_limit": "Tinkinti ciklo apsaugą",
+          "add_debounce": "Įjungti nutildymą"
+        },
+        "data_description": {
+          "add_flags": "Pažymėkite, kad reikalautumėte papildomų sąlygų (pvz., taikyti tik tada, kai niekas nėra namuose, tik po saulėlydžio). Nepažymėkite, kad taikymas vyktų kaskart, kai suveikia aktyvinimas.",
+          "custom_rate_limit": "Ciklo apsauga automatiškai slopina taisyklę, jei ji suveikia daugiau nei 10 kartų per minutę (numatyta). Nepažymėkite, kad naudotumėte numatytą reikšmę. Pažymėkite, kad nustatytumėte savo skaičių arba visiškai išjungtumėte ciklo apsaugą kitame ekrane.",
+          "add_debounce": "Pažymėkite, kad ignoruotumėte greitus pirmyn-atgal pokyčius. Taisyklė veikia tik tada, jei aktyvinimas išlieka nepakitęs jūsų nustatytą laiką kitame ekrane. Nepažymėkite, kad veiktų kiekvieno pokyčio metu."
+        }
+      },
+      "flags": {
+        "title": "Sąlygos (pasirinktinai)",
+        "description": "Papildomos sąlygos, kurios visos turi būti tenkinamos, kad taisyklė veiktų.\n\nPavyzdžiai:\n  • person.alice = not_home — tik kai Alice nėra\n  • input_boolean.guest_mode = off — tik kai nėra svečių\n  • sun.sun = below_horizon — tik po saulėlydžio\n  • binary_sensor.work_hours = on — tik darbo valandomis\n\nKad pridėtumėte sąlygą: pasirinkite esybę, įveskite būseną, kurioje ji turi būti, tada spustelėkite Pateikti.\n\nJei šiuo metu nenorite jokios sąlygos, palikite abu laukus tuščius ir spustelėkite Pateikti, kad praleistumėte.\n\nIki šiol pridėtos sąlygos ({count}): {summary}\n\n{current_state}\n\nPažymėkite „Pridėti dar vieną“, kad sujungtumėte daugiau — visos turi atitikti, kad taisyklė suveiktų.",
+        "data": {
+          "entity": "Sąlygos esybė",
+          "match_state": "Reikalaujama būsena",
+          "add_another": "Pridėti dar vieną sąlygą po šios"
+        },
+        "data_description": {
+          "entity": "Pasirinkite esybę, kurios būsena veikia kaip sąlyga (pvz., person.alice, input_boolean.guest_mode, sun.sun).",
+          "match_state": "Būsena, kurioje esybė turi būti, kad taisyklė suveiktų (pvz., „on“, „home“, „not_home“, „below_horizon“).",
+          "add_another": "Pažymėkite, kad pridėtumėte daugiau sąlygų. Nepažymėkite, kad baigtumėte."
+        }
+      },
+      "advanced": {
+        "title": "Išplėstiniai",
+        "description": "Nustatykite parinktis, kurias pasirinkote ankstesniame ekrane. Numatytoji dažnio riba yra {default_rate} taikymų per minutę.",
+        "data": {
+          "debounce_seconds": "Nutildymo langas (sekundės)",
+          "rate_limit_enabled": "Taikyti ciklo apsaugą",
+          "max_enforcements_per_minute": "Daugiausia taikymų per minutę"
+        },
+        "data_description": {
+          "debounce_seconds": "Langas sekundėmis. Mažiausia 0, daugiausia 86400 (24 val.). Rodoma tik tada, kai nutildymas buvo įjungtas ankstesniame žingsnyje.",
+          "rate_limit_enabled": "Pažymėkite, kad ciklo apsauga liktų įjungta (rekomenduojama). Nuimkite žymėjimą, kad išjungtumėte ją šiai taisyklei — nekontroliuojami ciklai nebus automatiškai sustabdyti.",
+          "max_enforcements_per_minute": "Kiek taikymų per minutę leidžiama prieš taisyklei automatiškai susislopinant 15 minučių. Mažiausia 1, daugiausia 600. Ignoruojama, kai ciklo apsauga aukščiau nepažymėta."
+        }
+      },
+      "safety": {
+        "title": "Saugos patvirtinimas",
+        "description": "Ši taisyklė taikoma saugos požiūriu jautrioms esybėms ({entities}). Kad tęstumėte, turite aiškiai patvirtinti riziką.",
+        "data": {
+          "safety_acknowledged": "Suprantu, kad ši taisyklė judins fizinę įrangą, ir prisiimu riziką."
+        }
+      },
+      "preview": {
+        "title": "Peržiūrėti ir sukurti",
+        "description": "Peržiūrėkite savo taisyklę žemiau. Spustelėkite **Pateikti**, kad ją sukurtumėte, arba naudokite atgal rodyklę, kad atliktumėte pakeitimų.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Atributo parametrai",
+        "description": "Konfigūruokite pasirinkto atributo taikymo reikšmes.",
+        "data": {
+          "operator": "Operatorius",
+          "threshold": "Slenkstis",
+          "target_value": "Tikslinė reikšmė",
+          "delay_seconds": "Delsimas (sekundės)"
+        },
+        "data_description": {
+          "operator": "Palyginimo operatorius, naudojamas skaitinio apribojimo taisyklėms.",
+          "threshold": "Skaitinė reikšmė, lyginama su tiesioginiu atributu. Naudojama tik skaitinio apribojimo taisyklėms.",
+          "target_value": "Taikoma reikšmė. Skaitiniai atributai apribojami iki šios reikšmės; spalvų atributai turi ją atitikti.",
+          "delay_seconds": "Palaukite tiek laiko po aktyvinimo prieš taikydami. 0 = iškart. Daugiausia 86400 (24 val.)."
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "Taisyklės pavadinimas negali būti tuščias.",
+      "empty_target_entities": "Pasirinkite bent vieną tikslinę esybę.",
+      "empty_trigger_states": "Nurodykite bent vieną aktyvinimo būseną.",
+      "empty_target_state": "Tikslinė būsena negali būti tuščia.",
+      "invalid_threshold": "Slenkstis ir tikslinė reikšmė turi būti skaitiniai.",
+      "invalid_delay": "Delsimas turi būti sveikasis skaičius nuo 0 iki 86400 sekundžių (24 val.).",
+      "invalid_rate": "Daugiausia taikymų per minutę turi būti sveikasis skaičius nuo 1 iki 600.",
+      "target_in_triggers": "Tikslinė būsena negali būti ir aktyvinimo būsena — tai sukurtų taikymo ciklą.",
+      "forbidden_state": "Būsenos „unavailable“, „unknown“ ir „none“ negali būti naudojamos kaip aktyvinimo ar tikslinės būsenos.",
+      "incomplete_flag": "Turi būti nustatyta ir vėliavos esybė, ir reikalaujama būsena.",
+      "safety_not_acknowledged": "Kad tęstumėte, turite patvirtinti saugos riziką.",
+      "name_already_exists": "Taisyklė tokiu pavadinimu jau egzistuoja.",
+      "invalid_rgb_color": "RGB spalva turi būti trijų reikšmių nuo 0 iki 255 sąrašas.",
+      "invalid_color_temp_kelvin": "Spalvos temperatūra turi būti nuo 2000 K iki 6500 K."
+    },
+    "abort": {
+      "single_instance_allowed": "Galima sukonfigūruoti tik vieną Entity Guard mazgą.",
+      "name_already_exists": "Taisyklė tokiu pavadinimu jau egzistuoja.",
+      "already_configured": "Ši taisyklė jau sukonfigūruota."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Redaguoti taisyklę",
+        "description": "{summary}\n\nPasirinkite, ką keisti.",
+        "menu_options": {
+          "edit_basics": "Redaguoti pavadinimą",
+          "edit_mode": "Redaguoti režimui būdingus nustatymus",
+          "edit_entities": "Pridėti arba pašalinti tikslines esybes",
+          "edit_flags": "Redaguoti vėliavų sąlygas",
+          "edit_advanced": "Redaguoti nutildymą ir dažnio ribą"
+        }
+      },
+      "edit_basics": {
+        "title": "Redaguoti pavadinimą",
+        "data": {
+          "rule_name": "Taisyklės pavadinimas"
+        }
+      },
+      "edit_entities": {
+        "title": "Redaguoti tikslines esybes",
+        "data": {
+          "target_entities": "Tikslinės esybės"
+        }
+      },
+      "edit_safety": {
+        "title": "Saugos patvirtinimas",
+        "description": "Buvo pridėtos naujos saugos požiūriu jautrios esybės. Patvirtinkite iš naujo, kad išsaugotumėte.",
+        "data": {
+          "safety_acknowledged": "Suprantu, kad ši taisyklė judins fizinę įrangą, ir prisiimu riziką."
+        }
+      },
+      "edit_state": {
+        "title": "Redaguoti būsenos režimą",
+        "data": {
+          "trigger_states": "Aktyvinimo būsenos",
+          "target_state": "Tikslinė būsena",
+          "delay_seconds": "Delsimas (sekundės)"
+        }
+      },
+      "edit_attribute": {
+        "title": "Redaguoti atributo režimą",
+        "description": "Pasirinkite, kurį atributą ši taisyklė turi taikyti. Skaitiniai atributai apribojami iki tikslo; spalvų atributai atitinka tikslinę spalvą.",
+        "data": {
+          "attribute": "Atributas"
+        }
+      },
+      "edit_flags": {
+        "title": "Redaguoti vėliavų sąlygas",
+        "description": "Dabartinės vėliavos: {summary}.\n\n{current_state}\n\nPasirinkite „pridėti“, kad pridurtumėte, „pakeisti“, kad pakeistumėte visas, „išvalyti“, kad pašalintumėte visas, arba „išsaugoti“, kad paliktumėte nepakeistas.",
+        "data": {
+          "entity": "Vėliavos esybė",
+          "match_state": "Reikalaujama būsena",
+          "action": "Veiksmas"
+        }
+      },
+      "edit_advanced": {
+        "title": "Redaguoti išplėstinius nustatymus",
+        "data": {
+          "debounce_enabled": "Įjungti nutildymą",
+          "debounce_seconds": "Nutildymo langas (sekundės)",
+          "max_enforcements_per_minute": "Daugiausia taikymų per minutę"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Redaguoti atributo parametrus",
+        "description": "Konfigūruokite pasirinkto atributo taikymo reikšmes.",
+        "data": {
+          "operator": "Operatorius",
+          "threshold": "Slenkstis",
+          "target_value": "Tikslinė reikšmė",
+          "delay_seconds": "Delsimas (sekundės)"
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "Taisyklės pavadinimas negali būti tuščias.",
+      "empty_target_entities": "Pasirinkite bent vieną tikslinę esybę.",
+      "empty_trigger_states": "Nurodykite bent vieną aktyvinimo būseną.",
+      "empty_target_state": "Tikslinė būsena negali būti tuščia.",
+      "invalid_threshold": "Slenkstis ir tikslinė reikšmė turi būti skaitiniai.",
+      "invalid_delay": "Delsimas turi būti sveikasis skaičius nuo 0 iki 86400 sekundžių (24 val.).",
+      "invalid_rate": "Daugiausia taikymų per minutę turi būti sveikasis skaičius nuo 1 iki 600.",
+      "target_in_triggers": "Tikslinė būsena negali būti ir aktyvinimo būsena — tai sukurtų taikymo ciklą.",
+      "forbidden_state": "Būsenos „unavailable“, „unknown“ ir „none“ negali būti naudojamos kaip aktyvinimo ar tikslinės būsenos.",
+      "incomplete_flag": "Turi būti nustatyta ir vėliavos esybė, ir reikalaujama būsena.",
+      "safety_not_acknowledged": "Kad tęstumėte, turite patvirtinti saugos riziką.",
+      "name_already_exists": "Taisyklė tokiu pavadinimu jau egzistuoja.",
+      "invalid_rgb_color": "RGB spalva turi būti trijų reikšmių nuo 0 iki 255 sąrašas.",
+      "invalid_color_temp_kelvin": "Spalvos temperatūra turi būti nuo 2000 K iki 6500 K."
+    },
+    "abort": {
+      "name_already_exists": "Taisyklė tokiu pavadinimu jau egzistuoja.",
+      "hub_no_options": "Entity Guard mazgas neturi redaguojamų parinkčių."
+    }
+  },
+  "exceptions": {
+    "rule_not_found": {
+      "message": "Nerasta jokios Entity Guard taisyklės, atitinkančios {rule_id}."
+    }
+  },
+  "services": {
+    "suppress": {
+      "name": "Slopinti taisyklę",
+      "description": "Laikinai slopinti Entity Guard taisyklę. Taisyklė automatiškai atsinaujina pasibaigus trukmei.",
+      "fields": {
+        "rule_id": {
+          "name": "Taisyklė",
+          "description": "Taisyklės UUID arba taisyklės pavadinimas (konfigūracijos įrašo antraštė)."
+        },
+        "duration_minutes": {
+          "name": "Trukmė (minutės)",
+          "description": "Kiek laiko slopinti taisyklę (1–1440 minučių)."
+        }
+      }
+    },
+    "unsuppress": {
+      "name": "Panaikinti taisyklės slopinimą",
+      "description": "Nedelsiant atnaujinti slopinamą Entity Guard taisyklę.",
+      "fields": {
+        "rule_id": {
+          "name": "Taisyklė",
+          "description": "Taisyklės UUID arba taisyklės pavadinimas (konfigūracijos įrašo antraštė)."
+        }
+      }
+    },
+    "list_rules": {
+      "name": "Išvardyti taisykles",
+      "description": "Grąžinti kiekvienos Entity Guard taisyklės konfigūraciją ir dabartinę būseną."
+    },
+    "clear_history": {
+      "name": "Išvalyti taisyklės istoriją",
+      "description": "Išvalyti saugomą taikymo istoriją (skaičiavimus, paskutinį taikymą, atvėsimo laikus) taisyklei.",
+      "fields": {
+        "rule_id": {
+          "name": "Taisyklė",
+          "description": "Taisyklės UUID arba taisyklės pavadinimas (konfigūracijos įrašo antraštė)."
+        }
+      }
+    },
+    "panic_stop": {
+      "name": "Avarinis stabdymas",
+      "description": "Avarinis išjungimas — išjungti kiekvieną taisyklę, išvalyti visus atvėsimo laikus, slopinti 60 minučių ir išjungti mazgo pagrindinį jungiklį."
+    }
+  },
+  "selector": {
+    "status": {
+      "options": {
+        "error": "Klaida",
+        "disabled": "Išjungta",
+        "master_disabled": "Pagrindinis išjungtas",
+        "suppressed": "Slopinama",
+        "enforcing": "Taikoma",
+        "cooldown": "Atvėsimas",
+        "armed": "Suaktyvinta",
+        "conditional": "Laukiama sąlygų",
+        "starting": "Paleidžiama",
+        "pending": "Netrukus taikys"
+      }
+    },
+    "mode": {
+      "options": {
+        "state": "Būsena",
+        "attribute": "Atributas"
+      }
+    },
+    "attribute": {
+      "options": {
+        "brightness": "Ryškumas",
+        "volume_level": "Garsumo lygis",
+        "temperature": "Temperatūra",
+        "percentage": "Procentai",
+        "rgb_color": "RGB spalva",
+        "color_temp_kelvin": "Spalvos temperatūra (Kelvinai)"
+      }
+    },
+    "operator": {
+      "options": {
+        "lt": "Mažiau nei (<)",
+        "lte": "Mažiau arba lygu (<=)",
+        "gt": "Daugiau nei (>)",
+        "gte": "Daugiau arba lygu (>=)"
+      }
+    },
+    "flag_action": {
+      "options": {
+        "save": "Išeiti be pakeitimų",
+        "add": "Pridėti vėliavą",
+        "replace": "Pakeisti visas vėliavas",
+        "clear": "Išvalyti visas vėliavas"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "armed": {
+        "name": "Suaktyvinta"
+      },
+      "active": {
+        "name": "Aktyvi"
+      },
+      "in_cooldown": {
+        "name": "Atvėsimo metu"
+      },
+      "pending": {
+        "name": "Laukiama"
+      },
+      "recently_enforced": {
+        "name": "Neseniai pritaikyta"
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Būsena"
+      },
+      "last_enforced": {
+        "name": "Paskutinį kartą pritaikyta"
+      },
+      "enforcement_count_today": {
+        "name": "Taikymai šiandien"
+      },
+      "enforcement_count_total": {
+        "name": "Taikymai iš viso"
+      },
+      "cooldown_remaining": {
+        "name": "Likęs atvėsimas"
+      },
+      "safety_status": {
+        "name": "Saugos būsena"
+      },
+      "suppressed_until": {
+        "name": "Slopinama iki"
+      },
+      "rule_id": {
+        "name": "Taisyklės ID"
+      }
+    },
+    "switch": {
+      "enabled": {
+        "name": "Įjungta"
+      },
+      "debounce_enabled": {
+        "name": "Nutildymas įjungtas"
+      },
+      "master_enabled": {
+        "name": "Pagrindinis įjungtas"
+      }
+    },
+    "number": {
+      "delay_seconds": {
+        "name": "Delsimas (sekundės)"
+      },
+      "debounce_seconds": {
+        "name": "Nutildymas (sekundės)"
+      },
+      "max_enforcements_per_minute": {
+        "name": "Daugiausia taikymų per minutę"
+      }
+    },
+    "button": {
+      "reset": {
+        "name": "Atstatyti atvėsimo laikus"
+      },
+      "test_enforce": {
+        "name": "Bandomasis taikymas"
+      },
+      "clear_suppression": {
+        "name": "Išvalyti slopinimą"
+      },
+      "clear_history": {
+        "name": "Išvalyti istoriją (skaitiklius)"
+      }
+    }
+  },
+  "issues": {
+    "flag_entity_missing": {
+      "title": "Vėliavos esybė trūksta taisyklėje „{rule_name}“",
+      "description": "Šios vėliavos esybės (-ių) nebeegzistuoja, tačiau į jas nurodoma taisyklėje: {missing_entities}. Taisyklė netaikys, kai šių vėliavų nebus galima įvertinti. Atnaujinkite arba pašalinkite taisyklę, kad išspręstumėte šią problemą."
+    }
+  }
+}

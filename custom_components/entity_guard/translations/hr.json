@@ -1,0 +1,415 @@
+{
+  "title": "Entity Guard",
+  "config": {
+    "step": {
+      "rule": {
+        "title": "Novo pravilo — osnove",
+        "description": "Imenujte pravilo, odaberite ciljne entitete koje želite nadzirati i odaberite način rada pravila.",
+        "data": {
+          "rule_name": "Naziv pravila",
+          "target_entities": "Ciljni entiteti",
+          "mode": "Način rada pravila"
+        },
+        "data_description": {
+          "rule_name": "Prikazani naziv u sučelju. Mora biti jedinstven.",
+          "target_entities": "Jedan ili više entiteta koje će ovo pravilo nadzirati.",
+          "mode": "Način rada stanja prisiljava određeno stanje. Način rada atributa ograničava numeričke atribute ili odgovara ciljanoj boji."
+        }
+      },
+      "state": {
+        "title": "Način rada stanja",
+        "description": "Kada bilo koji ciljni entitet uđe u jedno od okidajućih stanja, vratite ga natrag u ciljno stanje nakon neobaveznog odgode.",
+        "data": {
+          "trigger_states": "Okidajuća stanja",
+          "target_state": "Ciljno stanje",
+          "delay_seconds": "Odgoda (sekunde)"
+        },
+        "data_description": {
+          "trigger_states": "Popis stanja koja aktiviraju provedbu (npr. on, open, unlocked). Upišite za dodavanje prilagođenih vrijednosti.",
+          "target_state": "Stanje u koje će entitet biti prisiljen (npr. off, closed, locked).",
+          "delay_seconds": "Pričekajte ovoliko dugo nakon okidača prije provedbe. 0 = odmah. Maksimalno 86400 (24 h)."
+        }
+      },
+      "attribute": {
+        "title": "Način rada atributa",
+        "description": "Odaberite koji atribut ovo pravilo treba nadzirati. Numerički atributi ograničavaju se na cilj; atributi boje odgovaraju ciljanoj boji.",
+        "data": {
+          "attribute": "Atribut"
+        },
+        "data_description": {
+          "attribute": "Atribut za nadzor i provedbu."
+        }
+      },
+      "extras": {
+        "title": "Neobavezne značajke",
+        "description": "Označite značajke koje želite konfigurirati. Svaka označena opcija dodaje sljedeći zaslon. Preskočite ih sve za izravan prijelaz na pregled.",
+        "data": {
+          "add_flags": "Dodaj dodatne uvjete",
+          "custom_rate_limit": "Prilagodi zaštitu od petlji",
+          "add_debounce": "Omogući odgodu ponavljanja"
+        },
+        "data_description": {
+          "add_flags": "Označite za zahtijevanje dodatnih uvjeta (npr. provedi samo kada nitko nije kod kuće, samo nakon zalaska sunca). Ostavite neoznačeno za provedbu svaki put kada se okidač pokrene.",
+          "custom_rate_limit": "Zaštita od petlji automatski potiskuje pravilo ako se pokrene više od 10 puta u minuti (zadano). Ostavite neoznačeno za korištenje zadane vrijednosti. Označite za postavljanje vlastitog broja ili za potpuno isključivanje zaštite od petlji na sljedećem zaslonu.",
+          "add_debounce": "Označite za zanemarivanje brzih naprijed-natrag promjena. Pravilo djeluje samo ako okidač ostane isti tijekom vremena koje postavite na sljedećem zaslonu. Ostavite neoznačeno za djelovanje na svaku promjenu."
+        }
+      },
+      "flags": {
+        "title": "Uvjeti (neobavezno)",
+        "description": "Dodatni uvjeti koji svi moraju biti ispunjeni da bi pravilo djelovalo.\n\nPrimjeri:\n  • person.alice = not_home — samo kada Alice nije prisutna\n  • input_boolean.guest_mode = off — samo kada nema gostiju\n  • sun.sun = below_horizon — samo nakon zalaska sunca\n  • binary_sensor.work_hours = on — samo tijekom radnog vremena\n\nZa dodavanje uvjeta: odaberite entitet, upišite stanje u kojem mora biti, zatim kliknite Pošalji.\n\nAko trenutačno ne želite nikakav uvjet, ostavite oba polja prazna i kliknite Pošalji za preskakanje.\n\nDosad dodani uvjeti ({count}): {summary}\n\n{current_state}\n\nOznačite 'Dodaj još' za povezivanje dodatnih — svi moraju odgovarati da bi se pravilo pokrenulo.",
+        "data": {
+          "entity": "Entitet uvjeta",
+          "match_state": "Traženo stanje",
+          "add_another": "Dodaj još jedan uvjet nakon ovoga"
+        },
+        "data_description": {
+          "entity": "Odaberite entitet čije stanje djeluje kao uvjet (npr. person.alice, input_boolean.guest_mode, sun.sun).",
+          "match_state": "Stanje u kojem entitet mora biti da bi se pravilo pokrenulo (npr. 'on', 'home', 'not_home', 'below_horizon').",
+          "add_another": "Označite za dodavanje dodatnih uvjeta. Ostavite neoznačeno za završetak."
+        }
+      },
+      "advanced": {
+        "title": "Napredno",
+        "description": "Postavite opcije koje ste odabrali na prethodnom zaslonu. Zadano ograničenje učestalosti je {default_rate} provedbi u minuti.",
+        "data": {
+          "debounce_seconds": "Prozor odgode ponavljanja (sekunde)",
+          "rate_limit_enabled": "Provedi zaštitu od petlji",
+          "max_enforcements_per_minute": "Maks. provedbi u minuti"
+        },
+        "data_description": {
+          "debounce_seconds": "Prozor u sekundama. Min 0, maks 86400 (24 h). Prikazuje se samo kada je odgoda ponavljanja omogućena u prethodnom koraku.",
+          "rate_limit_enabled": "Označite za zadržavanje uključene zaštite od petlji (preporučeno). Odznačite za onemogućavanje za ovo pravilo — nekontrolirane petlje neće biti automatski zaustavljene.",
+          "max_enforcements_per_minute": "Koliko je provedbi u minuti dopušteno prije nego se pravilo automatski potisne na 15 minuta. Min 1, maks 600. Zanemaruje se kada je zaštita od petlji odznačena iznad."
+        }
+      },
+      "safety": {
+        "title": "Potvrda sigurnosti",
+        "description": "Ovo pravilo cilja sigurnosno osjetljive entitete ({entities}). Morate izričito potvrditi rizik za nastavak.",
+        "data": {
+          "safety_acknowledged": "Razumijem da će ovo pravilo pomicati fizički hardver i prihvaćam rizik."
+        }
+      },
+      "preview": {
+        "title": "Pregled i stvaranje",
+        "description": "Pregledajte svoje pravilo u nastavku. Kliknite **Pošalji** za stvaranje ili upotrijebite strelicu natrag za promjene.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Parametri atributa",
+        "description": "Konfigurirajte vrijednosti provedbe za odabrani atribut.",
+        "data": {
+          "operator": "Operator",
+          "threshold": "Prag",
+          "target_value": "Ciljna vrijednost",
+          "delay_seconds": "Odgoda (sekunde)"
+        },
+        "data_description": {
+          "operator": "Operator usporedbe koji se koristi za numerička pravila ograničavanja.",
+          "threshold": "Numerička vrijednost uspoređena sa živim atributom. Koristi se samo za numerička pravila ograničavanja.",
+          "target_value": "Vrijednost koja se provodi. Numerički atributi ograničavaju se na ovu vrijednost; atributi boje moraju joj odgovarati.",
+          "delay_seconds": "Pričekajte ovoliko dugo nakon okidača prije provedbe. 0 = odmah. Maksimalno 86400 (24 h)."
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "Naziv pravila ne može biti prazan.",
+      "empty_target_entities": "Odaberite barem jedan ciljni entitet.",
+      "empty_trigger_states": "Navedite barem jedno okidajuće stanje.",
+      "empty_target_state": "Ciljno stanje ne može biti prazno.",
+      "invalid_threshold": "Prag i ciljna vrijednost moraju biti numerički.",
+      "invalid_delay": "Odgoda mora biti cijeli broj između 0 i 86400 sekundi (24 h).",
+      "invalid_rate": "Maks. provedbi u minuti mora biti cijeli broj između 1 i 600.",
+      "target_in_triggers": "Ciljno stanje ne može ujedno biti i okidajuće stanje — to bi stvorilo petlju provedbe.",
+      "forbidden_state": "Stanja 'unavailable', 'unknown' i 'none' ne mogu se koristiti kao okidači ni kao ciljevi.",
+      "incomplete_flag": "Moraju biti postavljeni i entitet zastavice i traženo stanje.",
+      "safety_not_acknowledged": "Morate potvrditi sigurnosni rizik za nastavak.",
+      "name_already_exists": "Pravilo s ovim nazivom već postoji.",
+      "invalid_rgb_color": "RGB boja mora biti popis od tri vrijednosti između 0 i 255.",
+      "invalid_color_temp_kelvin": "Temperatura boje mora biti između 2000 K i 6500 K."
+    },
+    "abort": {
+      "single_instance_allowed": "Može se konfigurirati samo jedno Entity Guard čvorište.",
+      "name_already_exists": "Pravilo s ovim nazivom već postoji.",
+      "already_configured": "Ovo je pravilo već konfigurirano."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Uredi pravilo",
+        "description": "{summary}\n\nOdaberite što promijeniti.",
+        "menu_options": {
+          "edit_basics": "Uredi naziv",
+          "edit_mode": "Uredi postavke specifične za način rada",
+          "edit_entities": "Dodaj ili ukloni ciljne entitete",
+          "edit_flags": "Uredi uvjete zastavica",
+          "edit_advanced": "Uredi odgodu ponavljanja i ograničenje učestalosti"
+        }
+      },
+      "edit_basics": {
+        "title": "Uredi naziv",
+        "data": {
+          "rule_name": "Naziv pravila"
+        }
+      },
+      "edit_entities": {
+        "title": "Uredi ciljne entitete",
+        "data": {
+          "target_entities": "Ciljni entiteti"
+        }
+      },
+      "edit_safety": {
+        "title": "Potvrda sigurnosti",
+        "description": "Dodani su novi sigurnosno osjetljivi entiteti. Ponovno potvrdite za spremanje.",
+        "data": {
+          "safety_acknowledged": "Razumijem da će ovo pravilo pomicati fizički hardver i prihvaćam rizik."
+        }
+      },
+      "edit_state": {
+        "title": "Uredi način rada stanja",
+        "data": {
+          "trigger_states": "Okidajuća stanja",
+          "target_state": "Ciljno stanje",
+          "delay_seconds": "Odgoda (sekunde)"
+        }
+      },
+      "edit_attribute": {
+        "title": "Uredi način rada atributa",
+        "description": "Odaberite koji atribut ovo pravilo treba nadzirati. Numerički atributi ograničavaju se na cilj; atributi boje odgovaraju ciljanoj boji.",
+        "data": {
+          "attribute": "Atribut"
+        }
+      },
+      "edit_flags": {
+        "title": "Uredi uvjete zastavica",
+        "description": "Trenutačne zastavice: {summary}.\n\n{current_state}\n\nOdaberite 'dodaj' za nadodavanje, 'zamijeni' za zamjenu svih, 'očisti' za uklanjanje svih ili 'spremi' za ostavljanje nepromijenjenim.",
+        "data": {
+          "entity": "Entitet zastavice",
+          "match_state": "Traženo stanje",
+          "action": "Radnja"
+        }
+      },
+      "edit_advanced": {
+        "title": "Uredi napredne postavke",
+        "data": {
+          "debounce_enabled": "Omogući odgodu ponavljanja",
+          "debounce_seconds": "Prozor odgode ponavljanja (sekunde)",
+          "max_enforcements_per_minute": "Maks. provedbi u minuti"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Uredi parametre atributa",
+        "description": "Konfigurirajte vrijednosti provedbe za odabrani atribut.",
+        "data": {
+          "operator": "Operator",
+          "threshold": "Prag",
+          "target_value": "Ciljna vrijednost",
+          "delay_seconds": "Odgoda (sekunde)"
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "Naziv pravila ne može biti prazan.",
+      "empty_target_entities": "Odaberite barem jedan ciljni entitet.",
+      "empty_trigger_states": "Navedite barem jedno okidajuće stanje.",
+      "empty_target_state": "Ciljno stanje ne može biti prazno.",
+      "invalid_threshold": "Prag i ciljna vrijednost moraju biti numerički.",
+      "invalid_delay": "Odgoda mora biti cijeli broj između 0 i 86400 sekundi (24 h).",
+      "invalid_rate": "Maks. provedbi u minuti mora biti cijeli broj između 1 i 600.",
+      "target_in_triggers": "Ciljno stanje ne može ujedno biti i okidajuće stanje — to bi stvorilo petlju provedbe.",
+      "forbidden_state": "Stanja 'unavailable', 'unknown' i 'none' ne mogu se koristiti kao okidači ni kao ciljevi.",
+      "incomplete_flag": "Moraju biti postavljeni i entitet zastavice i traženo stanje.",
+      "safety_not_acknowledged": "Morate potvrditi sigurnosni rizik za nastavak.",
+      "name_already_exists": "Pravilo s ovim nazivom već postoji.",
+      "invalid_rgb_color": "RGB boja mora biti popis od tri vrijednosti između 0 i 255.",
+      "invalid_color_temp_kelvin": "Temperatura boje mora biti između 2000 K i 6500 K."
+    },
+    "abort": {
+      "name_already_exists": "Pravilo s ovim nazivom već postoji.",
+      "hub_no_options": "Entity Guard čvorište nema opcije koje se mogu uređivati."
+    }
+  },
+  "exceptions": {
+    "rule_not_found": {
+      "message": "Nije pronađeno nijedno Entity Guard pravilo koje odgovara {rule_id}."
+    }
+  },
+  "services": {
+    "suppress": {
+      "name": "Potisni pravilo",
+      "description": "Privremeno potisnite Entity Guard pravilo. Pravilo se automatski nastavlja nakon isteka trajanja.",
+      "fields": {
+        "rule_id": {
+          "name": "Pravilo",
+          "description": "UUID pravila ili naziv pravila (naslov konfiguracijskog unosa)."
+        },
+        "duration_minutes": {
+          "name": "Trajanje (minute)",
+          "description": "Koliko dugo potisnuti pravilo (1-1440 minuta)."
+        }
+      }
+    },
+    "unsuppress": {
+      "name": "Poništi potiskivanje pravila",
+      "description": "Odmah nastavite potisnuto Entity Guard pravilo.",
+      "fields": {
+        "rule_id": {
+          "name": "Pravilo",
+          "description": "UUID pravila ili naziv pravila (naslov konfiguracijskog unosa)."
+        }
+      }
+    },
+    "list_rules": {
+      "name": "Popiši pravila",
+      "description": "Vraća konfiguraciju i trenutačni status svakog Entity Guard pravila."
+    },
+    "clear_history": {
+      "name": "Očisti povijest pravila",
+      "description": "Očistite spremljenu povijest provedbe (brojače, zadnju provedbu, razdoblja mirovanja) za pravilo.",
+      "fields": {
+        "rule_id": {
+          "name": "Pravilo",
+          "description": "UUID pravila ili naziv pravila (naslov konfiguracijskog unosa)."
+        }
+      }
+    },
+    "panic_stop": {
+      "name": "Zaustavljanje u panici",
+      "description": "Hitno gašenje — onemogući svako pravilo, očisti sva razdoblja mirovanja, potisni na 60 minuta i isključi glavni prekidač čvorišta."
+    }
+  },
+  "selector": {
+    "status": {
+      "options": {
+        "error": "Pogreška",
+        "disabled": "Onemogućeno",
+        "master_disabled": "Glavno onemogućeno",
+        "suppressed": "Potisnuto",
+        "enforcing": "Provodi se",
+        "cooldown": "Razdoblje mirovanja",
+        "armed": "Naoružano",
+        "conditional": "Čeka uvjete",
+        "starting": "Pokreće se",
+        "pending": "Uskoro provedba"
+      }
+    },
+    "mode": {
+      "options": {
+        "state": "Stanje",
+        "attribute": "Atribut"
+      }
+    },
+    "attribute": {
+      "options": {
+        "brightness": "Svjetlina",
+        "volume_level": "Razina glasnoće",
+        "temperature": "Temperatura",
+        "percentage": "Postotak",
+        "rgb_color": "RGB boja",
+        "color_temp_kelvin": "Temperatura boje (Kelvin)"
+      }
+    },
+    "operator": {
+      "options": {
+        "lt": "Manje od (<)",
+        "lte": "Manje ili jednako (<=)",
+        "gt": "Veće od (>)",
+        "gte": "Veće ili jednako (>=)"
+      }
+    },
+    "flag_action": {
+      "options": {
+        "save": "Izađi bez promjena",
+        "add": "Dodaj zastavicu",
+        "replace": "Zamijeni sve zastavice",
+        "clear": "Očisti sve zastavice"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "armed": {
+        "name": "Naoružano"
+      },
+      "active": {
+        "name": "Aktivno"
+      },
+      "in_cooldown": {
+        "name": "U razdoblju mirovanja"
+      },
+      "pending": {
+        "name": "Na čekanju"
+      },
+      "recently_enforced": {
+        "name": "Nedavno provedeno"
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Status"
+      },
+      "last_enforced": {
+        "name": "Zadnja provedba"
+      },
+      "enforcement_count_today": {
+        "name": "Provedbe danas"
+      },
+      "enforcement_count_total": {
+        "name": "Ukupno provedbi"
+      },
+      "cooldown_remaining": {
+        "name": "Preostalo razdoblje mirovanja"
+      },
+      "safety_status": {
+        "name": "Sigurnosni status"
+      },
+      "suppressed_until": {
+        "name": "Potisnuto do"
+      },
+      "rule_id": {
+        "name": "ID pravila"
+      }
+    },
+    "switch": {
+      "enabled": {
+        "name": "Omogućeno"
+      },
+      "debounce_enabled": {
+        "name": "Odgoda ponavljanja omogućena"
+      },
+      "master_enabled": {
+        "name": "Glavno omogućeno"
+      }
+    },
+    "number": {
+      "delay_seconds": {
+        "name": "Odgoda (sekunde)"
+      },
+      "debounce_seconds": {
+        "name": "Odgoda ponavljanja (sekunde)"
+      },
+      "max_enforcements_per_minute": {
+        "name": "Maks. provedbi u minuti"
+      }
+    },
+    "button": {
+      "reset": {
+        "name": "Poništi razdoblja mirovanja"
+      },
+      "test_enforce": {
+        "name": "Testna provedba"
+      },
+      "clear_suppression": {
+        "name": "Očisti potiskivanje"
+      },
+      "clear_history": {
+        "name": "Očisti povijest (brojače)"
+      }
+    }
+  },
+  "issues": {
+    "flag_entity_missing": {
+      "title": "Entitet zastavice nedostaje u pravilu \"{rule_name}\"",
+      "description": "Sljedeći entitet(i) zastavice više ne postoje, ali se referenciraju u pravilu: {missing_entities}. Pravilo se neće provoditi kada te zastavice nije moguće procijeniti. Ažurirajte ili uklonite pravilo da biste riješili ovaj problem."
+    }
+  }
+}

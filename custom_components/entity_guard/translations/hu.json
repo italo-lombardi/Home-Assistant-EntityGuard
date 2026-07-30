@@ -1,0 +1,415 @@
+{
+  "title": "Entity Guard",
+  "config": {
+    "step": {
+      "rule": {
+        "title": "Új szabály — alapok",
+        "description": "Nevezze el a szabályt, válassza ki a kényszerítendő cél entitásokat, és válassza ki a szabály módját.",
+        "data": {
+          "rule_name": "Szabály neve",
+          "target_entities": "Cél entitások",
+          "mode": "Szabály módja"
+        },
+        "data_description": {
+          "rule_name": "A felületen megjelenő megjelenítendő név. Egyedinek kell lennie.",
+          "target_entities": "Egy vagy több entitás, amelyet ez a szabály kényszerít.",
+          "mode": "Az állapot mód egy adott állapotot kényszerít ki. Az attribútum mód numerikus attribútumokat korlátoz, vagy egy szín célértékre illeszkedik."
+        }
+      },
+      "state": {
+        "title": "Állapot mód",
+        "description": "Amikor bármely cél entitás valamelyik triggerállapotba lép, kényszerítse vissza a cél állapotba az opcionális késleltetés után.",
+        "data": {
+          "trigger_states": "Trigger állapotok",
+          "target_state": "Cél állapot",
+          "delay_seconds": "Késleltetés (másodperc)"
+        },
+        "data_description": {
+          "trigger_states": "Azon állapotok listája, amelyek élesítik a kényszerítést (pl. on, open, unlocked). Gépeljen egyéni értékek hozzáadásához.",
+          "target_state": "Az az állapot, amelyre az entitást kényszeríteni fogja (pl. off, closed, locked).",
+          "delay_seconds": "Várjon ennyit egy trigger után a kényszerítés előtt. 0 = azonnali. Maximum 86400 (24 óra)."
+        }
+      },
+      "attribute": {
+        "title": "Attribútum mód",
+        "description": "Válassza ki, melyik attribútumot kényszerítse ez a szabály. A numerikus attribútumok egy célértékre korlátozódnak; a szín attribútumok egy cél színre illeszkednek.",
+        "data": {
+          "attribute": "Attribútum"
+        },
+        "data_description": {
+          "attribute": "A megfigyelendő és kényszerítendő attribútum."
+        }
+      },
+      "extras": {
+        "title": "Opcionális funkciók",
+        "description": "Jelölje be a beállítani kívánt funkciókat. Minden bejelölt opció egy további képernyőt ad hozzá. Hagyja mind bejelöletlenül, hogy közvetlenül az áttekintéshez ugorjon.",
+        "data": {
+          "add_flags": "További feltételek hozzáadása",
+          "custom_rate_limit": "Hurokvédelem testreszabása",
+          "add_debounce": "Debounce engedélyezése"
+        },
+        "data_description": {
+          "add_flags": "Jelölje be, ha további feltételeket szeretne megkövetelni (pl. csak akkor kényszerítsen, ha senki sincs otthon, csak naplemente után). Hagyja bejelöletlenül, hogy minden alkalommal kényszerítsen, amikor a trigger aktiválódik.",
+          "custom_rate_limit": "A hurokvédelem automatikusan elnyomja a szabályt, ha percenként több mint 10-szer aktiválódik (alapértelmezett). Hagyja bejelöletlenül az alapértelmezett használatához. Jelölje be, hogy saját számot állítson be, vagy hogy a hurokvédelmet teljesen kikapcsolja egy későbbi képernyőn.",
+          "add_debounce": "Jelölje be, hogy figyelmen kívül hagyja a gyors oda-vissza változásokat. A szabály csak akkor lép fel, ha a trigger a beállított ideig változatlan marad egy későbbi képernyőn. Hagyja bejelöletlenül, hogy minden változásra fellépjen."
+        }
+      },
+      "flags": {
+        "title": "Feltételek (opcionális)",
+        "description": "További feltételek, amelyeknek mindegyikének igaznak kell lennie, hogy a szabály fellépjen.\n\nPéldák:\n  • person.alice = not_home — csak amikor Alice távol van\n  • input_boolean.guest_mode = off — csak amikor nincs vendég\n  • sun.sun = below_horizon — csak naplemente után\n  • binary_sensor.work_hours = on — csak munkaidőben\n\nFeltétel hozzáadásához: válasszon egy entitást, gépelje be a szükséges állapotot, majd kattintson a Beküldés gombra.\n\nHa jelenleg nem szeretne feltételt, hagyja mindkét mezőt üresen, és kattintson a Beküldés gombra a kihagyáshoz.\n\nEddig hozzáadott feltételek ({count}): {summary}\n\n{current_state}\n\nJelölje be a 'Továbbiak hozzáadása' opciót további láncoláshoz — mindegyiknek illeszkednie kell, hogy a szabály aktiválódjon.",
+        "data": {
+          "entity": "Feltétel entitás",
+          "match_state": "Szükséges állapot",
+          "add_another": "Ezután adjon hozzá egy másik feltételt"
+        },
+        "data_description": {
+          "entity": "Válassza ki azt az entitást, amelynek állapota feltételként szolgál (pl. person.alice, input_boolean.guest_mode, sun.sun).",
+          "match_state": "Az az állapot, amelyben az entitásnak lennie kell, hogy a szabály aktiválódjon (pl. 'on', 'home', 'not_home', 'below_horizon').",
+          "add_another": "Jelölje be további feltételek hozzáadásához. Hagyja bejelöletlenül a befejezéshez."
+        }
+      },
+      "advanced": {
+        "title": "Speciális",
+        "description": "Állítsa be az előző képernyőn kiválasztott opciókat. Az alapértelmezett sebességkorlát {default_rate} kényszerítés percenként.",
+        "data": {
+          "debounce_seconds": "Debounce ablak (másodperc)",
+          "rate_limit_enabled": "Hurokvédelem kényszerítése",
+          "max_enforcements_per_minute": "Maximális kényszerítés percenként"
+        },
+        "data_description": {
+          "debounce_seconds": "Ablak másodpercben. Min. 0, max. 86400 (24 óra). Csak akkor jelenik meg, ha a debounce engedélyezve volt az előző lépésben.",
+          "rate_limit_enabled": "Jelölje be a hurokvédelem bekapcsolva tartásához (ajánlott). Vegye ki a jelölést, hogy letiltsa ehhez a szabályhoz — a megszaladt hurkok nem állnak le automatikusan.",
+          "max_enforcements_per_minute": "Hány kényszerítés engedélyezett percenként, mielőtt a szabály automatikusan elnyomja magát 15 percre. Min. 1, max. 600. Figyelmen kívül hagyva, ha a hurokvédelem fentebb ki van kapcsolva."
+        }
+      },
+      "safety": {
+        "title": "Biztonsági nyugtázás",
+        "description": "Ez a szabály biztonsági szempontból érzékeny entitásokat céloz ({entities}). A folytatáshoz kifejezetten nyugtáznia kell a kockázatot.",
+        "data": {
+          "safety_acknowledged": "Megértem, hogy ez a szabály fizikai hardvert fog mozgatni, és elfogadom a kockázatot."
+        }
+      },
+      "preview": {
+        "title": "Áttekintés és létrehozás",
+        "description": "Tekintse át a szabályát alább. Kattintson a **Beküldés** gombra a létrehozásához, vagy használja a vissza nyilat a módosításokhoz.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Attribútum paraméterek",
+        "description": "Állítsa be a kényszerítési értékeket a kiválasztott attribútumhoz.",
+        "data": {
+          "operator": "Operátor",
+          "threshold": "Küszöbérték",
+          "target_value": "Célérték",
+          "delay_seconds": "Késleltetés (másodperc)"
+        },
+        "data_description": {
+          "operator": "A numerikus korlátozási szabályokhoz használt összehasonlító operátor.",
+          "threshold": "Az élő attribútumhoz viszonyított numerikus érték. Csak numerikus korlátozási szabályokhoz használatos.",
+          "target_value": "A kényszerítendő érték. A numerikus attribútumok erre az értékre korlátozódnak; a szín attribútumoknak illeszkedniük kell rá.",
+          "delay_seconds": "Várjon ennyit egy trigger után a kényszerítés előtt. 0 = azonnali. Maximum 86400 (24 óra)."
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "A szabály neve nem lehet üres.",
+      "empty_target_entities": "Válasszon legalább egy cél entitást.",
+      "empty_trigger_states": "Adjon meg legalább egy trigger állapotot.",
+      "empty_target_state": "A cél állapot nem lehet üres.",
+      "invalid_threshold": "A küszöbértéknek és a célértéknek numerikusnak kell lennie.",
+      "invalid_delay": "A késleltetésnek 0 és 86400 másodperc (24 óra) közötti egész számnak kell lennie.",
+      "invalid_rate": "A percenkénti maximális kényszerítésnek 1 és 600 közötti egész számnak kell lennie.",
+      "target_in_triggers": "A cél állapot nem lehet egyben trigger állapot is — ez kényszerítési hurkot hozna létre.",
+      "forbidden_state": "Az 'unavailable', 'unknown' és 'none' állapotok nem használhatók triggerként vagy célként.",
+      "incomplete_flag": "A flag entitást és a szükséges állapotot is be kell állítani.",
+      "safety_not_acknowledged": "A folytatáshoz nyugtáznia kell a biztonsági kockázatot.",
+      "name_already_exists": "Már létezik ilyen nevű szabály.",
+      "invalid_rgb_color": "Az RGB színnek három, 0 és 255 közötti értékből álló listának kell lennie.",
+      "invalid_color_temp_kelvin": "A színhőmérsékletnek 2000 K és 6500 K között kell lennie."
+    },
+    "abort": {
+      "single_instance_allowed": "Csak egy Entity Guard hub konfigurálható.",
+      "name_already_exists": "Már létezik ilyen nevű szabály.",
+      "already_configured": "Ez a szabály már konfigurálva van."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Szabály szerkesztése",
+        "description": "{summary}\n\nVálassza ki, mit szeretne módosítani.",
+        "menu_options": {
+          "edit_basics": "Név szerkesztése",
+          "edit_mode": "Mód-specifikus beállítások szerkesztése",
+          "edit_entities": "Cél entitások hozzáadása vagy eltávolítása",
+          "edit_flags": "Flag feltételek szerkesztése",
+          "edit_advanced": "Debounce és sebességkorlát szerkesztése"
+        }
+      },
+      "edit_basics": {
+        "title": "Név szerkesztése",
+        "data": {
+          "rule_name": "Szabály neve"
+        }
+      },
+      "edit_entities": {
+        "title": "Cél entitások szerkesztése",
+        "data": {
+          "target_entities": "Cél entitások"
+        }
+      },
+      "edit_safety": {
+        "title": "Biztonsági nyugtázás",
+        "description": "Új biztonsági szempontból érzékeny entitások lettek hozzáadva. Nyugtázza újra a mentéshez.",
+        "data": {
+          "safety_acknowledged": "Megértem, hogy ez a szabály fizikai hardvert fog mozgatni, és elfogadom a kockázatot."
+        }
+      },
+      "edit_state": {
+        "title": "Állapot mód szerkesztése",
+        "data": {
+          "trigger_states": "Trigger állapotok",
+          "target_state": "Cél állapot",
+          "delay_seconds": "Késleltetés (másodperc)"
+        }
+      },
+      "edit_attribute": {
+        "title": "Attribútum mód szerkesztése",
+        "description": "Válassza ki, melyik attribútumot kényszerítse ez a szabály. A numerikus attribútumok egy célértékre korlátozódnak; a szín attribútumok egy cél színre illeszkednek.",
+        "data": {
+          "attribute": "Attribútum"
+        }
+      },
+      "edit_flags": {
+        "title": "Flag feltételek szerkesztése",
+        "description": "Jelenlegi flagek: {summary}.\n\n{current_state}\n\nVálassza az 'add' lehetőséget a hozzáfűzéshez, a 'replace' opciót az összes cseréjéhez, a 'clear' opciót az összes eltávolításához, vagy a 'save' opciót a változatlanul hagyáshoz.",
+        "data": {
+          "entity": "Flag entitás",
+          "match_state": "Szükséges állapot",
+          "action": "Művelet"
+        }
+      },
+      "edit_advanced": {
+        "title": "Speciális beállítások szerkesztése",
+        "data": {
+          "debounce_enabled": "Debounce engedélyezése",
+          "debounce_seconds": "Debounce ablak (másodperc)",
+          "max_enforcements_per_minute": "Maximális kényszerítés percenként"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Attribútum paraméterek szerkesztése",
+        "description": "Állítsa be a kényszerítési értékeket a kiválasztott attribútumhoz.",
+        "data": {
+          "operator": "Operátor",
+          "threshold": "Küszöbérték",
+          "target_value": "Célérték",
+          "delay_seconds": "Késleltetés (másodperc)"
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "A szabály neve nem lehet üres.",
+      "empty_target_entities": "Válasszon legalább egy cél entitást.",
+      "empty_trigger_states": "Adjon meg legalább egy trigger állapotot.",
+      "empty_target_state": "A cél állapot nem lehet üres.",
+      "invalid_threshold": "A küszöbértéknek és a célértéknek numerikusnak kell lennie.",
+      "invalid_delay": "A késleltetésnek 0 és 86400 másodperc (24 óra) közötti egész számnak kell lennie.",
+      "invalid_rate": "A percenkénti maximális kényszerítésnek 1 és 600 közötti egész számnak kell lennie.",
+      "target_in_triggers": "A cél állapot nem lehet egyben trigger állapot is — ez kényszerítési hurkot hozna létre.",
+      "forbidden_state": "Az 'unavailable', 'unknown' és 'none' állapotok nem használhatók triggerként vagy célként.",
+      "incomplete_flag": "A flag entitást és a szükséges állapotot is be kell állítani.",
+      "safety_not_acknowledged": "A folytatáshoz nyugtáznia kell a biztonsági kockázatot.",
+      "name_already_exists": "Már létezik ilyen nevű szabály.",
+      "invalid_rgb_color": "Az RGB színnek három, 0 és 255 közötti értékből álló listának kell lennie.",
+      "invalid_color_temp_kelvin": "A színhőmérsékletnek 2000 K és 6500 K között kell lennie."
+    },
+    "abort": {
+      "name_already_exists": "Már létezik ilyen nevű szabály.",
+      "hub_no_options": "Az Entity Guard hubnak nincsenek szerkeszthető opciói."
+    }
+  },
+  "exceptions": {
+    "rule_not_found": {
+      "message": "Nem található {rule_id} azonosítóhoz illeszkedő Entity Guard szabály."
+    }
+  },
+  "services": {
+    "suppress": {
+      "name": "Szabály elnyomása",
+      "description": "Egy Entity Guard szabály ideiglenes elnyomása. A szabály automatikusan folytatódik az időtartam után.",
+      "fields": {
+        "rule_id": {
+          "name": "Szabály",
+          "description": "Szabály UUID vagy szabály neve (konfigurációs bejegyzés címe)."
+        },
+        "duration_minutes": {
+          "name": "Időtartam (perc)",
+          "description": "Mennyi ideig nyomja el a szabályt (1-1440 perc)."
+        }
+      }
+    },
+    "unsuppress": {
+      "name": "Szabály elnyomásának feloldása",
+      "description": "Egy elnyomott Entity Guard szabály azonnali folytatása.",
+      "fields": {
+        "rule_id": {
+          "name": "Szabály",
+          "description": "Szabály UUID vagy szabály neve (konfigurációs bejegyzés címe)."
+        }
+      }
+    },
+    "list_rules": {
+      "name": "Szabályok listázása",
+      "description": "Adja vissza minden Entity Guard szabály konfigurációját és jelenlegi állapotát."
+    },
+    "clear_history": {
+      "name": "Szabály előzményeinek törlése",
+      "description": "Egy szabály tárolt kényszerítési előzményeinek (számlálók, utolsó kényszerítés, várakozási idők) törlése.",
+      "fields": {
+        "rule_id": {
+          "name": "Szabály",
+          "description": "Szabály UUID vagy szabály neve (konfigurációs bejegyzés címe)."
+        }
+      }
+    },
+    "panic_stop": {
+      "name": "Vészleállítás",
+      "description": "Vészleállítás — minden szabály letiltása, minden várakozási idő törlése, 60 perces elnyomás, és a hub főkapcsoló kikapcsolása."
+    }
+  },
+  "selector": {
+    "status": {
+      "options": {
+        "error": "Hiba",
+        "disabled": "Letiltva",
+        "master_disabled": "Fő letiltva",
+        "suppressed": "Elnyomva",
+        "enforcing": "Kényszerítés",
+        "cooldown": "Várakozási idő",
+        "armed": "Élesítve",
+        "conditional": "Feltételekre várva",
+        "starting": "Indítás",
+        "pending": "Kényszerítés előtt"
+      }
+    },
+    "mode": {
+      "options": {
+        "state": "Állapot",
+        "attribute": "Attribútum"
+      }
+    },
+    "attribute": {
+      "options": {
+        "brightness": "Fényerő",
+        "volume_level": "Hangerőszint",
+        "temperature": "Hőmérséklet",
+        "percentage": "Százalék",
+        "rgb_color": "RGB szín",
+        "color_temp_kelvin": "Színhőmérséklet (Kelvin)"
+      }
+    },
+    "operator": {
+      "options": {
+        "lt": "Kisebb mint (<)",
+        "lte": "Kisebb vagy egyenlő (<=)",
+        "gt": "Nagyobb mint (>)",
+        "gte": "Nagyobb vagy egyenlő (>=)"
+      }
+    },
+    "flag_action": {
+      "options": {
+        "save": "Kilépés módosítás nélkül",
+        "add": "Flag hozzáadása",
+        "replace": "Összes flag cseréje",
+        "clear": "Összes flag törlése"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "armed": {
+        "name": "Élesítve"
+      },
+      "active": {
+        "name": "Aktív"
+      },
+      "in_cooldown": {
+        "name": "Várakozási időben"
+      },
+      "pending": {
+        "name": "Függőben"
+      },
+      "recently_enforced": {
+        "name": "Nemrég kényszerítve"
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Állapot"
+      },
+      "last_enforced": {
+        "name": "Utolsó kényszerítés"
+      },
+      "enforcement_count_today": {
+        "name": "Mai kényszerítések"
+      },
+      "enforcement_count_total": {
+        "name": "Összes kényszerítés"
+      },
+      "cooldown_remaining": {
+        "name": "Hátralévő várakozási idő"
+      },
+      "safety_status": {
+        "name": "Biztonsági állapot"
+      },
+      "suppressed_until": {
+        "name": "Elnyomva eddig"
+      },
+      "rule_id": {
+        "name": "Szabály azonosító"
+      }
+    },
+    "switch": {
+      "enabled": {
+        "name": "Engedélyezve"
+      },
+      "debounce_enabled": {
+        "name": "Debounce engedélyezve"
+      },
+      "master_enabled": {
+        "name": "Fő engedélyezve"
+      }
+    },
+    "number": {
+      "delay_seconds": {
+        "name": "Késleltetés (másodperc)"
+      },
+      "debounce_seconds": {
+        "name": "Debounce (másodperc)"
+      },
+      "max_enforcements_per_minute": {
+        "name": "Maximális kényszerítés percenként"
+      }
+    },
+    "button": {
+      "reset": {
+        "name": "Várakozási idők visszaállítása"
+      },
+      "test_enforce": {
+        "name": "Kényszerítés tesztelése"
+      },
+      "clear_suppression": {
+        "name": "Elnyomás törlése"
+      },
+      "clear_history": {
+        "name": "Előzmények törlése (számlálók)"
+      }
+    }
+  },
+  "issues": {
+    "flag_entity_missing": {
+      "title": "Hiányzó flag entitás a(z) \"{rule_name}\" szabályban",
+      "description": "A következő flag entitás(ok) már nem léteznek, de a szabály hivatkozik rájuk: {missing_entities}. A szabály nem fog kényszeríteni, amikor ezek a flagek nem értékelhetők ki. Frissítse vagy távolítsa el a szabályt a probléma megoldásához."
+    }
+  }
+}

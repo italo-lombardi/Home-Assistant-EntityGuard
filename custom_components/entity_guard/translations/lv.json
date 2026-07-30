@@ -1,0 +1,415 @@
+{
+  "title": "Entity Guard",
+  "config": {
+    "step": {
+      "rule": {
+        "title": "Jauns noteikums — pamati",
+        "description": "Nosauciet noteikumu, izvēlieties mērķa entītijas, pret kurām piemērot, un izvēlieties noteikuma režīmu.",
+        "data": {
+          "rule_name": "Noteikuma nosaukums",
+          "target_entities": "Mērķa entītijas",
+          "mode": "Noteikuma režīms"
+        },
+        "data_description": {
+          "rule_name": "Attēlojamais nosaukums, kas redzams saskarnē. Jābūt unikālam.",
+          "target_entities": "Viena vai vairākas entītijas, uz kurām šis noteikums attieksies.",
+          "mode": "Stāvokļa režīms piespiež noteiktu stāvokli. Atribūta režīms ierobežo skaitliskos atribūtus vai atbilst krāsas mērķim."
+        }
+      },
+      "state": {
+        "title": "Stāvokļa režīms",
+        "description": "Kad kāda mērķa entītija nonāk vienā no aktivizējošajiem stāvokļiem, piespiediet to atpakaļ uz mērķa stāvokli pēc izvēles aizkaves.",
+        "data": {
+          "trigger_states": "Aktivizējošie stāvokļi",
+          "target_state": "Mērķa stāvoklis",
+          "delay_seconds": "Aizkave (sekundes)"
+        },
+        "data_description": {
+          "trigger_states": "Stāvokļu saraksts, kas aktivizē piemērošanu (piem., on, open, unlocked). Rakstiet, lai pievienotu pielāgotas vērtības.",
+          "target_state": "Stāvoklis, uz kuru entītija tiks piespiesta (piem., off, closed, locked).",
+          "delay_seconds": "Uzgaidiet tik ilgi pēc aktivizēšanas pirms piemērošanas. 0 = tūlītēji. Maks. 86400 (24 h)."
+        }
+      },
+      "attribute": {
+        "title": "Atribūta režīms",
+        "description": "Izvēlieties, kuru atribūtu šis noteikums piemēros. Skaitliskie atribūti tiek ierobežoti līdz mērķim; krāsu atribūti atbilst mērķa krāsai.",
+        "data": {
+          "attribute": "Atribūts"
+        },
+        "data_description": {
+          "attribute": "Uzraugāmais un piemērojamais atribūts."
+        }
+      },
+      "extras": {
+        "title": "Papildu funkcijas",
+        "description": "Atzīmējiet jebkuras funkcijas, kuras vēlaties konfigurēt. Katra atzīmētā opcija pievieno papildu ekrānu. Izlaidiet visas, lai dotos tieši uz pārskatīšanu.",
+        "data": {
+          "add_flags": "Pievienot papildu nosacījumus",
+          "custom_rate_limit": "Pielāgot cilpu aizsardzību",
+          "add_debounce": "Iespējot atsitiena novēršanu"
+        },
+        "data_description": {
+          "add_flags": "Atzīmējiet, lai pieprasītu papildu nosacījumus (piem., piemērot tikai tad, kad neviena nav mājās, tikai pēc saulrieta). Atstājiet neatzīmētu, lai piemērotu katru reizi, kad aktivizētājs nostrādā.",
+          "custom_rate_limit": "Cilpu aizsardzība automātiski aptur noteikumu, ja tas nostrādā vairāk nekā 10 reizes minūtē (noklusējums). Atstājiet neatzīmētu, lai izmantotu noklusējumu. Atzīmējiet, lai iestatītu savu skaitli vai pilnībā izslēgtu cilpu aizsardzību nākamajā ekrānā.",
+          "add_debounce": "Atzīmējiet, lai ignorētu ātras uz priekšu un atpakaļ izmaiņas. Noteikums darbojas tikai tad, ja aktivizētājs paliek nemainīgs jūsu nākamajā ekrānā iestatīto laiku. Atstājiet neatzīmētu, lai darbotos pie katras izmaiņas."
+        }
+      },
+      "flags": {
+        "title": "Nosacījumi (izvēles)",
+        "description": "Papildu nosacījumi, kuriem visiem jābūt patiesiem, lai noteikums darbotos.\n\nPiemēri:\n  • person.alice = not_home — tikai tad, kad Alise ir prom\n  • input_boolean.guest_mode = off — tikai tad, kad nav viesu\n  • sun.sun = below_horizon — tikai pēc saulrieta\n  • binary_sensor.work_hours = on — tikai darba laikā\n\nLai pievienotu nosacījumu: izvēlieties entītiju, ievadiet stāvokli, kādā tai jābūt, tad noklikšķiniet Iesniegt.\n\nJa pašlaik nevēlaties nevienu nosacījumu, atstājiet abus laukus tukšus un noklikšķiniet Iesniegt, lai izlaistu.\n\nLīdz šim pievienotie nosacījumi ({count}): {summary}\n\n{current_state}\n\nAtzīmējiet “Pievienot vēl”, lai ķēdētu vairākus — visiem jāsakrīt, lai noteikums nostrādātu.",
+        "data": {
+          "entity": "Nosacījuma entītija",
+          "match_state": "Nepieciešamais stāvoklis",
+          "add_another": "Pievienot vēl vienu nosacījumu pēc šī"
+        },
+        "data_description": {
+          "entity": "Izvēlieties entītiju, kuras stāvoklis darbojas kā nosacījums (piem., person.alice, input_boolean.guest_mode, sun.sun).",
+          "match_state": "Stāvoklis, kādā entītijai jābūt, lai noteikums nostrādātu (piem., 'on', 'home', 'not_home', 'below_horizon').",
+          "add_another": "Atzīmējiet, lai pievienotu vairāk nosacījumu. Atstājiet neatzīmētu, lai pabeigtu."
+        }
+      },
+      "advanced": {
+        "title": "Papildu",
+        "description": "Iestatiet opcijas, kuras izvēlējāties iepriekšējā ekrānā. Noklusējuma biežuma ierobežojums ir {default_rate} piemērošanas minūtē.",
+        "data": {
+          "debounce_seconds": "Atsitiena novēršanas logs (sekundes)",
+          "rate_limit_enabled": "Piemērot cilpu aizsardzību",
+          "max_enforcements_per_minute": "Maks. piemērošanas minūtē"
+        },
+        "data_description": {
+          "debounce_seconds": "Logs sekundēs. Min. 0, maks. 86400 (24 h). Rādīts tikai tad, ja atsitiena novēršana tika iespējota iepriekšējā solī.",
+          "rate_limit_enabled": "Atzīmējiet, lai saglabātu cilpu aizsardzību ieslēgtu (ieteicams). Noņemiet atzīmi, lai to atspējotu šim noteikumam — nekontrolētas cilpas netiks automātiski apturētas.",
+          "max_enforcements_per_minute": "Cik piemērošanu minūtē ir atļautas, pirms noteikums automātiski tiek apturēts uz 15 minūtēm. Min. 1, maks. 600. Ignorēts, kad cilpu aizsardzība iepriekš nav atzīmēta."
+        }
+      },
+      "safety": {
+        "title": "Drošības apstiprinājums",
+        "description": "Šis noteikums attiecas uz drošībai jutīgām entītijām ({entities}). Lai turpinātu, jums nepārprotami jāapstiprina risks.",
+        "data": {
+          "safety_acknowledged": "Es saprotu, ka šis noteikums pārvietos fizisku aparatūru, un pieņemu risku."
+        }
+      },
+      "preview": {
+        "title": "Pārskatīt un izveidot",
+        "description": "Pārskatiet savu noteikumu zemāk. Noklikšķiniet **Iesniegt**, lai to izveidotu, vai izmantojiet atpakaļ bultiņu, lai veiktu izmaiņas.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Atribūta parametri",
+        "description": "Konfigurējiet piemērošanas vērtības izvēlētajam atribūtam.",
+        "data": {
+          "operator": "Operators",
+          "threshold": "Slieksnis",
+          "target_value": "Mērķa vērtība",
+          "delay_seconds": "Aizkave (sekundes)"
+        },
+        "data_description": {
+          "operator": "Salīdzināšanas operators, ko izmanto skaitliskajiem ierobežojuma noteikumiem.",
+          "threshold": "Skaitliska vērtība, kas tiek salīdzināta ar aktuālo atribūtu. Izmanto tikai skaitliskajiem ierobežojuma noteikumiem.",
+          "target_value": "Piemērojamā vērtība. Skaitliskie atribūti tiek ierobežoti līdz šai vērtībai; krāsu atribūtiem tai jāatbilst.",
+          "delay_seconds": "Uzgaidiet tik ilgi pēc aktivizēšanas pirms piemērošanas. 0 = tūlītēji. Maks. 86400 (24 h)."
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "Noteikuma nosaukums nevar būt tukšs.",
+      "empty_target_entities": "Izvēlieties vismaz vienu mērķa entītiju.",
+      "empty_trigger_states": "Norādiet vismaz vienu aktivizējošo stāvokli.",
+      "empty_target_state": "Mērķa stāvoklis nevar būt tukšs.",
+      "invalid_threshold": "Slieksnim un mērķa vērtībai jābūt skaitliskiem.",
+      "invalid_delay": "Aizkavei jābūt veselam skaitlim no 0 līdz 86400 sekundēm (24 h).",
+      "invalid_rate": "Maks. piemērošanām minūtē jābūt veselam skaitlim no 1 līdz 600.",
+      "target_in_triggers": "Mērķa stāvoklis nevar būt arī aktivizējošais stāvoklis — tas radītu piemērošanas cilpu.",
+      "forbidden_state": "Stāvokļus 'unavailable', 'unknown' un 'none' nevar izmantot kā aktivizētājus vai mērķus.",
+      "incomplete_flag": "Jāiestata gan karodziņa entītija, gan nepieciešamais stāvoklis.",
+      "safety_not_acknowledged": "Lai turpinātu, jums jāapstiprina drošības risks.",
+      "name_already_exists": "Noteikums ar šādu nosaukumu jau pastāv.",
+      "invalid_rgb_color": "RGB krāsai jābūt sarakstam ar trim vērtībām no 0 līdz 255.",
+      "invalid_color_temp_kelvin": "Krāsas temperatūrai jābūt no 2000 K līdz 6500 K."
+    },
+    "abort": {
+      "single_instance_allowed": "Var konfigurēt tikai vienu Entity Guard centrmezglu.",
+      "name_already_exists": "Noteikums ar šādu nosaukumu jau pastāv.",
+      "already_configured": "Šis noteikums jau ir konfigurēts."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Rediģēt noteikumu",
+        "description": "{summary}\n\nIzvēlieties, ko mainīt.",
+        "menu_options": {
+          "edit_basics": "Rediģēt nosaukumu",
+          "edit_mode": "Rediģēt režīmam specifiskos iestatījumus",
+          "edit_entities": "Pievienot vai noņemt mērķa entītijas",
+          "edit_flags": "Rediģēt karodziņu nosacījumus",
+          "edit_advanced": "Rediģēt atsitiena novēršanu un biežuma ierobežojumu"
+        }
+      },
+      "edit_basics": {
+        "title": "Rediģēt nosaukumu",
+        "data": {
+          "rule_name": "Noteikuma nosaukums"
+        }
+      },
+      "edit_entities": {
+        "title": "Rediģēt mērķa entītijas",
+        "data": {
+          "target_entities": "Mērķa entītijas"
+        }
+      },
+      "edit_safety": {
+        "title": "Drošības apstiprinājums",
+        "description": "Tika pievienotas jaunas drošībai jutīgas entītijas. Apstipriniet vēlreiz, lai saglabātu.",
+        "data": {
+          "safety_acknowledged": "Es saprotu, ka šis noteikums pārvietos fizisku aparatūru, un pieņemu risku."
+        }
+      },
+      "edit_state": {
+        "title": "Rediģēt stāvokļa režīmu",
+        "data": {
+          "trigger_states": "Aktivizējošie stāvokļi",
+          "target_state": "Mērķa stāvoklis",
+          "delay_seconds": "Aizkave (sekundes)"
+        }
+      },
+      "edit_attribute": {
+        "title": "Rediģēt atribūta režīmu",
+        "description": "Izvēlieties, kuru atribūtu šis noteikums piemēros. Skaitliskie atribūti tiek ierobežoti līdz mērķim; krāsu atribūti atbilst mērķa krāsai.",
+        "data": {
+          "attribute": "Atribūts"
+        }
+      },
+      "edit_flags": {
+        "title": "Rediģēt karodziņu nosacījumus",
+        "description": "Pašreizējie karodziņi: {summary}.\n\n{current_state}\n\nIzvēlieties “add”, lai pievienotu, “replace”, lai aizstātu visus, “clear”, lai noņemtu visus, vai “save”, lai atstātu nemainītu.",
+        "data": {
+          "entity": "Karodziņa entītija",
+          "match_state": "Nepieciešamais stāvoklis",
+          "action": "Darbība"
+        }
+      },
+      "edit_advanced": {
+        "title": "Rediģēt papildu iestatījumus",
+        "data": {
+          "debounce_enabled": "Iespējot atsitiena novēršanu",
+          "debounce_seconds": "Atsitiena novēršanas logs (sekundes)",
+          "max_enforcements_per_minute": "Maks. piemērošanas minūtē"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Rediģēt atribūta parametrus",
+        "description": "Konfigurējiet piemērošanas vērtības izvēlētajam atribūtam.",
+        "data": {
+          "operator": "Operators",
+          "threshold": "Slieksnis",
+          "target_value": "Mērķa vērtība",
+          "delay_seconds": "Aizkave (sekundes)"
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "Noteikuma nosaukums nevar būt tukšs.",
+      "empty_target_entities": "Izvēlieties vismaz vienu mērķa entītiju.",
+      "empty_trigger_states": "Norādiet vismaz vienu aktivizējošo stāvokli.",
+      "empty_target_state": "Mērķa stāvoklis nevar būt tukšs.",
+      "invalid_threshold": "Slieksnim un mērķa vērtībai jābūt skaitliskiem.",
+      "invalid_delay": "Aizkavei jābūt veselam skaitlim no 0 līdz 86400 sekundēm (24 h).",
+      "invalid_rate": "Maks. piemērošanām minūtē jābūt veselam skaitlim no 1 līdz 600.",
+      "target_in_triggers": "Mērķa stāvoklis nevar būt arī aktivizējošais stāvoklis — tas radītu piemērošanas cilpu.",
+      "forbidden_state": "Stāvokļus 'unavailable', 'unknown' un 'none' nevar izmantot kā aktivizētājus vai mērķus.",
+      "incomplete_flag": "Jāiestata gan karodziņa entītija, gan nepieciešamais stāvoklis.",
+      "safety_not_acknowledged": "Lai turpinātu, jums jāapstiprina drošības risks.",
+      "name_already_exists": "Noteikums ar šādu nosaukumu jau pastāv.",
+      "invalid_rgb_color": "RGB krāsai jābūt sarakstam ar trim vērtībām no 0 līdz 255.",
+      "invalid_color_temp_kelvin": "Krāsas temperatūrai jābūt no 2000 K līdz 6500 K."
+    },
+    "abort": {
+      "name_already_exists": "Noteikums ar šādu nosaukumu jau pastāv.",
+      "hub_no_options": "Entity Guard centrmezglam nav rediģējamu opciju."
+    }
+  },
+  "exceptions": {
+    "rule_not_found": {
+      "message": "Nav atrasts neviens Entity Guard noteikums, kas atbilstu {rule_id}."
+    }
+  },
+  "services": {
+    "suppress": {
+      "name": "Apturēt noteikumu",
+      "description": "Uz laiku apturēt Entity Guard noteikumu. Noteikums automātiski atsāksies pēc noteiktā ilguma.",
+      "fields": {
+        "rule_id": {
+          "name": "Noteikums",
+          "description": "Noteikuma UUID vai noteikuma nosaukums (konfigurācijas ieraksta virsraksts)."
+        },
+        "duration_minutes": {
+          "name": "Ilgums (minūtes)",
+          "description": "Cik ilgi apturēt noteikumu (1-1440 minūtes)."
+        }
+      }
+    },
+    "unsuppress": {
+      "name": "Atcelt apturēšanu",
+      "description": "Nekavējoties atsākt apturētu Entity Guard noteikumu.",
+      "fields": {
+        "rule_id": {
+          "name": "Noteikums",
+          "description": "Noteikuma UUID vai noteikuma nosaukums (konfigurācijas ieraksta virsraksts)."
+        }
+      }
+    },
+    "list_rules": {
+      "name": "Uzskaitīt noteikumus",
+      "description": "Atgriezt katra Entity Guard noteikuma konfigurāciju un pašreizējo statusu."
+    },
+    "clear_history": {
+      "name": "Notīrīt noteikuma vēsturi",
+      "description": "Notīrīt saglabāto piemērošanas vēsturi (skaitītājus, pēdējo piemērošanu, atdzišanu) noteikumam.",
+      "fields": {
+        "rule_id": {
+          "name": "Noteikums",
+          "description": "Noteikuma UUID vai noteikuma nosaukums (konfigurācijas ieraksta virsraksts)."
+        }
+      }
+    },
+    "panic_stop": {
+      "name": "Panikas apturēšana",
+      "description": "Ārkārtas izslēgšana — atspējot katru noteikumu, notīrīt visas atdzišanas, apturēt uz 60 minūtēm un izslēgt centrmezgla galveno slēdzi."
+    }
+  },
+  "selector": {
+    "status": {
+      "options": {
+        "error": "Kļūda",
+        "disabled": "Atspējots",
+        "master_disabled": "Galvenais atspējots",
+        "suppressed": "Apturēts",
+        "enforcing": "Piemēro",
+        "cooldown": "Atdzišana",
+        "armed": "Aktivizēts",
+        "conditional": "Gaida nosacījumus",
+        "starting": "Sākas",
+        "pending": "Gatavojas piemērot"
+      }
+    },
+    "mode": {
+      "options": {
+        "state": "Stāvoklis",
+        "attribute": "Atribūts"
+      }
+    },
+    "attribute": {
+      "options": {
+        "brightness": "Spilgtums",
+        "volume_level": "Skaļuma līmenis",
+        "temperature": "Temperatūra",
+        "percentage": "Procenti",
+        "rgb_color": "RGB krāsa",
+        "color_temp_kelvin": "Krāsas temperatūra (Kelvini)"
+      }
+    },
+    "operator": {
+      "options": {
+        "lt": "Mazāk nekā (<)",
+        "lte": "Mazāk vai vienāds (<=)",
+        "gt": "Vairāk nekā (>)",
+        "gte": "Vairāk vai vienāds (>=)"
+      }
+    },
+    "flag_action": {
+      "options": {
+        "save": "Iziet bez izmaiņām",
+        "add": "Pievienot karodziņu",
+        "replace": "Aizstāt visus karodziņus",
+        "clear": "Notīrīt visus karodziņus"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "armed": {
+        "name": "Aktivizēts"
+      },
+      "active": {
+        "name": "Aktīvs"
+      },
+      "in_cooldown": {
+        "name": "Atdzišanā"
+      },
+      "pending": {
+        "name": "Gaidīšanā"
+      },
+      "recently_enforced": {
+        "name": "Nesen piemērots"
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Statuss"
+      },
+      "last_enforced": {
+        "name": "Pēdējo reizi piemērots"
+      },
+      "enforcement_count_today": {
+        "name": "Piemērošanas šodien"
+      },
+      "enforcement_count_total": {
+        "name": "Piemērošanas kopā"
+      },
+      "cooldown_remaining": {
+        "name": "Atlikusī atdzišana"
+      },
+      "safety_status": {
+        "name": "Drošības statuss"
+      },
+      "suppressed_until": {
+        "name": "Apturēts līdz"
+      },
+      "rule_id": {
+        "name": "Noteikuma ID"
+      }
+    },
+    "switch": {
+      "enabled": {
+        "name": "Iespējots"
+      },
+      "debounce_enabled": {
+        "name": "Atsitiena novēršana iespējota"
+      },
+      "master_enabled": {
+        "name": "Galvenais iespējots"
+      }
+    },
+    "number": {
+      "delay_seconds": {
+        "name": "Aizkave (sekundes)"
+      },
+      "debounce_seconds": {
+        "name": "Atsitiena novēršana (sekundes)"
+      },
+      "max_enforcements_per_minute": {
+        "name": "Maks. piemērošanas minūtē"
+      }
+    },
+    "button": {
+      "reset": {
+        "name": "Atiestatīt atdzišanas"
+      },
+      "test_enforce": {
+        "name": "Testa piemērošana"
+      },
+      "clear_suppression": {
+        "name": "Notīrīt apturēšanu"
+      },
+      "clear_history": {
+        "name": "Notīrīt vēsturi (skaitītājus)"
+      }
+    }
+  },
+  "issues": {
+    "flag_entity_missing": {
+      "title": "Trūkst karodziņa entītijas noteikumā “{rule_name}”",
+      "description": "Šī(-s) karodziņa entītija(-s) vairs nepastāv, bet uz to(-ām) atsaucas noteikums: {missing_entities}. Noteikums netiks piemērots, kad šos karodziņus nevar novērtēt. Atjauniniet vai noņemiet noteikumu, lai atrisinātu šo problēmu."
+    }
+  }
+}
