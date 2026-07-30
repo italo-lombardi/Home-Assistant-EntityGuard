@@ -26,12 +26,12 @@ from custom_components.entity_guard.const import (
     OPERATOR_LE,
     OPERATOR_LT,
     STATUS_ARMED,
+    STATUS_CONDITIONAL,
     STATUS_COOLDOWN,
     STATUS_DISABLED,
-    STATUS_MASTER_DISABLED,
     STATUS_ENFORCING,
     STATUS_ERROR,
-    STATUS_CONDITIONAL,
+    STATUS_MASTER_DISABLED,
     STATUS_PENDING,
     STATUS_STARTING,
     STATUS_SUPPRESSED,
@@ -47,7 +47,6 @@ from custom_components.entity_guard.rule_engine import (
     signal_for_rule,
 )
 from custom_components.entity_guard.storage import EntityGuardStore
-
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -1523,8 +1522,9 @@ async def test_evaluate_in_cooldown_during_debounce(hass: HomeAssistant):
     config = _make_config(debounce_enabled=True, debounce_seconds=60)
     engine = _make_engine(hass, config)
     engine._startup_complete = True
-    from homeassistant.util import dt as dt_util
     from datetime import timedelta
+
+    from homeassistant.util import dt as dt_util
 
     engine.state.cooldowns["light.bedroom"] = dt_util.now() + timedelta(seconds=30)
     hass.states.async_set("light.bedroom", "on")
@@ -1605,6 +1605,7 @@ async def test_enforce_no_service_mapping_fires_skipped(hass: HomeAssistant):
 def test_set_enabled_clears_expired_suppression(hass: HomeAssistant):
     engine = _make_engine(hass)
     from datetime import timedelta
+
     from homeassistant.util import dt as dt_util
 
     engine.state.suppressed_until = dt_util.now() - timedelta(seconds=1)
@@ -2213,6 +2214,7 @@ def test_schedule_eval_task_cancels_existing(hass: HomeAssistant):
 async def test_is_unloaded_guard_prevents_fire(hass: HomeAssistant):
     """If engine is unloaded before _fire runs, enforcement must be skipped."""
     from unittest.mock import AsyncMock
+
     from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
     config = _make_config(delay_seconds=1)
@@ -2546,12 +2548,14 @@ async def test_cooldown_remaining_uses_pre_service_now(hass: HomeAssistant):
 async def test_engine_unloaded_even_when_platform_unload_fails(hass: HomeAssistant):
     """async_unload_entry must unload the engine even when async_unload_platforms
     returns False — prevents orphaned listeners on partial platform teardown."""
-    from unittest.mock import AsyncMock, patch, MagicMock
+    from unittest.mock import AsyncMock, MagicMock, patch
+
     from pytest_homeassistant_custom_component.common import MockConfigEntry
+
     from custom_components.entity_guard import async_unload_entry
     from custom_components.entity_guard.const import (
-        DOMAIN,
         CONF_ENTRY_TYPE,
+        DOMAIN,
         ENTRY_TYPE_RULE,
     )
 
@@ -3285,6 +3289,7 @@ async def test_cooldown_broadcast_expired_entry_skipped(hass: HomeAssistant):
     # Plant an already-expired cooldown so remaining <= 0 before enforce runs
     # (override the cooldown that _enforce would set by patching timedelta addition)
     from datetime import timedelta as _td
+
     import custom_components.entity_guard.rule_engine as _re_mod
 
     original_timedelta = _td
@@ -3292,7 +3297,7 @@ async def test_cooldown_broadcast_expired_entry_skipped(hass: HomeAssistant):
     class _ZeroTD:
         """Returns a timedelta of 0 regardless of seconds kwarg."""
 
-        def __new__(cls, seconds=0, **kw):  # noqa: ARG003
+        def __new__(cls, seconds=0, **kw):
             return original_timedelta(seconds=0)
 
     with patch.object(_re_mod, "timedelta", _ZeroTD):

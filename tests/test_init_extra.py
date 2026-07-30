@@ -22,7 +22,6 @@ from custom_components.entity_guard.const import (
     DOMAIN,
 )
 
-
 # ---------------------------------------------------------------------------
 # _get_version
 # ---------------------------------------------------------------------------
@@ -467,6 +466,7 @@ async def test_deferred_flag_check_fires_on_started_event(
 ):
     """When homeassistant_started fires, _deferred_flag_check_once must run."""
     from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+
     from custom_components.entity_guard import async_setup_entry
 
     rule_entry.add_to_hass(hass)

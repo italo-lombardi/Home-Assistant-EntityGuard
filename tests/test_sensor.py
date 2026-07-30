@@ -292,8 +292,8 @@ def test_suppressed_until_sensor_attrs():
 
 
 async def test_setup_entry_skips_non_rule(hass: HomeAssistant):
-    from custom_components.entity_guard.sensor import async_setup_entry
     from custom_components.entity_guard.const import ENTRY_TYPE_HUB
+    from custom_components.entity_guard.sensor import async_setup_entry
 
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -353,14 +353,16 @@ async def test_sensor_async_added_subscribes(hass: HomeAssistant):
 
 
 def test_rule_id_sensor_native_value():
-    from custom_components.entity_guard.sensor import EntityGuardRuleIdSensor
     from unittest.mock import MagicMock
+
     from pytest_homeassistant_custom_component.common import MockConfigEntry
+
     from custom_components.entity_guard.const import (
-        DOMAIN,
         CONF_ENTRY_TYPE,
+        DOMAIN,
         ENTRY_TYPE_RULE,
     )
+    from custom_components.entity_guard.sensor import EntityGuardRuleIdSensor
 
     entry = MockConfigEntry(
         domain=DOMAIN,

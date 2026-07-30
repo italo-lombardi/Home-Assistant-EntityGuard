@@ -7,17 +7,17 @@ from unittest.mock import AsyncMock, MagicMock
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.entity_guard.const import (
-    CONF_ENTRY_TYPE,
-    DOMAIN,
-    ENTRY_TYPE_HUB,
-    ENTRY_TYPE_RULE,
-)
 from custom_components.entity_guard.button import (
     EntityGuardClearHistoryButton,
     EntityGuardClearSuppressionButton,
     EntityGuardResetButton,
     EntityGuardTestEnforceButton,
+)
+from custom_components.entity_guard.const import (
+    CONF_ENTRY_TYPE,
+    DOMAIN,
+    ENTRY_TYPE_HUB,
+    ENTRY_TYPE_RULE,
 )
 
 

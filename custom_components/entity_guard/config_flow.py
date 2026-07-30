@@ -7,7 +7,6 @@ import uuid
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant.config_entries import (
     SOURCE_IMPORT,
     ConfigEntry,
@@ -72,6 +71,8 @@ from .const import (
     NUMERIC_ATTRIBUTES,
     SAFETY_DOMAINS,
     SUPPORTED_OPERATORS,
+)
+from .const import (
     has_safety_target as _has_safety_target,
 )
 

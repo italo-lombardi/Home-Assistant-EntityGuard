@@ -6,7 +6,6 @@ import logging
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant.core import (
     HomeAssistant,
     ServiceCall,
@@ -94,7 +93,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 duration_minutes=duration_minutes,
                 user_id=call.context.user_id,
             )
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             raise HomeAssistantError(
                 f"Failed to suppress rule '{rule_id}': {err}"
             ) from err
@@ -109,7 +108,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         engine = _resolve_engine(hass, rule_id)
         try:
             await engine.async_unsuppress()
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             raise HomeAssistantError(
                 f"Failed to unsuppress rule '{rule_id}': {err}"
             ) from err
@@ -120,7 +119,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
         engine = _resolve_engine(hass, rule_id)
         try:
             await engine.async_clear_history()
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             raise HomeAssistantError(
                 f"Failed to clear history for rule '{rule_id}': {err}"
             ) from err
@@ -159,7 +158,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
                     duration_minutes=PANIC_STOP_DURATION_MINUTES,
                     user_id=call.context.user_id,
                 )
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 _LOGGER.warning(
                     "Panic stop partial failure on rule '%s': %s",
                     getattr(engine.config, "name", "?"),

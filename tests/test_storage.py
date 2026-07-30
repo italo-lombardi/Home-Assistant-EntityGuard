@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from unittest.mock import AsyncMock, patch
 
 from homeassistant.core import HomeAssistant
@@ -15,7 +15,6 @@ from custom_components.entity_guard.storage import (
     _parse_dt,
     _serialize_dt,
 )
-
 
 # ---------------------------------------------------------------------------
 # helpers
@@ -320,7 +319,7 @@ def test_data_provider_returns_deep_copy(hass: HomeAssistant):
 
 async def test_async_migrate_logs_and_returns_raw(hass: HomeAssistant):
     """_async_migrate returns raw when from_version >= STORE_VERSION (no-op path)."""
-    from custom_components.entity_guard.storage import EntityGuardStore, STORE_VERSION
+    from custom_components.entity_guard.storage import STORE_VERSION, EntityGuardStore
 
     raw = {"version": STORE_VERSION, "rules": {}}
     store = EntityGuardStore(hass)
@@ -331,6 +330,7 @@ async def test_async_migrate_logs_and_returns_raw(hass: HomeAssistant):
 async def test_async_migrate_raises_for_unimplemented_path(hass: HomeAssistant):
     """_async_migrate raises NotImplementedError for versions with no migration path."""
     import pytest
+
     from custom_components.entity_guard.storage import EntityGuardStore
 
     store = EntityGuardStore(hass)
@@ -341,7 +341,8 @@ async def test_async_migrate_raises_for_unimplemented_path(hass: HomeAssistant):
 async def test_async_load_triggers_migration(hass: HomeAssistant):
     """async_load calls _async_migrate when stored version is stale."""
     from unittest.mock import AsyncMock, patch
-    from custom_components.entity_guard.storage import EntityGuardStore, STORE_VERSION
+
+    from custom_components.entity_guard.storage import STORE_VERSION, EntityGuardStore
 
     store = EntityGuardStore(hass)
     stale_version = STORE_VERSION - 1 if STORE_VERSION > 1 else 0
@@ -365,7 +366,8 @@ async def test_async_load_migration_not_implemented_resets_and_notifies(
     crashing the entire integration load when storage version < STORE_VERSION.
     """
     from unittest.mock import AsyncMock, patch
-    from custom_components.entity_guard.storage import EntityGuardStore, STORE_VERSION
+
+    from custom_components.entity_guard.storage import STORE_VERSION, EntityGuardStore
 
     store = EntityGuardStore(hass)
     raw = {"version": 0, "rules": {"r1": {"enforcement_count_today": 5}}}

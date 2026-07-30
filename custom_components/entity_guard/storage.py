@@ -103,7 +103,7 @@ class EntityGuardStore:
         for rule_id, blob in rules_in.items():
             try:
                 rules_out[rule_id] = self._validate_blob(blob)
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 # Per spec: corruption in one rule must not crash the whole load.
                 _LOGGER.warning(
                     "Corrupt persisted state for rule %s, resetting: %s", rule_id, err
