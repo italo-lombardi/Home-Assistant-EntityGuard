@@ -273,7 +273,7 @@
       }
     },
     "panic_stop": {
-      "name": "Zaustavljanje u panici",
+      "name": "Hitno zaustavljanje",
       "description": "Hitno gašenje — onemogući svako pravilo, očisti sva razdoblja mirovanja, potisni na 60 minuta i isključi glavni prekidač čvorišta."
     }
   },
@@ -286,7 +286,7 @@
         "suppressed": "Potisnuto",
         "enforcing": "Provodi se",
         "cooldown": "Razdoblje mirovanja",
-        "armed": "Naoružano",
+        "armed": "Aktivirano",
         "conditional": "Čeka uvjete",
         "starting": "Pokreće se",
         "pending": "Uskoro provedba"
@@ -328,7 +328,7 @@
   "entity": {
     "binary_sensor": {
       "armed": {
-        "name": "Naoružano"
+        "name": "Aktivirano"
       },
       "active": {
         "name": "Aktivno"
