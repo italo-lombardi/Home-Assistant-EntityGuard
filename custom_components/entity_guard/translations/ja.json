@@ -1,0 +1,128 @@
+{
+  "title": "Entity Guard",
+  "config": {
+    "step": {
+      "rule": {
+        "title": "新しいルール — 基本設定",
+        "description": "ルールに名前を付け、適用対象のエンティティを選択し、ルールモードを選びます。",
+        "data": {"rule_name": "ルール名","target_entities": "対象エンティティ","mode": "ルールモード"},
+        "data_description": {"rule_name": "UI に表示される表示名です。一意である必要があります。","target_entities": "このルールが適用される 1 つ以上のエンティティ。","mode": "状態モードは特定の状態を強制します。属性モードは数値属性を制限するか、色のターゲットに一致させます。"}
+      },
+      "state": {
+        "title": "状態モード",
+        "description": "いずれかの対象エンティティがトリガー状態のいずれかになると、任意の遅延の後にターゲット状態へ戻します。",
+        "data": {"trigger_states": "トリガー状態","target_state": "ターゲット状態","delay_seconds": "遅延（秒）"},
+        "data_description": {"trigger_states": "強制を発動させる状態のリスト（例: on、open、unlocked）。入力してカスタム値を追加できます。","target_state": "エンティティを強制的にする状態（例: off、closed、locked）。","delay_seconds": "トリガー後、強制するまでこの時間だけ待機します。0 = 即時。最大 86400（24 時間）。"}
+      },
+      "attribute": {
+        "title": "属性モード",
+        "description": "このルールで適用する属性を選択します。数値属性はターゲットに制限され、色属性はターゲット色に一致させます。",
+        "data": {"attribute": "属性"},
+        "data_description": {"attribute": "監視して強制する属性。"}
+      },
+      "extras": {
+        "title": "オプション機能",
+        "description": "設定したい機能にチェックを入れてください。チェックした各オプションで追加の画面が表示されます。すべてスキップすると直接レビューに進みます。",
+        "data": {"add_flags": "追加条件を設定","custom_rate_limit": "ループ保護をカスタマイズ","add_debounce": "デバウンスを有効化"},
+        "data_description": {"add_flags": "追加条件を要求するにはチェックします（例: 誰も在宅していないときだけ強制、日没後だけ強制）。チェックしない場合はトリガーが発動するたびに強制します。","custom_rate_limit": "ループ保護は、ルールが 1 分あたり 10 回を超えて発動すると自動的に抑制します（デフォルト）。デフォルトを使用する場合はチェックしないでください。独自の数値を設定するか、後の画面でループ保護を完全にオフにするにはチェックします。","add_debounce": "素早い行き来の変化を無視するにはチェックします。トリガーが後の画面で設定した時間だけ同じ状態を維持した場合にのみルールが動作します。チェックしない場合はすべての変化に対して動作します。"}
+      },
+      "flags": {
+        "title": "条件（オプション）",
+        "description": "ルールが動作するためにすべて真である必要がある追加条件です。\n\n例:\n  • person.alice = not_home — Alice が外出中のときだけ\n  • input_boolean.guest_mode = off — ゲストがいないときだけ\n  • sun.sun = below_horizon — 日没後だけ\n  • binary_sensor.work_hours = on — 勤務時間中だけ\n\n条件を追加するには: エンティティを選び、必要な状態を入力し、送信をクリックします。\n\n今は条件が不要な場合は、両方のフィールドを空のままにして送信をクリックしてスキップしてください。\n\nこれまでに追加された条件（{count}）: {summary}\n\n{current_state}\n\nさらに連鎖させるには「別の条件を追加」にチェックします — ルールが発動するにはすべてが一致する必要があります。",
+        "data": {"entity": "条件エンティティ","match_state": "必要な状態","add_another": "この後に別の条件を追加"},
+        "data_description": {"entity": "状態を条件として使用するエンティティを選択します（例: person.alice、input_boolean.guest_mode、sun.sun）。","match_state": "ルールが発動するためにエンティティが取るべき状態（例: 'on'、'home'、'not_home'、'below_horizon'）。","add_another": "さらに条件を追加するにはチェックします。完了するにはチェックしないでください。"}
+      },
+      "advanced": {
+        "title": "詳細設定",
+        "description": "前の画面で選択したオプションを設定します。デフォルトのレート制限は 1 分あたり {default_rate} 回の強制です。",
+        "data": {"debounce_seconds": "デバウンスウィンドウ（秒）","rate_limit_enabled": "ループ保護を有効化","max_enforcements_per_minute": "1 分あたりの最大強制回数"},
+        "data_description": {"debounce_seconds": "秒単位のウィンドウ。最小 0、最大 86400（24 時間）。前のステップでデバウンスが有効化された場合にのみ表示されます。","rate_limit_enabled": "ループ保護を有効に保つにはチェックします（推奨）。このルールで無効にするにはチェックを外します — 暴走するループは自動的に停止されません。","max_enforcements_per_minute": "ルールが 15 分間自動抑制されるまでに 1 分あたり許可される強制回数。最小 1、最大 600。上記でループ保護のチェックを外した場合は無視されます。"}
+      },
+      "safety": {
+        "title": "安全性の確認",
+        "description": "このルールは安全上重要なエンティティ（{entities}）を対象としています。続行するには、リスクを明示的に承認する必要があります。",
+        "data": {"safety_acknowledged": "このルールが物理的なハードウェアを動作させることを理解し、リスクを受け入れます。"}
+      },
+      "preview": {
+        "title": "レビューと作成",
+        "description": "以下のルールをレビューしてください。**送信**をクリックして作成するか、戻る矢印を使って変更してください。\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "属性パラメーター",
+        "description": "選択した属性の強制値を設定します。",
+        "data": {"operator": "演算子","threshold": "しきい値","target_value": "ターゲット値","delay_seconds": "遅延（秒）"},
+        "data_description": {"operator": "数値制限ルールに使用される比較演算子。","threshold": "ライブ属性と比較される数値。数値制限ルールにのみ使用されます。","target_value": "強制する値。数値属性はこの値に制限され、色属性はこれに一致する必要があります。","delay_seconds": "トリガー後、強制するまでこの時間だけ待機します。0 = 即時。最大 86400（24 時間）。"}
+      }
+    },
+    "error": {
+      "empty_rule_name": "ルール名を空にすることはできません。",
+      "empty_target_entities": "少なくとも 1 つの対象エンティティを選択してください。",
+      "empty_trigger_states": "少なくとも 1 つのトリガー状態を指定してください。",
+      "empty_target_state": "ターゲット状態を空にすることはできません。",
+      "invalid_threshold": "しきい値とターゲット値は数値である必要があります。",
+      "invalid_delay": "遅延は 0 から 86400 秒（24 時間）までの整数である必要があります。",
+      "invalid_rate": "1 分あたりの最大強制回数は 1 から 600 までの整数である必要があります。",
+      "target_in_triggers": "ターゲット状態をトリガー状態にすることはできません — 強制ループが発生します。",
+      "forbidden_state": "状態 'unavailable'、'unknown'、'none' はトリガーまたはターゲットとして使用できません。",
+      "incomplete_flag": "フラグのエンティティと必要な状態の両方を設定する必要があります。",
+      "safety_not_acknowledged": "続行するには安全上のリスクを承認する必要があります。",
+      "name_already_exists": "この名前のルールはすでに存在します。",
+      "invalid_rgb_color": "RGB 色は 0 から 255 までの 3 つの値のリストである必要があります。",
+      "invalid_color_temp_kelvin": "色温度は 2000 K から 6500 K の間である必要があります。"
+    },
+    "abort": {"single_instance_allowed": "設定できる Entity Guard ハブは 1 つだけです。","name_already_exists": "この名前のルールはすでに存在します。","already_configured": "このルールはすでに設定されています。"}
+  },
+  "options": {
+    "step": {
+      "init": {"title": "ルールを編集","description": "{summary}\n\n変更する項目を選択してください。","menu_options": {"edit_basics": "名前を編集","edit_mode": "モード固有の設定を編集","edit_entities": "対象エンティティを追加または削除","edit_flags": "フラグ条件を編集","edit_advanced": "デバウンスとレート制限を編集"}},
+      "edit_basics": {"title": "名前を編集","data": {"rule_name": "ルール名"}},
+      "edit_entities": {"title": "対象エンティティを編集","data": {"target_entities": "対象エンティティ"}},
+      "edit_safety": {"title": "安全性の確認","description": "新しい安全上重要なエンティティが追加されました。保存するには再度承認してください。","data": {"safety_acknowledged": "このルールが物理的なハードウェアを動作させることを理解し、リスクを受け入れます。"}},
+      "edit_state": {"title": "状態モードを編集","data": {"trigger_states": "トリガー状態","target_state": "ターゲット状態","delay_seconds": "遅延（秒）"}},
+      "edit_attribute": {"title": "属性モードを編集","description": "このルールで適用する属性を選択します。数値属性はターゲットに制限され、色属性はターゲット色に一致させます。","data": {"attribute": "属性"}},
+      "edit_flags": {"title": "フラグ条件を編集","description": "現在のフラグ: {summary}。\n\n{current_state}\n\n追加するには 'add'、すべて置き換えるには 'replace'、すべて削除するには 'clear'、変更せずに終了するには 'save' を選択してください。","data": {"entity": "フラグエンティティ","match_state": "必要な状態","action": "アクション"}},
+      "edit_advanced": {"title": "詳細設定を編集","data": {"debounce_enabled": "デバウンスを有効化","debounce_seconds": "デバウンスウィンドウ（秒）","max_enforcements_per_minute": "1 分あたりの最大強制回数"}},
+      "edit_attribute_params": {"title": "属性パラメーターを編集","description": "選択した属性の強制値を設定します。","data": {"operator": "演算子","threshold": "しきい値","target_value": "ターゲット値","delay_seconds": "遅延（秒）"}}
+    },
+    "error": {
+      "empty_rule_name": "ルール名を空にすることはできません。",
+      "empty_target_entities": "少なくとも 1 つの対象エンティティを選択してください。",
+      "empty_trigger_states": "少なくとも 1 つのトリガー状態を指定してください。",
+      "empty_target_state": "ターゲット状態を空にすることはできません。",
+      "invalid_threshold": "しきい値とターゲット値は数値である必要があります。",
+      "invalid_delay": "遅延は 0 から 86400 秒（24 時間）までの整数である必要があります。",
+      "invalid_rate": "1 分あたりの最大強制回数は 1 から 600 までの整数である必要があります。",
+      "target_in_triggers": "ターゲット状態をトリガー状態にすることはできません — 強制ループが発生します。",
+      "forbidden_state": "状態 'unavailable'、'unknown'、'none' はトリガーまたはターゲットとして使用できません。",
+      "incomplete_flag": "フラグのエンティティと必要な状態の両方を設定する必要があります。",
+      "safety_not_acknowledged": "続行するには安全上のリスクを承認する必要があります。",
+      "name_already_exists": "この名前のルールはすでに存在します。",
+      "invalid_rgb_color": "RGB 色は 0 から 255 までの 3 つの値のリストである必要があります。",
+      "invalid_color_temp_kelvin": "色温度は 2000 K から 6500 K の間である必要があります。"
+    },
+    "abort": {"name_already_exists": "この名前のルールはすでに存在します。","hub_no_options": "Entity Guard ハブには編集可能なオプションがありません。"}
+  },
+  "exceptions": {"rule_not_found": {"message": "{rule_id} に一致する Entity Guard ルールが見つかりません。"}},
+  "services": {
+    "suppress": {"name": "ルールを抑制","description": "Entity Guard ルールを一時的に抑制します。ルールは期間終了後に自動的に再開します。","fields": {"rule_id": {"name": "ルール","description": "ルール UUID またはルール名（設定エントリのタイトル）。"},"duration_minutes": {"name": "期間（分）","description": "ルールを抑制する時間（1〜1440 分）。"}}},
+    "unsuppress": {"name": "ルールの抑制を解除","description": "抑制された Entity Guard ルールを直ちに再開します。","fields": {"rule_id": {"name": "ルール","description": "ルール UUID またはルール名（設定エントリのタイトル）。"}}},
+    "list_rules": {"name": "ルール一覧","description": "すべての Entity Guard ルールの設定と現在のステータスを返します。"},
+    "clear_history": {"name": "ルール履歴をクリア","description": "ルールの保存された強制履歴（カウント、最終強制、クールダウン）をクリアします。","fields": {"rule_id": {"name": "ルール","description": "ルール UUID またはルール名（設定エントリのタイトル）。"}}},
+    "panic_stop": {"name": "緊急停止","description": "緊急キル — すべてのルールを無効化し、すべてのクールダウンをクリアし、60 分間抑制し、ハブのマスタースイッチをオフにします。"}
+  },
+  "selector": {
+    "status": {"options": {"error": "エラー","disabled": "無効","master_disabled": "マスター無効","suppressed": "抑制中","enforcing": "強制中","cooldown": "クールダウン","armed": "待機中","conditional": "条件待ち","starting": "起動中","pending": "強制直前"}},
+    "mode": {"options": {"state": "状態","attribute": "属性"}},
+    "attribute": {"options": {"brightness": "明るさ","volume_level": "音量レベル","temperature": "温度","percentage": "パーセンテージ","rgb_color": "RGB 色","color_temp_kelvin": "色温度（ケルビン）"}},
+    "operator": {"options": {"lt": "より小さい（<）","lte": "以下（<=）","gt": "より大きい（>）","gte": "以上（>=）"}},
+    "flag_action": {"options": {"save": "変更せずに終了","add": "フラグを追加","replace": "すべてのフラグを置き換え","clear": "すべてのフラグをクリア"}}
+  },
+  "entity": {
+    "binary_sensor": {"armed": {"name": "待機中"},"active": {"name": "アクティブ"},"in_cooldown": {"name": "クールダウン中"},"pending": {"name": "保留中"},"recently_enforced": {"name": "最近強制"}},
+    "sensor": {"status": {"name": "ステータス"},"last_enforced": {"name": "最終強制"},"enforcement_count_today": {"name": "本日の強制回数"},"enforcement_count_total": {"name": "強制回数合計"},"cooldown_remaining": {"name": "クールダウン残り"},"safety_status": {"name": "安全性ステータス"},"suppressed_until": {"name": "抑制終了時刻"},"rule_id": {"name": "ルール ID"}},
+    "switch": {"enabled": {"name": "有効"},"debounce_enabled": {"name": "デバウンス有効"},"master_enabled": {"name": "マスター有効"}},
+    "number": {"delay_seconds": {"name": "遅延（秒）"},"debounce_seconds": {"name": "デバウンス（秒）"},"max_enforcements_per_minute": {"name": "1 分あたりの最大強制回数"}},
+    "button": {"reset": {"name": "クールダウンをリセット"},"test_enforce": {"name": "テスト強制"},"clear_suppression": {"name": "抑制をクリア"},"clear_history": {"name": "履歴をクリア（カウンター）"}}
+  },
+  "issues": {"flag_entity_missing": {"title": "ルール「{rule_name}」でフラグエンティティが見つかりません","description": "次のフラグエンティティは存在しなくなりましたが、ルールで参照されています: {missing_entities}。これらのフラグを評価できない場合、ルールは強制されません。この問題を解決するにはルールを更新または削除してください。"}}
+}

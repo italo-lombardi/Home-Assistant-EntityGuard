@@ -1,0 +1,220 @@
+{
+  "title": "Entity Guard",
+  "config": {
+    "step": {
+      "rule": {
+        "title": "新規則 — 基本設定",
+        "description": "為規則命名、選擇要強制執行的目標實體，並選擇規則模式。",
+        "data": {
+          "rule_name": "規則名稱",
+          "target_entities": "目標實體",
+          "mode": "規則模式"
+        },
+        "data_description": {
+          "rule_name": "顯示於介面中的名稱，必須是唯一的。",
+          "target_entities": "此規則將強制執行的一個或多個實體。",
+          "mode": "狀態模式會強制指定特定狀態。屬性模式會限制數值屬性範圍或比對顏色目標。"
+        }
+      },
+      "state": {
+        "title": "狀態模式",
+        "description": "當任何目標實體進入其中一個觸發狀態時，在可選的延遲後將其強制恢復為目標狀態。",
+        "data": {
+          "trigger_states": "觸發狀態",
+          "target_state": "目標狀態",
+          "delay_seconds": "延遲（秒）"
+        },
+        "data_description": {
+          "trigger_states": "會啟動強制執行的狀態清單（例如 on、open、unlocked）。輸入以新增自訂值。",
+          "target_state": "實體將被強制恢復的狀態（例如 off、closed、locked）。",
+          "delay_seconds": "觸發後等待此時間才強制執行。0 = 立即執行。最大 86400（24 小時）。"
+        }
+      },
+      "attribute": {
+        "title": "屬性模式",
+        "description": "選擇此規則應強制執行的屬性。數值屬性會限制在目標值範圍內；顏色屬性會比對目標顏色。",
+        "data": {
+          "attribute": "屬性"
+        },
+        "data_description": {
+          "attribute": "要監控並強制執行的屬性。"
+        }
+      },
+      "extras": {
+        "title": "可選功能",
+        "description": "勾選您想要設定的功能。每個勾選的選項都會新增一個後續畫面。全部略過即可直接進入審閱。",
+        "data": {
+          "add_flags": "新增額外條件",
+          "custom_rate_limit": "自訂迴圈保護",
+          "add_debounce": "啟用去抖動"
+        },
+        "data_description": {
+          "add_flags": "勾選以要求額外條件（例如僅在無人在家時強制執行、僅在日落後執行）。不勾選則每次觸發時皆強制執行。",
+          "custom_rate_limit": "迴圈保護會在規則每分鐘觸發超過 10 次（預設值）時自動抑制該規則。不勾選則使用預設值。勾選以設定您自己的數值，或在後續畫面中完全關閉迴圈保護。",
+          "add_debounce": "勾選以忽略快速來回的變化。規則僅在觸發狀態於您設定的時間內保持不變時才動作。不勾選則每次變化皆動作。"
+        }
+      },
+      "flags": {
+        "title": "條件（可選）",
+        "description": "規則動作前必須全部成立的額外條件。\n\n範例：\n  • person.alice = not_home — 僅在 Alice 外出時\n  • input_boolean.guest_mode = off — 僅在無訪客時\n  • sun.sun = below_horizon — 僅在日落後\n  • binary_sensor.work_hours = on — 僅在工作時間內\n\n新增條件方式：選擇實體、輸入其必須符合的狀態，然後按一下「提交」。\n\n若目前不想要任何條件，請將兩個欄位皆留空並按一下「提交」以略過。\n\n目前已新增的條件（{count}）：{summary}\n\n{current_state}\n\n勾選「再新增一個」以串接更多條件 — 所有條件皆須符合，規則才會觸發。",
+        "data": {
+          "entity": "條件實體",
+          "match_state": "所需狀態",
+          "add_another": "在此之後再新增一個條件"
+        },
+        "data_description": {
+          "entity": "選擇其狀態作為條件的實體（例如 person.alice、input_boolean.guest_mode、sun.sun）。",
+          "match_state": "規則觸發時實體必須符合的狀態（例如 'on'、'home'、'not_home'、'below_horizon'）。",
+          "add_another": "勾選以新增更多條件。不勾選則結束。"
+        }
+      },
+      "advanced": {
+        "title": "進階",
+        "description": "設定您在上一個畫面選擇加入的選項。預設速率限制為每分鐘 {default_rate} 次強制執行。",
+        "data": {
+          "debounce_seconds": "去抖動時間窗（秒）",
+          "rate_limit_enabled": "強制執行迴圈保護",
+          "max_enforcements_per_minute": "每分鐘最大強制執行次數"
+        },
+        "data_description": {
+          "debounce_seconds": "以秒為單位的時間窗。最小 0，最大 86400（24 小時）。僅在上一步啟用去抖動時顯示。",
+          "rate_limit_enabled": "勾選以保持迴圈保護開啟（建議）。取消勾選則為此規則停用迴圈保護 — 失控迴圈將不會被自動停止。",
+          "max_enforcements_per_minute": "規則在自動抑制 15 分鐘前，每分鐘允許的強制執行次數。最小 1，最大 600。當上方取消勾選迴圈保護時，此設定會被忽略。"
+        }
+      },
+      "safety": {
+        "title": "安全確認",
+        "description": "此規則以安全敏感實體（{entities}）為目標。您必須明確確認風險才能繼續。",
+        "data": {
+          "safety_acknowledged": "我了解此規則將移動實體硬體並接受相關風險。"
+        }
+      },
+      "preview": {
+        "title": "審閱並建立",
+        "description": "請審閱下方的規則。按一下**提交**以建立，或使用返回箭頭進行修改。\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "屬性參數",
+        "description": "為所選屬性設定強制執行值。",
+        "data": {
+          "operator": "運算子",
+          "threshold": "閾值",
+          "target_value": "目標值",
+          "delay_seconds": "延遲（秒）"
+        },
+        "data_description": {
+          "operator": "數值限制規則所使用的比較運算子。",
+          "threshold": "與即時屬性比較的數值。僅用於數值限制規則。",
+          "target_value": "要強制執行的值。數值屬性會限制為此值；顏色屬性必須符合此值。",
+          "delay_seconds": "觸發後等待此時間才強制執行。0 = 立即執行。最大 86400（24 小時）。"
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "規則名稱不能為空。",
+      "empty_target_entities": "請至少選擇一個目標實體。",
+      "empty_trigger_states": "請至少提供一個觸發狀態。",
+      "empty_target_state": "目標狀態不能為空。",
+      "invalid_threshold": "閾值與目標值必須為數值。",
+      "invalid_delay": "延遲必須是介於 0 到 86400 秒（24 小時）之間的整數。",
+      "invalid_rate": "每分鐘最大強制執行次數必須是介於 1 到 600 之間的整數。",
+      "target_in_triggers": "目標狀態不能同時為觸發狀態 — 這會造成強制執行迴圈。",
+      "forbidden_state": "狀態 'unavailable'、'unknown' 和 'none' 不能用作觸發或目標。",
+      "incomplete_flag": "旗標實體與所需狀態皆須設定。",
+      "safety_not_acknowledged": "您必須確認安全風險才能繼續。",
+      "name_already_exists": "已存在同名的規則。",
+      "invalid_rgb_color": "RGB 顏色必須是三個介於 0 到 255 之間的值所組成的清單。",
+      "invalid_color_temp_kelvin": "色溫必須介於 2000 K 到 6500 K 之間。"
+    },
+    "abort": {
+      "single_instance_allowed": "只能設定一個 Entity Guard 中樞。",
+      "name_already_exists": "已存在同名的規則。",
+      "already_configured": "此規則已完成設定。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "編輯規則",
+        "description": "{summary}\n\n選擇要變更的項目。",
+        "menu_options": {
+          "edit_basics": "編輯名稱",
+          "edit_mode": "編輯模式專屬設定",
+          "edit_entities": "新增或移除目標實體",
+          "edit_flags": "編輯旗標條件",
+          "edit_advanced": "編輯去抖動與速率限制"
+        }
+      },
+      "edit_basics": {"title": "編輯名稱","data": {"rule_name": "規則名稱"}},
+      "edit_entities": {"title": "編輯目標實體","data": {"target_entities": "目標實體"}},
+      "edit_safety": {
+        "title": "安全確認",
+        "description": "已新增安全敏感實體。請重新確認以儲存。",
+        "data": {"safety_acknowledged": "我了解此規則將移動實體硬體並接受相關風險。"}
+      },
+      "edit_state": {"title": "編輯狀態模式","data": {"trigger_states": "觸發狀態","target_state": "目標狀態","delay_seconds": "延遲（秒）"}},
+      "edit_attribute": {
+        "title": "編輯屬性模式",
+        "description": "選擇此規則應強制執行的屬性。數值屬性會限制在目標值範圍內；顏色屬性會比對目標顏色。",
+        "data": {"attribute": "屬性"}
+      },
+      "edit_flags": {
+        "title": "編輯旗標條件",
+        "description": "目前的旗標：{summary}。\n\n{current_state}\n\n選擇「add」以附加、「replace」以取代全部、「clear」以移除全部，或「save」以保持不變。",
+        "data": {"entity": "旗標實體","match_state": "所需狀態","action": "動作"}
+      },
+      "edit_advanced": {
+        "title": "編輯進階設定",
+        "data": {"debounce_enabled": "啟用去抖動","debounce_seconds": "去抖動時間窗（秒）","max_enforcements_per_minute": "每分鐘最大強制執行次數"}
+      },
+      "edit_attribute_params": {
+        "title": "編輯屬性參數",
+        "description": "為所選屬性設定強制執行值。",
+        "data": {"operator": "運算子","threshold": "閾值","target_value": "目標值","delay_seconds": "延遲（秒）"}
+      }
+    },
+    "error": {
+      "empty_rule_name": "規則名稱不能為空。",
+      "empty_target_entities": "請至少選擇一個目標實體。",
+      "empty_trigger_states": "請至少提供一個觸發狀態。",
+      "empty_target_state": "目標狀態不能為空。",
+      "invalid_threshold": "閾值與目標值必須為數值。",
+      "invalid_delay": "延遲必須是介於 0 到 86400 秒（24 小時）之間的整數。",
+      "invalid_rate": "每分鐘最大強制執行次數必須是介於 1 到 600 之間的整數。",
+      "target_in_triggers": "目標狀態不能同時為觸發狀態 — 這會造成強制執行迴圈。",
+      "forbidden_state": "狀態 'unavailable'、'unknown' 和 'none' 不能用作觸發或目標。",
+      "incomplete_flag": "旗標實體與所需狀態皆須設定。",
+      "safety_not_acknowledged": "您必須確認安全風險才能繼續。",
+      "name_already_exists": "已存在同名的規則。",
+      "invalid_rgb_color": "RGB 顏色必須是三個介於 0 到 255 之間的值所組成的清單。",
+      "invalid_color_temp_kelvin": "色溫必須介於 2000 K 到 6500 K 之間。"
+    },
+    "abort": {
+      "name_already_exists": "已存在同名的規則。",
+      "hub_no_options": "Entity Guard 中樞沒有可編輯的選項。"
+    }
+  },
+  "exceptions": {"rule_not_found": {"message": "找不到符合 {rule_id} 的 Entity Guard 規則。"}},
+  "services": {
+    "suppress": {"name": "抑制規則","description": "暫時抑制某個 Entity Guard 規則。規則會在持續時間結束後自動恢復。","fields": {"rule_id": {"name": "規則","description": "規則 UUID 或規則名稱（設定項目標題）。"},"duration_minutes": {"name": "持續時間（分鐘）","description": "抑制規則的時長（1-1440 分鐘）。"}}},
+    "unsuppress": {"name": "解除抑制規則","description": "立即恢復被抑制的 Entity Guard 規則。","fields": {"rule_id": {"name": "規則","description": "規則 UUID 或規則名稱（設定項目標題）。"}}},
+    "list_rules": {"name": "列出規則","description": "傳回每個 Entity Guard 規則的設定與目前狀態。"},
+    "clear_history": {"name": "清除規則歷史","description": "清除某個規則所儲存的強制執行歷史（計數、上次強制執行時間、冷卻時間）。","fields": {"rule_id": {"name": "規則","description": "規則 UUID 或規則名稱（設定項目標題）。"}}},
+    "panic_stop": {"name": "緊急停止","description": "緊急終止 — 停用每個規則、清除所有冷卻時間、抑制 60 分鐘，並關閉中樞主開關。"}
+  },
+  "selector": {
+    "status": {"options": {"error": "錯誤","disabled": "已停用","master_disabled": "主開關已停用","suppressed": "已抑制","enforcing": "強制執行中","cooldown": "冷卻中","armed": "已啟動","conditional": "等待條件中","starting": "啟動中","pending": "即將強制執行"}},
+    "mode": {"options": {"state": "狀態","attribute": "屬性"}},
+    "attribute": {"options": {"brightness": "亮度","volume_level": "音量","temperature": "溫度","percentage": "百分比","rgb_color": "RGB 顏色","color_temp_kelvin": "色溫（開爾文）"}},
+    "operator": {"options": {"lt": "小於（<）","lte": "小於或等於（<=）","gt": "大於（>）","gte": "大於或等於（>=）"}},
+    "flag_action": {"options": {"save": "不變更並離開","add": "新增旗標","replace": "取代所有旗標","clear": "清除所有旗標"}}
+  },
+  "entity": {
+    "binary_sensor": {"armed": {"name": "已啟動"},"active": {"name": "作用中"},"in_cooldown": {"name": "冷卻中"},"pending": {"name": "待處理"},"recently_enforced": {"name": "最近已強制執行"}},
+    "sensor": {"status": {"name": "狀態"},"last_enforced": {"name": "上次強制執行"},"enforcement_count_today": {"name": "今日強制執行次數"},"enforcement_count_total": {"name": "強制執行總次數"},"cooldown_remaining": {"name": "剩餘冷卻時間"},"safety_status": {"name": "安全狀態"},"suppressed_until": {"name": "抑制至"},"rule_id": {"name": "規則 ID"}},
+    "switch": {"enabled": {"name": "已啟用"},"debounce_enabled": {"name": "已啟用去抖動"},"master_enabled": {"name": "主開關已啟用"}},
+    "number": {"delay_seconds": {"name": "延遲（秒）"},"debounce_seconds": {"name": "去抖動（秒）"},"max_enforcements_per_minute": {"name": "每分鐘最大強制執行次數"}},
+    "button": {"reset": {"name": "重設冷卻時間"},"test_enforce": {"name": "測試強制執行"},"clear_suppression": {"name": "清除抑制"},"clear_history": {"name": "清除歷史（計數器）"}}
+  },
+  "issues": {"flag_entity_missing": {"title": "規則「{rule_name}」中的旗標實體遺失","description": "下列旗標實體已不存在，但仍在規則中被參照：{missing_entities}。當這些旗標無法評估時，規則將不會強制執行。請更新或移除規則以解決此問題。"}}
+}
