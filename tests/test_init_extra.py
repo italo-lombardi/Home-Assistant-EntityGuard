@@ -367,8 +367,9 @@ async def test_setup_rule_entry_startup_not_running_registers_listener(
 
     with (
         patch.object(
-        type(hass), "is_running", new_callable=lambda: property(lambda self: False)
-    ), patch.object(
+            type(hass), "is_running", new_callable=lambda: property(lambda self: False)
+        ),
+        patch.object(
             hass.config_entries,
             "async_forward_entry_setups",
             new_callable=AsyncMock,
