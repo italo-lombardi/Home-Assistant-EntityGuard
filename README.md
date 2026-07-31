@@ -35,6 +35,7 @@ Enforce desired entity state in Home Assistant via declarative rules. Replaces N
 - **Custom Lovelace card** -- per-rule status, counters, controls
 - **Self-managed storage** -- no recorder dependency; cooldowns and counters survive restarts
 - **No pip dependencies**
+- **29 languages** -- UI translated into bg, ca, cs, da, de, el, en, es, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, ro, ru, sk, sv, tr, uk, zh-Hans, zh-Hant
 
 ---
 
