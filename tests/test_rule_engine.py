@@ -54,24 +54,24 @@ from custom_components.entity_guard.storage import EntityGuardStore
 
 
 def _make_config(**overrides) -> RuleConfig:
-    defaults = dict(
-        name="Test Rule",
-        unique_id="test-uid",
-        target_entities=["light.bedroom"],
-        mode=MODE_STATE,
-        trigger_states=["on"],
-        target_state="off",
-        delay_seconds=0,
-        attribute=None,
-        operator=None,
-        threshold=None,
-        target_value=None,
-        flags=[],
-        debounce_enabled=False,
-        debounce_seconds=60,
-        max_enforcements_per_minute=10,
-        safety_acknowledged=False,
-    )
+    defaults = {
+        "name": "Test Rule",
+        "unique_id": "test-uid",
+        "target_entities": ["light.bedroom"],
+        "mode": MODE_STATE,
+        "trigger_states": ["on"],
+        "target_state": "off",
+        "delay_seconds": 0,
+        "attribute": None,
+        "operator": None,
+        "threshold": None,
+        "target_value": None,
+        "flags": [],
+        "debounce_enabled": False,
+        "debounce_seconds": 60,
+        "max_enforcements_per_minute": 10,
+        "safety_acknowledged": False,
+    }
     defaults.update(overrides)
     return RuleConfig(**defaults)
 
@@ -777,7 +777,7 @@ async def test_resolve_service_attribute_mode(hass: HomeAssistant):
     engine = _make_engine(hass, config)
     result = engine._resolve_service("light.x")
     assert result is not None
-    _, service, data = result
+    _, _, data = result
     assert "brightness" in data
 
 
@@ -1543,7 +1543,7 @@ def test_resolve_service_homeassistant_fallback_on(hass: HomeAssistant):
     engine = _make_engine(hass, config)
     result = engine._resolve_service("vacuum.robo")
     assert result is not None
-    domain, service, data = result
+    domain, service, _ = result
     assert domain == "homeassistant"
     assert service == "turn_on"
 
@@ -3265,7 +3265,6 @@ async def test_cooldown_broadcast_no_cooldown_entry(hass: HomeAssistant):
     class _RacyDict(dict):
         def get(self, key, default=None):
             self.clear()  # simulate async_reset_cooldowns clearing between set and get
-            return None
 
     engine._state.cooldowns = _RacyDict()
     await engine._enforce("light.bedroom")
