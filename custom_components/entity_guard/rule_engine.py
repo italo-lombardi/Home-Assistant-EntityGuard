@@ -5,8 +5,9 @@ from __future__ import annotations
 import asyncio
 import bisect
 import logging
+from collections.abc import Callable
 from datetime import datetime, timedelta
-from typing import Any, Callable
+from typing import Any
 
 from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
@@ -1000,8 +1001,7 @@ class RuleEngine:
         remaining = 0.0
         for end in self._state.cooldowns.values():
             delta = (end - now).total_seconds()
-            if delta > remaining:
-                remaining = delta
+            remaining = max(remaining, delta)
         return remaining
 
     def _set_status(self, status: str) -> None:

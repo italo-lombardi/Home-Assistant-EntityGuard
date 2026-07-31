@@ -365,33 +365,32 @@ async def test_setup_rule_entry_startup_not_running_registers_listener(
 
     rule_entry.add_to_hass(hass)
 
-    with patch.object(
+    with (
+        patch.object(
         type(hass), "is_running", new_callable=lambda: property(lambda self: False)
+    ), patch.object(
+            hass.config_entries,
+            "async_forward_entry_setups",
+            new_callable=AsyncMock,
+        ),
+        patch(
+            "custom_components.entity_guard._async_install_card",
+            new_callable=AsyncMock,
+        ),
+        patch(
+            "custom_components.entity_guard.RuleEngine.async_setup",
+            new_callable=AsyncMock,
+        ),
+        patch(
+            "custom_components.entity_guard._async_ensure_hub",
+            new_callable=AsyncMock,
+        ),
+        patch(
+            "custom_components.entity_guard.async_check_missing_flag_entities",
+            new_callable=AsyncMock,
+        ) as mock_check,
     ):
-        with (
-            patch.object(
-                hass.config_entries,
-                "async_forward_entry_setups",
-                new_callable=AsyncMock,
-            ),
-            patch(
-                "custom_components.entity_guard._async_install_card",
-                new_callable=AsyncMock,
-            ),
-            patch(
-                "custom_components.entity_guard.RuleEngine.async_setup",
-                new_callable=AsyncMock,
-            ),
-            patch(
-                "custom_components.entity_guard._async_ensure_hub",
-                new_callable=AsyncMock,
-            ),
-            patch(
-                "custom_components.entity_guard.async_check_missing_flag_entities",
-                new_callable=AsyncMock,
-            ) as mock_check,
-        ):
-            result = await async_setup_entry(hass, rule_entry)
+        result = await async_setup_entry(hass, rule_entry)
 
     assert result is True
     mock_check.assert_not_called()  # deferred, not called yet

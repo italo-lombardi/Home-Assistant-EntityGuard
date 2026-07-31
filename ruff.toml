@@ -2,4 +2,5 @@ line-length = 88
 
 [lint]
 select = ["E", "F", "I", "W", "RUF"]
+# E501: line-too-long — formatter handles wrapping
 ignore = ["E501"]
