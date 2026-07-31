@@ -219,6 +219,7 @@ async def test_panic_stop_disables_all(hass: HomeAssistant):
 async def test_panic_stop_persists_hub_master_disabled(hass: HomeAssistant):
     """panic_stop must persist master_enabled=False to hub entry options."""
     from pytest_homeassistant_custom_component.common import MockConfigEntry
+
     from custom_components.entity_guard.const import CONF_ENTRY_TYPE, ENTRY_TYPE_HUB
 
     hub_entry = MockConfigEntry(
@@ -237,6 +238,7 @@ async def test_panic_stop_persists_hub_master_disabled(hass: HomeAssistant):
 async def test_panic_stop_persists_per_rule_disabled(hass: HomeAssistant):
     """panic_stop must write enabled=False to each rule's config entry options."""
     from pytest_homeassistant_custom_component.common import MockConfigEntry
+
     from custom_components.entity_guard.const import CONF_ENTRY_TYPE, ENTRY_TYPE_RULE
 
     rule_entry = MockConfigEntry(

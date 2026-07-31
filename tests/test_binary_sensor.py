@@ -7,16 +7,16 @@ from unittest.mock import MagicMock
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.entity_guard.binary_sensor import (
+    EntityGuardActiveSensor,
+    EntityGuardArmedSensor,
+    EntityGuardInCooldownSensor,
+)
 from custom_components.entity_guard.const import (
     CONF_ENTRY_TYPE,
     DOMAIN,
     ENTRY_TYPE_HUB,
     ENTRY_TYPE_RULE,
-)
-from custom_components.entity_guard.binary_sensor import (
-    EntityGuardActiveSensor,
-    EntityGuardArmedSensor,
-    EntityGuardInCooldownSensor,
 )
 
 
@@ -149,12 +149,14 @@ async def test_binary_sensor_async_added_subscribes(hass: HomeAssistant):
 
 
 def test_pending_sensor_is_on():
-    from custom_components.entity_guard.binary_sensor import EntityGuardPendingSensor
     from unittest.mock import MagicMock
+
     from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.entity_guard.binary_sensor import EntityGuardPendingSensor
     from custom_components.entity_guard.const import (
-        DOMAIN,
         CONF_ENTRY_TYPE,
+        DOMAIN,
         ENTRY_TYPE_RULE,
     )
 
@@ -169,12 +171,14 @@ def test_pending_sensor_is_on():
 
 
 def test_pending_sensor_is_off():
-    from custom_components.entity_guard.binary_sensor import EntityGuardPendingSensor
     from unittest.mock import MagicMock
+
     from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.entity_guard.binary_sensor import EntityGuardPendingSensor
     from custom_components.entity_guard.const import (
-        DOMAIN,
         CONF_ENTRY_TYPE,
+        DOMAIN,
         ENTRY_TYPE_RULE,
     )
 
@@ -189,14 +193,16 @@ def test_pending_sensor_is_off():
 
 
 def test_recently_enforced_sensor_is_on():
+    from unittest.mock import MagicMock
+
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
     from custom_components.entity_guard.binary_sensor import (
         EntityGuardRecentlyEnforcedSensor,
     )
-    from unittest.mock import MagicMock
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
     from custom_components.entity_guard.const import (
-        DOMAIN,
         CONF_ENTRY_TYPE,
+        DOMAIN,
         ENTRY_TYPE_RULE,
     )
 
@@ -212,14 +218,16 @@ def test_recently_enforced_sensor_is_on():
 
 
 def test_recently_enforced_sensor_is_off():
+    from unittest.mock import MagicMock
+
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
     from custom_components.entity_guard.binary_sensor import (
         EntityGuardRecentlyEnforcedSensor,
     )
-    from unittest.mock import MagicMock
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
     from custom_components.entity_guard.const import (
-        DOMAIN,
         CONF_ENTRY_TYPE,
+        DOMAIN,
         ENTRY_TYPE_RULE,
     )
 
@@ -235,14 +243,16 @@ def test_recently_enforced_sensor_is_off():
 
 
 def test_recently_enforced_sensor_extra_state_attributes():
+    from unittest.mock import MagicMock
+
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
     from custom_components.entity_guard.binary_sensor import (
         EntityGuardRecentlyEnforcedSensor,
     )
-    from unittest.mock import MagicMock
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
     from custom_components.entity_guard.const import (
-        DOMAIN,
         CONF_ENTRY_TYPE,
+        DOMAIN,
         ENTRY_TYPE_RULE,
         MODE_STATE,
     )
@@ -272,14 +282,16 @@ def test_recently_enforced_sensor_extra_state_attributes():
 async def test_recently_enforced_sensor_target_entity_names_with_hass(
     hass: HomeAssistant,
 ):
+    from unittest.mock import MagicMock
+
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
     from custom_components.entity_guard.binary_sensor import (
         EntityGuardRecentlyEnforcedSensor,
     )
-    from unittest.mock import MagicMock
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
     from custom_components.entity_guard.const import (
-        DOMAIN,
         CONF_ENTRY_TYPE,
+        DOMAIN,
         ENTRY_TYPE_RULE,
         MODE_STATE,
     )
@@ -315,18 +327,20 @@ async def test_recently_enforced_subscribes_to_target_entity_changes(
     hass: HomeAssistant,
 ):
     """Re-writes state when a target entity registry entry changes (for friendly name refresh)."""
+    from unittest.mock import MagicMock
+
+    from homeassistant.helpers.entity_registry import async_get as async_get_er
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
     from custom_components.entity_guard.binary_sensor import (
         EntityGuardRecentlyEnforcedSensor,
     )
-    from unittest.mock import MagicMock
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
     from custom_components.entity_guard.const import (
-        DOMAIN,
         CONF_ENTRY_TYPE,
+        DOMAIN,
         ENTRY_TYPE_RULE,
         MODE_STATE,
     )
-    from homeassistant.helpers.entity_registry import async_get as async_get_er
 
     er = async_get_er(hass)
     er.async_get_or_create("light", "test", "balcony", suggested_object_id="balcony")
@@ -359,14 +373,16 @@ async def test_recently_enforced_no_target_entities_no_subscription(
     hass: HomeAssistant,
 ):
     """No state change subscription when target_entities is empty."""
+    from unittest.mock import MagicMock
+
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
     from custom_components.entity_guard.binary_sensor import (
         EntityGuardRecentlyEnforcedSensor,
     )
-    from unittest.mock import MagicMock
-    from pytest_homeassistant_custom_component.common import MockConfigEntry
     from custom_components.entity_guard.const import (
-        DOMAIN,
         CONF_ENTRY_TYPE,
+        DOMAIN,
         ENTRY_TYPE_RULE,
         MODE_STATE,
     )

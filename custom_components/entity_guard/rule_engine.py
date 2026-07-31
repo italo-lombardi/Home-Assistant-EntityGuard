@@ -5,8 +5,9 @@ from __future__ import annotations
 import asyncio
 import bisect
 import logging
+from collections.abc import Callable
 from datetime import datetime, timedelta
-from typing import Any, Callable
+from typing import Any
 
 from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
@@ -193,14 +194,14 @@ class RuleEngine:
         for unsub in self._unsub_callbacks:
             try:
                 unsub()
-            except Exception:  # noqa: BLE001
+            except Exception:
                 _LOGGER.debug("Listener unsubscribe failed", exc_info=True)
         self._unsub_callbacks.clear()
 
         for cancel in list(self._pending_enforcements.values()):
             try:
                 cancel()
-            except Exception:  # noqa: BLE001
+            except Exception:
                 _LOGGER.debug("Pending enforcement cancel failed", exc_info=True)
         self._pending_enforcements.clear()
 
@@ -211,7 +212,7 @@ class RuleEngine:
         for cancel in list(self._cooldown_broadcast_unsubs.values()):
             try:
                 cancel()
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
         self._cooldown_broadcast_unsubs.clear()
 
@@ -522,7 +523,7 @@ class RuleEngine:
         if cancel is not None:
             try:
                 cancel()
-            except Exception:  # noqa: BLE001
+            except Exception:
                 _LOGGER.debug("Pending cancel failed for %s", entity_id, exc_info=True)
 
     def _cancel_pending_for_entities(self, entity_ids: list[str]) -> None:
@@ -589,7 +590,7 @@ class RuleEngine:
                 await self._hass.services.async_call(
                     domain, service, data, blocking=True, context=ctx
                 )
-            except Exception as err:  # noqa: BLE001
+            except Exception as err:
                 # Spec: target unavailable / service errors → skip silently + debug log.
                 self._fire_skipped(entity_id, "service_call_failed", error=str(err))
                 _LOGGER.warning(
@@ -680,7 +681,7 @@ class RuleEngine:
                     if old_unsub is not None:
                         try:
                             old_unsub()
-                        except Exception:  # noqa: BLE001
+                        except Exception:
                             pass
 
                     _eid = entity_id
@@ -836,7 +837,7 @@ class RuleEngine:
         for cancel in list(self._cooldown_broadcast_unsubs.values()):
             try:
                 cancel()
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
         self._cooldown_broadcast_unsubs.clear()
         self._cancel_recently_enforced_timer()
@@ -902,7 +903,7 @@ class RuleEngine:
         for cancel in list(self._cooldown_broadcast_unsubs.values()):
             try:
                 cancel()
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
         self._cooldown_broadcast_unsubs.clear()
         self._cancel_recently_enforced_timer()
@@ -935,7 +936,7 @@ class RuleEngine:
             # broadcast → fire explicitly so recently_enforced binary sensor refreshes.
             if had_recently_enforced and self._current_status == prev_status:
                 self._broadcast_status()
-        except Exception:  # noqa: BLE001  # pragma: no cover
+        except Exception:  # pragma: no cover
             # Ensure sentinel STATUS_STARTING is never left stranded if derivation fails.
             if self._current_status == STATUS_STARTING:
                 self._current_status = (
@@ -1000,8 +1001,7 @@ class RuleEngine:
         remaining = 0.0
         for end in self._state.cooldowns.values():
             delta = (end - now).total_seconds()
-            if delta > remaining:
-                remaining = delta
+            remaining = max(remaining, delta)
         return remaining
 
     def _set_status(self, status: str) -> None:
@@ -1052,7 +1052,7 @@ class RuleEngine:
             for unsub in list(self._cooldown_broadcast_unsubs.values()):
                 try:
                     unsub()
-                except Exception:  # noqa: BLE001
+                except Exception:
                     pass
             self._cooldown_broadcast_unsubs.clear()
         self._set_status(status)
@@ -1080,7 +1080,7 @@ class RuleEngine:
             return
         try:
             self._suppression_timer_unsub()
-        except Exception:  # noqa: BLE001
+        except Exception:
             _LOGGER.debug("Suppression timer cancel failed", exc_info=True)
         self._suppression_timer_unsub = None
 
@@ -1090,7 +1090,7 @@ class RuleEngine:
             return
         try:
             self._recently_enforced_unsub()
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
         self._recently_enforced_unsub = None
 

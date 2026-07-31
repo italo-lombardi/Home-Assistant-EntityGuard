@@ -33,7 +33,7 @@ async def async_check_missing_flag_entities(hass: HomeAssistant, entry_id: str) 
 
     try:
         config = parse_rule_config(entry)
-    except Exception:  # noqa: BLE001
+    except Exception:
         _LOGGER.exception("Could not parse config for entry %s", entry_id)
         return
 

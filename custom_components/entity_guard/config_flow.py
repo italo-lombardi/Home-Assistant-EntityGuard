@@ -7,7 +7,6 @@ import uuid
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant.config_entries import (
     SOURCE_IMPORT,
     ConfigEntry,
@@ -72,7 +71,7 @@ from .const import (
     NUMERIC_ATTRIBUTES,
     SAFETY_DOMAINS,
     SUPPORTED_OPERATORS,
-    has_safety_target as _has_safety_target,
+    has_safety_target,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -742,7 +741,7 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
 
     async def _after_advanced(self) -> ConfigFlowResult:
         """Common branch after advanced (or when advanced is skipped)."""
-        if _has_safety_target(self._rule_data[CONF_TARGET_ENTITIES]):
+        if has_safety_target(self._rule_data[CONF_TARGET_ENTITIES]):
             return await self.async_step_safety()
         return await self.async_step_preview()
 
@@ -991,7 +990,7 @@ class EntityGuardOptionsFlow(OptionsFlow):
             else:
                 self._working[CONF_TARGET_ENTITIES] = entities
                 # New safety domain present? Force re-ack if not already given.
-                if _has_safety_target(entities) and not self._working.get(
+                if has_safety_target(entities) and not self._working.get(
                     CONF_SAFETY_ACKNOWLEDGED, False
                 ):
                     return await self.async_step_edit_safety()

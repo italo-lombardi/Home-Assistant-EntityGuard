@@ -1,0 +1,415 @@
+{
+  "title": "Entity Guard",
+  "config": {
+    "step": {
+      "rule": {
+        "title": "Nové pravidlo — základy",
+        "description": "Pomenujte pravidlo, vyberte cieľové entity, na ktoré sa má vzťahovať, a zvoľte režim pravidla.",
+        "data": {
+          "rule_name": "Názov pravidla",
+          "target_entities": "Cieľové entity",
+          "mode": "Režim pravidla"
+        },
+        "data_description": {
+          "rule_name": "Zobrazovaný názov v používateľskom rozhraní. Musí byť jedinečný.",
+          "target_entities": "Jedna alebo viac entít, na ktoré sa toto pravidlo bude vzťahovať.",
+          "mode": "Stavový režim vynucuje konkrétny stav. Atribútový režim obmedzuje číselné atribúty alebo porovnáva cieľovú farbu."
+        }
+      },
+      "state": {
+        "title": "Stavový režim",
+        "description": "Keď ktorákoľvek cieľová entita prejde do niektorého zo spúšťacích stavov, po voliteľnom oneskorení ju vráti späť do cieľového stavu.",
+        "data": {
+          "trigger_states": "Spúšťacie stavy",
+          "target_state": "Cieľový stav",
+          "delay_seconds": "Oneskorenie (sekundy)"
+        },
+        "data_description": {
+          "trigger_states": "Zoznam stavov, ktoré aktivujú vynucovanie (napr. on, open, unlocked). Píšte pre pridanie vlastných hodnôt.",
+          "target_state": "Stav, do ktorého bude entita vynútená (napr. off, closed, locked).",
+          "delay_seconds": "Po spustení počkajte takto dlho pred vynútením. 0 = okamžite. Max 86400 (24 h)."
+        }
+      },
+      "attribute": {
+        "title": "Atribútový režim",
+        "description": "Vyberte, ktorý atribút má toto pravidlo vynucovať. Číselné atribúty sa obmedzia na cieľovú hodnotu; farebné atribúty porovnávajú cieľovú farbu.",
+        "data": {
+          "attribute": "Atribút"
+        },
+        "data_description": {
+          "attribute": "Atribút na monitorovanie a vynucovanie."
+        }
+      },
+      "extras": {
+        "title": "Voliteľné funkcie",
+        "description": "Začiarknite funkcie, ktoré chcete nakonfigurovať. Každá začiarknutá možnosť pridá nadväzujúcu obrazovku. Ak ich všetky preskočíte, prejdete rovno na kontrolu.",
+        "data": {
+          "add_flags": "Pridať ďalšie podmienky",
+          "custom_rate_limit": "Prispôsobiť ochranu proti slučkám",
+          "add_debounce": "Povoliť potlačenie zákmitov"
+        },
+        "data_description": {
+          "add_flags": "Začiarknite, ak chcete vyžadovať ďalšie podmienky (napr. vynucovať iba keď nikto nie je doma, iba po západe slnka). Ak nezačiarknete, pravidlo sa vynúti pri každom spustení.",
+          "custom_rate_limit": "Ochrana proti slučkám automaticky potlačí pravidlo, ak sa spustí viac ako 10-krát za minútu (predvolené). Ak nezačiarknete, použije sa predvolená hodnota. Začiarknite pre nastavenie vlastného počtu alebo pre úplné vypnutie ochrany proti slučkám na neskoršej obrazovke.",
+          "add_debounce": "Začiarknite pre ignorovanie rýchlych zmien tam a späť. Pravidlo zareaguje iba vtedy, ak spúšťač zostane rovnaký po dobu, ktorú nastavíte na neskoršej obrazovke. Ak nezačiarknete, zareaguje na každú zmenu."
+        }
+      },
+      "flags": {
+        "title": "Podmienky (voliteľné)",
+        "description": "Ďalšie podmienky, ktoré musia byť všetky splnené, aby pravidlo zareagovalo.\n\nPríklady:\n  • person.alice = not_home — iba keď je Alica preč\n  • input_boolean.guest_mode = off — iba keď nie sú hostia\n  • sun.sun = below_horizon — iba po západe slnka\n  • binary_sensor.work_hours = on — iba počas pracovných hodín\n\nPre pridanie podmienky: vyberte entitu, napíšte stav, v ktorom musí byť, a kliknite na Odoslať.\n\nAk teraz nechcete žiadnu podmienku, nechajte obe polia prázdne a kliknutím na Odoslať ju preskočte.\n\nDoteraz pridané podmienky ({count}): {summary}\n\n{current_state}\n\nZačiarknite „Pridať ďalšiu“ pre zreťazenie viacerých — všetky musia byť splnené, aby sa pravidlo spustilo.",
+        "data": {
+          "entity": "Entita podmienky",
+          "match_state": "Požadovaný stav",
+          "add_another": "Pridať ďalšiu podmienku po tejto"
+        },
+        "data_description": {
+          "entity": "Vyberte entitu, ktorej stav slúži ako podmienka (napr. person.alice, input_boolean.guest_mode, sun.sun).",
+          "match_state": "Stav, v ktorom musí byť entita, aby sa pravidlo spustilo (napr. „on“, „home“, „not_home“, „below_horizon“).",
+          "add_another": "Začiarknite pre pridanie ďalších podmienok. Ak nezačiarknete, dokončíte."
+        }
+      },
+      "advanced": {
+        "title": "Rozšírené",
+        "description": "Nastavte možnosti, ktoré ste vybrali na predchádzajúcej obrazovke. Predvolený limit rýchlosti je {default_rate} vynútení za minútu.",
+        "data": {
+          "debounce_seconds": "Okno potlačenia zákmitov (sekundy)",
+          "rate_limit_enabled": "Vynucovať ochranu proti slučkám",
+          "max_enforcements_per_minute": "Maximálny počet vynútení za minútu"
+        },
+        "data_description": {
+          "debounce_seconds": "Okno v sekundách. Min 0, max 86400 (24 h). Zobrazuje sa iba vtedy, keď bolo potlačenie zákmitov povolené v predchádzajúcom kroku.",
+          "rate_limit_enabled": "Začiarknite pre ponechanie ochrany proti slučkám zapnutej (odporúčané). Zrušte začiarknutie pre jej vypnutie pre toto pravidlo — nekontrolovateľné slučky nebudú automaticky zastavené.",
+          "max_enforcements_per_minute": "Koľko vynútení za minútu je povolených predtým, ako sa pravidlo automaticky potlačí na 15 minút. Min 1, max 600. Ignoruje sa, keď je ochrana proti slučkám vyššie nezačiarknutá."
+        }
+      },
+      "safety": {
+        "title": "Potvrdenie bezpečnosti",
+        "description": "Toto pravidlo sa vzťahuje na entity citlivé z hľadiska bezpečnosti ({entities}). Na pokračovanie musíte výslovne potvrdiť riziko.",
+        "data": {
+          "safety_acknowledged": "Rozumiem, že toto pravidlo bude pohybovať fyzickým hardvérom, a prijímam riziko."
+        }
+      },
+      "preview": {
+        "title": "Kontrola a vytvorenie",
+        "description": "Skontrolujte svoje pravidlo nižšie. Kliknutím na **Odoslať** ho vytvoríte, alebo použite šípku späť na vykonanie zmien.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Parametre atribútu",
+        "description": "Nakonfigurujte hodnoty vynucovania pre vybraný atribút.",
+        "data": {
+          "operator": "Operátor",
+          "threshold": "Prah",
+          "target_value": "Cieľová hodnota",
+          "delay_seconds": "Oneskorenie (sekundy)"
+        },
+        "data_description": {
+          "operator": "Porovnávací operátor použitý pre pravidlá číselného obmedzenia.",
+          "threshold": "Číselná hodnota porovnávaná so živým atribútom. Používa sa iba pre pravidlá číselného obmedzenia.",
+          "target_value": "Hodnota na vynútenie. Číselné atribúty sa obmedzia na túto hodnotu; farebné atribúty jej musia zodpovedať.",
+          "delay_seconds": "Po spustení počkajte takto dlho pred vynútením. 0 = okamžite. Max 86400 (24 h)."
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "Názov pravidla nemôže byť prázdny.",
+      "empty_target_entities": "Vyberte aspoň jednu cieľovú entitu.",
+      "empty_trigger_states": "Zadajte aspoň jeden spúšťací stav.",
+      "empty_target_state": "Cieľový stav nemôže byť prázdny.",
+      "invalid_threshold": "Prah a cieľová hodnota musia byť číselné.",
+      "invalid_delay": "Oneskorenie musí byť celé číslo od 0 do 86400 sekúnd (24 h).",
+      "invalid_rate": "Maximálny počet vynútení za minútu musí byť celé číslo od 1 do 600.",
+      "target_in_triggers": "Cieľový stav nemôže byť zároveň spúšťacím stavom — vytvorilo by to vynucovaciu slučku.",
+      "forbidden_state": "Stavy „unavailable“, „unknown“ a „none“ nemožno použiť ako spúšťače ani ciele.",
+      "incomplete_flag": "Musí byť nastavená entita príznaku aj požadovaný stav.",
+      "safety_not_acknowledged": "Na pokračovanie musíte potvrdiť bezpečnostné riziko.",
+      "name_already_exists": "Pravidlo s týmto názvom už existuje.",
+      "invalid_rgb_color": "Farba RGB musí byť zoznamom troch hodnôt od 0 do 255.",
+      "invalid_color_temp_kelvin": "Teplota farby musí byť od 2000 K do 6500 K."
+    },
+    "abort": {
+      "single_instance_allowed": "Konfigurovať možno iba jeden rozbočovač Entity Guard.",
+      "name_already_exists": "Pravidlo s týmto názvom už existuje.",
+      "already_configured": "Toto pravidlo je už nakonfigurované."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Upraviť pravidlo",
+        "description": "{summary}\n\nVyberte, čo chcete zmeniť.",
+        "menu_options": {
+          "edit_basics": "Upraviť názov",
+          "edit_mode": "Upraviť nastavenia špecifické pre režim",
+          "edit_entities": "Pridať alebo odstrániť cieľové entity",
+          "edit_flags": "Upraviť podmienky príznakov",
+          "edit_advanced": "Upraviť potlačenie zákmitov a limit rýchlosti"
+        }
+      },
+      "edit_basics": {
+        "title": "Upraviť názov",
+        "data": {
+          "rule_name": "Názov pravidla"
+        }
+      },
+      "edit_entities": {
+        "title": "Upraviť cieľové entity",
+        "data": {
+          "target_entities": "Cieľové entity"
+        }
+      },
+      "edit_safety": {
+        "title": "Potvrdenie bezpečnosti",
+        "description": "Boli pridané nové entity citlivé z hľadiska bezpečnosti. Pre uloženie znovu potvrďte.",
+        "data": {
+          "safety_acknowledged": "Rozumiem, že toto pravidlo bude pohybovať fyzickým hardvérom, a prijímam riziko."
+        }
+      },
+      "edit_state": {
+        "title": "Upraviť stavový režim",
+        "data": {
+          "trigger_states": "Spúšťacie stavy",
+          "target_state": "Cieľový stav",
+          "delay_seconds": "Oneskorenie (sekundy)"
+        }
+      },
+      "edit_attribute": {
+        "title": "Upraviť atribútový režim",
+        "description": "Vyberte, ktorý atribút má toto pravidlo vynucovať. Číselné atribúty sa obmedzia na cieľovú hodnotu; farebné atribúty porovnávajú cieľovú farbu.",
+        "data": {
+          "attribute": "Atribút"
+        }
+      },
+      "edit_flags": {
+        "title": "Upraviť podmienky príznakov",
+        "description": "Aktuálne príznaky: {summary}.\n\n{current_state}\n\nVyberte „add“ pre pridanie, „replace“ pre nahradenie všetkých, „clear“ pre odstránenie všetkých alebo „save“ pre ponechanie bez zmeny.",
+        "data": {
+          "entity": "Entita príznaku",
+          "match_state": "Požadovaný stav",
+          "action": "Akcia"
+        }
+      },
+      "edit_advanced": {
+        "title": "Upraviť rozšírené nastavenia",
+        "data": {
+          "debounce_enabled": "Povoliť potlačenie zákmitov",
+          "debounce_seconds": "Okno potlačenia zákmitov (sekundy)",
+          "max_enforcements_per_minute": "Maximálny počet vynútení za minútu"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Upraviť parametre atribútu",
+        "description": "Nakonfigurujte hodnoty vynucovania pre vybraný atribút.",
+        "data": {
+          "operator": "Operátor",
+          "threshold": "Prah",
+          "target_value": "Cieľová hodnota",
+          "delay_seconds": "Oneskorenie (sekundy)"
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "Názov pravidla nemôže byť prázdny.",
+      "empty_target_entities": "Vyberte aspoň jednu cieľovú entitu.",
+      "empty_trigger_states": "Zadajte aspoň jeden spúšťací stav.",
+      "empty_target_state": "Cieľový stav nemôže byť prázdny.",
+      "invalid_threshold": "Prah a cieľová hodnota musia byť číselné.",
+      "invalid_delay": "Oneskorenie musí byť celé číslo od 0 do 86400 sekúnd (24 h).",
+      "invalid_rate": "Maximálny počet vynútení za minútu musí byť celé číslo od 1 do 600.",
+      "target_in_triggers": "Cieľový stav nemôže byť zároveň spúšťacím stavom — vytvorilo by to vynucovaciu slučku.",
+      "forbidden_state": "Stavy „unavailable“, „unknown“ a „none“ nemožno použiť ako spúšťače ani ciele.",
+      "incomplete_flag": "Musí byť nastavená entita príznaku aj požadovaný stav.",
+      "safety_not_acknowledged": "Na pokračovanie musíte potvrdiť bezpečnostné riziko.",
+      "name_already_exists": "Pravidlo s týmto názvom už existuje.",
+      "invalid_rgb_color": "Farba RGB musí byť zoznamom troch hodnôt od 0 do 255.",
+      "invalid_color_temp_kelvin": "Teplota farby musí byť od 2000 K do 6500 K."
+    },
+    "abort": {
+      "name_already_exists": "Pravidlo s týmto názvom už existuje.",
+      "hub_no_options": "Rozbočovač Entity Guard nemá žiadne upraviteľné možnosti."
+    }
+  },
+  "exceptions": {
+    "rule_not_found": {
+      "message": "Nenašlo sa žiadne pravidlo Entity Guard zodpovedajúce {rule_id}."
+    }
+  },
+  "services": {
+    "suppress": {
+      "name": "Potlačiť pravidlo",
+      "description": "Dočasne potlačí pravidlo Entity Guard. Pravidlo sa po uplynutí doby automaticky obnoví.",
+      "fields": {
+        "rule_id": {
+          "name": "Pravidlo",
+          "description": "UUID pravidla alebo názov pravidla (názov konfiguračnej položky)."
+        },
+        "duration_minutes": {
+          "name": "Trvanie (minúty)",
+          "description": "Ako dlho potláčať pravidlo (1 – 1440 minút)."
+        }
+      }
+    },
+    "unsuppress": {
+      "name": "Zrušiť potlačenie pravidla",
+      "description": "Okamžite obnoví potlačené pravidlo Entity Guard.",
+      "fields": {
+        "rule_id": {
+          "name": "Pravidlo",
+          "description": "UUID pravidla alebo názov pravidla (názov konfiguračnej položky)."
+        }
+      }
+    },
+    "list_rules": {
+      "name": "Zoznam pravidiel",
+      "description": "Vráti konfiguráciu a aktuálny stav každého pravidla Entity Guard."
+    },
+    "clear_history": {
+      "name": "Vymazať históriu pravidla",
+      "description": "Vymaže uloženú históriu vynucovania (počty, posledné vynútenie, doby vychladnutia) pre pravidlo.",
+      "fields": {
+        "rule_id": {
+          "name": "Pravidlo",
+          "description": "UUID pravidla alebo názov pravidla (názov konfiguračnej položky)."
+        }
+      }
+    },
+    "panic_stop": {
+      "name": "Núdzové zastavenie",
+      "description": "Núdzové vypnutie — zakáže všetky pravidlá, vymaže všetky doby vychladnutia, potlačí na 60 minút a vypne hlavný prepínač rozbočovača."
+    }
+  },
+  "selector": {
+    "status": {
+      "options": {
+        "error": "Chyba",
+        "disabled": "Zakázané",
+        "master_disabled": "Hlavný vypnutý",
+        "suppressed": "Potlačené",
+        "enforcing": "Vynucuje sa",
+        "cooldown": "Vychladnutie",
+        "armed": "Aktivované",
+        "conditional": "Čaká na podmienky",
+        "starting": "Spúšťa sa",
+        "pending": "Čoskoro vynúti"
+      }
+    },
+    "mode": {
+      "options": {
+        "state": "Stav",
+        "attribute": "Atribút"
+      }
+    },
+    "attribute": {
+      "options": {
+        "brightness": "Jas",
+        "volume_level": "Úroveň hlasitosti",
+        "temperature": "Teplota",
+        "percentage": "Percento",
+        "rgb_color": "Farba RGB",
+        "color_temp_kelvin": "Teplota farby (Kelvin)"
+      }
+    },
+    "operator": {
+      "options": {
+        "lt": "Menšie ako (<)",
+        "lte": "Menšie alebo rovné (<=)",
+        "gt": "Väčšie ako (>)",
+        "gte": "Väčšie alebo rovné (>=)"
+      }
+    },
+    "flag_action": {
+      "options": {
+        "save": "Ukončiť bez zmien",
+        "add": "Pridať príznak",
+        "replace": "Nahradiť všetky príznaky",
+        "clear": "Vymazať všetky príznaky"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "armed": {
+        "name": "Aktivované"
+      },
+      "active": {
+        "name": "Aktívne"
+      },
+      "in_cooldown": {
+        "name": "Vo vychladnutí"
+      },
+      "pending": {
+        "name": "Čakajúce"
+      },
+      "recently_enforced": {
+        "name": "Nedávno vynútené"
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Stav"
+      },
+      "last_enforced": {
+        "name": "Posledné vynútenie"
+      },
+      "enforcement_count_today": {
+        "name": "Vynútenia dnes"
+      },
+      "enforcement_count_total": {
+        "name": "Vynútenia celkovo"
+      },
+      "cooldown_remaining": {
+        "name": "Zostávajúce vychladnutie"
+      },
+      "safety_status": {
+        "name": "Bezpečnostný stav"
+      },
+      "suppressed_until": {
+        "name": "Potlačené do"
+      },
+      "rule_id": {
+        "name": "ID pravidla"
+      }
+    },
+    "switch": {
+      "enabled": {
+        "name": "Povolené"
+      },
+      "debounce_enabled": {
+        "name": "Potlačenie zákmitov povolené"
+      },
+      "master_enabled": {
+        "name": "Hlavný povolený"
+      }
+    },
+    "number": {
+      "delay_seconds": {
+        "name": "Oneskorenie (sekundy)"
+      },
+      "debounce_seconds": {
+        "name": "Potlačenie zákmitov (sekundy)"
+      },
+      "max_enforcements_per_minute": {
+        "name": "Maximálny počet vynútení za minútu"
+      }
+    },
+    "button": {
+      "reset": {
+        "name": "Obnoviť doby vychladnutia"
+      },
+      "test_enforce": {
+        "name": "Testovať vynútenie"
+      },
+      "clear_suppression": {
+        "name": "Vymazať potlačenie"
+      },
+      "clear_history": {
+        "name": "Vymazať históriu (počítadlá)"
+      }
+    }
+  },
+  "issues": {
+    "flag_entity_missing": {
+      "title": "Chýbajúca entita príznaku v pravidle „{rule_name}“",
+      "description": "Nasledujúce entity príznakov už neexistujú, ale sú v pravidle uvedené: {missing_entities}. Pravidlo sa nevynúti, keď tieto príznaky nemožno vyhodnotiť. Pre vyriešenie tohto problému aktualizujte alebo odstráňte pravidlo."
+    }
+  }
+}

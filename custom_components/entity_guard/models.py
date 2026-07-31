@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass, field
-from datetime import datetime, date
+from datetime import date, datetime
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -59,7 +59,7 @@ class Flag:
         return {CONF_FLAG_ENTITY: self.entity, CONF_FLAG_MATCH_STATE: self.match_state}
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Flag":
+    def from_dict(cls, data: dict[str, Any]) -> Flag:
         """Deserialize from dict."""
         try:
             return cls(
