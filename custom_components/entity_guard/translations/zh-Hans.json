@@ -1,0 +1,369 @@
+{
+  "title": "Entity Guard",
+  "config": {
+    "step": {
+      "rule": {
+        "title": "新建规则 — 基础信息",
+        "description": "为规则命名，选择要执行强制的目标实体，并选择规则模式。",
+        "data": {
+          "rule_name": "规则名称",
+          "target_entities": "目标实体",
+          "mode": "规则模式"
+        },
+        "data_description": {
+          "rule_name": "在界面中显示的名称。必须唯一。",
+          "target_entities": "此规则将强制执行的一个或多个实体。",
+          "mode": "状态模式会强制指定的状态。属性模式会将数值属性限制在范围内或匹配某个颜色目标。"
+        }
+      },
+      "state": {
+        "title": "状态模式",
+        "description": "当任一目标实体进入某个触发状态时，在可选延迟后将其强制恢复到目标状态。",
+        "data": {
+          "trigger_states": "触发状态",
+          "target_state": "目标状态",
+          "delay_seconds": "延迟（秒）"
+        },
+        "data_description": {
+          "trigger_states": "启用强制执行的状态列表（例如 on、open、unlocked）。输入以添加自定义值。",
+          "target_state": "实体将被强制恢复到的状态（例如 off、closed、locked）。",
+          "delay_seconds": "触发后等待此时长再执行强制。0 = 立即执行。最大 86400（24 小时）。"
+        }
+      },
+      "attribute": {
+        "title": "属性模式",
+        "description": "选择此规则应强制执行的属性。数值属性会被限制到目标值；颜色属性会匹配目标颜色。",
+        "data": {
+          "attribute": "属性"
+        },
+        "data_description": {
+          "attribute": "要监控并强制执行的属性。"
+        }
+      },
+      "extras": {
+        "title": "可选功能",
+        "description": "勾选您想要配置的任意功能。每勾选一项都会增加一个后续界面。全部跳过则直接进入审核。",
+        "data": {
+          "add_flags": "添加额外条件",
+          "custom_rate_limit": "自定义循环保护",
+          "add_debounce": "启用防抖"
+        },
+        "data_description": {
+          "add_flags": "勾选以要求额外条件（例如仅在无人在家时强制执行，仅在日落后强制执行）。不勾选则每次触发时都执行强制。",
+          "custom_rate_limit": "循环保护会在规则每分钟触发超过 10 次时自动抑制它（默认）。不勾选则使用默认值。勾选可自行设置数值，或在后续界面完全关闭循环保护。",
+          "add_debounce": "勾选以忽略快速来回的变化。仅当触发在您设定的时长内保持不变时规则才会执行操作（时长在后续界面设置）。不勾选则每次变化都执行操作。"
+        }
+      },
+      "flags": {
+        "title": "条件（可选）",
+        "description": "规则执行操作所必须全部满足的额外条件。\n\n示例：\n  • person.alice = not_home — 仅当 Alice 离开时\n  • input_boolean.guest_mode = off — 仅当没有访客时\n  • sun.sun = below_horizon — 仅在日落后\n  • binary_sensor.work_hours = on — 仅在工作时间内\n\n添加条件的方法：选择一个实体，输入其必须处于的状态，然后点击提交。\n\n如果您现在不想添加任何条件，请将两个字段都留空并点击提交以跳过。\n\n目前已添加的条件（{count}）：{summary}\n\n{current_state}\n\n勾选“再添加一个”以链接更多条件 — 所有条件都必须匹配，规则才会触发。",
+        "data": {
+          "entity": "条件实体",
+          "match_state": "所需状态",
+          "add_another": "在此之后再添加一个条件"
+        },
+        "data_description": {
+          "entity": "选择状态作为条件的实体（例如 person.alice、input_boolean.guest_mode、sun.sun）。",
+          "match_state": "规则触发所需实体必须处于的状态（例如 'on'、'home'、'not_home'、'below_horizon'）。",
+          "add_another": "勾选以添加更多条件。不勾选则完成。"
+        }
+      },
+      "advanced": {
+        "title": "高级",
+        "description": "设置您在上一界面选择启用的选项。默认速率限制为每分钟 {default_rate} 次强制执行。",
+        "data": {
+          "debounce_seconds": "防抖窗口（秒）",
+          "rate_limit_enabled": "启用循环保护",
+          "max_enforcements_per_minute": "每分钟最大强制执行次数"
+        },
+        "data_description": {
+          "debounce_seconds": "窗口时长（秒）。最小 0，最大 86400（24 小时）。仅在上一步启用了防抖时显示。",
+          "rate_limit_enabled": "勾选以保持循环保护开启（推荐）。取消勾选可为此规则禁用它 — 失控循环将不会被自动阻止。",
+          "max_enforcements_per_minute": "规则自动抑制 15 分钟前每分钟允许的强制执行次数。最小 1，最大 600。上方取消勾选循环保护时忽略此项。"
+        }
+      },
+      "safety": {
+        "title": "安全确认",
+        "description": "此规则针对安全敏感实体（{entities}）。您必须明确确认风险才能继续。",
+        "data": {
+          "safety_acknowledged": "我理解此规则将会操作物理硬件并接受相关风险。"
+        }
+      },
+      "preview": {
+        "title": "审核并创建",
+        "description": "请在下方审核您的规则。点击 **提交** 以创建，或使用返回箭头进行修改。\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "属性参数",
+        "description": "为所选属性配置强制执行的值。",
+        "data": {
+          "operator": "运算符",
+          "threshold": "阈值",
+          "target_value": "目标值",
+          "delay_seconds": "延迟（秒）"
+        },
+        "data_description": {
+          "operator": "用于数值限制规则的比较运算符。",
+          "threshold": "与实时属性比较的数值。仅用于数值限制规则。",
+          "target_value": "要强制执行的值。数值属性会被限制到此值；颜色属性必须与之匹配。",
+          "delay_seconds": "触发后等待此时长再执行强制。0 = 立即执行。最大 86400（24 小时）。"
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "规则名称不能为空。",
+      "empty_target_entities": "请至少选择一个目标实体。",
+      "empty_trigger_states": "请至少提供一个触发状态。",
+      "empty_target_state": "目标状态不能为空。",
+      "invalid_threshold": "阈值和目标值必须为数值。",
+      "invalid_delay": "延迟必须是 0 到 86400 秒（24 小时）之间的整数。",
+      "invalid_rate": "每分钟最大强制执行次数必须是 1 到 600 之间的整数。",
+      "target_in_triggers": "目标状态不能同时是触发状态 — 这会造成强制执行循环。",
+      "forbidden_state": "状态 'unavailable'、'unknown' 和 'none' 不能用作触发状态或目标状态。",
+      "incomplete_flag": "必须同时设置条件实体和所需状态。",
+      "safety_not_acknowledged": "您必须确认安全风险才能继续。",
+      "name_already_exists": "已存在同名规则。",
+      "invalid_rgb_color": "RGB 颜色必须是三个 0 到 255 之间的值组成的列表。",
+      "invalid_color_temp_kelvin": "色温必须在 2000 K 到 6500 K 之间。"
+    },
+    "abort": {
+      "single_instance_allowed": "只能配置一个 Entity Guard 中枢。",
+      "name_already_exists": "已存在同名规则。",
+      "already_configured": "此规则已配置。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "编辑规则",
+        "description": "{summary}\n\n选择要更改的内容。",
+        "menu_options": {
+          "edit_basics": "编辑名称",
+          "edit_mode": "编辑模式专属设置",
+          "edit_entities": "添加或移除目标实体",
+          "edit_flags": "编辑条件标志",
+          "edit_advanced": "编辑防抖和速率限制"
+        }
+      },
+      "edit_basics": {
+        "title": "编辑名称",
+        "data": {
+          "rule_name": "规则名称"
+        }
+      },
+      "edit_entities": {
+        "title": "编辑目标实体",
+        "data": {
+          "target_entities": "目标实体"
+        }
+      },
+      "edit_safety": {
+        "title": "安全确认",
+        "description": "添加了新的安全敏感实体。请重新确认以保存。",
+        "data": {
+          "safety_acknowledged": "我理解此规则将会操作物理硬件并接受相关风险。"
+        }
+      },
+      "edit_state": {
+        "title": "编辑状态模式",
+        "data": {
+          "trigger_states": "触发状态",
+          "target_state": "目标状态",
+          "delay_seconds": "延迟（秒）"
+        }
+      },
+      "edit_attribute": {
+        "title": "编辑属性模式",
+        "description": "选择此规则应强制执行的属性。数值属性会被限制到目标值；颜色属性会匹配目标颜色。",
+        "data": {
+          "attribute": "属性"
+        }
+      },
+      "edit_flags": {
+        "title": "编辑条件标志",
+        "description": "当前标志：{summary}。\n\n{current_state}\n\n选择“添加”以追加，“替换”以替换全部，“清除”以移除全部，或“保存”以保持不变。",
+        "data": {
+          "entity": "标志实体",
+          "match_state": "所需状态",
+          "action": "操作"
+        }
+      },
+      "edit_advanced": {
+        "title": "编辑高级设置",
+        "data": {
+          "debounce_enabled": "启用防抖",
+          "debounce_seconds": "防抖窗口（秒）",
+          "max_enforcements_per_minute": "每分钟最大强制执行次数"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "编辑属性参数",
+        "description": "为所选属性配置强制执行的值。",
+        "data": {
+          "operator": "运算符",
+          "threshold": "阈值",
+          "target_value": "目标值",
+          "delay_seconds": "延迟（秒）"
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "规则名称不能为空。",
+      "empty_target_entities": "请至少选择一个目标实体。",
+      "empty_trigger_states": "请至少提供一个触发状态。",
+      "empty_target_state": "目标状态不能为空。",
+      "invalid_threshold": "阈值和目标值必须为数值。",
+      "invalid_delay": "延迟必须是 0 到 86400 秒（24 小时）之间的整数。",
+      "invalid_rate": "每分钟最大强制执行次数必须是 1 到 600 之间的整数。",
+      "target_in_triggers": "目标状态不能同时是触发状态 — 这会造成强制执行循环。",
+      "forbidden_state": "状态 'unavailable'、'unknown' 和 'none' 不能用作触发状态或目标状态。",
+      "incomplete_flag": "必须同时设置条件实体和所需状态。",
+      "safety_not_acknowledged": "您必须确认安全风险才能继续。",
+      "name_already_exists": "已存在同名规则。",
+      "invalid_rgb_color": "RGB 颜色必须是三个 0 到 255 之间的值组成的列表。",
+      "invalid_color_temp_kelvin": "色温必须在 2000 K 到 6500 K 之间。"
+    },
+    "abort": {
+      "name_already_exists": "已存在同名规则。",
+      "hub_no_options": "Entity Guard 中枢没有可编辑的选项。"
+    }
+  },
+  "exceptions": {
+    "rule_not_found": {
+      "message": "未找到与 {rule_id} 匹配的 Entity Guard 规则。"
+    }
+  },
+  "services": {
+    "suppress": {
+      "name": "抑制规则",
+      "description": "临时抑制一个 Entity Guard 规则。规则将在持续时间后自动恢复。",
+      "fields": {
+        "rule_id": {
+          "name": "规则",
+          "description": "规则 UUID 或规则名称（配置条目标题）。"
+        },
+        "duration_minutes": {
+          "name": "持续时间（分钟）",
+          "description": "抑制规则的时长（1-1440 分钟）。"
+        }
+      }
+    },
+    "unsuppress": {
+      "name": "取消抑制规则",
+      "description": "立即恢复被抑制的 Entity Guard 规则。",
+      "fields": {
+        "rule_id": {
+          "name": "规则",
+          "description": "规则 UUID 或规则名称（配置条目标题）。"
+        }
+      }
+    },
+    "list_rules": {
+      "name": "列出规则",
+      "description": "返回每个 Entity Guard 规则的配置和当前状态。"
+    },
+    "clear_history": {
+      "name": "清除规则历史",
+      "description": "清除某规则存储的强制执行历史（计数、上次强制执行、冷却时间）。",
+      "fields": {
+        "rule_id": {
+          "name": "规则",
+          "description": "规则 UUID 或规则名称（配置条目标题）。"
+        }
+      }
+    },
+    "panic_stop": {
+      "name": "紧急停止",
+      "description": "紧急终止 — 禁用所有规则、清除所有冷却时间、抑制 60 分钟，并关闭中枢主开关。"
+    }
+  },
+  "selector": {
+    "status": {
+      "options": {
+        "error": "错误",
+        "disabled": "已禁用",
+        "master_disabled": "主开关已禁用",
+        "suppressed": "已抑制",
+        "enforcing": "正在强制执行",
+        "cooldown": "冷却中",
+        "armed": "已激活",
+        "conditional": "等待条件",
+        "starting": "正在启动",
+        "pending": "即将强制执行"
+      }
+    },
+    "mode": {
+      "options": {
+        "state": "状态",
+        "attribute": "属性"
+      }
+    },
+    "attribute": {
+      "options": {
+        "brightness": "亮度",
+        "volume_level": "音量级别",
+        "temperature": "温度",
+        "percentage": "百分比",
+        "rgb_color": "RGB 颜色",
+        "color_temp_kelvin": "色温（开尔文）"
+      }
+    },
+    "operator": {
+      "options": {
+        "lt": "小于（<）",
+        "lte": "小于或等于（<=）",
+        "gt": "大于（>）",
+        "gte": "大于或等于（>=）"
+      }
+    },
+    "flag_action": {
+      "options": {
+        "save": "退出且不做更改",
+        "add": "添加标志",
+        "replace": "替换所有标志",
+        "clear": "清除所有标志"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "armed": {"name": "已激活"},
+      "active": {"name": "活动中"},
+      "in_cooldown": {"name": "冷却中"},
+      "pending": {"name": "待处理"},
+      "recently_enforced": {"name": "最近已强制执行"}
+    },
+    "sensor": {
+      "status": {"name": "状态"},
+      "last_enforced": {"name": "上次强制执行"},
+      "enforcement_count_today": {"name": "今日强制执行次数"},
+      "enforcement_count_total": {"name": "强制执行总次数"},
+      "cooldown_remaining": {"name": "剩余冷却时间"},
+      "safety_status": {"name": "安全状态"},
+      "suppressed_until": {"name": "抑制至"},
+      "rule_id": {"name": "规则 ID"}
+    },
+    "switch": {
+      "enabled": {"name": "已启用"},
+      "debounce_enabled": {"name": "已启用防抖"},
+      "master_enabled": {"name": "主开关已启用"}
+    },
+    "number": {
+      "delay_seconds": {"name": "延迟（秒）"},
+      "debounce_seconds": {"name": "防抖（秒）"},
+      "max_enforcements_per_minute": {"name": "每分钟最大强制执行次数"}
+    },
+    "button": {
+      "reset": {"name": "重置冷却时间"},
+      "test_enforce": {"name": "测试强制执行"},
+      "clear_suppression": {"name": "清除抑制"},
+      "clear_history": {"name": "清除历史（计数器）"}
+    }
+  },
+  "issues": {
+    "flag_entity_missing": {
+      "title": "规则“{rule_name}”中缺少标志实体",
+      "description": "以下标志实体不再存在但仍被规则引用：{missing_entities}。当这些标志无法评估时，规则将不会强制执行。请更新或移除规则以解决此问题。"
+    }
+  }
+}

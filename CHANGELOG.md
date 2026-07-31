@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### i18n
+
+- Added 18 new locales: zh-Hans, zh-Hant, ru, ja, ko, uk, cs, sk, hu, ro, bg, hr, fi, el, tr, lt, lv, ca. Translation coverage grows from 11 → 29 languages.
+
+---
+
 ## [0.2.8] — 2026-07-22
 
 ### Added

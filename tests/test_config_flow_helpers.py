@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import selector
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -16,7 +15,6 @@ from custom_components.entity_guard.config_flow import (
     _current_state_hint,
     _debounce_selector,
     _delay_selector,
-    _has_safety_target,
     _number_selector,
     _rate_selector,
     _rule_name_taken,
@@ -54,8 +52,8 @@ from custom_components.entity_guard.const import (
     MODE_ATTRIBUTE,
     MODE_STATE,
     NUMERIC_ATTRIBUTES,
+    has_safety_target,
 )
-
 
 # ---------------------------------------------------------------------------
 # _has_safety_target
@@ -63,27 +61,27 @@ from custom_components.entity_guard.const import (
 
 
 def test_has_safety_target_lock():
-    assert _has_safety_target(["lock.front"]) is True
+    assert has_safety_target(["lock.front"]) is True
 
 
 def test_has_safety_target_cover():
-    assert _has_safety_target(["cover.garage"]) is True
+    assert has_safety_target(["cover.garage"]) is True
 
 
 def test_has_safety_target_climate():
-    assert _has_safety_target(["climate.thermostat"]) is True
+    assert has_safety_target(["climate.thermostat"]) is True
 
 
 def test_has_safety_target_light_only():
-    assert _has_safety_target(["light.bedroom", "switch.kitchen"]) is False
+    assert has_safety_target(["light.bedroom", "switch.kitchen"]) is False
 
 
 def test_has_safety_target_empty():
-    assert _has_safety_target([]) is False
+    assert has_safety_target([]) is False
 
 
 def test_has_safety_target_mixed():
-    assert _has_safety_target(["light.bedroom", "lock.front"]) is True
+    assert has_safety_target(["light.bedroom", "lock.front"]) is True
 
 
 # ---------------------------------------------------------------------------

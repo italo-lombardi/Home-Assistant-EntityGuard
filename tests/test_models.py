@@ -21,12 +21,11 @@ from custom_components.entity_guard.models import (
     _parse_target_value,
     _parse_threshold,
     _to_float_or_none,
+    _to_int_or_default,
     _to_int_or_none,
     _to_rgb_color_or_none,
-    _to_int_or_default,
     parse_rule_config,
 )
-
 
 # ---------------------------------------------------------------------------
 # Flag

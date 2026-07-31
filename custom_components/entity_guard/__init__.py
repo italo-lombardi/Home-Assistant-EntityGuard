@@ -23,8 +23,8 @@ from .const import (
     ENTRY_TYPE_HUB,
     ENTRY_TYPE_RULE,
 )
-from .models import parse_rule_config
 from .issue_helpers import async_check_missing_flag_entities, missing_flags_issue_id
+from .models import parse_rule_config
 from .rule_engine import RuleEngine, signal_for_rule, signal_master_update
 from .services import async_register_services, async_unload_services
 from .storage import EntityGuardStore
@@ -124,7 +124,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         engine = RuleEngine(hass, config, store, _master_enabled_getter(hass), entry)
         try:
             await engine.async_setup()
-        except Exception:  # noqa: BLE001
+        except Exception:
             _LOGGER.exception(
                 "Engine setup failed for rule entry %s; entry will not load",
                 entry.entry_id,
@@ -167,7 +167,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 if not _flag_check_done:
                     try:
                         unsub()
-                    except Exception:  # noqa: BLE001
+                    except Exception:
                         pass
 
             entry.async_on_unload(_cancel_flag_check_listener)
@@ -308,7 +308,7 @@ async def _async_ensure_hub(hass: HomeAssistant) -> None:
                 context={"source": SOURCE_IMPORT},
                 data={},
             )
-        except Exception:  # noqa: BLE001
+        except Exception:
             _LOGGER.exception("Failed to auto-create hub entry")
 
     hass.async_create_task(_create_hub())
@@ -331,7 +331,7 @@ async def _async_install_card(hass: HomeAssistant) -> None:
         await hass.http.async_register_static_paths(
             [StaticPathConfig(CARD_URL, str(source), True)]
         )
-    except Exception:  # noqa: BLE001
+    except Exception:
         _LOGGER.debug("Static path %s already registered", CARD_URL)
 
     await _async_register_lovelace_resource(hass, version)

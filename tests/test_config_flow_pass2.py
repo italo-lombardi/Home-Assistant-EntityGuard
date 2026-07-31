@@ -152,7 +152,6 @@ async def test_state_invalid_delay_via_string(hass: HomeAssistant):
 
 async def test_attribute_invalid_threshold_create_skipped():
     """Schema-validated NumberSelector rejects non-numeric → except branch unreachable from flow."""
-    pass
 
 
 async def test_attribute_invalid_delay_create(hass: HomeAssistant):
@@ -237,7 +236,6 @@ async def test_attribute_invalid_color_temp_kelvin_create(hass: HomeAssistant):
 
 async def test_advanced_invalid_rate_via_int_failure_skipped():
     """Schema-validated rate selector clamps numeric input → invalid_rate except path unreachable."""
-    pass
 
 
 # ---------------------------------------------------------------------------
@@ -450,7 +448,6 @@ async def test_options_edit_attribute_save(hass: HomeAssistant):
 
 async def test_options_edit_attribute_invalid_threshold_skipped():
     """Schema-validated NumberSelector rejects non-numeric → except branch unreachable from flow."""
-    pass
 
 
 async def test_options_edit_attribute_invalid_delay(hass: HomeAssistant):

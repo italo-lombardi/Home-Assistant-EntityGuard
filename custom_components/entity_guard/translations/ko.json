@@ -1,0 +1,112 @@
+{
+  "title": "Entity Guard",
+  "config": {
+    "step": {
+      "rule": {
+        "title": "새 규칙 — 기본 설정",
+        "description": "규칙 이름을 지정하고, 적용할 대상 엔터티를 선택한 뒤 규칙 모드를 고르세요.",
+        "data": {"rule_name": "규칙 이름","target_entities": "대상 엔터티","mode": "규칙 모드"},
+        "data_description": {"rule_name": "UI에 표시되는 이름입니다. 고유해야 합니다.","target_entities": "이 규칙이 적용될 하나 이상의 엔터티입니다.","mode": "상태 모드는 특정 상태를 강제합니다. 속성 모드는 숫자 속성을 제한하거나 색상 대상과 일치시킵니다."}
+      },
+      "state": {
+        "title": "상태 모드",
+        "description": "대상 엔터티 중 하나라도 트리거 상태에 진입하면, 선택적 지연 후 대상 상태로 되돌립니다.",
+        "data": {"trigger_states": "트리거 상태","target_state": "대상 상태","delay_seconds": "지연 (초)"},
+        "data_description": {"trigger_states": "적용을 발동시키는 상태 목록입니다 (예: on, open, unlocked). 입력하여 사용자 지정 값을 추가할 수 있습니다.","target_state": "엔터티가 강제로 전환될 상태입니다 (예: off, closed, locked).","delay_seconds": "트리거 후 적용까지 대기 시간입니다. 0 = 즉시. 최대 86400 (24시간)."}
+      },
+      "attribute": {
+        "title": "속성 모드",
+        "description": "이 규칙이 적용할 속성을 선택하세요. 숫자 속성은 대상 값으로 제한되고, 색상 속성은 대상 색상과 일치시킵니다.",
+        "data": {"attribute": "속성"},
+        "data_description": {"attribute": "모니터링하고 적용할 속성입니다."}
+      },
+      "extras": {
+        "title": "선택 기능",
+        "description": "구성하려는 기능을 선택하세요. 선택한 각 옵션은 후속 화면을 추가합니다. 모두 건너뛰면 바로 검토 화면으로 이동합니다.",
+        "data": {"add_flags": "추가 조건 넣기","custom_rate_limit": "루프 보호 사용자 지정","add_debounce": "디바운스 활성화"},
+        "data_description": {"add_flags": "추가 조건을 요구하려면 선택하세요 (예: 아무도 집에 없을 때만 적용, 일몰 이후에만 적용). 선택하지 않으면 트리거가 발동할 때마다 적용됩니다.","custom_rate_limit": "루프 보호는 규칙이 분당 10회를 초과해 발동하면 자동으로 억제합니다(기본값). 기본값을 사용하려면 선택하지 마세요. 직접 숫자를 설정하거나 이후 화면에서 루프 보호를 완전히 끄려면 선택하세요.","add_debounce": "빠른 왕복 변경을 무시하려면 선택하세요. 트리거가 이후 화면에서 설정한 시간 동안 동일하게 유지될 때만 규칙이 작동합니다. 선택하지 않으면 모든 변경에 대해 작동합니다."}
+      },
+      "flags": {
+        "title": "조건 (선택)",
+        "description": "규칙이 작동하려면 모두 참이어야 하는 추가 조건입니다.\n\n예시:\n  • person.alice = not_home — Alice가 외출 중일 때만\n  • input_boolean.guest_mode = off — 손님이 없을 때만\n  • sun.sun = below_horizon — 일몰 이후에만\n  • binary_sensor.work_hours = on — 근무 시간 중에만\n\n조건을 추가하려면: 엔터티를 선택하고, 필요한 상태를 입력한 다음 제출을 클릭하세요.\n\n지금 조건을 원하지 않으면 두 필드를 모두 비워 두고 제출을 클릭하여 건너뛰세요.\n\n지금까지 추가된 조건 ({count}): {summary}\n\n{current_state}\n\n더 연결하려면 '다른 조건 추가'를 선택하세요 — 규칙이 발동하려면 모두 일치해야 합니다.",
+        "data": {"entity": "조건 엔터티","match_state": "필요한 상태","add_another": "이 조건 다음에 다른 조건 추가"},
+        "data_description": {"entity": "상태가 조건으로 작동할 엔터티를 선택하세요 (예: person.alice, input_boolean.guest_mode, sun.sun).","match_state": "규칙이 발동하기 위해 엔터티가 있어야 하는 상태입니다 (예: 'on', 'home', 'not_home', 'below_horizon').","add_another": "조건을 더 추가하려면 선택하세요. 완료하려면 선택하지 마세요."}
+      },
+      "advanced": {
+        "title": "고급",
+        "description": "이전 화면에서 선택한 옵션을 설정하세요. 기본 속도 제한은 분당 {default_rate}회 적용입니다.",
+        "data": {"debounce_seconds": "디바운스 창 (초)","rate_limit_enabled": "루프 보호 적용","max_enforcements_per_minute": "분당 최대 적용 횟수"},
+        "data_description": {"debounce_seconds": "초 단위 창입니다. 최소 0, 최대 86400 (24시간). 이전 단계에서 디바운스를 활성화한 경우에만 표시됩니다.","rate_limit_enabled": "루프 보호를 켜 두려면 선택하세요(권장). 이 규칙에 대해 비활성화하려면 선택 해제하세요 — 폭주 루프가 자동으로 중지되지 않습니다.","max_enforcements_per_minute": "규칙이 15분간 자동 억제되기 전에 허용되는 분당 적용 횟수입니다. 최소 1, 최대 600. 위에서 루프 보호가 선택 해제되면 무시됩니다."}
+      },
+      "safety": {
+        "title": "안전 확인",
+        "description": "이 규칙은 안전에 민감한 엔터티({entities})를 대상으로 합니다. 계속하려면 위험을 명시적으로 확인해야 합니다.",
+        "data": {"safety_acknowledged": "이 규칙이 물리적 하드웨어를 작동시킨다는 것을 이해하며 위험을 감수합니다."}
+      },
+      "preview": {"title": "검토 및 생성","description": "아래에서 규칙을 검토하세요. 생성하려면 **제출**을 클릭하고, 변경하려면 뒤로 화살표를 사용하세요.\n\n---\n\n{summary}"},
+      "attribute_params": {
+        "title": "속성 매개변수",
+        "description": "선택한 속성의 적용 값을 구성하세요.",
+        "data": {"operator": "연산자","threshold": "임계값","target_value": "대상 값","delay_seconds": "지연 (초)"},
+        "data_description": {"operator": "숫자 제한 규칙에 사용되는 비교 연산자입니다.","threshold": "실시간 속성과 비교되는 숫자 값입니다. 숫자 제한 규칙에만 사용됩니다.","target_value": "적용할 값입니다. 숫자 속성은 이 값으로 제한되고, 색상 속성은 이 값과 일치해야 합니다.","delay_seconds": "트리거 후 적용까지 대기 시간입니다. 0 = 즉시. 최대 86400 (24시간)."}
+      }
+    },
+    "error": {
+      "empty_rule_name": "규칙 이름은 비워 둘 수 없습니다.",
+      "empty_target_entities": "대상 엔터티를 하나 이상 선택하세요.",
+      "empty_trigger_states": "트리거 상태를 하나 이상 입력하세요.",
+      "empty_target_state": "대상 상태는 비워 둘 수 없습니다.",
+      "invalid_threshold": "임계값과 대상 값은 숫자여야 합니다.",
+      "invalid_delay": "지연은 0에서 86400초(24시간) 사이의 정수여야 합니다.",
+      "invalid_rate": "분당 최대 적용 횟수는 1에서 600 사이의 정수여야 합니다.",
+      "target_in_triggers": "대상 상태는 트리거 상태가 될 수 없습니다 — 적용 루프가 발생합니다.",
+      "forbidden_state": "'unavailable', 'unknown', 'none' 상태는 트리거나 대상으로 사용할 수 없습니다.",
+      "incomplete_flag": "플래그 엔터티와 필요한 상태를 모두 설정해야 합니다.",
+      "safety_not_acknowledged": "계속하려면 안전 위험을 확인해야 합니다.",
+      "name_already_exists": "이 이름의 규칙이 이미 존재합니다.",
+      "invalid_rgb_color": "RGB 색상은 0에서 255 사이의 값 세 개로 구성된 목록이어야 합니다.",
+      "invalid_color_temp_kelvin": "색온도는 2000 K에서 6500 K 사이여야 합니다."
+    },
+    "abort": {"single_instance_allowed": "Entity Guard 허브는 하나만 구성할 수 있습니다.","name_already_exists": "이 이름의 규칙이 이미 존재합니다.","already_configured": "이 규칙은 이미 구성되어 있습니다."}
+  },
+  "options": {
+    "step": {
+      "init": {"title": "규칙 편집","description": "{summary}\n\n변경할 항목을 선택하세요.","menu_options": {"edit_basics": "이름 편집","edit_mode": "모드별 설정 편집","edit_entities": "대상 엔터티 추가 또는 제거","edit_flags": "플래그 조건 편집","edit_advanced": "디바운스 및 속도 제한 편집"}},
+      "edit_basics": {"title": "이름 편집","data": {"rule_name": "규칙 이름"}},
+      "edit_entities": {"title": "대상 엔터티 편집","data": {"target_entities": "대상 엔터티"}},
+      "edit_safety": {"title": "안전 확인","description": "안전에 민감한 새 엔터티가 추가되었습니다. 저장하려면 다시 확인하세요.","data": {"safety_acknowledged": "이 규칙이 물리적 하드웨어를 작동시킨다는 것을 이해하며 위험을 감수합니다."}},
+      "edit_state": {"title": "상태 모드 편집","data": {"trigger_states": "트리거 상태","target_state": "대상 상태","delay_seconds": "지연 (초)"}},
+      "edit_attribute": {"title": "속성 모드 편집","description": "이 규칙이 적용할 속성을 선택하세요. 숫자 속성은 대상 값으로 제한되고, 색상 속성은 대상 색상과 일치시킵니다.","data": {"attribute": "속성"}},
+      "edit_flags": {"title": "플래그 조건 편집","description": "현재 플래그: {summary}.\n\n{current_state}\n\n추가하려면 'add', 모두 교체하려면 'replace', 모두 제거하려면 'clear', 변경하지 않으려면 'save'를 선택하세요.","data": {"entity": "플래그 엔터티","match_state": "필요한 상태","action": "동작"}},
+      "edit_advanced": {"title": "고급 설정 편집","data": {"debounce_enabled": "디바운스 활성화","debounce_seconds": "디바운스 창 (초)","max_enforcements_per_minute": "분당 최대 적용 횟수"}},
+      "edit_attribute_params": {"title": "속성 매개변수 편집","description": "선택한 속성의 적용 값을 구성하세요.","data": {"operator": "연산자","threshold": "임계값","target_value": "대상 값","delay_seconds": "지연 (초)"}}
+    },
+    "error": {
+      "empty_rule_name": "규칙 이름은 비워 둘 수 없습니다.","empty_target_entities": "대상 엔터티를 하나 이상 선택하세요.","empty_trigger_states": "트리거 상태를 하나 이상 입력하세요.","empty_target_state": "대상 상태는 비워 둘 수 없습니다.","invalid_threshold": "임계값과 대상 값은 숫자여야 합니다.","invalid_delay": "지연은 0에서 86400초(24시간) 사이의 정수여야 합니다.","invalid_rate": "분당 최대 적용 횟수는 1에서 600 사이의 정수여야 합니다.","target_in_triggers": "대상 상태는 트리거 상태가 될 수 없습니다 — 적용 루프가 발생합니다.","forbidden_state": "'unavailable', 'unknown', 'none' 상태는 트리거나 대상으로 사용할 수 없습니다.","incomplete_flag": "플래그 엔터티와 필요한 상태를 모두 설정해야 합니다.","safety_not_acknowledged": "계속하려면 안전 위험을 확인해야 합니다.","name_already_exists": "이 이름의 규칙이 이미 존재합니다.","invalid_rgb_color": "RGB 색상은 0에서 255 사이의 값 세 개로 구성된 목록이어야 합니다.","invalid_color_temp_kelvin": "색온도는 2000 K에서 6500 K 사이여야 합니다."
+    },
+    "abort": {"name_already_exists": "이 이름의 규칙이 이미 존재합니다.","hub_no_options": "Entity Guard 허브에는 편집 가능한 옵션이 없습니다."}
+  },
+  "exceptions": {"rule_not_found": {"message": "{rule_id}와 일치하는 Entity Guard 규칙을 찾을 수 없습니다."}},
+  "services": {
+    "suppress": {"name": "규칙 억제","description": "Entity Guard 규칙을 일시적으로 억제합니다. 규칙은 지정된 시간 후 자동으로 재개됩니다.","fields": {"rule_id": {"name": "규칙","description": "규칙 UUID 또는 규칙 이름(구성 항목 제목)."},"duration_minutes": {"name": "지속 시간 (분)","description": "규칙을 억제할 시간입니다 (1-1440분)."}}},
+    "unsuppress": {"name": "규칙 억제 해제","description": "억제된 Entity Guard 규칙을 즉시 재개합니다.","fields": {"rule_id": {"name": "규칙","description": "규칙 UUID 또는 규칙 이름(구성 항목 제목)."}}},
+    "list_rules": {"name": "규칙 목록","description": "모든 Entity Guard 규칙의 구성과 현재 상태를 반환합니다."},
+    "clear_history": {"name": "규칙 기록 지우기","description": "규칙에 대해 저장된 적용 기록(횟수, 마지막 적용, 쿨다운)을 지웁니다.","fields": {"rule_id": {"name": "규칙","description": "규칙 UUID 또는 규칙 이름(구성 항목 제목)."}}},
+    "panic_stop": {"name": "긴급 정지","description": "긴급 종료 — 모든 규칙을 비활성화하고, 모든 쿨다운을 지우고, 60분간 억제하며, 허브 마스터 스위치를 끕니다."}
+  },
+  "selector": {
+    "status": {"options": {"error": "오류","disabled": "비활성화됨","master_disabled": "마스터 비활성화됨","suppressed": "억제됨","enforcing": "적용 중","cooldown": "쿨다운","armed": "준비됨","conditional": "조건 대기 중","starting": "시작 중","pending": "적용 예정"}},
+    "mode": {"options": {"state": "상태","attribute": "속성"}},
+    "attribute": {"options": {"brightness": "밝기","volume_level": "볼륨 수준","temperature": "온도","percentage": "백분율","rgb_color": "RGB 색상","color_temp_kelvin": "색온도 (켈빈)"}},
+    "operator": {"options": {"lt": "미만 (<)","lte": "이하 (<=)","gt": "초과 (>)","gte": "이상 (>=)"}},
+    "flag_action": {"options": {"save": "변경 없이 종료","add": "플래그 추가","replace": "모든 플래그 교체","clear": "모든 플래그 지우기"}}
+  },
+  "entity": {
+    "binary_sensor": {"armed": {"name": "준비됨"},"active": {"name": "활성"},"in_cooldown": {"name": "쿨다운 중"},"pending": {"name": "대기 중"},"recently_enforced": {"name": "최근 적용됨"}},
+    "sensor": {"status": {"name": "상태"},"last_enforced": {"name": "마지막 적용"},"enforcement_count_today": {"name": "오늘 적용 횟수"},"enforcement_count_total": {"name": "총 적용 횟수"},"cooldown_remaining": {"name": "남은 쿨다운"},"safety_status": {"name": "안전 상태"},"suppressed_until": {"name": "억제 종료 시각"},"rule_id": {"name": "규칙 ID"}},
+    "switch": {"enabled": {"name": "활성화됨"},"debounce_enabled": {"name": "디바운스 활성화됨"},"master_enabled": {"name": "마스터 활성화됨"}},
+    "number": {"delay_seconds": {"name": "지연 (초)"},"debounce_seconds": {"name": "디바운스 (초)"},"max_enforcements_per_minute": {"name": "분당 최대 적용 횟수"}},
+    "button": {"reset": {"name": "쿨다운 재설정"},"test_enforce": {"name": "테스트 적용"},"clear_suppression": {"name": "억제 해제"},"clear_history": {"name": "기록 지우기 (카운터)"}}
+  },
+  "issues": {"flag_entity_missing": {"title": "규칙 \"{rule_name}\"에 플래그 엔터티 누락","description": "다음 플래그 엔터티가 더 이상 존재하지 않지만 규칙에서 참조되고 있습니다: {missing_entities}. 이러한 플래그를 평가할 수 없으므로 규칙이 적용되지 않습니다. 이 문제를 해결하려면 규칙을 업데이트하거나 제거하세요."}}
+}

@@ -8,9 +8,9 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.entity_guard.const import (
-    CONF_ENTRY_TYPE,
     CONF_DEBOUNCE_SECONDS,
     CONF_DELAY_SECONDS,
+    CONF_ENTRY_TYPE,
     CONF_MAX_ENFORCEMENTS_PER_MINUTE,
     DEFAULT_DEBOUNCE_SECONDS,
     DEFAULT_DELAY_SECONDS,

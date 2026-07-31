@@ -5,6 +5,8 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, patch
 
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.entity_guard.const import DOMAIN, ENTRY_TYPE_RULE
@@ -12,8 +14,6 @@ from custom_components.entity_guard.issue_helpers import (
     ISSUE_FLAG_ENTITY_MISSING,
     async_check_missing_flag_entities,
 )
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
 
 
 def _rule_entry(**overrides) -> MockConfigEntry:

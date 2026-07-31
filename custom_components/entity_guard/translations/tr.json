@@ -1,0 +1,415 @@
+{
+  "title": "Entity Guard",
+  "config": {
+    "step": {
+      "rule": {
+        "title": "Yeni kural — temel bilgiler",
+        "description": "Kurala bir ad verin, uygulanacak hedef varlıkları seçin ve kural modunu belirleyin.",
+        "data": {
+          "rule_name": "Kural adı",
+          "target_entities": "Hedef varlıklar",
+          "mode": "Kural modu"
+        },
+        "data_description": {
+          "rule_name": "Arayüzde gösterilen görünen ad. Benzersiz olmalıdır.",
+          "target_entities": "Bu kuralın uygulayacağı bir veya daha fazla varlık.",
+          "mode": "Durum modu belirli bir durumu zorlar. Öznitelik modu sayısal öznitelikleri sınırlar veya bir renk hedefiyle eşleştirir."
+        }
+      },
+      "state": {
+        "title": "Durum modu",
+        "description": "Herhangi bir hedef varlık tetikleme durumlarından birine girdiğinde, isteğe bağlı gecikmenin ardından onu hedef duruma geri zorlayın.",
+        "data": {
+          "trigger_states": "Tetikleme durumları",
+          "target_state": "Hedef durum",
+          "delay_seconds": "Gecikme (saniye)"
+        },
+        "data_description": {
+          "trigger_states": "Uygulamayı devreye alan durumların listesi (ör. on, open, unlocked). Özel değerler eklemek için yazın.",
+          "target_state": "Varlığın zorlanacağı durum (ör. off, closed, locked).",
+          "delay_seconds": "Uygulamadan önce bir tetiklemenin ardından bu kadar bekleyin. 0 = anında. En fazla 86400 (24s)."
+        }
+      },
+      "attribute": {
+        "title": "Öznitelik modu",
+        "description": "Bu kuralın hangi özniteliği uygulayacağını seçin. Sayısal öznitelikler bir hedefe sınırlanır; renk öznitelikleri bir hedef rengiyle eşleşir.",
+        "data": {
+          "attribute": "Öznitelik"
+        },
+        "data_description": {
+          "attribute": "İzlenecek ve uygulanacak öznitelik."
+        }
+      },
+      "extras": {
+        "title": "İsteğe bağlı özellikler",
+        "description": "Yapılandırmak istediğiniz özellikleri işaretleyin. İşaretlenen her seçenek bir takip ekranı ekler. İncelemeye doğrudan gitmek için hepsini atlayın.",
+        "data": {
+          "add_flags": "Ek koşullar ekle",
+          "custom_rate_limit": "Döngü korumasını özelleştir",
+          "add_debounce": "Debounce'u etkinleştir"
+        },
+        "data_description": {
+          "add_flags": "Ek koşullar gerektirmek için işaretleyin (ör. yalnızca kimse evde yokken, yalnızca gün batımından sonra uygula). Tetikleme her gerçekleştiğinde uygulamak için işaretsiz bırakın.",
+          "custom_rate_limit": "Döngü koruması, kural dakikada 10'dan fazla gerçekleşirse onu otomatik olarak bastırır (varsayılan). Varsayılanı kullanmak için işaretsiz bırakın. Kendi sayınızı belirlemek veya sonraki bir ekranda döngü korumasını tamamen kapatmak için işaretleyin.",
+          "add_debounce": "Hızlı gidip gelen değişiklikleri yoksaymak için işaretleyin. Kural yalnızca tetikleyici, sonraki bir ekranda belirlediğiniz süre boyunca aynı kalırsa harekete geçer. Her değişiklikte harekete geçmek için işaretsiz bırakın."
+        }
+      },
+      "flags": {
+        "title": "Koşullar (isteğe bağlı)",
+        "description": "Kuralın harekete geçmesi için hepsinin doğru olması gereken ek koşullar.\n\nÖrnekler:\n  • person.alice = not_home — yalnızca Alice uzaktayken\n  • input_boolean.guest_mode = off — yalnızca misafir yokken\n  • sun.sun = below_horizon — yalnızca gün batımından sonra\n  • binary_sensor.work_hours = on — yalnızca çalışma saatleri içinde\n\nKoşul eklemek için: bir varlık seçin, olması gereken durumu yazın, ardından Gönder'e tıklayın.\n\nŞu anda herhangi bir koşul istemiyorsanız, her iki alanı da boş bırakıp atlamak için Gönder'e tıklayın.\n\nŞu ana kadar eklenen koşullar ({count}): {summary}\n\n{current_state}\n\nDaha fazlasını zincirlemek için 'Başka bir tane ekle'yi işaretleyin — kuralın çalışması için hepsinin eşleşmesi gerekir.",
+        "data": {
+          "entity": "Koşul varlığı",
+          "match_state": "Gerekli durum",
+          "add_another": "Bundan sonra başka bir koşul ekle"
+        },
+        "data_description": {
+          "entity": "Durumu koşul olarak işlev gören varlığı seçin (ör. person.alice, input_boolean.guest_mode, sun.sun).",
+          "match_state": "Kuralın çalışması için varlığın bulunması gereken durum (ör. 'on', 'home', 'not_home', 'below_horizon').",
+          "add_another": "Daha fazla koşul eklemek için işaretleyin. Bitirmek için işaretsiz bırakın."
+        }
+      },
+      "advanced": {
+        "title": "Gelişmiş",
+        "description": "Önceki ekranda seçtiğiniz seçenekleri ayarlayın. Varsayılan hız sınırı dakikada {default_rate} uygulamadır.",
+        "data": {
+          "debounce_seconds": "Debounce penceresi (saniye)",
+          "rate_limit_enabled": "Döngü korumasını uygula",
+          "max_enforcements_per_minute": "Dakika başına maksimum uygulama"
+        },
+        "data_description": {
+          "debounce_seconds": "Saniye cinsinden pencere. En az 0, en fazla 86400 (24s). Yalnızca önceki adımda debounce etkinleştirildiğinde gösterilir.",
+          "rate_limit_enabled": "Döngü korumasını açık tutmak için işaretleyin (önerilir). Bu kural için devre dışı bırakmak üzere işareti kaldırın — kontrolden çıkan döngüler otomatik olarak durdurulmaz.",
+          "max_enforcements_per_minute": "Kural 15 dakika boyunca otomatik olarak bastırılmadan önce dakikada kaç uygulamaya izin verilir. En az 1, en fazla 600. Yukarıda döngü koruması işaretlenmediğinde yoksayılır."
+        }
+      },
+      "safety": {
+        "title": "Güvenlik onayı",
+        "description": "Bu kural güvenlik açısından hassas varlıkları ({entities}) hedefler. Devam etmek için riski açıkça onaylamanız gerekir.",
+        "data": {
+          "safety_acknowledged": "Bu kuralın fiziksel donanımı hareket ettireceğini anlıyorum ve riski kabul ediyorum."
+        }
+      },
+      "preview": {
+        "title": "İnceleyip oluştur",
+        "description": "Kuralınızı aşağıda inceleyin. Oluşturmak için **Gönder**'e tıklayın veya değişiklik yapmak için geri okunu kullanın.\n\n---\n\n{summary}"
+      },
+      "attribute_params": {
+        "title": "Öznitelik parametreleri",
+        "description": "Seçilen öznitelik için uygulama değerlerini yapılandırın.",
+        "data": {
+          "operator": "Operatör",
+          "threshold": "Eşik",
+          "target_value": "Hedef değer",
+          "delay_seconds": "Gecikme (saniye)"
+        },
+        "data_description": {
+          "operator": "Sayısal sınırlama kuralları için kullanılan karşılaştırma operatörü.",
+          "threshold": "Canlı öznitelikle karşılaştırılan sayısal değer. Yalnızca sayısal sınırlama kuralları için kullanılır.",
+          "target_value": "Uygulanacak değer. Sayısal öznitelikler bu değere sınırlanır; renk öznitelikleri bununla eşleşmelidir.",
+          "delay_seconds": "Uygulamadan önce bir tetiklemenin ardından bu kadar bekleyin. 0 = anında. En fazla 86400 (24s)."
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "Kural adı boş olamaz.",
+      "empty_target_entities": "En az bir hedef varlık seçin.",
+      "empty_trigger_states": "En az bir tetikleme durumu sağlayın.",
+      "empty_target_state": "Hedef durum boş olamaz.",
+      "invalid_threshold": "Eşik ve hedef değer sayısal olmalıdır.",
+      "invalid_delay": "Gecikme, 0 ile 86400 saniye (24s) arasında tam bir sayı olmalıdır.",
+      "invalid_rate": "Dakika başına maksimum uygulama, 1 ile 600 arasında tam bir sayı olmalıdır.",
+      "target_in_triggers": "Hedef durum aynı zamanda bir tetikleme durumu olamaz — bu bir uygulama döngüsü oluşturur.",
+      "forbidden_state": "'unavailable', 'unknown' ve 'none' durumları tetikleyici veya hedef olarak kullanılamaz.",
+      "incomplete_flag": "Hem bayrak varlığı hem de gerekli durum ayarlanmalıdır.",
+      "safety_not_acknowledged": "Devam etmek için güvenlik riskini onaylamanız gerekir.",
+      "name_already_exists": "Bu ada sahip bir kural zaten var.",
+      "invalid_rgb_color": "RGB rengi, 0 ile 255 arasında üç değerden oluşan bir liste olmalıdır.",
+      "invalid_color_temp_kelvin": "Renk sıcaklığı 2000 K ile 6500 K arasında olmalıdır."
+    },
+    "abort": {
+      "single_instance_allowed": "Yalnızca bir Entity Guard merkezi yapılandırılabilir.",
+      "name_already_exists": "Bu ada sahip bir kural zaten var.",
+      "already_configured": "Bu kural zaten yapılandırılmış."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Kuralı düzenle",
+        "description": "{summary}\n\nNeyi değiştireceğinizi seçin.",
+        "menu_options": {
+          "edit_basics": "Adı düzenle",
+          "edit_mode": "Moda özel ayarları düzenle",
+          "edit_entities": "Hedef varlık ekle veya kaldır",
+          "edit_flags": "Bayrak koşullarını düzenle",
+          "edit_advanced": "Debounce ve hız sınırını düzenle"
+        }
+      },
+      "edit_basics": {
+        "title": "Adı düzenle",
+        "data": {
+          "rule_name": "Kural adı"
+        }
+      },
+      "edit_entities": {
+        "title": "Hedef varlıkları düzenle",
+        "data": {
+          "target_entities": "Hedef varlıklar"
+        }
+      },
+      "edit_safety": {
+        "title": "Güvenlik onayı",
+        "description": "Güvenlik açısından hassas yeni varlıklar eklendi. Kaydetmek için yeniden onaylayın.",
+        "data": {
+          "safety_acknowledged": "Bu kuralın fiziksel donanımı hareket ettireceğini anlıyorum ve riski kabul ediyorum."
+        }
+      },
+      "edit_state": {
+        "title": "Durum modunu düzenle",
+        "data": {
+          "trigger_states": "Tetikleme durumları",
+          "target_state": "Hedef durum",
+          "delay_seconds": "Gecikme (saniye)"
+        }
+      },
+      "edit_attribute": {
+        "title": "Öznitelik modunu düzenle",
+        "description": "Bu kuralın hangi özniteliği uygulayacağını seçin. Sayısal öznitelikler bir hedefe sınırlanır; renk öznitelikleri bir hedef rengiyle eşleşir.",
+        "data": {
+          "attribute": "Öznitelik"
+        }
+      },
+      "edit_flags": {
+        "title": "Bayrak koşullarını düzenle",
+        "description": "Geçerli bayraklar: {summary}.\n\n{current_state}\n\nEklemek için 'add', tümünü değiştirmek için 'replace', tümünü kaldırmak için 'clear' veya değiştirmeden bırakmak için 'save' seçin.",
+        "data": {
+          "entity": "Bayrak varlığı",
+          "match_state": "Gerekli durum",
+          "action": "Eylem"
+        }
+      },
+      "edit_advanced": {
+        "title": "Gelişmiş ayarları düzenle",
+        "data": {
+          "debounce_enabled": "Debounce'u etkinleştir",
+          "debounce_seconds": "Debounce penceresi (saniye)",
+          "max_enforcements_per_minute": "Dakika başına maksimum uygulama"
+        }
+      },
+      "edit_attribute_params": {
+        "title": "Öznitelik parametrelerini düzenle",
+        "description": "Seçilen öznitelik için uygulama değerlerini yapılandırın.",
+        "data": {
+          "operator": "Operatör",
+          "threshold": "Eşik",
+          "target_value": "Hedef değer",
+          "delay_seconds": "Gecikme (saniye)"
+        }
+      }
+    },
+    "error": {
+      "empty_rule_name": "Kural adı boş olamaz.",
+      "empty_target_entities": "En az bir hedef varlık seçin.",
+      "empty_trigger_states": "En az bir tetikleme durumu sağlayın.",
+      "empty_target_state": "Hedef durum boş olamaz.",
+      "invalid_threshold": "Eşik ve hedef değer sayısal olmalıdır.",
+      "invalid_delay": "Gecikme, 0 ile 86400 saniye (24s) arasında tam bir sayı olmalıdır.",
+      "invalid_rate": "Dakika başına maksimum uygulama, 1 ile 600 arasında tam bir sayı olmalıdır.",
+      "target_in_triggers": "Hedef durum aynı zamanda bir tetikleme durumu olamaz — bu bir uygulama döngüsü oluşturur.",
+      "forbidden_state": "'unavailable', 'unknown' ve 'none' durumları tetikleyici veya hedef olarak kullanılamaz.",
+      "incomplete_flag": "Hem bayrak varlığı hem de gerekli durum ayarlanmalıdır.",
+      "safety_not_acknowledged": "Devam etmek için güvenlik riskini onaylamanız gerekir.",
+      "name_already_exists": "Bu ada sahip bir kural zaten var.",
+      "invalid_rgb_color": "RGB rengi, 0 ile 255 arasında üç değerden oluşan bir liste olmalıdır.",
+      "invalid_color_temp_kelvin": "Renk sıcaklığı 2000 K ile 6500 K arasında olmalıdır."
+    },
+    "abort": {
+      "name_already_exists": "Bu ada sahip bir kural zaten var.",
+      "hub_no_options": "Entity Guard merkezinin düzenlenebilir seçeneği yok."
+    }
+  },
+  "exceptions": {
+    "rule_not_found": {
+      "message": "{rule_id} ile eşleşen Entity Guard kuralı bulunamadı."
+    }
+  },
+  "services": {
+    "suppress": {
+      "name": "Kuralı bastır",
+      "description": "Bir Entity Guard kuralını geçici olarak bastırın. Kural, süre dolduktan sonra otomatik olarak devam eder.",
+      "fields": {
+        "rule_id": {
+          "name": "Kural",
+          "description": "Kural UUID'si veya kural adı (yapılandırma girişi başlığı)."
+        },
+        "duration_minutes": {
+          "name": "Süre (dakika)",
+          "description": "Kuralın ne kadar süreyle bastırılacağı (1-1440 dakika)."
+        }
+      }
+    },
+    "unsuppress": {
+      "name": "Kural bastırmayı kaldır",
+      "description": "Bastırılmış bir Entity Guard kuralını hemen devam ettirin.",
+      "fields": {
+        "rule_id": {
+          "name": "Kural",
+          "description": "Kural UUID'si veya kural adı (yapılandırma girişi başlığı)."
+        }
+      }
+    },
+    "list_rules": {
+      "name": "Kuralları listele",
+      "description": "Her Entity Guard kuralının yapılandırmasını ve geçerli durumunu döndürün."
+    },
+    "clear_history": {
+      "name": "Kural geçmişini temizle",
+      "description": "Bir kural için depolanan uygulama geçmişini (sayımlar, son uygulama, bekleme süreleri) temizleyin.",
+      "fields": {
+        "rule_id": {
+          "name": "Kural",
+          "description": "Kural UUID'si veya kural adı (yapılandırma girişi başlığı)."
+        }
+      }
+    },
+    "panic_stop": {
+      "name": "Panik durdurma",
+      "description": "Acil kapatma — her kuralı devre dışı bırakın, tüm bekleme sürelerini temizleyin, 60 dakika bastırın ve merkez ana anahtarını kapatın."
+    }
+  },
+  "selector": {
+    "status": {
+      "options": {
+        "error": "Hata",
+        "disabled": "Devre dışı",
+        "master_disabled": "Ana devre dışı",
+        "suppressed": "Bastırıldı",
+        "enforcing": "Uygulanıyor",
+        "cooldown": "Bekleme süresi",
+        "armed": "Hazır",
+        "conditional": "Koşullar bekleniyor",
+        "starting": "Başlatılıyor",
+        "pending": "Uygulanmak üzere"
+      }
+    },
+    "mode": {
+      "options": {
+        "state": "Durum",
+        "attribute": "Öznitelik"
+      }
+    },
+    "attribute": {
+      "options": {
+        "brightness": "Parlaklık",
+        "volume_level": "Ses seviyesi",
+        "temperature": "Sıcaklık",
+        "percentage": "Yüzde",
+        "rgb_color": "RGB rengi",
+        "color_temp_kelvin": "Renk sıcaklığı (Kelvin)"
+      }
+    },
+    "operator": {
+      "options": {
+        "lt": "Küçüktür (<)",
+        "lte": "Küçük veya eşit (<=)",
+        "gt": "Büyüktür (>)",
+        "gte": "Büyük veya eşit (>=)"
+      }
+    },
+    "flag_action": {
+      "options": {
+        "save": "Değişiklik yapmadan çık",
+        "add": "Bayrak ekle",
+        "replace": "Tüm bayrakları değiştir",
+        "clear": "Tüm bayrakları temizle"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "armed": {
+        "name": "Hazır"
+      },
+      "active": {
+        "name": "Etkin"
+      },
+      "in_cooldown": {
+        "name": "Bekleme süresinde"
+      },
+      "pending": {
+        "name": "Beklemede"
+      },
+      "recently_enforced": {
+        "name": "Yakın zamanda uygulandı"
+      }
+    },
+    "sensor": {
+      "status": {
+        "name": "Durum"
+      },
+      "last_enforced": {
+        "name": "Son uygulama"
+      },
+      "enforcement_count_today": {
+        "name": "Bugünkü uygulamalar"
+      },
+      "enforcement_count_total": {
+        "name": "Toplam uygulamalar"
+      },
+      "cooldown_remaining": {
+        "name": "Kalan bekleme süresi"
+      },
+      "safety_status": {
+        "name": "Güvenlik durumu"
+      },
+      "suppressed_until": {
+        "name": "Bastırma bitişi"
+      },
+      "rule_id": {
+        "name": "Kural kimliği"
+      }
+    },
+    "switch": {
+      "enabled": {
+        "name": "Etkin"
+      },
+      "debounce_enabled": {
+        "name": "Debounce etkin"
+      },
+      "master_enabled": {
+        "name": "Ana etkin"
+      }
+    },
+    "number": {
+      "delay_seconds": {
+        "name": "Gecikme (saniye)"
+      },
+      "debounce_seconds": {
+        "name": "Debounce (saniye)"
+      },
+      "max_enforcements_per_minute": {
+        "name": "Dakika başına maksimum uygulama"
+      }
+    },
+    "button": {
+      "reset": {
+        "name": "Bekleme sürelerini sıfırla"
+      },
+      "test_enforce": {
+        "name": "Uygulamayı test et"
+      },
+      "clear_suppression": {
+        "name": "Bastırmayı temizle"
+      },
+      "clear_history": {
+        "name": "Geçmişi temizle (sayaçlar)"
+      }
+    }
+  },
+  "issues": {
+    "flag_entity_missing": {
+      "title": "\"{rule_name}\" kuralında bayrak varlığı eksik",
+      "description": "Aşağıdaki bayrak varlığı/varlıkları artık mevcut değil ancak kuralda başvuruluyor: {missing_entities}. Bu bayraklar değerlendirilemediğinde kural uygulanmayacaktır. Bu sorunu çözmek için kuralı güncelleyin veya kaldırın."
+    }
+  }
+}

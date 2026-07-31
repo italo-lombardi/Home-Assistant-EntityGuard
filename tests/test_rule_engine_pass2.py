@@ -20,24 +20,24 @@ from custom_components.entity_guard.storage import EntityGuardStore
 
 
 def _make_config(**overrides) -> RuleConfig:
-    defaults = dict(
-        unique_id="rule-uid",
-        name="Rule",
-        target_entities=["light.bedroom"],
-        mode="state",
-        trigger_states=["on"],
-        target_state="off",
-        delay_seconds=0,
-        attribute=None,
-        operator=None,
-        threshold=None,
-        target_value=None,
-        flags=[],
-        debounce_enabled=False,
-        debounce_seconds=60,
-        max_enforcements_per_minute=10,
-        safety_acknowledged=False,
-    )
+    defaults = {
+        "unique_id": "rule-uid",
+        "name": "Rule",
+        "target_entities": ["light.bedroom"],
+        "mode": "state",
+        "trigger_states": ["on"],
+        "target_state": "off",
+        "delay_seconds": 0,
+        "attribute": None,
+        "operator": None,
+        "threshold": None,
+        "target_value": None,
+        "flags": [],
+        "debounce_enabled": False,
+        "debounce_seconds": 60,
+        "max_enforcements_per_minute": 10,
+        "safety_acknowledged": False,
+    }
     defaults.update(overrides)
     return RuleConfig(**defaults)
 

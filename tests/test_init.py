@@ -9,11 +9,11 @@ from homeassistant.core import HomeAssistant
 from custom_components.entity_guard import (
     PLATFORMS_HUB,
     PLATFORMS_RULE,
+    async_remove_entry,
     async_setup_entry,
     async_unload_entry,
-    async_remove_entry,
 )
-from custom_components.entity_guard.const import DOMAIN, CONF_ENTRY_TYPE
+from custom_components.entity_guard.const import CONF_ENTRY_TYPE, DOMAIN
 
 
 async def test_setup_hub_entry(hass: HomeAssistant, hub_entry) -> None:
@@ -180,6 +180,7 @@ async def test_unload_rule_with_sibling_rule_does_not_unload_services(
 ) -> None:
     """When a rule is unloaded but another rule entry still exists, services are kept."""
     from pytest_homeassistant_custom_component.common import MockConfigEntry
+
     from custom_components.entity_guard.const import ENTRY_TYPE_RULE
 
     hub_entry.add_to_hass(hass)
