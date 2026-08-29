@@ -93,6 +93,19 @@ def _state(state_str, attributes=None):
     return s
 
 
+def _capturing_create_task(sink=None):
+    """async_create_task stand-in that closes the coroutine (no 'never awaited'
+    warning) and optionally records each call in `sink`."""
+
+    def _side_effect(coro, *args, **kwargs):
+        if hasattr(coro, "close"):
+            coro.close()
+        if sink is not None:
+            sink.append(coro)
+
+    return _side_effect
+
+
 # ---------------------------------------------------------------------------
 # signal helpers
 # ---------------------------------------------------------------------------
@@ -1441,7 +1454,9 @@ def test_handle_state_event_creates_task(hass: HomeAssistant):
     event = MagicMock()
     event.data = {"entity_id": "light.bedroom", "new_state": _state("on")}
     tasks_created = []
-    with patch.object(hass, "async_create_task", side_effect=tasks_created.append):
+    with patch.object(
+        hass, "async_create_task", side_effect=_capturing_create_task(tasks_created)
+    ):
         engine._handle_state_event(event)
     assert len(tasks_created) == 1
 
@@ -1451,7 +1466,9 @@ def test_handle_state_event_none_entity_id(hass: HomeAssistant):
     event = MagicMock()
     event.data = {"entity_id": None, "new_state": None}
     tasks_created = []
-    with patch.object(hass, "async_create_task", side_effect=tasks_created.append):
+    with patch.object(
+        hass, "async_create_task", side_effect=_capturing_create_task(tasks_created)
+    ):
         engine._handle_state_event(event)
     assert tasks_created == []
 
@@ -1490,7 +1507,9 @@ def test_handle_startup_grace_done_sweeps_targets(hass: HomeAssistant):
     engine._startup_complete = False
     hass.states.async_set("light.bedroom", "on")
     tasks_created = []
-    with patch.object(hass, "async_create_task", side_effect=tasks_created.append):
+    with patch.object(
+        hass, "async_create_task", side_effect=_capturing_create_task(tasks_created)
+    ):
         engine._handle_startup_grace_done(MagicMock())
     assert engine._startup_complete is True
     assert len(tasks_created) == 1  # one per target entity

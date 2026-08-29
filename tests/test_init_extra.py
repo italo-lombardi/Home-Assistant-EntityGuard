@@ -169,6 +169,31 @@ async def test_setup_rule_entry_syncs_device_name(hass: HomeAssistant, rule_entr
     assert device.name == rule_entry.title
 
 
+async def test_setup_rule_entry_device_lookup_legacy_ha():
+    """_lookup_device falls back to async_get_device on HA lacking the new lookup.
+
+    CI runs modern HA (new lookup); this exercises both branches directly so
+    coverage holds regardless of the installed HA version.
+    """
+    from custom_components.entity_guard import _lookup_device
+
+    sentinel = object()
+
+    # New API present → uses async_get_device_by_identifier.
+    modern = MagicMock(spec=["async_get_device_by_identifier"])
+    modern.async_get_device_by_identifier.return_value = sentinel
+    assert _lookup_device(modern, "eid") is sentinel
+    modern.async_get_device_by_identifier.assert_called_once_with(
+        (DOMAIN, "eid"), "eid"
+    )
+
+    # Legacy HA (no new method) → falls back to async_get_device.
+    legacy = MagicMock(spec=["async_get_device"])
+    legacy.async_get_device.return_value = sentinel
+    assert _lookup_device(legacy, "eid") is sentinel
+    legacy.async_get_device.assert_called_once_with(identifiers={(DOMAIN, "eid")})
+
+
 async def test_setup_rule_entry_skips_rename_when_title_matches(
     hass: HomeAssistant, rule_entry
 ):
