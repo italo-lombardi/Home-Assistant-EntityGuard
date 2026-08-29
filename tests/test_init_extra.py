@@ -164,7 +164,8 @@ async def test_setup_rule_entry_syncs_device_name(hass: HomeAssistant, rule_entr
     ):
         result = await async_setup_entry(hass, rule_entry)
     assert result is True
-    device = device_reg.async_get_device(identifiers={(DOMAIN, rule_entry.entry_id)})
+    devices = dr.async_entries_for_config_entry(device_reg, rule_entry.entry_id)
+    device = next(d for d in devices if (DOMAIN, rule_entry.entry_id) in d.identifiers)
     assert device.name == rule_entry.title
 
 
