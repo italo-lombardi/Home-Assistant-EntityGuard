@@ -56,6 +56,18 @@ def _get_version() -> str:
         return json.load(f).get("version", "0.0.0")
 
 
+def _lookup_device(device_reg, entry_id: str):
+    """Find this integration's device for a config entry.
+
+    Prefers async_get_device_by_identifier (HA 2025.x+; the identifiers= form of
+    async_get_device is removed in HA 2027.8), falling back for older HA.
+    """
+    new_lookup = getattr(device_reg, "async_get_device_by_identifier", None)
+    if new_lookup is not None:
+        return new_lookup((DOMAIN, entry_id), entry_id)
+    return device_reg.async_get_device(identifiers={(DOMAIN, entry_id)})
+
+
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up the Entity Guard integration."""
     _LOGGER.debug("async_setup invoked")
@@ -201,7 +213,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # (options-flow rename). Tracking via _device_title option prevents clobbering
         # user-set device names on every restart.
         device_reg = dr.async_get(hass)
-        device = device_reg.async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+        device = _lookup_device(device_reg, entry.entry_id)
         if device is not None:
             stored_title = entry.options.get("_device_title")
             if stored_title != entry.title:
