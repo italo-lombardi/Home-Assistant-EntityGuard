@@ -4,7 +4,7 @@
 
 ### Changed
 
-- Device-registry lookup now prefers `async_get_device_by_identifier` (added in the HA 2026.9 beta), falling back to `async_get_device(identifiers=)` on older Home Assistant. HA's frame helper flags the `identifiers=` form as deprecated and slated to stop working in HA 2027.8; the fallback keeps the declared minimum (HA 2024.1) working while silencing the warning on newer cores. Note: the new method scopes the lookup to the config entry, but for this integration (one device per entry, identifier == entry id) the resolved device is identical.
+- Device-registry lookup now prefers `async_get_device_by_identifier` (added in HA 2026.8), falling back to `async_get_device(identifiers=)` on older Home Assistant. HA's frame helper flags the `identifiers=` form as deprecated and slated to stop working in HA 2027.8; the fallback keeps the declared minimum (HA 2024.1) working while silencing the warning on newer cores. Note: the new method scopes the lookup to the config entry, but for this integration (one device per entry, identifier == entry id) the resolved device is identical.
 
 ### Fixed
 
