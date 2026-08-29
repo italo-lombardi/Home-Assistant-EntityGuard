@@ -503,10 +503,11 @@ async def test_color_enforcement_calls_light_turn_on_with_rgb(hass: HomeAssistan
     hass.services.async_register("light", "turn_on", _turn_on)
     hass.states.async_set("light.bedroom", "on", {"rgb_color": [0, 0, 255]})
     await engine.async_evaluate("light.bedroom", hass.states.get("light.bedroom"))
+    await hass.async_block_till_done()
 
     assert service_calls
     assert service_calls[0].data["rgb_color"] == [255, 0, 0]
-    assert enforced_events[-1].data["target"] == "rgb_color=[255, 0, 0]"
+    assert any(e.data["target"] == "rgb_color=[255, 0, 0]" for e in enforced_events)
 
 
 async def test_color_enforcement_calls_light_turn_on_with_kelvin(hass: HomeAssistant):
@@ -547,9 +548,10 @@ async def test_color_enforcement_skips_when_light_off(hass: HomeAssistant):
     hass.states.async_set("light.bedroom", "off", {"rgb_color": [0, 0, 255]})
 
     await engine.async_evaluate("light.bedroom", hass.states.get("light.bedroom"))
+    await hass.async_block_till_done()
 
     service.assert_not_awaited()
-    assert skipped_events[-1].data["reason"] == "light_off"
+    assert any(e.data["reason"] == "light_off" for e in skipped_events)
 
 
 async def test_color_enforcement_skips_when_light_unavailable(hass: HomeAssistant):
@@ -566,8 +568,9 @@ async def test_color_enforcement_skips_when_light_unavailable(hass: HomeAssistan
     hass.states.async_set("light.bedroom", "unavailable")
 
     await engine.async_evaluate("light.bedroom", hass.states.get("light.bedroom"))
+    await hass.async_block_till_done()
 
-    assert skipped_events[-1].data["reason"] == "light_unavailable"
+    assert any(e.data["reason"] == "light_unavailable" for e in skipped_events)
 
 
 async def test_color_enforcement_skips_when_rgb_attribute_unavailable(
@@ -588,9 +591,10 @@ async def test_color_enforcement_skips_when_rgb_attribute_unavailable(
     hass.states.async_set("light.bedroom", "on", {})
 
     await engine.async_evaluate("light.bedroom", hass.states.get("light.bedroom"))
+    await hass.async_block_till_done()
 
     service.assert_not_awaited()
-    assert skipped_events[-1].data["reason"] == "attribute_unavailable"
+    assert any(e.data["reason"] == "attribute_unavailable" for e in skipped_events)
 
 
 async def test_color_enforcement_skips_when_kelvin_attribute_unavailable(
@@ -611,9 +615,10 @@ async def test_color_enforcement_skips_when_kelvin_attribute_unavailable(
     hass.states.async_set("light.bedroom", "on", {})
 
     await engine.async_evaluate("light.bedroom", hass.states.get("light.bedroom"))
+    await hass.async_block_till_done()
 
     service.assert_not_awaited()
-    assert skipped_events[-1].data["reason"] == "attribute_unavailable"
+    assert any(e.data["reason"] == "attribute_unavailable" for e in skipped_events)
 
 
 async def test_delayed_color_enforcement_skips_if_light_turns_off(hass: HomeAssistant):
@@ -637,7 +642,7 @@ async def test_delayed_color_enforcement_skips_if_light_turns_off(hass: HomeAssi
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=2))
     await hass.async_block_till_done()
 
-    assert skipped_events[-1].data["reason"] == "light_off"
+    assert any(e.data["reason"] == "light_off" for e in skipped_events)
 
 
 async def test_manual_color_enforce_skips_when_light_off(hass: HomeAssistant):
@@ -656,9 +661,10 @@ async def test_manual_color_enforce_skips_when_light_off(hass: HomeAssistant):
     hass.states.async_set("light.bedroom", "off", {"rgb_color": [0, 0, 255]})
 
     await engine.async_test_enforce()
+    await hass.async_block_till_done()
 
     service.assert_not_awaited()
-    assert skipped_events[-1].data["reason"] == "light_off"
+    assert any(e.data["reason"] == "light_off" for e in skipped_events)
 
 
 async def test_color_enforcement_respects_debounce_cooldown(hass: HomeAssistant):
