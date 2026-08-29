@@ -17,7 +17,7 @@ from custom_components.entity_guard.const import (
 from custom_components.entity_guard.models import Flag, RuleConfig
 from custom_components.entity_guard.rule_engine import RuleEngine
 from custom_components.entity_guard.storage import EntityGuardStore
-from tests.test_rule_engine import _capturing_create_task
+from tests.conftest import capturing_create_task
 
 
 def _make_config(**overrides) -> RuleConfig:
@@ -62,7 +62,7 @@ def test_startup_grace_sets_disabled_when_disabled(hass: HomeAssistant):
     engine = _make_engine(hass)
     engine._state.enabled = False
     hass.states.async_set("light.bedroom", "on")
-    with patch.object(hass, "async_create_task", side_effect=_capturing_create_task()):
+    with patch.object(hass, "async_create_task", side_effect=capturing_create_task()):
         engine._handle_startup_grace_done(MagicMock())
     assert engine.current_status() == STATUS_DISABLED
 
@@ -70,7 +70,7 @@ def test_startup_grace_sets_disabled_when_disabled(hass: HomeAssistant):
 def test_startup_grace_sets_disabled_when_master_off(hass: HomeAssistant):
     engine = _make_engine(hass, master=False)
     hass.states.async_set("light.bedroom", "on")
-    with patch.object(hass, "async_create_task", side_effect=_capturing_create_task()):
+    with patch.object(hass, "async_create_task", side_effect=capturing_create_task()):
         engine._handle_startup_grace_done(MagicMock())
     assert engine.current_status() == STATUS_MASTER_DISABLED
 
@@ -79,7 +79,7 @@ def test_startup_grace_sets_suppressed(hass: HomeAssistant):
     engine = _make_engine(hass)
     engine._state.suppressed_until = dt_util.now() + timedelta(minutes=10)
     hass.states.async_set("light.bedroom", "on")
-    with patch.object(hass, "async_create_task", side_effect=_capturing_create_task()):
+    with patch.object(hass, "async_create_task", side_effect=capturing_create_task()):
         engine._handle_startup_grace_done(MagicMock())
     assert engine.current_status() == STATUS_SUPPRESSED
 
@@ -89,7 +89,7 @@ def test_startup_grace_sets_conditional_when_flags_mismatch(hass: HomeAssistant)
     engine = _make_engine(hass, _make_config(flags=[flag]))
     hass.states.async_set("input_boolean.x", "off")
     hass.states.async_set("light.bedroom", "on")
-    with patch.object(hass, "async_create_task", side_effect=_capturing_create_task()):
+    with patch.object(hass, "async_create_task", side_effect=capturing_create_task()):
         engine._handle_startup_grace_done(MagicMock())
     assert engine.current_status() == STATUS_CONDITIONAL
 
