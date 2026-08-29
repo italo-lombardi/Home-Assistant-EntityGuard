@@ -13,6 +13,19 @@ from custom_components.entity_guard.const import (
 )
 
 
+def capturing_create_task(sink=None):
+    """async_create_task stand-in that closes the coroutine (no 'never awaited'
+    warning) and optionally records each call in `sink`."""
+
+    def _side_effect(coro, *args, **kwargs):
+        if hasattr(coro, "close"):
+            coro.close()
+        if sink is not None:
+            sink.append(coro)
+
+    return _side_effect
+
+
 @pytest.fixture
 def hub_entry():
     return MockConfigEntry(

@@ -59,8 +59,9 @@ def _get_version() -> str:
 def _lookup_device(device_reg, entry_id: str):
     """Find this integration's device for a config entry.
 
-    Prefers async_get_device_by_identifier (HA 2025.x+; the identifiers= form of
-    async_get_device is removed in HA 2027.8), falling back for older HA.
+    Prefers async_get_device_by_identifier (HA 2026.8+); the identifiers= form of
+    async_get_device is flagged deprecated and slated to stop working in HA
+    2027.8, so we fall back to it only on older cores.
     """
     new_lookup = getattr(device_reg, "async_get_device_by_identifier", None)
     if new_lookup is not None:
