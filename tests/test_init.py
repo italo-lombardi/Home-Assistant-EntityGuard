@@ -58,6 +58,10 @@ async def test_setup_rule_entry(hass: HomeAssistant, rule_entry) -> None:
             "custom_components.entity_guard.RuleEngine.async_unload",
             new_callable=AsyncMock,
         ),
+        patch(
+            "custom_components.entity_guard._async_ensure_hub",
+            new_callable=AsyncMock,
+        ),
     ):
         result = await async_setup_entry(hass, rule_entry)
 
