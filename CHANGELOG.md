@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Device-registry lookup now prefers `async_get_device_by_identifier` (added in the HA 2026.9 beta), falling back to `async_get_device(identifiers=)` on older Home Assistant. HA's frame helper flags the `identifiers=` form as deprecated and slated to stop working in HA 2027.8; the fallback keeps the declared minimum (HA 2024.1) working while silencing the warning on newer cores. Note: the new method scopes the lookup to the config entry, but for this integration (one device per entry, identifier == entry id) the resolved device is identical.
+
+### Fixed
+
+- Device lookup no longer trips the Home Assistant deprecation warning about `device_registry.async_get_device` on newer cores.
+
+### CI
+
+- Standardized development and CI on Python 3.14.
+- Fixed a test that leaked a hub auto-create import flow into teardown, scheduling a startup-grace timer that `verify_cleanup` flagged as a lingering timer under Python 3.14's task scheduling.
+
+### Tests
+
+- Silenced the recurring `coroutine 'RuleEngine.async_evaluate' was never awaited` warning by closing coroutines handed to a patched `hass.async_create_task`.
+
 ### i18n
 
 - Added 18 new locales: zh-Hans, zh-Hant, ru, ja, ko, uk, cs, sk, hu, ro, bg, hr, fi, el, tr, lt, lv, ca. Translation coverage grows from 11 → 29 languages.
