@@ -541,9 +541,9 @@ class EntityGuardCard extends LitElement {
   }
 
   // Returns a display string for an entity state. When HA can translate the
-  // state (e.g. device_class gives "Detected" for "on"), shows "Detected · on".
+  // state (e.g. device_class gives "Detected" for "on"), shows "Detected (on)".
   // Falls back to raw value for numerics, unavailable formatEntityState, or when
-  // the translated label is identical to the raw value (avoids "On · on" noise).
+  // the translated label is identical to the raw value (avoids "Off (off)" noise).
   _formatStateDisplay(stateObj, rawValue) {
     if (!stateObj || rawValue == null) return rawValue ?? "unknown";
     if (!isNaN(parseFloat(rawValue))) return rawValue;
@@ -553,8 +553,24 @@ class EntityGuardCard extends LitElement {
         label = this.hass.formatEntityState(stateObj) ?? rawValue;
       } catch (e) {}
     }
-    if (label === rawValue) return rawValue;
-    return `${label} · ${rawValue}`;
+    if (label.toLowerCase() === rawValue.toLowerCase()) return label;
+    return `${label} (${rawValue})`;
+  }
+
+  // Like _formatStateDisplay but for a hypothetical state value (no live state obj).
+  // Builds a minimal fake state object from the entity's existing attributes.
+  _formatHypotheticalState(entityId, rawValue) {
+    if (rawValue == null) return rawValue ?? "unknown";
+    if (!isNaN(parseFloat(rawValue))) return rawValue;
+    const existing = this.hass.states[entityId];
+    if (!existing || !this.hass.formatEntityState) return rawValue;
+    const fakeState = { ...existing, state: rawValue };
+    let label = rawValue;
+    try {
+      label = this.hass.formatEntityState(fakeState) ?? rawValue;
+    } catch (e) {}
+    if (label.toLowerCase() === rawValue.toLowerCase()) return label;
+    return `${label} (${rawValue})`;
   }
 
   _attrValue(entityId, attr) {
@@ -755,6 +771,7 @@ class EntityGuardCard extends LitElement {
           const name = st?.attributes?.friendly_name || id;
           const state = st ? st.state : "unknown";
           const displayState = this._formatStateDisplay(st, state);
+          const displayTarget = this._formatHypotheticalState(id, refs.targetState);
           const compliant = !triggerStates || !triggerStates.includes(state);
           return html`
             <div class="entity-row">
@@ -764,7 +781,7 @@ class EntityGuardCard extends LitElement {
                   ? html`${displayState}
                       <span style="color:var(--success-color,#4caf50)">✓</span>`
                   : html`<span style="color:var(--warning-color,#ff9800)"
-                      >${displayState} → ${refs.targetState} ⚠</span
+                      >${displayState} → ${displayTarget} ⚠</span
                     >`}
               </span>
             </div>
@@ -785,6 +802,7 @@ class EntityGuardCard extends LitElement {
           const st = this.hass.states[f.entity];
           const name = st?.attributes?.friendly_name || f.entity;
           const displayCurrent = this._formatStateDisplay(st, f.current ?? "unknown");
+          const displayRequired = this._formatHypotheticalState(f.entity, f.required ?? "");
           return html`
             <div class="entity-row">
               <span class="entity-name" title="${f.entity}">${name}</span>
@@ -793,7 +811,7 @@ class EntityGuardCard extends LitElement {
                   ? html`${displayCurrent}
                       <span style="color:var(--success-color,#4caf50)">✓</span>`
                   : html`<span style="color:var(--warning-color,#ff9800)"
-                      >${displayCurrent} → ${f.required} ⚠</span
+                      >${displayCurrent} → ${displayRequired} ⚠</span
                     >`}
               </span>
             </div>
