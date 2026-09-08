@@ -540,12 +540,7 @@ class EntityGuardCard extends LitElement {
     return st.state;
   }
 
-  // Returns a display string for an entity state. When HA can translate the
-  // state (e.g. device_class gives "Detected" for "on"), shows "Detected (on)".
-  // Falls back to raw value for numerics, unavailable formatEntityState, or when
-  // the translated label is identical to the raw value (avoids "Off (off)" noise).
-  _formatStateDisplay(stateObj, rawValue) {
-    if (!stateObj || rawValue == null) return rawValue ?? "unknown";
+  _applyStateFormat(stateObj, rawValue) {
     if (!isNaN(parseFloat(rawValue))) return rawValue;
     let label = rawValue;
     if (this.hass.formatEntityState) {
@@ -557,20 +552,21 @@ class EntityGuardCard extends LitElement {
     return `${label} (${rawValue})`;
   }
 
-  // Like _formatStateDisplay but for a hypothetical state value (no live state obj).
-  // Builds a minimal fake state object from the entity's existing attributes.
+  // Returns display string for a live entity state.
+  _formatStateDisplay(stateObj, rawValue) {
+    if (!stateObj || rawValue == null) return rawValue ?? "unknown";
+    return this._applyStateFormat(stateObj, rawValue);
+  }
+
+  // Returns display string for a hypothetical state value (e.g. required/target).
+  // Builds a fake state object from the entity's existing attributes so
+  // formatEntityState can resolve device_class translations.
   _formatHypotheticalState(entityId, rawValue) {
-    if (rawValue == null) return rawValue ?? "unknown";
-    if (!isNaN(parseFloat(rawValue))) return rawValue;
+    if (rawValue == null) return "unknown";
     const existing = this.hass.states[entityId];
     if (!existing || !this.hass.formatEntityState) return rawValue;
-    const fakeState = { ...existing, state: rawValue };
-    let label = rawValue;
-    try {
-      label = this.hass.formatEntityState(fakeState) ?? rawValue;
-    } catch (e) {}
-    if (label.toLowerCase() === rawValue.toLowerCase()) return label;
-    return `${label} (${rawValue})`;
+    const fakeState = { ...existing, state: rawValue, attributes: { ...existing.attributes } };
+    return this._applyStateFormat(fakeState, rawValue);
   }
 
   _attrValue(entityId, attr) {
