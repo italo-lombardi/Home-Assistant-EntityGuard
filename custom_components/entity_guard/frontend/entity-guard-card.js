@@ -551,9 +551,11 @@ class EntityGuardCard extends LitElement {
     if (this.hass.formatEntityState) {
       try {
         label = this.hass.formatEntityState(stateObj) ?? rawValue;
-      } catch (_) {}
+      } catch (e) {
+        console.debug("[EntityGuard] formatEntityState failed:", e);
+      }
     }
-    if (label.toLowerCase() === rawValue.toLowerCase()) return rawValue;
+    if (label === rawValue) return rawValue;
     return `${label} · ${rawValue}`;
   }
 
@@ -625,7 +627,9 @@ class EntityGuardCard extends LitElement {
     if (statusEntity && this.hass.formatEntityState) {
       try {
         label = this.hass.formatEntityState(statusEntity) || label;
-      } catch (_) {}
+      } catch (e) {
+        console.debug("[EntityGuard] formatEntityState failed:", e);
+      }
     }
     const enabled = this.hass.states[refs.enabled]?.state === "on";
     const lastError = statusEntity?.attributes?.last_error;
@@ -785,7 +789,6 @@ class EntityGuardCard extends LitElement {
           const st = this.hass.states[f.entity];
           const name = st?.attributes?.friendly_name || f.entity;
           const displayCurrent = this._formatStateDisplay(st, f.current ?? "unknown");
-          const displayRequired = f.required;
           return html`
             <div class="entity-row">
               <span class="entity-name" title="${f.entity}">${name}</span>
@@ -794,7 +797,7 @@ class EntityGuardCard extends LitElement {
                   ? html`${displayCurrent}
                       <span style="color:var(--success-color,#4caf50)">✓</span>`
                   : html`<span style="color:var(--warning-color,#ff9800)"
-                      >${displayCurrent} → ${displayRequired} ⚠</span
+                      >${displayCurrent} → ${f.required} ⚠</span
                     >`}
               </span>
             </div>
