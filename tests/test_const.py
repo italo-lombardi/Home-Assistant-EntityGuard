@@ -60,7 +60,9 @@ def test_status_values_have_selector_translations() -> None:
     )
     options = strings["selector"]["status"]["options"]
     for v in const.STATUS_VALUES:
-        assert v in options, f"STATUS_VALUE '{v}' missing from strings.json selector.status.options"
+        assert v in options, (
+            f"STATUS_VALUE '{v}' missing from strings.json selector.status.options"
+        )
 
 
 def test_color_attributes_supported() -> None:
