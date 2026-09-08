@@ -4,7 +4,7 @@
 
 ### Added
 
-- **Friendly state labels in the Lovelace card**: the status chip now shows translated labels ("Armed", "Waiting on conditions") using HA's `formatEntityState` API with `STATUS_LABELS` as fallback for older HA versions. Bound-entity and condition rows show contextual labels where HA's device_class provides one (e.g. "Detected · on" for a motion sensor, "Locked · locked" for a lock); generic entities without a device_class continue showing the raw state value. Raw state values are unchanged everywhere — automations and templates are unaffected.
+- **Friendly state labels in the Lovelace card**: the status chip now shows translated labels ("Armed", "Waiting on conditions") using HA's `formatEntityState` API with `STATUS_LABELS` as fallback for older HA versions. Bound-entity and condition rows show contextual labels where HA's device_class provides one — e.g. `Clear (off)` for a smoke sensor, `Detected (on)` for a motion sensor; entities where the label is just a capitalised form of the raw value (e.g. groups) show the label only (`Off`). Non-compliant rows translate both sides of the arrow: `Detected (on) → Clear (off) ⚠`. Raw state values are unchanged everywhere — automations and templates are unaffected.
 
 ### Changed
 
