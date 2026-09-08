@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+import pathlib
+
 from custom_components.entity_guard import const
 
 
@@ -49,9 +52,6 @@ def test_entry_types() -> None:
 
 
 def test_status_values_have_selector_translations() -> None:
-    import json
-    import pathlib
-
     strings = json.loads(
         (
             pathlib.Path(__file__).parent.parent
