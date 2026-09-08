@@ -48,6 +48,21 @@ def test_entry_types() -> None:
     assert const.ENTRY_TYPE_HUB != const.ENTRY_TYPE_RULE
 
 
+def test_status_values_have_selector_translations() -> None:
+    import json
+    import pathlib
+
+    strings = json.loads(
+        (
+            pathlib.Path(__file__).parent.parent
+            / "custom_components/entity_guard/strings.json"
+        ).read_text()
+    )
+    options = strings["selector"]["status"]["options"]
+    for v in const.STATUS_VALUES:
+        assert v in options, f"STATUS_VALUE '{v}' missing from strings.json selector.status.options"
+
+
 def test_color_attributes_supported() -> None:
     assert const.ATTR_RGB_COLOR in const.SUPPORTED_ATTRIBUTES
     assert const.ATTR_COLOR_TEMP_KELVIN in const.SUPPORTED_ATTRIBUTES

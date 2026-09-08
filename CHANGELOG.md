@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.9] — 2026-09-08
+
+### Added
+
+- **Friendly state labels in the Lovelace card**: the status chip now shows translated labels ("Armed", "Waiting on conditions") using HA's `formatEntityState` API with `STATUS_LABELS` as fallback for older HA versions. Bound-entity and condition rows show contextual labels where HA's device_class provides one (e.g. "Detected · on" for a motion sensor, "Locked · locked" for a lock); generic entities without a device_class continue showing the raw state value. Raw state values are unchanged everywhere — automations and templates are unaffected.
 
 ### Changed
 
@@ -8,6 +12,7 @@
 
 ### Fixed
 
+- `master_disabled` status value was missing from the English (`strings.json`) selector translations; other locales (de, ja, etc.) already had it. The config flow rule-status filter now shows "Master disabled" in English.
 - Device lookup no longer trips the Home Assistant deprecation warning about `device_registry.async_get_device` on newer cores.
 
 ### CI
@@ -17,6 +22,7 @@
 
 ### Tests
 
+- Added `test_status_values_have_selector_translations` in `test_const.py`: asserts every `STATUS_VALUE` constant has a corresponding entry in `strings.json` `selector.status.options`, catching future sync gaps at CI time.
 - Silenced the recurring `coroutine 'RuleEngine.async_evaluate' was never awaited` warning by closing coroutines handed to a patched `hass.async_create_task`.
 
 ### i18n
