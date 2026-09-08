@@ -798,7 +798,7 @@ class EntityGuardCard extends LitElement {
           const st = this.hass.states[f.entity];
           const name = st?.attributes?.friendly_name || f.entity;
           const displayCurrent = this._formatStateDisplay(st, f.current ?? "unknown");
-          const displayRequired = this._formatHypotheticalState(f.entity, f.required ?? "");
+          const displayRequired = this._formatHypotheticalState(f.entity, f.required ?? null);
           return html`
             <div class="entity-row">
               <span class="entity-name" title="${f.entity}">${name}</span>
