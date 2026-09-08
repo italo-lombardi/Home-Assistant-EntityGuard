@@ -551,9 +551,7 @@ class EntityGuardCard extends LitElement {
     if (this.hass.formatEntityState) {
       try {
         label = this.hass.formatEntityState(stateObj) ?? rawValue;
-      } catch (e) {
-        console.debug("[EntityGuard] formatEntityState failed:", e);
-      }
+      } catch (e) {}
     }
     if (label === rawValue) return rawValue;
     return `${label} · ${rawValue}`;
@@ -627,9 +625,7 @@ class EntityGuardCard extends LitElement {
     if (statusEntity && this.hass.formatEntityState) {
       try {
         label = this.hass.formatEntityState(statusEntity) || label;
-      } catch (e) {
-        console.debug("[EntityGuard] formatEntityState failed:", e);
-      }
+      } catch (e) {}
     }
     const enabled = this.hass.states[refs.enabled]?.state === "on";
     const lastError = statusEntity?.attributes?.last_error;
