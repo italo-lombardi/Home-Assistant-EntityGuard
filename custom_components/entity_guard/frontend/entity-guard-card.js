@@ -1,5 +1,5 @@
 /**
- * Entity Guard Card v0.1.1
+ * Entity Guard Card v0.1.2
  * Custom Lovelace card for the Home Assistant Entity Guard integration.
  *
  * Config:
@@ -540,6 +540,23 @@ class EntityGuardCard extends LitElement {
     return st.state;
   }
 
+  // Returns a display string for an entity state. When HA can translate the
+  // state (e.g. device_class gives "Detected" for "on"), shows "Detected · on".
+  // Falls back to raw value for numerics, unavailable formatEntityState, or when
+  // the translated label is identical to the raw value (avoids "On · on" noise).
+  _formatStateDisplay(stateObj, rawValue) {
+    if (!stateObj || rawValue == null) return rawValue ?? "unknown";
+    if (!isNaN(parseFloat(rawValue))) return rawValue;
+    let label = rawValue;
+    if (this.hass.formatEntityState) {
+      try {
+        label = this.hass.formatEntityState(stateObj) ?? rawValue;
+      } catch (e) {}
+    }
+    if (label === rawValue) return rawValue;
+    return `${label} · ${rawValue}`;
+  }
+
   _attrValue(entityId, attr) {
     if (!entityId) return null;
     return this.hass.states[entityId]?.attributes?.[attr] ?? null;
@@ -603,9 +620,14 @@ class EntityGuardCard extends LitElement {
 
     const status = this._stateValue(refs.status, "conditional");
     const color = STATUS_COLORS[status] || STATUS_COLORS.conditional;
-    const label = STATUS_LABELS[status] || status;
-    const enabled = this.hass.states[refs.enabled]?.state === "on";
     const statusEntity = refs.status ? this.hass.states[refs.status] : null;
+    let label = STATUS_LABELS[status] || status;
+    if (statusEntity && this.hass.formatEntityState) {
+      try {
+        label = this.hass.formatEntityState(statusEntity) || label;
+      } catch (e) {}
+    }
+    const enabled = this.hass.states[refs.enabled]?.state === "on";
     const lastError = statusEntity?.attributes?.last_error;
     const consecutiveErrors = statusEntity?.attributes?.consecutive_errors;
 
@@ -732,16 +754,17 @@ class EntityGuardCard extends LitElement {
           const st = this.hass.states[id];
           const name = st?.attributes?.friendly_name || id;
           const state = st ? st.state : "unknown";
+          const displayState = this._formatStateDisplay(st, state);
           const compliant = !triggerStates || !triggerStates.includes(state);
           return html`
             <div class="entity-row">
               <span class="entity-name" title="${id}">${name}</span>
               <span class="entity-state">
                 ${compliant
-                  ? html`${state}
+                  ? html`${displayState}
                       <span style="color:var(--success-color,#4caf50)">✓</span>`
                   : html`<span style="color:var(--warning-color,#ff9800)"
-                      >${state} → ${refs.targetState} ⚠</span
+                      >${displayState} → ${refs.targetState} ⚠</span
                     >`}
               </span>
             </div>
@@ -761,15 +784,16 @@ class EntityGuardCard extends LitElement {
         ${flags.map((f) => {
           const st = this.hass.states[f.entity];
           const name = st?.attributes?.friendly_name || f.entity;
+          const displayCurrent = this._formatStateDisplay(st, f.current ?? "unknown");
           return html`
             <div class="entity-row">
               <span class="entity-name" title="${f.entity}">${name}</span>
               <span class="entity-state">
                 ${f.matches
-                  ? html`${f.current ?? "unknown"}
+                  ? html`${displayCurrent}
                       <span style="color:var(--success-color,#4caf50)">✓</span>`
                   : html`<span style="color:var(--warning-color,#ff9800)"
-                      >${f.current ?? "unknown"} → ${f.required} ⚠</span
+                      >${displayCurrent} → ${f.required} ⚠</span
                     >`}
               </span>
             </div>
