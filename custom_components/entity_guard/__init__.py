@@ -143,9 +143,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 entry.entry_id,
             )
             return False
-        # Restore persisted per-rule enabled state (written by panic_stop).
-        if not entry.options.get("enabled", True):
-            engine.set_enabled(False)
+        # Per-rule enabled state is restored from the Store inside engine.async_setup
+        # (blob_to_runtime). It is the single owner — the switch and panic_stop both
+        # persist through the engine/Store, so no second restore from options is needed.
         hass.data[DOMAIN]["engines"][entry.entry_id] = engine
         _LOGGER.debug(
             "Rule engine ready: rule_id=%s targets=%s mode=%s",
@@ -236,7 +236,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Reload rule entry when its data changes (rename, mode edits, etc.)."""
+    """Reload rule entry when its data changes (rename, mode edits, etc.).
+
+    Slider (number.*) writes persist to options but apply live already, so they
+    mark the entry to skip the reload — reloading would needlessly rebuild every
+    platform, possibly tearing down a rule mid-enforcement.
+
+    Safe only because HA fires update listeners eagerly/inline: async_update_entry
+    schedules each listener via hass.async_create_task with eager_start=True, which
+    runs the coroutine synchronously to its first await. The skip-check + discard
+    below sit before any await, so a flush's mark is consumed by that flush's own
+    listener within the same async_update_entry call — a competing update on the
+    same entry_id can't run in between and inherit the mark. If HA ever switches to
+    non-eager listener dispatch, that guarantee breaks and the mark needs a
+    per-update token instead of a bare entry_id set.
+    """
+    from .number import SKIP_RELOAD_KEY
+
+    skip = hass.data.get(DOMAIN, {}).get(SKIP_RELOAD_KEY)
+    if skip is not None and entry.entry_id in skip:
+        skip.discard(entry.entry_id)
+        return
     await hass.config_entries.async_reload(entry.entry_id)
 
 

@@ -15,6 +15,7 @@ from homeassistant.helpers.dispatcher import (
 )
 from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_call_later
 
 from .const import (
     CONF_DEBOUNCE_SECONDS,
@@ -31,7 +32,6 @@ from .const import (
     MAX_RATE_LIMIT,
     MIN_DEBOUNCE_SECONDS,
     MIN_DELAY_SECONDS,
-    MIN_RATE_LIMIT,
     signal_rule_update,
 )
 
@@ -39,6 +39,17 @@ if TYPE_CHECKING:  # pragma: no cover
     from .rule_engine import RuleEngine
 
 _LOGGER = logging.getLogger(__name__)
+
+# Slider writes to entry.options are debounced and coalesced per config entry so a
+# drag (many rapid set_value calls) collapses to one async_update_entry, and two
+# different sliders moved within the window persist together.
+_NUMBER_WRITE_DEBOUNCE_SECONDS = 2
+_PENDING_WRITES_KEY = "pending_number_writes"
+# Entry ids whose next options-update was written by a slider flush. The update
+# listener consumes this to skip the entry reload: the slider already applied its
+# value live (setattr + dispatcher), so a reload would tear down and rebuild all
+# platforms — possibly mid-enforcement — to produce an engine that's already current.
+SKIP_RELOAD_KEY = "number_write_skip_reload"
 
 
 def _device_info(entry: ConfigEntry) -> DeviceInfo:
@@ -114,8 +125,20 @@ class EntityGuardNumberBase(NumberEntity):
                 self._handle_update,
             )
         )
+        self.async_on_remove(self._cancel_pending_write)
         self._attr_available = True
         self.async_write_ha_state()
+
+    @callback
+    def _cancel_pending_write(self) -> None:
+        """Cancel a pending debounced options write for this entry (on unload).
+
+        Prevents a late flush from calling async_update_entry on a torn-down entry.
+        """
+        pending = self.hass.data.get(DOMAIN, {}).get(_PENDING_WRITES_KEY, {})
+        state = pending.pop(self._entry.entry_id, None)
+        if state is not None and state["cancel"] is not None:
+            state["cancel"]()
 
     @callback
     def _handle_update(self, *args: object) -> None:
@@ -132,14 +155,21 @@ class EntityGuardNumberBase(NumberEntity):
         return float(value)
 
     async def async_set_native_value(self, value: float) -> None:
-        """Apply a new value to the running engine without persisting to config entry.
+        """Apply a new value live and persist it to the config entry options.
 
-        Writes are applied live via setattr so they take effect immediately. The
-        canonical value lives in entry.data (set via the options flow); writing to
-        data/options here would trigger _async_update_listener → full entry reload,
-        tearing down and rebuilding all five platforms for a trivial slider change.
+        The value is applied to the running engine immediately via setattr (so the
+        change takes effect and the UI reflects it at once) and, on a short debounce,
+        written to entry.options via async_update_entry. Persisting to options — which
+        parse_rule_config merges over data — is what makes the value survive a reload
+        or restart.
+
+        The options write fires the entry's update listener, which would normally
+        reload the entry. Because the value is already applied live, the flush marks
+        the entry (SKIP_RELOAD_KEY) so the listener skips that reload — a slider nudge
+        must not tear down and rebuild all platforms, possibly mid-enforcement. The
+        debounce still coalesces a drag (and concurrent sliders) into one write.
         """
-        coerced = int(value)
+        coerced = max(0, int(value))
 
         config = getattr(self._engine, "config", None)
         if config is not None:  # pragma: no branch
@@ -150,6 +180,49 @@ class EntityGuardNumberBase(NumberEntity):
 
         async_dispatcher_send(
             self.hass, signal_rule_update(self._engine.config.unique_id)
+        )
+        self._schedule_options_write(self._config_key, coerced)
+
+    def _schedule_options_write(self, key: str, value: int) -> None:
+        """Queue a coalesced, debounced write of `key`=`value` to entry.options."""
+        pending = self.hass.data.setdefault(DOMAIN, {}).setdefault(
+            _PENDING_WRITES_KEY, {}
+        )
+        state = pending.setdefault(self._entry.entry_id, {"values": {}, "cancel": None})
+        state["values"][key] = value
+        if state["cancel"] is not None:
+            state["cancel"]()
+
+        entry = self._entry
+
+        @callback
+        def _flush(_now: object) -> None:
+            entry_pending = self.hass.data.get(DOMAIN, {}).get(_PENDING_WRITES_KEY, {})
+            # Pop the queue BEFORE async_update_entry below: the write triggers no
+            # reload (the listener skips it), but on a *real* options change HA still
+            # re-runs setup; keeping the pop first means a reload's unload path finds
+            # an empty pending map, so _cancel_pending_write can't double-cancel or
+            # drop a fresh write. Do not reorder the pop after the write.
+            queued = entry_pending.pop(entry.entry_id, None)
+            if not queued or not queued["values"]:
+                return
+            # Read options fresh at flush time so concurrent slider writes don't
+            # clobber each other with a stale snapshot captured at call time.
+            new_options = {**(entry.options or {}), **queued["values"]}
+            if new_options == (entry.options or {}):
+                # Re-set to the already-persisted value: async_update_entry would
+                # return False (no diff) and fire nothing, but skip the call entirely
+                # so we also never mark SKIP_RELOAD_KEY for a write that won't happen.
+                return
+            # Mark this update as slider-originated so the listener skips the reload
+            # (the value is already live via setattr + dispatcher above).
+            self.hass.data.setdefault(DOMAIN, {}).setdefault(
+                SKIP_RELOAD_KEY, set()
+            ).add(entry.entry_id)
+            self.hass.config_entries.async_update_entry(entry, options=new_options)
+
+        state["cancel"] = async_call_later(
+            self.hass, _NUMBER_WRITE_DEBOUNCE_SECONDS, _flush
         )
 
 
@@ -201,7 +274,9 @@ class EntityGuardMaxEnforcementsNumber(EntityGuardNumberBase):
             suffix="max_enforcements_per_minute",
             config_key=CONF_MAX_ENFORCEMENTS_PER_MINUTE,
             default=DEFAULT_MAX_ENFORCEMENTS_PER_MINUTE,
-            min_value=MIN_RATE_LIMIT,
+            # 0 disables rate limiting (matches the options flow). The engine treats
+            # 0 as "no limit"; MIN_RATE_LIMIT applies only to the flow's own field.
+            min_value=0,
             max_value=MAX_RATE_LIMIT,
             unit="/min",
         )

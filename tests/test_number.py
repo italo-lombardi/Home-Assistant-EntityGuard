@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from unittest.mock import MagicMock
 
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+)
 
 from custom_components.entity_guard.const import (
     CONF_DEBOUNCE_SECONDS,
@@ -46,6 +51,12 @@ def _make_rule_entry(**data_overrides):
     return MockConfigEntry(domain=DOMAIN, data=data, title="Rule")
 
 
+async def _flush_debounce(hass: HomeAssistant):
+    """Advance time past the number-write debounce window and let it flush."""
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=5))
+    await hass.async_block_till_done()
+
+
 # ---------------------------------------------------------------------------
 # EntityGuardDelaySecondsNumber
 # ---------------------------------------------------------------------------
@@ -75,8 +86,11 @@ async def test_delay_set_native_value(hass: HomeAssistant):
     num._attr_available = True
     num.async_write_ha_state = MagicMock()
     await num.async_set_native_value(20.0)
+    # Applied live to engine immediately.
     assert engine.config.delay_seconds == 20
-    # Value applied live to engine; not written to entry.data to avoid triggering reload.
+    # Persisted to options on debounce so it survives reload/restart.
+    await _flush_debounce(hass)
+    assert entry.options[CONF_DELAY_SECONDS] == 20
 
 
 # ---------------------------------------------------------------------------
@@ -101,7 +115,8 @@ async def test_debounce_set_native_value(hass: HomeAssistant):
     num.async_write_ha_state = MagicMock()
     await num.async_set_native_value(120.0)
     assert engine.config.debounce_seconds == 120
-    # Value applied live to engine; not written to entry.data to avoid triggering reload.
+    await _flush_debounce(hass)
+    assert entry.options[CONF_DEBOUNCE_SECONDS] == 120
 
 
 # ---------------------------------------------------------------------------
@@ -126,7 +141,118 @@ async def test_max_enforcements_set_native_value(hass: HomeAssistant):
     num.async_write_ha_state = MagicMock()
     await num.async_set_native_value(3.0)
     assert engine.config.max_enforcements_per_minute == 3
-    # Value applied live to engine; not written to entry.data to avoid triggering reload.
+    await _flush_debounce(hass)
+    assert entry.options[CONF_MAX_ENFORCEMENTS_PER_MINUTE] == 3
+
+
+async def test_max_enforcements_accepts_zero(hass: HomeAssistant):
+    """0 disables rate limiting; the UI floor allows it and it persists as 0."""
+    entry = _make_rule_entry()
+    entry.add_to_hass(hass)
+    engine = _make_engine(rate=10)
+    num = EntityGuardMaxEnforcementsNumber(entry, engine)
+    assert num.native_min_value == 0
+    num.hass = hass
+    num._attr_available = True
+    num.async_write_ha_state = MagicMock()
+    await num.async_set_native_value(0.0)
+    assert engine.config.max_enforcements_per_minute == 0
+    await _flush_debounce(hass)
+    assert entry.options[CONF_MAX_ENFORCEMENTS_PER_MINUTE] == 0
+
+
+async def test_two_sliders_within_debounce_persist_together(hass: HomeAssistant):
+    """Two different sliders moved in the debounce window coalesce into one write
+    that persists both keys (lost-update regression guard)."""
+    entry = _make_rule_entry()
+    entry.add_to_hass(hass)
+    engine = _make_engine(delay=0, debounce=60)
+    delay_num = EntityGuardDelaySecondsNumber(entry, engine)
+    debounce_num = EntityGuardDebounceSecondsNumber(entry, engine)
+    for n in (delay_num, debounce_num):
+        n.hass = hass
+        n._attr_available = True
+        n.async_write_ha_state = MagicMock()
+    await delay_num.async_set_native_value(45.0)
+    await debounce_num.async_set_native_value(90.0)
+    await _flush_debounce(hass)
+    assert entry.options[CONF_DELAY_SECONDS] == 45
+    assert entry.options[CONF_DEBOUNCE_SECONDS] == 90
+
+
+async def test_unload_cancels_pending_write(hass: HomeAssistant):
+    """Removing the entity cancels a queued debounced write so a late flush can't
+    touch a torn-down entry."""
+    entry = _make_rule_entry()
+    entry.add_to_hass(hass)
+    engine = _make_engine(delay=0)
+    num = EntityGuardDelaySecondsNumber(entry, engine)
+    num.hass = hass
+    num.async_write_ha_state = MagicMock()
+    await num.async_added_to_hass()
+    await num.async_set_native_value(30.0)
+    # A write is pending (not yet flushed).
+    pending = hass.data[DOMAIN]["pending_number_writes"]
+    assert entry.entry_id in pending
+    # Fire the on_remove callbacks (as HA does on unload).
+    num._cancel_pending_write()
+    assert entry.entry_id not in pending
+    # The cancelled timer must not persist anything.
+    await _flush_debounce(hass)
+    assert CONF_DELAY_SECONDS not in entry.options
+
+
+async def test_flush_noop_when_queue_empty(hass: HomeAssistant):
+    """A stray flush with no queued values is a no-op (defensive guard)."""
+    entry = _make_rule_entry()
+    entry.add_to_hass(hass)
+    engine = _make_engine(delay=0)
+    num = EntityGuardDelaySecondsNumber(entry, engine)
+    num.hass = hass
+    num.async_write_ha_state = MagicMock()
+    await num.async_set_native_value(30.0)
+    # Drop the queued values but keep the entry key, then let the timer fire.
+    hass.data[DOMAIN]["pending_number_writes"][entry.entry_id]["values"] = {}
+    await _flush_debounce(hass)
+    assert CONF_DELAY_SECONDS not in entry.options
+
+
+async def test_flush_marks_entry_to_skip_reload(hass: HomeAssistant):
+    """The flush that writes options must mark the entry so the update listener
+    skips the reload (the value is already applied live)."""
+    from custom_components.entity_guard.number import SKIP_RELOAD_KEY
+
+    entry = _make_rule_entry()
+    entry.add_to_hass(hass)
+    engine = _make_engine(delay=0)
+    num = EntityGuardDelaySecondsNumber(entry, engine)
+    num.hass = hass
+    num._attr_available = True
+    num.async_write_ha_state = MagicMock()
+    await num.async_set_native_value(42.0)
+    await _flush_debounce(hass)
+    assert entry.options[CONF_DELAY_SECONDS] == 42
+    assert entry.entry_id in hass.data[DOMAIN][SKIP_RELOAD_KEY]
+
+
+async def test_flush_skips_write_when_value_unchanged(hass: HomeAssistant):
+    """Re-setting a slider to the value already in options writes nothing (so the
+    update listener never fires for a no-op) and leaves no skip-reload mark."""
+    from custom_components.entity_guard.number import SKIP_RELOAD_KEY
+
+    entry = _make_rule_entry(**{CONF_DELAY_SECONDS: 15})
+    entry.add_to_hass(hass)
+    # Seed options with the value we'll "re-set" so the flush sees no change.
+    hass.config_entries.async_update_entry(entry, options={CONF_DELAY_SECONDS: 15})
+    engine = _make_engine(delay=15)
+    num = EntityGuardDelaySecondsNumber(entry, engine)
+    num.hass = hass
+    num._attr_available = True
+    num.async_write_ha_state = MagicMock()
+    await num.async_set_native_value(15.0)
+    await _flush_debounce(hass)
+    assert entry.options == {CONF_DELAY_SECONDS: 15}
+    assert entry.entry_id not in hass.data.get(DOMAIN, {}).get(SKIP_RELOAD_KEY, set())
 
 
 # ---------------------------------------------------------------------------

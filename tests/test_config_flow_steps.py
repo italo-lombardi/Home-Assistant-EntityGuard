@@ -651,6 +651,43 @@ async def test_options_edit_advanced_save(hass: HomeAssistant, options_rule_entr
     assert options_rule_entry.data[CONF_DEBOUNCE_SECONDS] == 45
 
 
+async def test_options_save_clears_stale_slider_options(
+    hass: HomeAssistant, options_rule_entry
+):
+    """A deliberate flow edit must not be masked by a slider value the number
+    entities persisted into options. HA blanks entry.options on options-flow
+    finish, so any stale slider key is gone and the edit in data wins via
+    parse_rule_config."""
+    hass.config_entries.async_update_entry(
+        options_rule_entry,
+        options={
+            CONF_DELAY_SECONDS: 999,
+            CONF_DEBOUNCE_SECONDS: 999,
+            CONF_MAX_ENFORCEMENTS_PER_MINUTE: 999,
+        },
+    )
+    res = await hass.config_entries.options.async_init(options_rule_entry.entry_id)
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"], {"next_step_id": "edit_advanced"}
+    )
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"],
+        {
+            CONF_DEBOUNCE_ENABLED: True,
+            CONF_DEBOUNCE_SECONDS: 45,
+            CONF_MAX_ENFORCEMENTS_PER_MINUTE: 8,
+        },
+    )
+    assert res["type"] == FlowResultType.CREATE_ENTRY
+    opts = options_rule_entry.options
+    assert CONF_DELAY_SECONDS not in opts
+    assert CONF_DEBOUNCE_SECONDS not in opts
+    assert CONF_MAX_ENFORCEMENTS_PER_MINUTE not in opts
+    # The edit landed in data, no longer masked by the stale option value.
+    assert options_rule_entry.data[CONF_DEBOUNCE_SECONDS] == 45
+    assert options_rule_entry.data[CONF_MAX_ENFORCEMENTS_PER_MINUTE] == 8
+
+
 async def test_options_edit_flags_clear(hass: HomeAssistant, options_rule_entry):
     res = await hass.config_entries.options.async_init(options_rule_entry.entry_id)
     res = await hass.config_entries.options.async_configure(
