@@ -241,6 +241,15 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> Non
     Slider (number.*) writes persist to options but apply live already, so they
     mark the entry to skip the reload — reloading would needlessly rebuild every
     platform, possibly tearing down a rule mid-enforcement.
+
+    Safe only because HA fires update listeners eagerly/inline: async_update_entry
+    schedules each listener via hass.async_create_task with eager_start=True, which
+    runs the coroutine synchronously to its first await. The skip-check + discard
+    below sit before any await, so a flush's mark is consumed by that flush's own
+    listener within the same async_update_entry call — a competing update on the
+    same entry_id can't run in between and inherit the mark. If HA ever switches to
+    non-eager listener dispatch, that guarantee breaks and the mark needs a
+    per-update token instead of a bare entry_id set.
     """
     from .number import SKIP_RELOAD_KEY
 
