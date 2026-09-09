@@ -201,8 +201,10 @@ def main() -> int:
     rate_e = by_unique_suffix("_max_enforcements_per_minute")
     enabled_e = by_unique_suffix("_enabled")
 
-    print(f"Resolved entities:\n  delay={delay_e}\n  debounce={debounce_e}\n"
-          f"  rate={rate_e}\n  enabled={enabled_e}")
+    print(
+        f"Resolved entities:\n  delay={delay_e}\n  debounce={debounce_e}\n"
+        f"  rate={rate_e}\n  enabled={enabled_e}"
+    )
     if not all([delay_e, debounce_e, rate_e, enabled_e]):
         print("Could not resolve all rule entities; is the rule loaded?")
         return 2
