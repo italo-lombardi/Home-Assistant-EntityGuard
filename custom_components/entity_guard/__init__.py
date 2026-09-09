@@ -236,7 +236,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Reload rule entry when its data changes (rename, mode edits, etc.)."""
+    """Reload rule entry when its data changes (rename, mode edits, etc.).
+
+    Slider (number.*) writes persist to options but apply live already, so they
+    mark the entry to skip the reload — reloading would needlessly rebuild every
+    platform, possibly tearing down a rule mid-enforcement.
+    """
+    from .number import SKIP_RELOAD_KEY
+
+    skip = hass.data.get(DOMAIN, {}).get(SKIP_RELOAD_KEY)
+    if skip is not None and entry.entry_id in skip:
+        skip.discard(entry.entry_id)
+        return
     await hass.config_entries.async_reload(entry.entry_id)
 
 

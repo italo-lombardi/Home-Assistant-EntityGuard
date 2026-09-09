@@ -126,6 +126,81 @@ async def test_update_listener_reloads_entry(hass: HomeAssistant, rule_entry):
     mock_reload.assert_awaited_once_with(rule_entry.entry_id)
 
 
+async def test_update_listener_skips_reload_for_slider_write(
+    hass: HomeAssistant, rule_entry
+):
+    """A slider flush marks the entry (SKIP_RELOAD_KEY); the listener must skip the
+    reload (value already applied live) and clear the mark so the next real change
+    still reloads."""
+    from custom_components.entity_guard.number import SKIP_RELOAD_KEY
+
+    rule_entry.add_to_hass(hass)
+    hass.data.setdefault(DOMAIN, {}).setdefault(SKIP_RELOAD_KEY, set()).add(
+        rule_entry.entry_id
+    )
+    with patch.object(
+        hass.config_entries, "async_reload", new_callable=AsyncMock
+    ) as mock_reload:
+        await _async_update_listener(hass, rule_entry)
+    mock_reload.assert_not_awaited()
+    # Mark consumed — a subsequent non-slider update reloads normally.
+    assert rule_entry.entry_id not in hass.data[DOMAIN][SKIP_RELOAD_KEY]
+    with patch.object(
+        hass.config_entries, "async_reload", new_callable=AsyncMock
+    ) as mock_reload2:
+        await _async_update_listener(hass, rule_entry)
+    mock_reload2.assert_awaited_once_with(rule_entry.entry_id)
+
+
+async def test_slider_flush_end_to_end_skips_reload_but_real_change_reloads(
+    hass: HomeAssistant, rule_entry
+):
+    """End-to-end: a real slider flush (via the registered update listener) persists
+    the value without reloading, while a subsequent unrelated update still reloads.
+
+    HA fires update listeners as eager tasks, so the flush's listener consumes the
+    SKIP_RELOAD_KEY mark inline — a competing update on the same entry can't inherit
+    a stale mark and wrongly skip its reload.
+    """
+    from datetime import timedelta
+
+    from homeassistant.util import dt as dt_util
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    from custom_components.entity_guard.const import CONF_DELAY_SECONDS
+    from custom_components.entity_guard.number import (
+        SKIP_RELOAD_KEY,
+        EntityGuardDelaySecondsNumber,
+    )
+
+    rule_entry.add_to_hass(hass)
+    # Register the listener exactly as async_setup_entry does for a rule entry.
+    rule_entry.add_update_listener(_async_update_listener)
+
+    engine = MagicMock()
+    engine.config.unique_id = "test-rule-uuid"
+    engine.config.delay_seconds = 0
+    num = EntityGuardDelaySecondsNumber(rule_entry, engine)
+    num.hass = hass
+    num._attr_available = True
+    num.async_write_ha_state = MagicMock()
+
+    with patch.object(
+        hass.config_entries, "async_reload", new_callable=AsyncMock
+    ) as mock_reload:
+        await num.async_set_native_value(42.0)
+        async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=5))
+        await hass.async_block_till_done()
+        # Persisted, no reload, mark consumed inline (not leaked).
+        assert rule_entry.options[CONF_DELAY_SECONDS] == 42
+        assert rule_entry.entry_id not in hass.data[DOMAIN].get(SKIP_RELOAD_KEY, set())
+        mock_reload.assert_not_awaited()
+        # A competing, non-slider change still reloads.
+        hass.config_entries.async_update_entry(rule_entry, title="Renamed")
+        await hass.async_block_till_done()
+    mock_reload.assert_awaited_once_with(rule_entry.entry_id)
+
+
 # ---------------------------------------------------------------------------
 # device-name sync on setup
 # ---------------------------------------------------------------------------

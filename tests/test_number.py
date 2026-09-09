@@ -217,6 +217,44 @@ async def test_flush_noop_when_queue_empty(hass: HomeAssistant):
     assert CONF_DELAY_SECONDS not in entry.options
 
 
+async def test_flush_marks_entry_to_skip_reload(hass: HomeAssistant):
+    """The flush that writes options must mark the entry so the update listener
+    skips the reload (the value is already applied live)."""
+    from custom_components.entity_guard.number import SKIP_RELOAD_KEY
+
+    entry = _make_rule_entry()
+    entry.add_to_hass(hass)
+    engine = _make_engine(delay=0)
+    num = EntityGuardDelaySecondsNumber(entry, engine)
+    num.hass = hass
+    num._attr_available = True
+    num.async_write_ha_state = MagicMock()
+    await num.async_set_native_value(42.0)
+    await _flush_debounce(hass)
+    assert entry.options[CONF_DELAY_SECONDS] == 42
+    assert entry.entry_id in hass.data[DOMAIN][SKIP_RELOAD_KEY]
+
+
+async def test_flush_skips_write_when_value_unchanged(hass: HomeAssistant):
+    """Re-setting a slider to the value already in options writes nothing (so the
+    update listener never fires for a no-op) and leaves no skip-reload mark."""
+    from custom_components.entity_guard.number import SKIP_RELOAD_KEY
+
+    entry = _make_rule_entry(**{CONF_DELAY_SECONDS: 15})
+    entry.add_to_hass(hass)
+    # Seed options with the value we'll "re-set" so the flush sees no change.
+    hass.config_entries.async_update_entry(entry, options={CONF_DELAY_SECONDS: 15})
+    engine = _make_engine(delay=15)
+    num = EntityGuardDelaySecondsNumber(entry, engine)
+    num.hass = hass
+    num._attr_available = True
+    num.async_write_ha_state = MagicMock()
+    await num.async_set_native_value(15.0)
+    await _flush_debounce(hass)
+    assert entry.options == {CONF_DELAY_SECONDS: 15}
+    assert entry.entry_id not in hass.data.get(DOMAIN, {}).get(SKIP_RELOAD_KEY, set())
+
+
 # ---------------------------------------------------------------------------
 # async_setup_entry
 # ---------------------------------------------------------------------------

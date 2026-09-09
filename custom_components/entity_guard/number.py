@@ -45,6 +45,11 @@ _LOGGER = logging.getLogger(__name__)
 # different sliders moved within the window persist together.
 _NUMBER_WRITE_DEBOUNCE_SECONDS = 2
 _PENDING_WRITES_KEY = "pending_number_writes"
+# Entry ids whose next options-update was written by a slider flush. The update
+# listener consumes this to skip the entry reload: the slider already applied its
+# value live (setattr + dispatcher), so a reload would tear down and rebuild all
+# platforms — possibly mid-enforcement — to produce an engine that's already current.
+SKIP_RELOAD_KEY = "number_write_skip_reload"
 
 
 def _device_info(entry: ConfigEntry) -> DeviceInfo:
@@ -156,8 +161,13 @@ class EntityGuardNumberBase(NumberEntity):
         change takes effect and the UI reflects it at once) and, on a short debounce,
         written to entry.options via async_update_entry. Persisting to options — which
         parse_rule_config merges over data — is what makes the value survive a reload
-        or restart. Writing on every keystroke would reload the entry repeatedly; the
-        debounce coalesces a slider drag (and concurrent sliders) into one write.
+        or restart.
+
+        The options write fires the entry's update listener, which would normally
+        reload the entry. Because the value is already applied live, the flush marks
+        the entry (SKIP_RELOAD_KEY) so the listener skips that reload — a slider nudge
+        must not tear down and rebuild all platforms, possibly mid-enforcement. The
+        debounce still coalesces a drag (and concurrent sliders) into one write.
         """
         coerced = max(0, int(value))
 
@@ -193,9 +203,17 @@ class EntityGuardNumberBase(NumberEntity):
                 return
             # Read options fresh at flush time so concurrent slider writes don't
             # clobber each other with a stale snapshot captured at call time.
-            self.hass.config_entries.async_update_entry(
-                entry, options={**(entry.options or {}), **queued["values"]}
-            )
+            new_options = {**(entry.options or {}), **queued["values"]}
+            if new_options == (entry.options or {}):
+                # Nothing actually changed (value re-set to its current one); skip
+                # the write so we don't fire the update listener for a no-op.
+                return
+            # Mark this update as slider-originated so the listener skips the reload
+            # (the value is already live via setattr + dispatcher above).
+            self.hass.data.setdefault(DOMAIN, {}).setdefault(
+                SKIP_RELOAD_KEY, set()
+            ).add(entry.entry_id)
+            self.hass.config_entries.async_update_entry(entry, options=new_options)
 
         state["cancel"] = async_call_later(
             self.hass, _NUMBER_WRITE_DEBOUNCE_SECONDS, _flush
