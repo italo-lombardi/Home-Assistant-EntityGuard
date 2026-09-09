@@ -198,6 +198,11 @@ class EntityGuardNumberBase(NumberEntity):
         @callback
         def _flush(_now: object) -> None:
             entry_pending = self.hass.data.get(DOMAIN, {}).get(_PENDING_WRITES_KEY, {})
+            # Pop the queue BEFORE async_update_entry below: the write triggers no
+            # reload (the listener skips it), but on a *real* options change HA still
+            # re-runs setup; keeping the pop first means a reload's unload path finds
+            # an empty pending map, so _cancel_pending_write can't double-cancel or
+            # drop a fresh write. Do not reorder the pop after the write.
             queued = entry_pending.pop(entry.entry_id, None)
             if not queued or not queued["values"]:
                 return
@@ -205,8 +210,9 @@ class EntityGuardNumberBase(NumberEntity):
             # clobber each other with a stale snapshot captured at call time.
             new_options = {**(entry.options or {}), **queued["values"]}
             if new_options == (entry.options or {}):
-                # Nothing actually changed (value re-set to its current one); skip
-                # the write so we don't fire the update listener for a no-op.
+                # Re-set to the already-persisted value: async_update_entry would
+                # return False (no diff) and fire nothing, but skip the call entirely
+                # so we also never mark SKIP_RELOAD_KEY for a write that won't happen.
                 return
             # Mark this update as slider-originated so the listener skips the reload
             # (the value is already live via setattr + dispatcher above).
