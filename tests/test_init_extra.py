@@ -714,13 +714,14 @@ async def test_register_resource_non_storage_collection_skips_delete(
     resources.async_delete_item.assert_not_awaited()
 
 
-async def test_setup_rule_entry_restores_disabled_from_options(
+async def test_setup_rule_entry_does_not_force_disable_from_options(
     hass: HomeAssistant, rule_entry
 ):
-    """When entry.options['enabled']=False, engine.set_enabled(False) is called on setup."""
+    """Setup must NOT restore enabled from entry.options — the Store is the single
+    owner (restored in engine.async_setup). A stale options['enabled']=False (e.g.
+    left by an older panic_stop) must not silently re-disable a re-enabled rule."""
     from custom_components.entity_guard import async_setup_entry
 
-    # Set enabled=False in options (written by panic_stop)
     rule_entry.add_to_hass(hass)
     hass.config_entries.async_update_entry(
         rule_entry, options={**rule_entry.options, "enabled": False}
@@ -759,4 +760,4 @@ async def test_setup_rule_entry_restores_disabled_from_options(
         result = await async_setup_entry(hass, rule_entry)
 
     assert result is True
-    mock_set_enabled.assert_called_once_with(False)
+    mock_set_enabled.assert_not_called()

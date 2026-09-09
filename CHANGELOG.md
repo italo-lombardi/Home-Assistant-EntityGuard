@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.0] — 2026-09-09
+
+### Fixed
+
+- **Number sliders no longer reset on restart/reload.** The `number.<rule>_delay_seconds`, `number.<rule>_debounce_seconds`, and `number.<rule>_max_enforcements_per_minute` entities previously applied a change only to the running engine — the value was lost on the next Home Assistant restart or config-entry reload, silently reverting to the value from the original config flow. Slider values are now persisted to the config entry's options (debounced and coalesced so a drag collapses to a single write) and restored on setup, so an adjustment survives a restart.
+- **Re-enabled rules no longer silently re-disable after a panic stop + restart.** Per-rule enabled state is owned by the runtime Store (written by the enable switch and by `panic_stop`). Setup also restored `enabled` from `entry.options`, but only `panic_stop` ever wrote that key — so after a panic stop, turning a rule back on, and restarting, the stale `options["enabled"]=False` re-disabled the rule. Setup no longer reads `enabled` from options; the Store is the single owner, and `panic_stop` no longer writes the redundant options key.
+
+### Changed
+
+- **Max-enforcements-per-minute slider can now reach `0` to disable rate limiting.** The slider's minimum was `1`, which could not express the "no limit" value (`0`) that the options flow already allowed and the engine already honored — so persisting a slider adjustment would have permanently clamped a deliberately-disabled rate limiter back up to `1`. The slider floor is now `0`, matching the flow and the engine.
+
+### Tests
+
+- Added coverage for slider persistence (debounced flush writes to options), two sliders moved within the debounce window coalescing into one write, unload cancelling a pending write, the max-enforcements `0` floor, and the panic-stop/enabled ownership change.
+
 ## [0.2.9] — 2026-09-08
 
 ### Added

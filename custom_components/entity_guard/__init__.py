@@ -143,9 +143,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 entry.entry_id,
             )
             return False
-        # Restore persisted per-rule enabled state (written by panic_stop).
-        if not entry.options.get("enabled", True):
-            engine.set_enabled(False)
+        # Per-rule enabled state is restored from the Store inside engine.async_setup
+        # (blob_to_runtime). It is the single owner — the switch and panic_stop both
+        # persist through the engine/Store, so no second restore from options is needed.
         hass.data[DOMAIN]["engines"][entry.entry_id] = engine
         _LOGGER.debug(
             "Rule engine ready: rule_id=%s targets=%s mode=%s",

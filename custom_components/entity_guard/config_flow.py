@@ -940,6 +940,9 @@ class EntityGuardOptionsFlow(OptionsFlow):
             data=self._working,
             title=self._working.get(CONF_RULE_NAME, self.config_entry.title),
         )
+        # Returning data={} makes HA blank entry.options on flow finish, which also
+        # clears any slider value the number entities had persisted there — so this
+        # deliberate edit (written to data above) is never masked by a stale option.
         return self.async_create_entry(title="", data={})
 
     # ------------------------------------------------------------------ Basics

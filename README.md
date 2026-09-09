@@ -158,7 +158,7 @@ If a flag entity is later deleted from Home Assistant, Entity Guard surfaces a *
 |-------|---------|-------------|
 | Debounce enabled | `false` | Suppress repeat enforcement within the debounce window |
 | Debounce (seconds) | `60` | Window during which a re-trigger is ignored (0-86400) |
-| Max enforcements per minute | `10` | Auto-suppresses the rule for 15 minutes if exceeded |
+| Max enforcements per minute | `10` | Auto-suppresses the rule for 15 minutes if exceeded. Set to `0` to disable the rate limiter entirely. |
 
 ![Step 4: Advanced](assets/05_advanced.png)
 
@@ -186,7 +186,7 @@ Review the assembled rule before saving. Confirm to create the config entry. The
 | `switch.<rule>_debounce_enabled` | Toggle the debounce window |
 | `number.<rule>_delay_seconds` | Delay before enforcing |
 | `number.<rule>_debounce_seconds` | Debounce window length |
-| `number.<rule>_max_enforcements_per_minute` | Per-rule rate limit |
+| `number.<rule>_max_enforcements_per_minute` | Per-rule rate limit (set `0` to disable) |
 | `binary_sensor.<rule>_armed` | Rule is watching (flag matched, master/enabled on) |
 | `binary_sensor.<rule>_active` | Service call currently in flight |
 | `binary_sensor.<rule>_in_cooldown` | Cooldown active for at least one bound entity |
@@ -207,6 +207,8 @@ Review the assembled rule before saving. Confirm to create the config entry. The
 | `sensor.<rule>_safety_status` | Visible only for cover/lock/climate rules |
 | `sensor.<rule>_suppressed_until` | Timestamp when suppression ends |
 | `sensor.<rule>_blocked_entities` | Count + list of entities currently in cooldown |
+
+> The three `number.*` sliders (delay, debounce, max enforcements) persist their values across Home Assistant restarts and reloads. Adjusting a slider takes effect immediately and survives a restart; editing the same field through the rule's options flow overrides the slider value.
 
 ---
 
