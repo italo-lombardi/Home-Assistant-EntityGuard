@@ -8,6 +8,10 @@ so we prove persistence (not just in-process setattr):
   2. Max-enforcements slider accepts 0 (rate limiter disabled) and it persists.
   3. Enable switch state is owned by the Store: disable → restart → still off;
      re-enable → restart → still on (the old options round-trip bug).
+  4. A slider write does not reload the entry (no platform teardown).
+  5. An options-flow save (rename, and edit_advanced) does NOT revert a slider
+     value the number entities persisted to entry.options — live and across a
+     restart. This is the v0.3.0 options-flow revert bug.
 
 Usage: python3 smoke.py <rule_entry_id>
 Exit 0 = all green, 1 = a failure.
@@ -85,6 +89,70 @@ def switch(token: str, entity_id: str, on: bool) -> None:
     )
 
 
+def options_flow_rename(token: str, entry_id: str, new_name: str) -> dict:
+    """Drive the options flow (REST): init → pick edit_basics → submit a new name —
+    an edit of a field unrelated to the sliders. Proves the options-flow save
+    preserves the slider values the number entities persisted to entry.options
+    (the revert bug): a pre-fix save wrote entry.data and blanked entry.options,
+    reverting the slider. The options flow is a REST-only API in HA (there is no
+    websocket command for it), so we drive it over REST like the real frontend."""
+    flow = api(
+        token, "POST", "/api/config/config_entries/options/flow", {"handler": entry_id}
+    )
+    flow_id = flow["flow_id"]
+    # init is a menu; choosing a menu option is a configure with next_step_id.
+    form = api(
+        token,
+        "POST",
+        f"/api/config/config_entries/options/flow/{flow_id}",
+        {"next_step_id": "edit_basics"},
+    )
+    # Seed from the form defaults so we change ONLY the name (one-field edit).
+    submit = {s["name"]: s.get("default") for s in form["data_schema"]}
+    submit["rule_name"] = new_name
+    return api(
+        token,
+        "POST",
+        f"/api/config/config_entries/options/flow/{flow_id}",
+        submit,
+    )
+
+
+def options_flow_edit_advanced(
+    token: str, entry_id: str, debounce_seconds: int
+) -> dict:
+    """Drive the options flow: init → pick edit_advanced → submit, editing only
+    debounce_seconds. Returns the final flow result. This is the exact path the
+    reported bug used ('edit configuration → edit mode-specific settings')."""
+    flow = api(
+        token, "POST", "/api/config/config_entries/options/flow", {"handler": entry_id}
+    )
+    flow_id = flow["flow_id"]
+    # init is a menu; choosing a menu option is a configure with next_step_id.
+    form = api(
+        token,
+        "POST",
+        f"/api/config/config_entries/options/flow/{flow_id}",
+        {"next_step_id": "edit_advanced"},
+    )
+    # Seed the submission from the form's current defaults so we change ONLY
+    # debounce_seconds — mirroring a user who edits one field and saves.
+    submit = {s["name"]: s.get("default") for s in form["data_schema"]}
+    # Guard against a form-generation regression that drops sliders from the
+    # schema: without them here the seeded submit would silently omit the
+    # values, and a survival check downstream would pass for the wrong reason.
+    for key in ("debounce_seconds", "max_enforcements_per_minute"):
+        if key not in submit:
+            raise RuntimeError(f"edit_advanced form missing slider field: {key}")
+    submit["debounce_seconds"] = debounce_seconds
+    return api(
+        token,
+        "POST",
+        f"/api/config/config_entries/options/flow/{flow_id}",
+        submit,
+    )
+
+
 def _hass_pids() -> list[int]:
     """PIDs of the running HA process(es). This dev container launches HA as
     `python -m homeassistant -c ./config` (NOT the `hass` console script), so
@@ -108,6 +176,14 @@ def restart_ha(token: str) -> None:
     deadline = time.time() + 60
     while time.time() < deadline and _hass_pids():
         time.sleep(1)
+    # A stuck instance would make the relaunch race the old one for the port (the
+    # old one wins, answers briefly, then dies) — SIGKILL any survivor first.
+    for pid in _hass_pids():
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    time.sleep(2)
     subprocess.Popen(
         [HA_PY, "-m", "homeassistant", "-c", "./config"],
         cwd=CORE,
@@ -118,14 +194,25 @@ def restart_ha(token: str) -> None:
 
 
 def wait_ready(timeout: int = 240) -> str:
-    """Wait until the API answers authed. Returns a fresh token."""
+    """Wait until HA has fully started and stays up. Returns a fresh token.
+
+    A bare "/api/ answers" check is not enough here: this dev container has no
+    supervisor, so a relaunch can race a not-yet-dead old instance — the old one
+    answers "API running." for a moment, then loses the port and dies. We guard
+    against that by requiring the core state to be RUNNING (start-up finished, not
+    just the HTTP server bound) and by confirming it twice a few seconds apart, so
+    a doomed transient instance can't satisfy the wait."""
     deadline = time.time() + timeout
     last = ""
     while time.time() < deadline:
         try:
             token = mint_token()
-            r = api(token, "GET", "/api/")
-            if r.get("message") == "API running.":
+            if api(token, "GET", "/api/").get("message") != "API running.":
+                raise OSError("api not running")
+            if api(token, "GET", "/api/config").get("state") != "RUNNING":
+                raise OSError("core not RUNNING yet")
+            time.sleep(3)
+            if api(token, "GET", "/api/config").get("state") == "RUNNING":
                 return token
         except (urllib.error.URLError, urllib.error.HTTPError, OSError) as e:
             last = str(e)
@@ -272,6 +359,74 @@ def main() -> int:
     token = wait_entity(token, enabled_e)
     en2 = state(token, enabled_e)["state"]
     check("re-enabled stays on after restart", en2 == "on", f"got {en2}")
+
+    # --- v0.3.0: options-flow save must NOT revert persisted slider values ----
+    # The reported bug: a slider value (delay=123) is persisted to entry.options,
+    # then the user opens the options flow and edits an UNRELATED field. Pre-fix,
+    # the save wrote entry.data and blanked entry.options, reverting the slider to
+    # its creation-time value. Post-fix the flow reads/writes the merged view, so
+    # the unedited slider value survives — both live and across a restart.
+    slider_before = float(state(token, delay_e)["state"])
+    check("delay is 123 before options edit", slider_before == 123.0)
+
+    # --- rename triggers exactly ONE reload (double-reload fix) ------------
+    # Pre-fix, async_setup_entry called async_update_entry to sync the device
+    # name, re-entering its own update listener -> a second reload per rename.
+    # Post-fix the setup-time device-sync block is gone; DeviceInfo(name=title)
+    # renames the device on the single rename-triggered reload. Count teardowns
+    # scoped to THIS rule around a real rename.
+    def rule_unload_count() -> int:
+        out = subprocess.run(
+            ["grep", "-ac", f"Unloading entry {rule}", "/tmp/ha.log"],
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        return int(out or 0)
+
+    rename_to = f"Smoke Renamed {int(time.time())}"
+    before_rl = rule_unload_count()
+    options_flow_rename(token, rule, rename_to)
+    time.sleep(3)
+    token = wait_entity(token, delay_e)
+    after_rl = rule_unload_count()
+    check(
+        "rename reloads entry exactly once (no double-reload)",
+        after_rl - before_rl == 1,
+        f"unload lines for rule {before_rl}->{after_rl} (delta {after_rl - before_rl})",
+    )
+    d_after_edit = float(state(token, delay_e)["state"])
+    check(
+        "delay survives options-flow save of unrelated field (live)",
+        d_after_edit == 123.0,
+        f"got {d_after_edit}",
+    )
+    # Also drive an edit_advanced save (changes debounce only) and confirm the
+    # unedited delay slider is untouched.
+    options_flow_edit_advanced(token, rule, debounce_seconds=88)
+    time.sleep(3)
+    token = wait_entity(token, delay_e)
+    d_after_adv = float(state(token, delay_e)["state"])
+    db_after_adv = float(state(token, debounce_e)["state"])
+    check(
+        "delay untouched by edit_advanced save",
+        d_after_adv == 123.0,
+        f"got {d_after_adv}",
+    )
+    check("edit_advanced applied debounce", db_after_adv == 88.0, f"got {db_after_adv}")
+    # And it persists across a restart (options is now the single owner).
+    print("Restarting HA (options-flow persistence)…")
+    restart_ha(token)
+    wait_down()
+    token = wait_ready()
+    token = wait_entity(token, delay_e)
+    check(
+        "delay persisted after options edit + restart",
+        float(state(token, delay_e)["state"]) == 123.0,
+    )
+    check(
+        "debounce=88 persisted after options edit + restart",
+        float(state(token, debounce_e)["state"]) == 88.0,
+    )
 
     # --- Restore friendly defaults so the rule is usable ------------------
     set_number(token, delay_e, 5)

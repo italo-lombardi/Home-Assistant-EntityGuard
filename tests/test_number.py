@@ -77,6 +77,21 @@ def test_delay_native_value_from_entry_when_config_missing():
     assert num.native_value == 30.0
 
 
+def test_delay_native_value_fallback_prefers_options_over_data():
+    """When the engine config attr is missing, the fallback reads the merged view
+    (options over data) so a persisted slider value wins over the stale data value."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE, CONF_DELAY_SECONDS: 30},
+        options={CONF_DELAY_SECONDS: 450},
+        title="Rule",
+    )
+    engine = _make_engine()
+    engine.config.delay_seconds = None
+    num = EntityGuardDelaySecondsNumber(entry, engine)
+    assert num.native_value == 450.0
+
+
 async def test_delay_set_native_value(hass: HomeAssistant):
     entry = _make_rule_entry()
     entry.add_to_hass(hass)
@@ -200,6 +215,33 @@ async def test_unload_cancels_pending_write(hass: HomeAssistant):
     # The cancelled timer must not persist anything.
     await _flush_debounce(hass)
     assert CONF_DELAY_SECONDS not in entry.options
+
+
+async def test_remove_while_loaded_flushes_pending_write(hass: HomeAssistant):
+    """Removing ONE slider entity while the config entry is still loaded (e.g. the
+    entity is disabled, or HA is stopping) flushes the coalesced write instead of
+    dropping it — the pending map is shared across the entry's three sliders, so a
+    silent cancel would lose a value the other two contributed."""
+    from homeassistant.config_entries import ConfigEntryState
+
+    entry = _make_rule_entry()
+    entry.add_to_hass(hass)
+    entry.mock_state(hass, ConfigEntryState.LOADED)
+    engine = _make_engine(delay=0)
+    num = EntityGuardDelaySecondsNumber(entry, engine)
+    num.hass = hass
+    num.async_write_ha_state = MagicMock()
+    await num.async_added_to_hass()
+    await num.async_set_native_value(30.0)
+    pending = hass.data[DOMAIN]["pending_number_writes"]
+    assert entry.entry_id in pending
+    # Entry still loaded → removal flushes the queued value now.
+    num._cancel_pending_write()
+    assert entry.entry_id not in pending
+    assert entry.options[CONF_DELAY_SECONDS] == 30
+    # A second removal with nothing queued is a no-op (guard early-return).
+    num._cancel_pending_write()
+    assert entry.options[CONF_DELAY_SECONDS] == 30
 
 
 async def test_flush_noop_when_queue_empty(hass: HomeAssistant):

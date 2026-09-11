@@ -6,7 +6,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from homeassistant.components.number import NumberEntity, NumberMode
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import (
@@ -131,14 +131,27 @@ class EntityGuardNumberBase(NumberEntity):
 
     @callback
     def _cancel_pending_write(self) -> None:
-        """Cancel a pending debounced options write for this entry (on unload).
+        """On entity removal: flush a pending debounced write if the entry is still
+        loaded, otherwise cancel it.
 
-        Prevents a late flush from calling async_update_entry on a torn-down entry.
+        The pending map is keyed by entry_id and shared across this entry's three
+        sliders, so removing ONE slider entity (e.g. it gets disabled, or HA stops
+        and removes entities) must not silently drop a coalesced write the other two
+        contributed to. When the config entry itself is unloading we cancel instead —
+        a flush would call async_update_entry on a tearing-down entry.
         """
         pending = self.hass.data.get(DOMAIN, {}).get(_PENDING_WRITES_KEY, {})
-        state = pending.pop(self._entry.entry_id, None)
-        if state is not None and state["cancel"] is not None:
+        state = pending.get(self._entry.entry_id)
+        if state is None or state["cancel"] is None:
+            return
+        if self._entry.state is ConfigEntryState.LOADED:
+            # Entry alive (single entity removed / HA stopping) — persist the value.
             state["cancel"]()
+            self._flush_pending_now()
+        else:
+            # Entry unloading — drop it; the rebuild would re-read options anyway.
+            state["cancel"]()
+            pending.pop(self._entry.entry_id, None)
 
     @callback
     def _handle_update(self, *args: object) -> None:
@@ -151,7 +164,11 @@ class EntityGuardNumberBase(NumberEntity):
         config = getattr(self._engine, "config", None)
         value = getattr(config, self._config_key, None)
         if value is None:
-            value = self._entry.data.get(self._config_key, self._default)
+            # Fallback only if the engine config attr is missing. Read merged
+            # (options over data) to match parse_rule_config, so a persisted slider
+            # value isn't shadowed by the stale creation-time data value.
+            merged = {**self._entry.data, **(self._entry.options or {})}
+            value = merged.get(self._config_key, self._default)
         return float(value)
 
     async def async_set_native_value(self, value: float) -> None:
@@ -183,6 +200,32 @@ class EntityGuardNumberBase(NumberEntity):
         )
         self._schedule_options_write(self._config_key, coerced)
 
+    def _flush_pending_now(self) -> None:
+        """Write this entry's queued slider values to entry.options immediately.
+
+        Shared by the debounce timer and the on-remove flush. Pops the queue BEFORE
+        async_update_entry: on a real options change HA re-runs setup, and keeping the
+        pop first means a reload's unload path finds an empty pending map so
+        _cancel_pending_write can't double-cancel or drop a fresh write. Reads options
+        fresh so concurrent slider writes don't clobber each other with a stale
+        snapshot; a re-set to the already-persisted value writes nothing (and never
+        marks SKIP_RELOAD for a write that won't happen).
+        """
+        entry = self._entry
+        entry_pending = self.hass.data.get(DOMAIN, {}).get(_PENDING_WRITES_KEY, {})
+        queued = entry_pending.pop(entry.entry_id, None)
+        if not queued or not queued["values"]:
+            return
+        new_options = {**(entry.options or {}), **queued["values"]}
+        if new_options == (entry.options or {}):
+            return
+        # Mark this update as slider-originated so the listener skips the reload
+        # (the value is already live via setattr + dispatcher).
+        self.hass.data.setdefault(DOMAIN, {}).setdefault(SKIP_RELOAD_KEY, set()).add(
+            entry.entry_id
+        )
+        self.hass.config_entries.async_update_entry(entry, options=new_options)
+
     def _schedule_options_write(self, key: str, value: int) -> None:
         """Queue a coalesced, debounced write of `key`=`value` to entry.options."""
         pending = self.hass.data.setdefault(DOMAIN, {}).setdefault(
@@ -193,33 +236,9 @@ class EntityGuardNumberBase(NumberEntity):
         if state["cancel"] is not None:
             state["cancel"]()
 
-        entry = self._entry
-
         @callback
         def _flush(_now: object) -> None:
-            entry_pending = self.hass.data.get(DOMAIN, {}).get(_PENDING_WRITES_KEY, {})
-            # Pop the queue BEFORE async_update_entry below: the write triggers no
-            # reload (the listener skips it), but on a *real* options change HA still
-            # re-runs setup; keeping the pop first means a reload's unload path finds
-            # an empty pending map, so _cancel_pending_write can't double-cancel or
-            # drop a fresh write. Do not reorder the pop after the write.
-            queued = entry_pending.pop(entry.entry_id, None)
-            if not queued or not queued["values"]:
-                return
-            # Read options fresh at flush time so concurrent slider writes don't
-            # clobber each other with a stale snapshot captured at call time.
-            new_options = {**(entry.options or {}), **queued["values"]}
-            if new_options == (entry.options or {}):
-                # Re-set to the already-persisted value: async_update_entry would
-                # return False (no diff) and fire nothing, but skip the call entirely
-                # so we also never mark SKIP_RELOAD_KEY for a write that won't happen.
-                return
-            # Mark this update as slider-originated so the listener skips the reload
-            # (the value is already live via setattr + dispatcher above).
-            self.hass.data.setdefault(DOMAIN, {}).setdefault(
-                SKIP_RELOAD_KEY, set()
-            ).add(entry.entry_id)
-            self.hass.config_entries.async_update_entry(entry, options=new_options)
+            self._flush_pending_now()
 
         state["cancel"] = async_call_later(
             self.hass, _NUMBER_WRITE_DEBOUNCE_SECONDS, _flush

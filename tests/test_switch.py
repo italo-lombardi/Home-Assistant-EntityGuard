@@ -119,25 +119,69 @@ def test_debounce_switch_is_off():
 
 
 async def test_debounce_switch_turn_on(hass: HomeAssistant):
+    from homeassistant.helpers.dispatcher import async_dispatcher_connect
+
+    from custom_components.entity_guard.const import signal_rule_update
+    from custom_components.entity_guard.number import SKIP_RELOAD_KEY
+
     entry = _make_rule_entry()
     engine = _make_engine(debounce_enabled=False)
     entry.add_to_hass(hass)
     sw = EntityGuardDebounceEnabledSwitch(entry, engine)
     sw.hass = hass
     sw.async_write_ha_state = MagicMock()
+    signalled = MagicMock()
+    async_dispatcher_connect(
+        hass, signal_rule_update(engine.config.unique_id), signalled
+    )
     await sw.async_turn_on()
+    await hass.async_block_till_done()
     assert entry.options.get("debounce_enabled") is True
+    # Applied live to the running engine (so is_on flips at once).
+    assert engine.config.debounce_enabled is True
+    # Marked to skip the reload the options write would otherwise trigger.
+    assert entry.entry_id in hass.data[DOMAIN][SKIP_RELOAD_KEY]
+    # Rule-update signal fires so the engine re-evaluates with the new setting.
+    signalled.assert_called_once()
 
 
 async def test_debounce_switch_turn_off(hass: HomeAssistant):
+    from homeassistant.helpers.dispatcher import async_dispatcher_connect
+
+    from custom_components.entity_guard.const import signal_rule_update
+
     entry = _make_rule_entry()
     engine = _make_engine(debounce_enabled=True)
     entry.add_to_hass(hass)
     sw = EntityGuardDebounceEnabledSwitch(entry, engine)
     sw.hass = hass
     sw.async_write_ha_state = MagicMock()
+    signalled = MagicMock()
+    async_dispatcher_connect(
+        hass, signal_rule_update(engine.config.unique_id), signalled
+    )
     await sw.async_turn_off()
+    await hass.async_block_till_done()
     assert entry.options.get("debounce_enabled") is False
+    assert engine.config.debounce_enabled is False
+    signalled.assert_called_once()
+
+
+async def test_debounce_switch_no_diff_skips_write(hass: HomeAssistant):
+    """Toggling to the value already in options writes nothing and leaves no
+    skip-reload mark — a no-op must not fire the update listener at all."""
+    from custom_components.entity_guard.number import SKIP_RELOAD_KEY
+
+    entry = _make_rule_entry()
+    engine = _make_engine(debounce_enabled=True)
+    entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(entry, options={"debounce_enabled": True})
+    sw = EntityGuardDebounceEnabledSwitch(entry, engine)
+    sw.hass = hass
+    sw.async_write_ha_state = MagicMock()
+    await sw.async_turn_on()
+    assert entry.options == {"debounce_enabled": True}
+    assert entry.entry_id not in hass.data.get(DOMAIN, {}).get(SKIP_RELOAD_KEY, set())
 
 
 # ---------------------------------------------------------------------------

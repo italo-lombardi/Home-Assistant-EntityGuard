@@ -23,6 +23,7 @@ from custom_components.entity_guard.const import (
     CONF_MAX_ENFORCEMENTS_PER_MINUTE,
     CONF_MODE,
     CONF_OPERATOR,
+    CONF_RATE_LIMIT_ENABLED,
     CONF_RULE_NAME,
     CONF_SAFETY_ACKNOWLEDGED,
     CONF_TARGET_ENTITIES,
@@ -35,6 +36,7 @@ from custom_components.entity_guard.const import (
     MODE_ATTRIBUTE,
     MODE_STATE,
 )
+from custom_components.entity_guard.models import parse_rule_config
 
 
 def _schema_key_names(result: dict) -> set[str]:
@@ -612,7 +614,31 @@ async def test_options_edit_basics_save(hass: HomeAssistant, options_rule_entry)
         res["flow_id"], {CONF_RULE_NAME: "Renamed"}
     )
     assert res["type"] == FlowResultType.CREATE_ENTRY
-    assert options_rule_entry.data[CONF_RULE_NAME] == "Renamed"
+    # Options-flow edits persist to entry.options (the runtime source of truth).
+    assert options_rule_entry.options[CONF_RULE_NAME] == "Renamed"
+
+
+async def test_options_edit_basics_rename_preserves_slider(
+    hass: HomeAssistant, options_rule_entry
+):
+    """Renaming a rule via edit_basics must not revert a slider value the number
+    entities persisted to entry.options. The revert bug specifically hit the rename
+    path: editing the name landed in entry.data while sliders wrote entry.options, so
+    saving the rename discarded the slider value."""
+    hass.config_entries.async_update_entry(
+        options_rule_entry, options={CONF_DELAY_SECONDS: 999}
+    )
+    res = await hass.config_entries.options.async_init(options_rule_entry.entry_id)
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"], {"next_step_id": "edit_basics"}
+    )
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"], {CONF_RULE_NAME: "Renamed"}
+    )
+    assert res["type"] == FlowResultType.CREATE_ENTRY
+    assert options_rule_entry.options[CONF_RULE_NAME] == "Renamed"
+    # The unedited slider value survives the rename.
+    assert parse_rule_config(options_rule_entry).delay_seconds == 999
 
 
 async def test_options_edit_entities_empty(hass: HomeAssistant, options_rule_entry):
@@ -648,16 +674,17 @@ async def test_options_edit_advanced_save(hass: HomeAssistant, options_rule_entr
         },
     )
     assert res["type"] == FlowResultType.CREATE_ENTRY
-    assert options_rule_entry.data[CONF_DEBOUNCE_SECONDS] == 45
+    assert options_rule_entry.options[CONF_DEBOUNCE_SECONDS] == 45
 
 
-async def test_options_save_clears_stale_slider_options(
+async def test_options_save_preserves_unedited_slider_options(
     hass: HomeAssistant, options_rule_entry
 ):
-    """A deliberate flow edit must not be masked by a slider value the number
-    entities persisted into options. HA blanks entry.options on options-flow
-    finish, so any stale slider key is gone and the edit in data wins via
-    parse_rule_config."""
+    """A flow edit persists to entry.options and merges over the existing options,
+    so a slider value the number entities already wrote survives when the user edits
+    an unrelated field. Regression for the options-flow revert bug: edits used to land
+    in entry.data while sliders wrote entry.options, so opening the options flow showed
+    the stale data value and saving discarded the persisted slider value."""
     hass.config_entries.async_update_entry(
         options_rule_entry,
         options={
@@ -679,13 +706,80 @@ async def test_options_save_clears_stale_slider_options(
         },
     )
     assert res["type"] == FlowResultType.CREATE_ENTRY
-    opts = options_rule_entry.options
-    assert CONF_DELAY_SECONDS not in opts
-    assert CONF_DEBOUNCE_SECONDS not in opts
-    assert CONF_MAX_ENFORCEMENTS_PER_MINUTE not in opts
-    # The edit landed in data, no longer masked by the stale option value.
-    assert options_rule_entry.data[CONF_DEBOUNCE_SECONDS] == 45
-    assert options_rule_entry.data[CONF_MAX_ENFORCEMENTS_PER_MINUTE] == 8
+    config = parse_rule_config(options_rule_entry)
+    # Edited fields override.
+    assert config.debounce_seconds == 45
+    assert config.max_enforcements_per_minute == 8
+    # The unedited slider value (delay) survives the save.
+    assert config.delay_seconds == 999
+
+
+async def test_options_edit_advanced_disable_rate_limit(
+    hass: HomeAssistant, options_rule_entry
+):
+    """Turning the rate-limit toggle off persists max_enforcements=0 (disabled),
+    not the numeric field's MIN_RATE_LIMIT floor — mirrors the create flow."""
+    res = await hass.config_entries.options.async_init(options_rule_entry.entry_id)
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"], {"next_step_id": "edit_advanced"}
+    )
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"],
+        {
+            CONF_DEBOUNCE_ENABLED: True,
+            CONF_DEBOUNCE_SECONDS: 45,
+            CONF_RATE_LIMIT_ENABLED: False,
+            CONF_MAX_ENFORCEMENTS_PER_MINUTE: 8,
+        },
+    )
+    assert res["type"] == FlowResultType.CREATE_ENTRY
+    assert options_rule_entry.options[CONF_MAX_ENFORCEMENTS_PER_MINUTE] == 0
+
+
+async def test_options_edit_advanced_enable_rate_limit(
+    hass: HomeAssistant, options_rule_entry
+):
+    """With the rate-limit toggle on, the numeric field value is persisted (not the
+    0 sentinel) — the enabled path, complementing the disable case. Guards the toggle
+    from silently forcing 0 regardless of the field."""
+    hass.config_entries.async_update_entry(
+        options_rule_entry, options={CONF_MAX_ENFORCEMENTS_PER_MINUTE: 0}
+    )
+    res = await hass.config_entries.options.async_init(options_rule_entry.entry_id)
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"], {"next_step_id": "edit_advanced"}
+    )
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"],
+        {
+            CONF_DEBOUNCE_ENABLED: True,
+            CONF_DEBOUNCE_SECONDS: 45,
+            CONF_RATE_LIMIT_ENABLED: True,
+            CONF_MAX_ENFORCEMENTS_PER_MINUTE: 8,
+        },
+    )
+    assert res["type"] == FlowResultType.CREATE_ENTRY
+    assert options_rule_entry.options[CONF_MAX_ENFORCEMENTS_PER_MINUTE] == 8
+
+
+async def test_options_edit_advanced_form_shows_persisted_option(
+    hass: HomeAssistant, options_rule_entry
+):
+    """The edit_advanced form seeds its defaults from the merged view (data +
+    options), so a value the number slider persisted into options is shown — not the
+    stale entry.data value. This is the read side of the options-flow revert bug: the
+    form used to show the data value (60) and saving would overwrite the slider's 450."""
+    hass.config_entries.async_update_entry(
+        options_rule_entry, options={CONF_DEBOUNCE_SECONDS: 450}
+    )
+    res = await hass.config_entries.options.async_init(options_rule_entry.entry_id)
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"], {"next_step_id": "edit_advanced"}
+    )
+    defaults = {
+        key.schema: key.default() for key in res["data_schema"].schema if key.default
+    }
+    assert defaults[CONF_DEBOUNCE_SECONDS] == 450
 
 
 async def test_options_edit_flags_clear(hass: HomeAssistant, options_rule_entry):
@@ -713,7 +807,7 @@ async def test_options_edit_flags_add(hass: HomeAssistant, options_rule_entry):
         },
     )
     assert res["type"] == FlowResultType.CREATE_ENTRY
-    assert len(options_rule_entry.data["flags"]) == 1
+    assert len(options_rule_entry.options["flags"]) == 1
 
 
 async def test_options_edit_flags_add_incomplete(
@@ -763,9 +857,10 @@ async def test_options_edit_flags_replace(hass: HomeAssistant, options_rule_entr
         },
     )
     assert res["type"] == FlowResultType.CREATE_ENTRY
-    assert len(options_rule_entry.data["flags"]) == 1
+    assert len(options_rule_entry.options["flags"]) == 1
     assert (
-        options_rule_entry.data["flags"][0][CONF_FLAG_ENTITY] == "input_boolean.night"
+        options_rule_entry.options["flags"][0][CONF_FLAG_ENTITY]
+        == "input_boolean.night"
     )
 
 
@@ -781,7 +876,7 @@ async def test_options_edit_entities_save_non_safety(
         res["flow_id"], {CONF_TARGET_ENTITIES: ["switch.outlet"]}
     )
     assert res["type"] == FlowResultType.CREATE_ENTRY
-    assert options_rule_entry.data[CONF_TARGET_ENTITIES] == ["switch.outlet"]
+    assert options_rule_entry.options[CONF_TARGET_ENTITIES] == ["switch.outlet"]
 
 
 async def test_options_edit_flags_replace_incomplete(
