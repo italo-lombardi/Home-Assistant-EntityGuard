@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Aktiver debounce",
           "debounce_seconds": "Debounce-vindu (sekunder)",
+          "rate_limit_enabled": "Håndhev løkkebeskyttelse",
           "max_enforcements_per_minute": "Maks håndhevinger per minutt"
         }
       },

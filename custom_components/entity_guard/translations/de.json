@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Entprellung aktivieren",
           "debounce_seconds": "Entprellungs-Fenster (Sekunden)",
+          "rate_limit_enabled": "Schleifenschutz erzwingen",
           "max_enforcements_per_minute": "Max. Durchsetzungen pro Minute"
         }
       },

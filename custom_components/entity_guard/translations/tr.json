@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Debounce'u etkinleştir",
           "debounce_seconds": "Debounce penceresi (saniye)",
+          "rate_limit_enabled": "Döngü korumasını uygula",
           "max_enforcements_per_minute": "Dakika başına maksimum uygulama"
         }
       },

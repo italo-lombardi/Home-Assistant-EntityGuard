@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Omogući odgodu ponavljanja",
           "debounce_seconds": "Prozor odgode ponavljanja (sekunde)",
+          "rate_limit_enabled": "Provedi zaštitu od petlji",
           "max_enforcements_per_minute": "Maks. provedbi u minuti"
         }
       },

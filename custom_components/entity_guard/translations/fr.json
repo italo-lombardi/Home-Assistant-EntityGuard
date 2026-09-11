@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Activer l'anti-rebond",
           "debounce_seconds": "Fenêtre d'anti-rebond (secondes)",
+          "rate_limit_enabled": "Activer la protection anti-boucle",
           "max_enforcements_per_minute": "Nombre maximal d'applications par minute"
         }
       },

@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Activează debounce",
           "debounce_seconds": "Fereastră debounce (secunde)",
+          "rate_limit_enabled": "Impune protecția împotriva buclelor",
           "max_enforcements_per_minute": "Impuneri maxime pe minut"
         }
       },

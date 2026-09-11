@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "启用防抖",
           "debounce_seconds": "防抖窗口（秒）",
+          "rate_limit_enabled": "启用循环保护",
           "max_enforcements_per_minute": "每分钟最大强制执行次数"
         }
       },

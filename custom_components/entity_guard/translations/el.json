@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Ενεργοποίηση αντιθορύβου",
           "debounce_seconds": "Παράθυρο αντιθορύβου (δευτερόλεπτα)",
+          "rate_limit_enabled": "Επιβολή προστασίας βρόχου",
           "max_enforcements_per_minute": "Μέγιστες επιβολές ανά λεπτό"
         }
       },

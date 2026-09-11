@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Įjungti nutildymą",
           "debounce_seconds": "Nutildymo langas (sekundės)",
+          "rate_limit_enabled": "Taikyti ciklo apsaugą",
           "max_enforcements_per_minute": "Daugiausia taikymų per minutę"
         }
       },

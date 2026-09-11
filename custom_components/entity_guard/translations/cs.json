@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Povolit potlačení zákmitů",
           "debounce_seconds": "Okno potlačení zákmitů (sekundy)",
+          "rate_limit_enabled": "Vynucovat ochranu proti smyčkám",
           "max_enforcements_per_minute": "Maximum vynucení za minutu"
         }
       },

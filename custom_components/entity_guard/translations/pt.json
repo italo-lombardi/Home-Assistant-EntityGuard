@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Ativar debounce",
           "debounce_seconds": "Janela de debounce (segundos)",
+          "rate_limit_enabled": "Aplicar proteção contra ciclos",
           "max_enforcements_per_minute": "Máximo de aplicações por minuto"
         }
       },

@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Activa l'antirebot",
           "debounce_seconds": "Finestra d'antirebot (segons)",
+          "rate_limit_enabled": "Aplica la protecció contra bucles",
           "max_enforcements_per_minute": "Màxim d'aplicacions per minut"
         }
       },

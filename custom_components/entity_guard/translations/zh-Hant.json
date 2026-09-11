@@ -165,7 +165,7 @@
       },
       "edit_advanced": {
         "title": "編輯進階設定",
-        "data": {"debounce_enabled": "啟用去抖動","debounce_seconds": "去抖動時間窗（秒）","max_enforcements_per_minute": "每分鐘最大強制執行次數"}
+        "data": {"debounce_enabled": "啟用去抖動","debounce_seconds": "去抖動時間窗（秒）","rate_limit_enabled": "強制執行迴圈保護","max_enforcements_per_minute": "每分鐘最大強制執行次數"}
       },
       "edit_attribute_params": {
         "title": "編輯屬性參數",

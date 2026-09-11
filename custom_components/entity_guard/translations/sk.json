@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Povoliť potlačenie zákmitov",
           "debounce_seconds": "Okno potlačenia zákmitov (sekundy)",
+          "rate_limit_enabled": "Vynucovať ochranu proti slučkám",
           "max_enforcements_per_minute": "Maximálny počet vynútení za minútu"
         }
       },

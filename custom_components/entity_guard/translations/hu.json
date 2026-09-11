@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Debounce engedélyezése",
           "debounce_seconds": "Debounce ablak (másodperc)",
+          "rate_limit_enabled": "Hurokvédelem kényszerítése",
           "max_enforcements_per_minute": "Maximális kényszerítés percenként"
         }
       },

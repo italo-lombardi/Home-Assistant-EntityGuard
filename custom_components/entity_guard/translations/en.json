@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Enable debounce",
           "debounce_seconds": "Debounce window (seconds)",
+          "rate_limit_enabled": "Enforce loop protection",
           "max_enforcements_per_minute": "Max enforcements per minute"
         }
       },

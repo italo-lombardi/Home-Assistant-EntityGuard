@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Habilitar antirrebote",
           "debounce_seconds": "Ventana de antirrebote (segundos)",
+          "rate_limit_enabled": "Aplicar protección contra bucles",
           "max_enforcements_per_minute": "Máx. actuaciones por minuto"
         }
       },

@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Активиране на дебаунс",
           "debounce_seconds": "Прозорец за дебаунс (секунди)",
+          "rate_limit_enabled": "Прилагане на защита срещу зациклане",
           "max_enforcements_per_minute": "Максимален брой прилагания в минута"
         }
       },

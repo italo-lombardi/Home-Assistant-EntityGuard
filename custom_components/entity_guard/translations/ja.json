@@ -81,7 +81,7 @@
       "edit_state": {"title": "状態モードを編集","data": {"trigger_states": "トリガー状態","target_state": "ターゲット状態","delay_seconds": "遅延（秒）"}},
       "edit_attribute": {"title": "属性モードを編集","description": "このルールで適用する属性を選択します。数値属性はターゲットに制限され、色属性はターゲット色に一致させます。","data": {"attribute": "属性"}},
       "edit_flags": {"title": "フラグ条件を編集","description": "現在のフラグ: {summary}。\n\n{current_state}\n\n追加するには 'add'、すべて置き換えるには 'replace'、すべて削除するには 'clear'、変更せずに終了するには 'save' を選択してください。","data": {"entity": "フラグエンティティ","match_state": "必要な状態","action": "アクション"}},
-      "edit_advanced": {"title": "詳細設定を編集","data": {"debounce_enabled": "デバウンスを有効化","debounce_seconds": "デバウンスウィンドウ（秒）","max_enforcements_per_minute": "1 分あたりの最大強制回数"}},
+      "edit_advanced": {"title": "詳細設定を編集","data": {"debounce_enabled": "デバウンスを有効化","debounce_seconds": "デバウンスウィンドウ（秒）","rate_limit_enabled": "ループ保護を有効化","max_enforcements_per_minute": "1 分あたりの最大強制回数"}},
       "edit_attribute_params": {"title": "属性パラメーターを編集","description": "選択した属性の強制値を設定します。","data": {"operator": "演算子","threshold": "しきい値","target_value": "ターゲット値","delay_seconds": "遅延（秒）"}}
     },
     "error": {

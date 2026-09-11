@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Debounce inschakelen",
           "debounce_seconds": "Debounce-venster (seconden)",
+          "rate_limit_enabled": "Lusbeveiliging afdwingen",
           "max_enforcements_per_minute": "Max afdwingingen per minuut"
         }
       },

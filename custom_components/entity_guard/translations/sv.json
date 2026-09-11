@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Aktivera avstudsning",
           "debounce_seconds": "Avstudsningsfönster (sekunder)",
+          "rate_limit_enabled": "Aktivera loopskydd",
           "max_enforcements_per_minute": "Max tillämpningar per minut"
         }
       },

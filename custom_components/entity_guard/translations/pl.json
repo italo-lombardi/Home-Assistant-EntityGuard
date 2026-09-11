@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Włącz debouncing",
           "debounce_seconds": "Okno debouncingu (sekundy)",
+          "rate_limit_enabled": "Wymuszaj ochronę przed pętlami",
           "max_enforcements_per_minute": "Maks. wymuszeń na minutę"
         }
       },

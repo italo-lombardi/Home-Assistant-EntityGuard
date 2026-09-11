@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Abilita debounce",
           "debounce_seconds": "Finestra di debounce (secondi)",
+          "rate_limit_enabled": "Applica protezione anti-loop",
           "max_enforcements_per_minute": "Numero massimo di applicazioni al minuto"
         }
       },

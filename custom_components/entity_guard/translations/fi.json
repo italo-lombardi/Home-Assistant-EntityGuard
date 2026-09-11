@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Ota käyttöön viivevakautus",
           "debounce_seconds": "Viivevakautusikkuna (sekuntia)",
+          "rate_limit_enabled": "Käytä silmukkasuojausta",
           "max_enforcements_per_minute": "Enimmäisvalvontatoimet minuutissa"
         }
       },

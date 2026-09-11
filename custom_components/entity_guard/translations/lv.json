@@ -193,6 +193,7 @@
         "data": {
           "debounce_enabled": "Iespējot atsitiena novēršanu",
           "debounce_seconds": "Atsitiena novēršanas logs (sekundes)",
+          "rate_limit_enabled": "Piemērot cilpu aizsardzību",
           "max_enforcements_per_minute": "Maks. piemērošanas minūtē"
         }
       },
