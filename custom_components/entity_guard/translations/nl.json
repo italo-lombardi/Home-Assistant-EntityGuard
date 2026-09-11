@@ -193,7 +193,14 @@
         "data": {
           "debounce_enabled": "Debounce inschakelen",
           "debounce_seconds": "Debounce-venster (seconden)",
+          "rate_limit_enabled": "Lusbeveiliging afdwingen",
           "max_enforcements_per_minute": "Max afdwingingen per minuut"
+        },
+        "data_description": {
+          "debounce_enabled": "Aanvinken om snelle heen-en-weer wijzigingen te negeren. De regel werkt alleen als de trigger gelijk blijft gedurende het debounce-venster dat je hieronder instelt. Niet aanvinken om bij elke wijziging te handelen.",
+          "debounce_seconds": "Venster in seconden. Min 0, max 86400 (24u).",
+          "rate_limit_enabled": "Aanvinken om lusbeveiliging aan te houden (aanbevolen). Uitvinken om deze voor deze regel uit te schakelen — op hol geslagen lussen worden niet automatisch gestopt.",
+          "max_enforcements_per_minute": "Hoeveel afdwingingen per minuut zijn toegestaan voordat de regel zichzelf 15 minuten onderdrukt. Min 1, max 600. Genegeerd wanneer lusbeveiliging hierboven niet is aangevinkt."
         }
       },
       "edit_attribute_params": {

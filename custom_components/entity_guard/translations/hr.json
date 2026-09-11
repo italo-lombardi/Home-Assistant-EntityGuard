@@ -193,7 +193,14 @@
         "data": {
           "debounce_enabled": "Omogući odgodu ponavljanja",
           "debounce_seconds": "Prozor odgode ponavljanja (sekunde)",
+          "rate_limit_enabled": "Provedi zaštitu od petlji",
           "max_enforcements_per_minute": "Maks. provedbi u minuti"
+        },
+        "data_description": {
+          "debounce_enabled": "Označite za zanemarivanje brzih naprijed-natrag promjena. Pravilo djeluje samo ako okidač ostane isti tijekom prozora odgode ponavljanja postavljenog u nastavku. Ostavite neoznačeno za djelovanje na svaku promjenu.",
+          "debounce_seconds": "Prozor u sekundama. Min 0, maks 86400 (24 h).",
+          "rate_limit_enabled": "Označite za zadržavanje uključene zaštite od petlji (preporučeno). Odznačite za onemogućavanje za ovo pravilo — nekontrolirane petlje neće biti automatski zaustavljene.",
+          "max_enforcements_per_minute": "Koliko je provedbi u minuti dopušteno prije nego se pravilo automatski potisne na 15 minuta. Min 1, maks 600. Zanemaruje se kada je zaštita od petlji odznačena iznad."
         }
       },
       "edit_attribute_params": {

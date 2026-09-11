@@ -193,7 +193,14 @@
         "data": {
           "debounce_enabled": "Iespējot atsitiena novēršanu",
           "debounce_seconds": "Atsitiena novēršanas logs (sekundes)",
+          "rate_limit_enabled": "Piemērot cilpu aizsardzību",
           "max_enforcements_per_minute": "Maks. piemērošanas minūtē"
+        },
+        "data_description": {
+          "debounce_enabled": "Atzīmējiet, lai ignorētu ātras uz priekšu un atpakaļ izmaiņas. Noteikums darbojas tikai tad, ja aktivizētājs paliek nemainīgs zemāk iestatīto atsitiena novēršanas logu. Atstājiet neatzīmētu, lai darbotos pie katras izmaiņas.",
+          "debounce_seconds": "Logs sekundēs. Min. 0, maks. 86400 (24 h).",
+          "rate_limit_enabled": "Atzīmējiet, lai saglabātu cilpu aizsardzību ieslēgtu (ieteicams). Noņemiet atzīmi, lai to atspējotu šim noteikumam — nekontrolētas cilpas netiks automātiski apturētas.",
+          "max_enforcements_per_minute": "Cik piemērošanu minūtē ir atļautas, pirms noteikums automātiski tiek apturēts uz 15 minūtēm. Min. 1, maks. 600. Ignorēts, kad cilpu aizsardzība iepriekš nav atzīmēta."
         }
       },
       "edit_attribute_params": {

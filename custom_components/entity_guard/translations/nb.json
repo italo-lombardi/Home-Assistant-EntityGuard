@@ -193,7 +193,14 @@
         "data": {
           "debounce_enabled": "Aktiver debounce",
           "debounce_seconds": "Debounce-vindu (sekunder)",
+          "rate_limit_enabled": "Håndhev løkkebeskyttelse",
           "max_enforcements_per_minute": "Maks håndhevinger per minutt"
+        },
+        "data_description": {
+          "debounce_enabled": "Kryss av for å ignorere raske endringer frem og tilbake. Regelen utføres bare hvis utløseren forblir den samme i debounce-vinduet som er satt nedenfor. La være å krysse av for å reagere på hver endring.",
+          "debounce_seconds": "Vindu i sekunder. Min 0, maks 86400 (24t).",
+          "rate_limit_enabled": "Kryss av for å beholde løkkebeskyttelsen på (anbefalt). Fjern avkryssing for å deaktivere den for denne regelen — løpske løkker vil ikke bli stoppet automatisk.",
+          "max_enforcements_per_minute": "Hvor mange håndhevinger per minutt som tillates før regelen automatisk undertrykkes i 15 minutter. Min 1, maks 600. Ignoreres når løkkebeskyttelsen er fjernet over."
         }
       },
       "edit_attribute_params": {

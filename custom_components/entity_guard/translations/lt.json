@@ -193,7 +193,14 @@
         "data": {
           "debounce_enabled": "Įjungti nutildymą",
           "debounce_seconds": "Nutildymo langas (sekundės)",
+          "rate_limit_enabled": "Taikyti ciklo apsaugą",
           "max_enforcements_per_minute": "Daugiausia taikymų per minutę"
+        },
+        "data_description": {
+          "debounce_enabled": "Pažymėkite, kad ignoruotumėte greitus pirmyn-atgal pokyčius. Taisyklė veikia tik tada, jei aktyvinimas išlieka nepakitęs žemiau nustatytą nutildymo langą. Nepažymėkite, kad veiktų kiekvieno pokyčio metu.",
+          "debounce_seconds": "Langas sekundėmis. Mažiausia 0, daugiausia 86400 (24 val.).",
+          "rate_limit_enabled": "Pažymėkite, kad ciklo apsauga liktų įjungta (rekomenduojama). Nuimkite žymėjimą, kad išjungtumėte ją šiai taisyklei — nekontroliuojami ciklai nebus automatiškai sustabdyti.",
+          "max_enforcements_per_minute": "Kiek taikymų per minutę leidžiama prieš taisyklei automatiškai susislopinant 15 minučių. Mažiausia 1, daugiausia 600. Ignoruojama, kai ciklo apsauga aukščiau nepažymėta."
         }
       },
       "edit_attribute_params": {

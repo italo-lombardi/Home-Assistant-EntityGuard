@@ -193,7 +193,14 @@
         "data": {
           "debounce_enabled": "启用防抖",
           "debounce_seconds": "防抖窗口（秒）",
+          "rate_limit_enabled": "启用循环保护",
           "max_enforcements_per_minute": "每分钟最大强制执行次数"
+        },
+        "data_description": {
+          "debounce_enabled": "勾选以忽略快速来回的变化。仅当触发在您于下方设定的防抖窗口内保持不变时规则才会执行操作。不勾选则每次变化都执行操作。",
+          "debounce_seconds": "窗口时长（秒）。最小 0，最大 86400（24 小时）。",
+          "rate_limit_enabled": "勾选以保持循环保护开启（推荐）。取消勾选可为此规则禁用它 — 失控循环将不会被自动阻止。",
+          "max_enforcements_per_minute": "规则自动抑制 15 分钟前每分钟允许的强制执行次数。最小 1，最大 600。上方取消勾选循环保护时忽略此项。"
         }
       },
       "edit_attribute_params": {

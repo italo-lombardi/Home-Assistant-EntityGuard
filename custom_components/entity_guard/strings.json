@@ -193,7 +193,14 @@
         "data": {
           "debounce_enabled": "Enable debounce",
           "debounce_seconds": "Debounce window (seconds)",
+          "rate_limit_enabled": "Enforce loop protection",
           "max_enforcements_per_minute": "Max enforcements per minute"
+        },
+        "data_description": {
+          "debounce_enabled": "Tick to ignore quick back-and-forth changes. The rule only acts if the trigger stays the same for the debounce window set below. Leave unticked to act on every change.",
+          "debounce_seconds": "Window in seconds. Min 0, max 86400 (24h).",
+          "rate_limit_enabled": "Tick to keep loop protection on (recommended). Untick to disable it for this rule — runaway loops will not be stopped automatically.",
+          "max_enforcements_per_minute": "How many enforcements per minute are allowed before the rule auto-suppresses for 15 minutes. Min 1, max 600. Ignored when loop protection is unticked above."
         }
       },
       "edit_attribute_params": {
