@@ -208,7 +208,7 @@ Review the assembled rule before saving. Confirm to create the config entry. The
 | `sensor.<rule>_suppressed_until` | Timestamp when suppression ends |
 | `sensor.<rule>_blocked_entities` | Count + list of entities currently in cooldown |
 
-> The three `number.*` sliders (delay, debounce, max enforcements) persist their values across Home Assistant restarts and reloads. Adjusting a slider takes effect immediately and survives a restart; editing the same field through the rule's options flow overrides the slider value.
+> The three `number.*` sliders (delay, debounce, max enforcements) persist their values across Home Assistant restarts and reloads. Adjusting a slider takes effect immediately and survives a restart. Opening the rule's options flow shows each slider's current (persisted) value, and saving only changes the fields you edit — an unedited slider keeps its value.
 
 ---
 

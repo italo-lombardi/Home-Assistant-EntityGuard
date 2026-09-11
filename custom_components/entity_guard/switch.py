@@ -26,6 +26,7 @@ from .const import (
     signal_master,
     signal_rule_update,
 )
+from .number import SKIP_RELOAD_KEY
 
 if TYPE_CHECKING:  # pragma: no cover
     from .rule_engine import RuleEngine
@@ -168,9 +169,33 @@ class EntityGuardDebounceEnabledSwitch(EntityGuardRuleSwitchBase):
         await self._set_debounce(False)
 
     async def _set_debounce(self, value: bool) -> None:
-        """Persist debounce_enabled to engine config and config entry."""
+        """Apply debounce_enabled live and persist it to entry.options.
+
+        Mirrors number.py's slider write: set the engine config immediately (so is_on
+        reflects the change at once) and mark the entry to skip the reload the options
+        write would otherwise trigger — a toggle must not tear down and rebuild all of
+        the rule's platforms, possibly mid-enforcement. A no-op toggle writes nothing.
+
+        The SKIP_RELOAD mark is consumed inline by this write's own update listener
+        (HA fires listeners eagerly); see number.py / __init__._async_update_listener.
+        """
+        config = getattr(self._engine, "config", None)
+        if config is not None:  # pragma: no branch
+            try:
+                setattr(config, CONF_DEBOUNCE_ENABLED, value)
+            except Exception:  # pragma: no cover - defensive
+                _LOGGER.debug("Failed to update engine config debounce_enabled")
+
         new_options = {**(self._entry.options or {}), CONF_DEBOUNCE_ENABLED: value}
-        self.hass.config_entries.async_update_entry(self._entry, options=new_options)
+        if new_options != (self._entry.options or {}):
+            # Mark before the write (no await between) so the eager listener skips the
+            # reload; the value is already applied live above.
+            self.hass.data.setdefault(DOMAIN, {}).setdefault(
+                SKIP_RELOAD_KEY, set()
+            ).add(self._entry.entry_id)
+            self.hass.config_entries.async_update_entry(
+                self._entry, options=new_options
+            )
         async_dispatcher_send(
             self.hass, signal_rule_update(self._engine.config.unique_id)
         )

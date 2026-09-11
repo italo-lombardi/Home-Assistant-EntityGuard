@@ -97,7 +97,11 @@ def _rule_name_taken(
             continue
         if ignore_entry_id is not None and entry.entry_id == ignore_entry_id:
             continue
-        if str(entry.data.get(CONF_RULE_NAME, entry.title)).strip().lower() == lowered:
+        # Read the merged view: a rename is persisted to entry.options (the runtime
+        # source of truth), leaving the original name in entry.data. Reading data
+        # alone would compare against the stale pre-rename name.
+        merged = {**entry.data, **(entry.options or {})}
+        if str(merged.get(CONF_RULE_NAME, entry.title)).strip().lower() == lowered:
             return True
     return False
 
@@ -910,9 +914,16 @@ class EntityGuardOptionsFlow(OptionsFlow):
         if self.config_entry.data.get(CONF_ENTRY_TYPE) == ENTRY_TYPE_HUB:
             return self.async_abort(reason="hub_no_options")
 
-        # Snapshot existing data once; each sub-step mutates ``_working`` and saves.
+        # Snapshot existing config once; each sub-step mutates ``_working`` and saves.
+        # Seed from the merged {**data, **options} view — the same merge
+        # parse_rule_config uses (models.py) — so the flow shows and edits exactly
+        # what the engine runs: the values the number sliders and the debounce switch
+        # persisted to entry.options, not the stale creation-time data values.
         if not self._working:  # pragma: no branch
-            self._working = dict(self.config_entry.data)
+            self._working = {
+                **self.config_entry.data,
+                **(self.config_entry.options or {}),
+            }
             self._working.setdefault(CONF_FLAGS, [])
 
         return self.async_show_menu(
@@ -932,18 +943,35 @@ class EntityGuardOptionsFlow(OptionsFlow):
     # ------------------------------------------------------------------ Persist helper
 
     def _save(self) -> ConfigFlowResult:
-        """Write working copy back without touching unique_id / rule_id."""
-        # rule_id and unique_id are immutable; merge into stored data only.
-        self._working[CONF_RULE_ID] = self.config_entry.data.get(CONF_RULE_ID)
+        """Persist edits to entry.options — the runtime source of truth.
+
+        parse_rule_config merges {**data, **options} with options winning; the number
+        sliders and the debounce switch also write to options. Writing the merged
+        working copy here keeps a single owner (options) and preserves any slider/
+        switch value the user did not edit.
+
+        entry.data is left untouched, so structural keys (entry_type, rule_id) and
+        the original name survive there for the readers that need them.
+
+        entry.title must be updated explicitly: async_create_entry(title="") in an
+        options flow sets entry.options to the returned data but does NOT touch
+        entry.title. Without this call a rename would update the engine (which reads
+        options) but leave the device name, entity friendly names, and repair-issue
+        text stale until manually changed.
+
+        Both title AND options are written in this single async_update_entry so the
+        update listener fires at most once. The options-flow manager then calls
+        async_update_entry(options=<same dict>) again as it finalizes the flow, but
+        async_update_entry is a no-op (returns False, fires no listener) when the
+        options are unchanged — so a rename reloads the entry exactly once, not twice.
+        """
+        options = dict(self._working)
         self.hass.config_entries.async_update_entry(
             self.config_entry,
-            data=self._working,
-            title=self._working.get(CONF_RULE_NAME, self.config_entry.title),
+            title=options.get(CONF_RULE_NAME, self.config_entry.title),
+            options=options,
         )
-        # Returning data={} makes HA blank entry.options on flow finish, which also
-        # clears any slider value the number entities had persisted there — so this
-        # deliberate edit (written to data above) is never masked by a stale option.
-        return self.async_create_entry(title="", data={})
+        return self.async_create_entry(title="", data=options)
 
     # ------------------------------------------------------------------ Basics
 
@@ -1307,11 +1335,21 @@ class EntityGuardOptionsFlow(OptionsFlow):
             self._working[CONF_DEBOUNCE_SECONDS] = int(
                 user_input[CONF_DEBOUNCE_SECONDS]
             )
-            self._working[CONF_MAX_ENFORCEMENTS_PER_MINUTE] = int(
-                user_input[CONF_MAX_ENFORCEMENTS_PER_MINUTE]
-            )
+            # 0 disables loop protection (the engine and parse_rule_config honor it,
+            # and the slider can reach 0). The numeric field's own min is
+            # MIN_RATE_LIMIT (1), so a dedicated toggle expresses the disabled state —
+            # mirroring the create flow — instead of clamping 0 back up to 1.
+            if user_input.get(CONF_RATE_LIMIT_ENABLED, True):
+                self._working[CONF_MAX_ENFORCEMENTS_PER_MINUTE] = int(
+                    user_input[CONF_MAX_ENFORCEMENTS_PER_MINUTE]
+                )
+            else:
+                self._working[CONF_MAX_ENFORCEMENTS_PER_MINUTE] = 0
             return self._save()
 
+        current_rate = self._working.get(
+            CONF_MAX_ENFORCEMENTS_PER_MINUTE, DEFAULT_MAX_ENFORCEMENTS_PER_MINUTE
+        )
         schema = vol.Schema(
             {
                 vol.Required(
@@ -1327,11 +1365,16 @@ class EntityGuardOptionsFlow(OptionsFlow):
                     ),
                 ): _debounce_selector(),
                 vol.Required(
+                    CONF_RATE_LIMIT_ENABLED,
+                    default=current_rate not in (None, 0),
+                ): selector.BooleanSelector(),
+                vol.Required(
                     CONF_MAX_ENFORCEMENTS_PER_MINUTE,
-                    default=self._working.get(
-                        CONF_MAX_ENFORCEMENTS_PER_MINUTE,
-                        DEFAULT_MAX_ENFORCEMENTS_PER_MINUTE,
-                    ),
+                    # Never seed below the selector min; 0 (disabled) is carried by
+                    # the toggle above, so show the default rate when disabled.
+                    default=current_rate
+                    if current_rate
+                    else DEFAULT_MAX_ENFORCEMENTS_PER_MINUTE,
                 ): _rate_selector(),
             }
         )

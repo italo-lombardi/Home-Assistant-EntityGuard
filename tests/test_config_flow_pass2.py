@@ -414,7 +414,8 @@ async def test_options_edit_state_save(hass: HomeAssistant):
         },
     )
     assert res["type"] == FlowResultType.CREATE_ENTRY
-    assert e.data[CONF_DELAY_SECONDS] == 5
+    # Options-flow edits persist to entry.options (the runtime source of truth).
+    assert e.options[CONF_DELAY_SECONDS] == 5
 
 
 # ---------------------------------------------------------------------------
@@ -443,7 +444,7 @@ async def test_options_edit_attribute_save(hass: HomeAssistant):
         },
     )
     assert res["type"] == FlowResultType.CREATE_ENTRY
-    assert e.data[CONF_THRESHOLD] == 100
+    assert e.options[CONF_THRESHOLD] == 100
 
 
 async def test_options_edit_attribute_invalid_threshold_skipped():
@@ -527,10 +528,10 @@ async def test_options_edit_attribute_switch_to_rgb_color(hass: HomeAssistant):
         res["flow_id"], {CONF_TARGET_VALUE: [255, 0, 0], CONF_DELAY_SECONDS: 0}
     )
     assert res["type"] == FlowResultType.CREATE_ENTRY
-    assert e.data[CONF_ATTRIBUTE] == ATTR_RGB_COLOR
-    assert e.data[CONF_TARGET_VALUE] == [255, 0, 0]
-    assert e.data[CONF_OPERATOR] is None
-    assert e.data[CONF_THRESHOLD] is None
+    assert e.options[CONF_ATTRIBUTE] == ATTR_RGB_COLOR
+    assert e.options[CONF_TARGET_VALUE] == [255, 0, 0]
+    assert e.options[CONF_OPERATOR] is None
+    assert e.options[CONF_THRESHOLD] is None
 
 
 async def test_options_edit_attribute_color_temp_kelvin_save(hass: HomeAssistant):
@@ -547,10 +548,10 @@ async def test_options_edit_attribute_color_temp_kelvin_save(hass: HomeAssistant
         res["flow_id"], {CONF_TARGET_VALUE: 3000, CONF_DELAY_SECONDS: 0}
     )
     assert res["type"] == FlowResultType.CREATE_ENTRY
-    assert e.data[CONF_ATTRIBUTE] == ATTR_COLOR_TEMP_KELVIN
-    assert e.data[CONF_TARGET_VALUE] == 3000
-    assert e.data[CONF_OPERATOR] is None
-    assert e.data[CONF_THRESHOLD] is None
+    assert e.options[CONF_ATTRIBUTE] == ATTR_COLOR_TEMP_KELVIN
+    assert e.options[CONF_TARGET_VALUE] == 3000
+    assert e.options[CONF_OPERATOR] is None
+    assert e.options[CONF_THRESHOLD] is None
 
 
 async def test_options_edit_attribute_invalid_rgb_color(hass: HomeAssistant):

@@ -246,7 +246,9 @@ def has_safety_target(entity_ids: list) -> bool:
 
 def entry_has_safety_target(entry) -> bool:
     """Return True if a config entry targets a safety-sensitive domain."""
-    entity_ids = entry.data.get(CONF_TARGET_ENTITIES) or entry.options.get(
-        CONF_TARGET_ENTITIES, []
-    )
-    return has_safety_target(entity_ids or [])
+    # Merge like parse_rule_config (options wins): an options-flow edit of the target
+    # entities persists to entry.options, so reading data alone (which keeps the
+    # creation-time entities) would miss a lock/cover added after creation and skip
+    # the safety-status sensor.
+    merged = {**entry.data, **(entry.options or {})}
+    return has_safety_target(merged.get(CONF_TARGET_ENTITIES) or [])

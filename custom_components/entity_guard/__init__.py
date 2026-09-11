@@ -13,7 +13,6 @@ from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.issue_registry import async_delete_issue
 
@@ -54,19 +53,6 @@ def _get_version() -> str:
     manifest = Path(__file__).parent / "manifest.json"
     with manifest.open() as f:
         return json.load(f).get("version", "0.0.0")
-
-
-def _lookup_device(device_reg, entry_id: str):
-    """Find this integration's device for a config entry.
-
-    Prefers async_get_device_by_identifier (HA 2026.8+); the identifiers= form of
-    async_get_device is flagged deprecated and slated to stop working in HA
-    2027.8, so we fall back to it only on older cores.
-    """
-    new_lookup = getattr(device_reg, "async_get_device_by_identifier", None)
-    if new_lookup is not None:
-        return new_lookup((DOMAIN, entry_id), entry_id)
-    return device_reg.async_get_device(identifiers={(DOMAIN, entry_id)})
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
@@ -210,19 +196,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
             entry.async_on_unload(unsub_reg)
 
-        # Sync device-registry name only when entry.title changed since last setup
-        # (options-flow rename). Tracking via _device_title option prevents clobbering
-        # user-set device names on every restart.
-        device_reg = dr.async_get(hass)
-        device = _lookup_device(device_reg, entry.entry_id)
-        if device is not None:
-            stored_title = entry.options.get("_device_title")
-            if stored_title != entry.title:
-                # Title changed (or first setup): sync device name and record it.
-                device_reg.async_update_device(device.id, name=entry.title)
-                hass.config_entries.async_update_entry(
-                    entry, options={**entry.options, "_device_title": entry.title}
-                )
         # Reload entry on options-save so engine picks up edits + entities rename.
         entry.async_on_unload(entry.add_update_listener(_async_update_listener))
         # Recreate hub if missing — covers user deleting hub while rules still exist.

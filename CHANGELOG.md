@@ -1,12 +1,15 @@
 # Changelog
 
-## [0.3.0] — 2026-09-09
+## [0.3.0] — 2026-09-11
 
 ### Fixed
 
+- **Editing a rule in the options flow no longer reverts a slider value you set from its number entity.** A slider (e.g. `number.<rule>_delay_seconds`) persists its value to the config entry's *options*, but the options flow seeded its forms from — and saved back to — the entry's *data*. Opening "Configure → edit mode-specific settings" therefore showed the stale creation-time value, and saving overwrote the live options with it, silently reverting the slider. The options flow now treats options as the single source of truth: it seeds every form from the merged `{**data, **options}` view (options winning) and writes the result to options, so an unedited field keeps its persisted value and a one-field edit no longer clobbers the others.
 - **Number sliders no longer reset on restart/reload.** The `number.<rule>_delay_seconds`, `number.<rule>_debounce_seconds`, and `number.<rule>_max_enforcements_per_minute` entities previously applied a change only to the running engine — the value was lost on the next Home Assistant restart or config-entry reload, silently reverting to the value from the original config flow. Slider values are now persisted to the config entry's options (debounced and coalesced so a drag collapses to a single write) and restored on setup, so an adjustment survives a restart.
 - **Re-enabled rules no longer silently re-disable after a panic stop + restart.** Per-rule enabled state is owned by the runtime Store (written by the enable switch and by `panic_stop`). Setup also restored `enabled` from `entry.options`, but only `panic_stop` ever wrote that key — so after a panic stop, turning a rule back on, and restarting, the stale `options["enabled"]=False` re-disabled the rule. Setup no longer reads `enabled` from options; the Store is the single owner, and `panic_stop` no longer writes the redundant options key.
-- **A slider adjustment no longer reloads the rule.** Persisting the slider value to the config entry's options fires the entry's update listener, which would otherwise reload the entry — tearing down and rebuilding all platforms, possibly mid-enforcement — even though the value was already applied live. The flush now marks the entry so the listener skips that reload; a re-set to the value already stored writes nothing at all.
+- **A slider adjustment no longer reloads the rule.** Persisting the slider value to the config entry's options fires the entry's update listener, which would otherwise reload the entry — tearing down and rebuilding all platforms, possibly mid-enforcement — even though the value was already applied live. The flush now marks the entry so the listener skips that reload; a re-set to the value already stored writes nothing at all. The debounce-enabled switch takes the same live-apply + skip-reload path.
+- **Safety-target detection now reflects a live-edited target list.** `entry_has_safety_target` read `entry.data` and only fell back to `entry.options`, so once the options flow wrote a target-entities list the check could still consult the stale data value. It now reads the merged `{**data, **options}` view, matching how the rule engine resolves the rule's configuration.
+- **Renaming a rule now reloads it once, not twice.** The options-flow save wrote the title and the options in two separate `async_update_entry` calls, and setup ran a device-registry name-sync block that did a third `async_update_entry` — each firing the entry's update listener and reloading the entry, tearing all platforms down and back up two-to-three times per rename. Title and options are now written in a single update (the flow's own finalizing write of the same options is a no-op), and the setup-time sync block is gone: every platform already sets `DeviceInfo(name=entry.title)`, so the one reload renames the device, and a user's own "Rename device" override (`name_by_user`) is a separate attribute that integration name-writes never touch.
 
 ### Changed
 
@@ -14,7 +17,8 @@
 
 ### Tests
 
-- Added coverage for slider persistence (debounced flush writes to options), two sliders moved within the debounce window coalescing into one write, unload cancelling a pending write, the max-enforcements `0` floor, the panic-stop/enabled ownership change, and the update listener skipping the reload on a slider write (while still reloading on a real change).
+- Added coverage for slider persistence (debounced flush writes to options), two sliders moved within the debounce window coalescing into one write, unload cancelling a pending write (and a remove-while-loaded flush that preserves the coalesced value), the max-enforcements `0` floor, the panic-stop/enabled ownership change, and the update listener skipping the reload on a slider write (while still reloading on a real change).
+- Added options-flow coverage: a save preserves an unedited slider value persisted to options, an edit shows the persisted option (not the stale data value) as its form default, and the rate-limit toggle writes `0` when disabled. Added a live smoke test (`scripts/smoke.py`) driving the number/switch entities and the REST options flow against a real Home Assistant across restarts.
 
 ## [0.2.9] — 2026-09-08
 
