@@ -197,6 +197,7 @@
           "max_enforcements_per_minute": "Maximális kényszerítés percenként"
         },
         "data_description": {
+          "debounce_enabled": "Jelölje be, hogy figyelmen kívül hagyja a gyors oda-vissza változásokat. A szabály csak akkor lép fel, ha a trigger változatlan marad az alább beállított debounce ablak idejéig. Hagyja bejelöletlenül, hogy minden változásra fellépjen.",
           "debounce_seconds": "Ablak másodpercben. Min. 0, max. 86400 (24 óra).",
           "rate_limit_enabled": "Jelölje be a hurokvédelem bekapcsolva tartásához (ajánlott). Vegye ki a jelölést, hogy letiltsa ehhez a szabályhoz — a megszaladt hurkok nem állnak le automatikusan.",
           "max_enforcements_per_minute": "Hány kényszerítés engedélyezett percenként, mielőtt a szabály automatikusan elnyomja magát 15 percre. Min. 1, max. 600. Figyelmen kívül hagyva, ha a hurokvédelem fentebb ki van kapcsolva."

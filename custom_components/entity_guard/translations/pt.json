@@ -197,6 +197,7 @@
           "max_enforcements_per_minute": "Máximo de aplicações por minuto"
         },
         "data_description": {
+          "debounce_enabled": "Selecione para ignorar mudanças rápidas e repetidas. A regra apenas atua se o gatilho se mantiver igual durante a janela de debounce definida abaixo. Deixe sem selecionar para atuar a cada mudança.",
           "debounce_seconds": "Janela em segundos. Mín. 0, máx. 86400 (24h).",
           "rate_limit_enabled": "Selecione para manter a proteção contra ciclos ativa (recomendado). Desmarque para a desativar nesta regra — ciclos descontrolados não serão parados automaticamente.",
           "max_enforcements_per_minute": "Quantas aplicações por minuto são permitidas antes da regra ser auto-suprimida durante 15 minutos. Mín. 1, máx. 600. Ignorado quando a proteção contra ciclos está desmarcada acima."

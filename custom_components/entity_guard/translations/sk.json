@@ -197,6 +197,7 @@
           "max_enforcements_per_minute": "Maximálny počet vynútení za minútu"
         },
         "data_description": {
+          "debounce_enabled": "Začiarknite pre ignorovanie rýchlych zmien tam a späť. Pravidlo zareaguje iba vtedy, ak spúšťač zostane rovnaký po dobu okna potlačenia zákmitov nastaveného nižšie. Ak nezačiarknete, zareaguje na každú zmenu.",
           "debounce_seconds": "Okno v sekundách. Min 0, max 86400 (24 h).",
           "rate_limit_enabled": "Začiarknite pre ponechanie ochrany proti slučkám zapnutej (odporúčané). Zrušte začiarknutie pre jej vypnutie pre toto pravidlo — nekontrolovateľné slučky nebudú automaticky zastavené.",
           "max_enforcements_per_minute": "Koľko vynútení za minútu je povolených predtým, ako sa pravidlo automaticky potlačí na 15 minút. Min 1, max 600. Ignoruje sa, keď je ochrana proti slučkám vyššie nezačiarknutá."

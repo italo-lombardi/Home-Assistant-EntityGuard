@@ -197,6 +197,7 @@
           "max_enforcements_per_minute": "Máx. actuaciones por minuto"
         },
         "data_description": {
+          "debounce_enabled": "Marque para ignorar cambios rápidos de ida y vuelta. La regla solo actuará si el disparador permanece igual durante la ventana de antirrebote de abajo. Deje sin marcar para actuar ante cada cambio.",
           "debounce_seconds": "Ventana en segundos. Mín. 0, máx. 86400 (24h).",
           "rate_limit_enabled": "Marque para mantener la protección contra bucles activada (recomendado). Desmarque para desactivarla en esta regla — los bucles descontrolados no se detendrán automáticamente.",
           "max_enforcements_per_minute": "Cuántas actuaciones por minuto se permiten antes de que la regla se autosuprima durante 15 minutos. Mín. 1, máx. 600. Se ignora cuando la protección contra bucles está desmarcada arriba."

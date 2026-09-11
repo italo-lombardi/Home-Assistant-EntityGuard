@@ -197,6 +197,7 @@
           "max_enforcements_per_minute": "Impuneri maxime pe minut"
         },
         "data_description": {
+          "debounce_enabled": "Bifați pentru a ignora schimbările rapide dus-întors. Regula acționează doar dacă declanșarea rămâne aceeași pe durata ferestrei debounce setate mai jos. Lăsați nebifat pentru a acționa la fiecare schimbare.",
           "debounce_seconds": "Fereastră în secunde. Minim 0, maxim 86400 (24h).",
           "rate_limit_enabled": "Bifați pentru a menține activă protecția împotriva buclelor (recomandat). Debifați pentru a o dezactiva pentru această regulă — buclele scăpate de sub control nu vor fi oprite automat.",
           "max_enforcements_per_minute": "Câte impuneri pe minut sunt permise înainte ca regula să se suprime automat timp de 15 minute. Minim 1, maxim 600. Ignorat când protecția împotriva buclelor este debifată mai sus."

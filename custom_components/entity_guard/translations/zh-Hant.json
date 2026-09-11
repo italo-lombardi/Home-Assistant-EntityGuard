@@ -166,7 +166,7 @@
       "edit_advanced": {
         "title": "編輯進階設定",
         "data": {"debounce_enabled": "啟用去抖動","debounce_seconds": "去抖動時間窗（秒）","rate_limit_enabled": "強制執行迴圈保護","max_enforcements_per_minute": "每分鐘最大強制執行次數"},
-        "data_description": {"debounce_seconds": "以秒為單位的時間窗。最小 0，最大 86400（24 小時）。","rate_limit_enabled": "勾選以保持迴圈保護開啟（建議）。取消勾選則為此規則停用迴圈保護 — 失控迴圈將不會被自動停止。","max_enforcements_per_minute": "規則在自動抑制 15 分鐘前，每分鐘允許的強制執行次數。最小 1，最大 600。當上方取消勾選迴圈保護時，此設定會被忽略。"}
+        "data_description": {"debounce_enabled": "勾選以忽略快速來回的變化。規則僅在觸發狀態於下方設定的去抖動時間窗內保持不變時才動作。不勾選則每次變化皆動作。","debounce_seconds": "以秒為單位的時間窗。最小 0，最大 86400（24 小時）。","rate_limit_enabled": "勾選以保持迴圈保護開啟（建議）。取消勾選則為此規則停用迴圈保護 — 失控迴圈將不會被自動停止。","max_enforcements_per_minute": "規則在自動抑制 15 分鐘前，每分鐘允許的強制執行次數。最小 1，最大 600。當上方取消勾選迴圈保護時，此設定會被忽略。"}
       },
       "edit_attribute_params": {
         "title": "編輯屬性參數",

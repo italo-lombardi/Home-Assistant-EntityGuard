@@ -197,6 +197,7 @@
           "max_enforcements_per_minute": "Max tillämpningar per minut"
         },
         "data_description": {
+          "debounce_enabled": "Bocka i för att ignorera snabba fram-och-tillbaka-ändringar. Regeln agerar endast om utlösaren förblir densamma under avstudsningsfönstret som ställs in nedan. Lämna obockad för att agera på varje ändring.",
           "debounce_seconds": "Fönster i sekunder. Min 0, max 86400 (24h).",
           "rate_limit_enabled": "Bocka i för att behålla loopskyddet aktivt (rekommenderas). Bocka ur för att inaktivera det för denna regel — skenande loopar stoppas inte automatiskt.",
           "max_enforcements_per_minute": "Hur många tillämpningar per minut som tillåts innan regeln undertrycks automatiskt i 15 minuter. Min 1, max 600. Ignoreras när loopskydd är obockat ovan."
