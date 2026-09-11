@@ -197,7 +197,7 @@
           "max_enforcements_per_minute": "Màxim d'aplicacions per minut"
         },
         "data_description": {
-          "debounce_seconds": "Finestra en segons. Mín. 0, màx. 86400 (24 h). Només es mostra quan l'antirebot s'ha activat al pas anterior.",
+          "debounce_seconds": "Finestra en segons. Mín. 0, màx. 86400 (24 h).",
           "rate_limit_enabled": "Marqueu per mantenir activada la protecció contra bucles (recomanat). Desmarqueu per desactivar-la per a aquesta regla — els bucles descontrolats no s'aturaran automàticament.",
           "max_enforcements_per_minute": "Quantes aplicacions per minut es permeten abans que la regla se suprimeixi automàticament durant 15 minuts. Mín. 1, màx. 600. S'ignora quan la protecció contra bucles està desmarcada a dalt."
         }

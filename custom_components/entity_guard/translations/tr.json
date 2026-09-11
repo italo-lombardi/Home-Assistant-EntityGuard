@@ -197,7 +197,7 @@
           "max_enforcements_per_minute": "Dakika başına maksimum uygulama"
         },
         "data_description": {
-          "debounce_seconds": "Saniye cinsinden pencere. En az 0, en fazla 86400 (24s). Yalnızca önceki adımda debounce etkinleştirildiğinde gösterilir.",
+          "debounce_seconds": "Saniye cinsinden pencere. En az 0, en fazla 86400 (24s).",
           "rate_limit_enabled": "Döngü korumasını açık tutmak için işaretleyin (önerilir). Bu kural için devre dışı bırakmak üzere işareti kaldırın — kontrolden çıkan döngüler otomatik olarak durdurulmaz.",
           "max_enforcements_per_minute": "Kural 15 dakika boyunca otomatik olarak bastırılmadan önce dakikada kaç uygulamaya izin verilir. En az 1, en fazla 600. Yukarıda döngü koruması işaretlenmediğinde yoksayılır."
         }

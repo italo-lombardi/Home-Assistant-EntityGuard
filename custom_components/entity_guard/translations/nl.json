@@ -197,7 +197,7 @@
           "max_enforcements_per_minute": "Max afdwingingen per minuut"
         },
         "data_description": {
-          "debounce_seconds": "Venster in seconden. Min 0, max 86400 (24u). Alleen getoond wanneer debounce is ingeschakeld in de vorige stap.",
+          "debounce_seconds": "Venster in seconden. Min 0, max 86400 (24u).",
           "rate_limit_enabled": "Aanvinken om lusbeveiliging aan te houden (aanbevolen). Uitvinken om deze voor deze regel uit te schakelen — op hol geslagen lussen worden niet automatisch gestopt.",
           "max_enforcements_per_minute": "Hoeveel afdwingingen per minuut zijn toegestaan voordat de regel zichzelf 15 minuten onderdrukt. Min 1, max 600. Genegeerd wanneer lusbeveiliging hierboven niet is aangevinkt."
         }

@@ -197,7 +197,7 @@
           "max_enforcements_per_minute": "Maks. wymuszeń na minutę"
         },
         "data_description": {
-          "debounce_seconds": "Okno w sekundach. Min. 0, maks. 86400 (24h). Wyświetlane tylko, gdy debouncing został włączony w poprzednim kroku.",
+          "debounce_seconds": "Okno w sekundach. Min. 0, maks. 86400 (24h).",
           "rate_limit_enabled": "Zaznacz, aby pozostawić włączoną ochronę przed pętlami (zalecane). Odznacz, aby wyłączyć ją dla tej reguły — niekontrolowane pętle nie będą zatrzymywane automatycznie.",
           "max_enforcements_per_minute": "Ile wymuszeń na minutę jest dozwolonych, zanim reguła automatycznie się wstrzyma na 15 minut. Min. 1, maks. 600. Ignorowane, gdy ochrona przed pętlami jest powyżej odznaczona."
         }

@@ -197,7 +197,7 @@
           "max_enforcements_per_minute": "Daugiausia taikymų per minutę"
         },
         "data_description": {
-          "debounce_seconds": "Langas sekundėmis. Mažiausia 0, daugiausia 86400 (24 val.). Rodoma tik tada, kai nutildymas buvo įjungtas ankstesniame žingsnyje.",
+          "debounce_seconds": "Langas sekundėmis. Mažiausia 0, daugiausia 86400 (24 val.).",
           "rate_limit_enabled": "Pažymėkite, kad ciklo apsauga liktų įjungta (rekomenduojama). Nuimkite žymėjimą, kad išjungtumėte ją šiai taisyklei — nekontroliuojami ciklai nebus automatiškai sustabdyti.",
           "max_enforcements_per_minute": "Kiek taikymų per minutę leidžiama prieš taisyklei automatiškai susislopinant 15 minučių. Mažiausia 1, daugiausia 600. Ignoruojama, kai ciklo apsauga aukščiau nepažymėta."
         }

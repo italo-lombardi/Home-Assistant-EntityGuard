@@ -197,7 +197,7 @@
           "max_enforcements_per_minute": "每分钟最大强制执行次数"
         },
         "data_description": {
-          "debounce_seconds": "窗口时长（秒）。最小 0，最大 86400（24 小时）。仅在上一步启用了防抖时显示。",
+          "debounce_seconds": "窗口时长（秒）。最小 0，最大 86400（24 小时）。",
           "rate_limit_enabled": "勾选以保持循环保护开启（推荐）。取消勾选可为此规则禁用它 — 失控循环将不会被自动阻止。",
           "max_enforcements_per_minute": "规则自动抑制 15 分钟前每分钟允许的强制执行次数。最小 1，最大 600。上方取消勾选循环保护时忽略此项。"
         }

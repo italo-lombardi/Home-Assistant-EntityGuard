@@ -197,7 +197,7 @@
           "max_enforcements_per_minute": "Numero massimo di applicazioni al minuto"
         },
         "data_description": {
-          "debounce_seconds": "Finestra in secondi. Min 0, max 86400 (24h). Mostrato solo se il debounce è stato abilitato nel passaggio precedente.",
+          "debounce_seconds": "Finestra in secondi. Min 0, max 86400 (24h).",
           "rate_limit_enabled": "Seleziona per mantenere attiva la protezione anti-loop (consigliato). Deseleziona per disabilitarla per questa regola — i loop incontrollati non verranno fermati automaticamente.",
           "max_enforcements_per_minute": "Quante applicazioni al minuto sono consentite prima che la regola venga auto-soppressa per 15 minuti. Min 1, max 600. Ignorato quando la protezione anti-loop è deselezionata sopra."
         }

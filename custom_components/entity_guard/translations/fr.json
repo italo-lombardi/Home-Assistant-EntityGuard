@@ -197,7 +197,7 @@
           "max_enforcements_per_minute": "Nombre maximal d'applications par minute"
         },
         "data_description": {
-          "debounce_seconds": "Fenêtre en secondes. Min 0, max 86400 (24 h). Affichée uniquement si l'anti-rebond a été activé à l'étape précédente.",
+          "debounce_seconds": "Fenêtre en secondes. Min 0, max 86400 (24 h).",
           "rate_limit_enabled": "Cochez pour conserver la protection anti-boucle activée (recommandé). Décochez pour la désactiver pour cette règle — les boucles incontrôlées ne seront pas arrêtées automatiquement.",
           "max_enforcements_per_minute": "Combien d'applications par minute sont autorisées avant que la règle ne s'auto-supprime pendant 15 minutes. Min 1, max 600. Ignoré si la protection anti-boucle est décochée ci-dessus."
         }

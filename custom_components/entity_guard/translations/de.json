@@ -197,7 +197,7 @@
           "max_enforcements_per_minute": "Max. Durchsetzungen pro Minute"
         },
         "data_description": {
-          "debounce_seconds": "Fenster in Sekunden. Min. 0, max. 86400 (24 Std.). Wird nur angezeigt, wenn die Entprellung im vorherigen Schritt aktiviert wurde.",
+          "debounce_seconds": "Fenster in Sekunden. Min. 0, max. 86400 (24 Std.).",
           "rate_limit_enabled": "Aktivieren, um den Schleifenschutz beizubehalten (empfohlen). Deaktivieren, um ihn für diese Regel auszuschalten — Endlosschleifen werden dann nicht automatisch gestoppt.",
           "max_enforcements_per_minute": "Wie viele Durchsetzungen pro Minute erlaubt sind, bevor sich die Regel für 15 Minuten automatisch unterdrückt. Min. 1, max. 600. Wird ignoriert, wenn der Schleifenschutz oben deaktiviert ist."
         }
