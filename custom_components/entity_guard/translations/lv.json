@@ -195,6 +195,11 @@
           "debounce_seconds": "Atsitiena novēršanas logs (sekundes)",
           "rate_limit_enabled": "Piemērot cilpu aizsardzību",
           "max_enforcements_per_minute": "Maks. piemērošanas minūtē"
+        },
+        "data_description": {
+          "debounce_seconds": "Logs sekundēs. Min. 0, maks. 86400 (24 h). Rādīts tikai tad, ja atsitiena novēršana tika iespējota iepriekšējā solī.",
+          "rate_limit_enabled": "Atzīmējiet, lai saglabātu cilpu aizsardzību ieslēgtu (ieteicams). Noņemiet atzīmi, lai to atspējotu šim noteikumam — nekontrolētas cilpas netiks automātiski apturētas.",
+          "max_enforcements_per_minute": "Cik piemērošanu minūtē ir atļautas, pirms noteikums automātiski tiek apturēts uz 15 minūtēm. Min. 1, maks. 600. Ignorēts, kad cilpu aizsardzība iepriekš nav atzīmēta."
         }
       },
       "edit_attribute_params": {

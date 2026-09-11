@@ -195,6 +195,11 @@
           "debounce_seconds": "Viivevakautusikkuna (sekuntia)",
           "rate_limit_enabled": "Käytä silmukkasuojausta",
           "max_enforcements_per_minute": "Enimmäisvalvontatoimet minuutissa"
+        },
+        "data_description": {
+          "debounce_seconds": "Ikkuna sekunteina. Vähintään 0, enintään 86400 (24 h). Näytetään vain, kun viivevakautus otettiin käyttöön edellisessä vaiheessa.",
+          "rate_limit_enabled": "Valitse pitääksesi silmukkasuojauksen päällä (suositeltavaa). Poista valinta poistaaksesi sen käytöstä tälle säännölle — karkaavia silmukoita ei pysäytetä automaattisesti.",
+          "max_enforcements_per_minute": "Kuinka monta valvontatoimenpidettä minuutissa sallitaan ennen kuin sääntö estää itsensä automaattisesti 15 minuutiksi. Vähintään 1, enintään 600. Ohitetaan, kun silmukkasuojaus on yllä valitsematta."
         }
       },
       "edit_attribute_params": {

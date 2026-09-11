@@ -195,6 +195,11 @@
           "debounce_seconds": "Okno potlačenia zákmitov (sekundy)",
           "rate_limit_enabled": "Vynucovať ochranu proti slučkám",
           "max_enforcements_per_minute": "Maximálny počet vynútení za minútu"
+        },
+        "data_description": {
+          "debounce_seconds": "Okno v sekundách. Min 0, max 86400 (24 h). Zobrazuje sa iba vtedy, keď bolo potlačenie zákmitov povolené v predchádzajúcom kroku.",
+          "rate_limit_enabled": "Začiarknite pre ponechanie ochrany proti slučkám zapnutej (odporúčané). Zrušte začiarknutie pre jej vypnutie pre toto pravidlo — nekontrolovateľné slučky nebudú automaticky zastavené.",
+          "max_enforcements_per_minute": "Koľko vynútení za minútu je povolených predtým, ako sa pravidlo automaticky potlačí na 15 minút. Min 1, max 600. Ignoruje sa, keď je ochrana proti slučkám vyššie nezačiarknutá."
         }
       },
       "edit_attribute_params": {

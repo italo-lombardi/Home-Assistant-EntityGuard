@@ -195,6 +195,11 @@
           "debounce_seconds": "Debounce ablak (másodperc)",
           "rate_limit_enabled": "Hurokvédelem kényszerítése",
           "max_enforcements_per_minute": "Maximális kényszerítés percenként"
+        },
+        "data_description": {
+          "debounce_seconds": "Ablak másodpercben. Min. 0, max. 86400 (24 óra). Csak akkor jelenik meg, ha a debounce engedélyezve volt az előző lépésben.",
+          "rate_limit_enabled": "Jelölje be a hurokvédelem bekapcsolva tartásához (ajánlott). Vegye ki a jelölést, hogy letiltsa ehhez a szabályhoz — a megszaladt hurkok nem állnak le automatikusan.",
+          "max_enforcements_per_minute": "Hány kényszerítés engedélyezett percenként, mielőtt a szabály automatikusan elnyomja magát 15 percre. Min. 1, max. 600. Figyelmen kívül hagyva, ha a hurokvédelem fentebb ki van kapcsolva."
         }
       },
       "edit_attribute_params": {

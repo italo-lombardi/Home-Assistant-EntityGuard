@@ -78,7 +78,7 @@
       "edit_state": {"title": "상태 모드 편집","data": {"trigger_states": "트리거 상태","target_state": "대상 상태","delay_seconds": "지연 (초)"}},
       "edit_attribute": {"title": "속성 모드 편집","description": "이 규칙이 적용할 속성을 선택하세요. 숫자 속성은 대상 값으로 제한되고, 색상 속성은 대상 색상과 일치시킵니다.","data": {"attribute": "속성"}},
       "edit_flags": {"title": "플래그 조건 편집","description": "현재 플래그: {summary}.\n\n{current_state}\n\n추가하려면 'add', 모두 교체하려면 'replace', 모두 제거하려면 'clear', 변경하지 않으려면 'save'를 선택하세요.","data": {"entity": "플래그 엔터티","match_state": "필요한 상태","action": "동작"}},
-      "edit_advanced": {"title": "고급 설정 편집","data": {"debounce_enabled": "디바운스 활성화","debounce_seconds": "디바운스 창 (초)","rate_limit_enabled": "루프 보호 적용","max_enforcements_per_minute": "분당 최대 적용 횟수"}},
+      "edit_advanced": {"title": "고급 설정 편집","data": {"debounce_enabled": "디바운스 활성화","debounce_seconds": "디바운스 창 (초)","rate_limit_enabled": "루프 보호 적용","max_enforcements_per_minute": "분당 최대 적용 횟수"},"data_description": {"debounce_seconds":"초 단위 창입니다. 최소 0, 최대 86400 (24시간). 이전 단계에서 디바운스를 활성화한 경우에만 표시됩니다.","rate_limit_enabled":"루프 보호를 켜 두려면 선택하세요(권장). 이 규칙에 대해 비활성화하려면 선택 해제하세요 — 폭주 루프가 자동으로 중지되지 않습니다.","max_enforcements_per_minute":"규칙이 15분간 자동 억제되기 전에 허용되는 분당 적용 횟수입니다. 최소 1, 최대 600. 위에서 루프 보호가 선택 해제되면 무시됩니다."}},
       "edit_attribute_params": {"title": "속성 매개변수 편집","description": "선택한 속성의 적용 값을 구성하세요.","data": {"operator": "연산자","threshold": "임계값","target_value": "대상 값","delay_seconds": "지연 (초)"}}
     },
     "error": {

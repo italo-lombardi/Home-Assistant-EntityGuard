@@ -195,6 +195,11 @@
           "debounce_seconds": "Ventana de antirrebote (segundos)",
           "rate_limit_enabled": "Aplicar protección contra bucles",
           "max_enforcements_per_minute": "Máx. actuaciones por minuto"
+        },
+        "data_description": {
+          "debounce_seconds": "Ventana en segundos. Mín. 0, máx. 86400 (24h). Solo se muestra cuando el antirrebote se habilitó en el paso anterior.",
+          "rate_limit_enabled": "Marque para mantener la protección contra bucles activada (recomendado). Desmarque para desactivarla en esta regla — los bucles descontrolados no se detendrán automáticamente.",
+          "max_enforcements_per_minute": "Cuántas actuaciones por minuto se permiten antes de que la regla se autosuprima durante 15 minutos. Mín. 1, máx. 600. Se ignora cuando la protección contra bucles está desmarcada arriba."
         }
       },
       "edit_attribute_params": {

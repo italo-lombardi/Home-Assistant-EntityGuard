@@ -195,6 +195,11 @@
           "debounce_seconds": "Okno potlačení zákmitů (sekundy)",
           "rate_limit_enabled": "Vynucovat ochranu proti smyčkám",
           "max_enforcements_per_minute": "Maximum vynucení za minutu"
+        },
+        "data_description": {
+          "debounce_seconds": "Okno v sekundách. Min. 0, max. 86400 (24 h). Zobrazuje se pouze, když bylo potlačení zákmitů povoleno v předchozím kroku.",
+          "rate_limit_enabled": "Zaškrtněte pro ponechání ochrany proti smyčkám zapnuté (doporučeno). Odškrtněte pro její vypnutí u tohoto pravidla — nekontrolované smyčky nebudou automaticky zastaveny.",
+          "max_enforcements_per_minute": "Kolik vynucení za minutu je povoleno, než se pravidlo automaticky potlačí na 15 minut. Min. 1, max. 600. Ignoruje se, když je ochrana proti smyčkám výše odškrtnuta."
         }
       },
       "edit_attribute_params": {
