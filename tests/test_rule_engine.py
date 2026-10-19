@@ -1169,7 +1169,7 @@ async def test_evaluate_skip_reason_entity_removed_from_pending_due_broadcasts(
     config = _make_config(
         delay_seconds=30,
         target_entities=["light.x", "light.y"],
-        mode="attribute",
+        mode=MODE_ATTRIBUTE,
         attribute="color_temp_kelvin",
         operator=None,
         threshold=None,
@@ -1200,18 +1200,17 @@ async def test_evaluate_skip_reason_entity_removed_from_pending_due_broadcasts(
 
     # light.x goes unavailable → _color_trigger_decision returns skip_reason="light_unavailable"
     hass.states.async_set("light.x", "unavailable", {"color_temp_kelvin": 6000})
-    with patch(
-        "custom_components.entity_guard.rule_engine.async_call_later"
-    ) as mock_later:
-        mock_later.return_value = MagicMock()
-        await engine.async_evaluate("light.x", hass.states.get("light.x"))
-        await hass.async_block_till_done()
+    await engine.async_evaluate("light.x", hass.states.get("light.x"))
+    await hass.async_block_till_done()
 
     due = engine.pending_enforcement_due()
     assert "light.x" not in due, (
         "skipped entity must be removed from pending_enforcement_due"
     )
     assert "light.y" in due, "still-pending entity must remain"
+    assert engine.current_status() == STATUS_PENDING, (
+        "rule must stay PENDING (light.y still pending)"
+    )
     assert broadcasts, "broadcast must fire so card receives updated dict"
 
 

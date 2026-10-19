@@ -378,27 +378,13 @@ class RuleEngine:
         if skip_reason is not None:
             self._cancel_pending(entity_id)
             self._fire_skipped(entity_id, skip_reason)
-            new_status = self._derive_armed_or_cooldown(now)
-            if new_status == STATUS_PENDING:
-                # Other entities still pending: _set_status dedupes the broadcast,
-                # so the updated _pending_enforcement_due dict (now missing this
-                # entity) would never trigger async_write_ha_state. Force it.
-                self._broadcast_status()
-            else:
-                self._set_status(new_status)
+            self._set_or_force_broadcast(self._derive_armed_or_cooldown(now))
             return
 
         if not triggered:
             # State no longer matches; cancel any pending delayed enforcement.
             self._cancel_pending(entity_id)
-            new_status = self._derive_armed_or_cooldown(now)
-            if new_status == STATUS_PENDING:
-                # Other entities still pending: _set_status dedupes the broadcast,
-                # so the updated _pending_enforcement_due dict (now missing this
-                # entity) would never trigger async_write_ha_state. Force it.
-                self._broadcast_status()
-            else:
-                self._set_status(new_status)
+            self._set_or_force_broadcast(self._derive_armed_or_cooldown(now))
             return
 
         if self._config.debounce_enabled and self._in_cooldown(entity_id, now):
@@ -409,13 +395,7 @@ class RuleEngine:
             # Order is load-bearing: schedule first (adds to _pending_enforcement_due),
             # then broadcast so the sensor receives the updated dict.
             self._schedule_delayed_enforcement(entity_id, trigger_context_id)
-            if self._current_status == STATUS_PENDING:
-                # Already PENDING: _set_status dedupes the broadcast, so the
-                # updated pending_enforcement_due dict (now containing this
-                # entity) would never trigger async_write_ha_state. Force it.
-                self._broadcast_status()
-            else:
-                self._set_status(STATUS_PENDING)
+            self._set_or_force_broadcast(STATUS_PENDING)
             return
 
         await self._enforce(entity_id, trigger_context_id=trigger_context_id)
@@ -516,6 +496,19 @@ class RuleEngine:
             return STATUS_COOLDOWN
         return STATUS_ARMED
 
+    def _set_or_force_broadcast(self, new_status: str) -> None:
+        """Set status or force a broadcast when status is already new_status.
+
+        When new_status is STATUS_PENDING and the rule is already PENDING,
+        _set_status would deduplicate the broadcast. Force it so the sensor
+        receives the updated _pending_enforcement_due dict (an entity was just
+        added or removed from it).
+        """
+        if new_status == STATUS_PENDING and self._current_status == STATUS_PENDING:
+            self._broadcast_status()
+        else:
+            self._set_status(new_status)
+
     def _prune_expired_cooldowns(self, now: datetime) -> None:
         """Remove expired per-entity cooldown entries."""
         expired = [eid for eid, end in self._state.cooldowns.items() if end <= now]
@@ -542,6 +535,7 @@ class RuleEngine:
                 if self._pending_enforcements.get(entity_id) is my_cancel:
                     self._pending_enforcements.pop(entity_id, None)
                     self._pending_enforcement_due.pop(entity_id, None)
+                    self._set_or_force_broadcast(self._derive_armed_or_cooldown(_now))
                 self._fire_skipped(entity_id, skip_reason)
                 return
             if not triggered:
@@ -550,11 +544,13 @@ class RuleEngine:
                 if self._pending_enforcements.get(entity_id) is my_cancel:
                     self._pending_enforcements.pop(entity_id, None)
                     self._pending_enforcement_due.pop(entity_id, None)
+                    self._set_or_force_broadcast(self._derive_armed_or_cooldown(_now))
                 return
             if not self._flags_match():
                 if self._pending_enforcements.get(entity_id) is my_cancel:
                     self._pending_enforcements.pop(entity_id, None)
                     self._pending_enforcement_due.pop(entity_id, None)
+                    self._set_or_force_broadcast(self._derive_armed_or_cooldown(_now))
                 return
             try:
                 await self._enforce(entity_id, trigger_context_id=trigger_context_id)
@@ -562,6 +558,11 @@ class RuleEngine:
                 if self._pending_enforcements.get(entity_id) is my_cancel:
                     self._pending_enforcements.pop(entity_id, None)
                     self._pending_enforcement_due.pop(entity_id, None)
+                    # _enforce already called _set_status(post_status), but the
+                    # entity was still in _pending_enforcements at that point so
+                    # _derive_armed_or_cooldown returned PENDING and the broadcast
+                    # was a no-op. Re-broadcast now that the dict is clean.
+                    self._broadcast_status()
 
         @callback
         def _fire_cb(now: datetime) -> None:
