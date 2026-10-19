@@ -1504,6 +1504,58 @@ def test_handle_startup_grace_done_sweeps_targets(hass: HomeAssistant):
     assert len(tasks_created) == 1  # one per target entity
 
 
+def test_reenable_sweeps_targets(hass: HomeAssistant):
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._state.enabled = False
+    hass.states.async_set("light.bedroom", "on")
+    tasks_created = []
+    with patch.object(
+        hass, "async_create_task", side_effect=capturing_create_task(tasks_created)
+    ):
+        engine.set_enabled(True)
+    assert len(tasks_created) == 1
+
+
+def test_reenable_no_sweep_before_startup_complete(hass: HomeAssistant):
+    engine = _make_engine(hass)
+    engine._startup_complete = False
+    engine._state.enabled = False
+    hass.states.async_set("light.bedroom", "on")
+    tasks_created = []
+    with patch.object(
+        hass, "async_create_task", side_effect=capturing_create_task(tasks_created)
+    ):
+        engine.set_enabled(True)
+    assert len(tasks_created) == 0
+
+
+def test_master_reenable_sweeps_targets(hass: HomeAssistant):
+    engine = _make_engine(hass, master=True)
+    engine._startup_complete = True
+    engine._state.enabled = True
+    hass.states.async_set("light.bedroom", "on")
+    tasks_created = []
+    with patch.object(
+        hass, "async_create_task", side_effect=capturing_create_task(tasks_created)
+    ):
+        engine._handle_master_changed()
+    assert len(tasks_created) == 1
+
+
+def test_reenable_sweep_skipped_when_master_off(hass: HomeAssistant):
+    engine = _make_engine(hass, master=False)
+    engine._startup_complete = True
+    engine._state.enabled = False
+    hass.states.async_set("light.bedroom", "on")
+    tasks_created = []
+    with patch.object(
+        hass, "async_create_task", side_effect=capturing_create_task(tasks_created)
+    ):
+        engine.set_enabled(True)
+    assert len(tasks_created) == 0
+
+
 # ---------------------------------------------------------------------------
 # async_unload: exception paths
 # ---------------------------------------------------------------------------

@@ -245,6 +245,12 @@ class RuleEngine:
                 lambda t, eid=entity_id: self._pending_eval_tasks.pop(eid, None)
             )
 
+    def _sweep_targets(self) -> None:
+        """Schedule an eval task for every target entity (re-arm sweep)."""
+        for entity_id in self._config.target_entities:
+            current = self._hass.states.get(entity_id)
+            self._schedule_eval_task(entity_id, current)
+
     @callback
     def _handle_midnight(self, _now: datetime) -> None:
         """Zero today counter at HA-local midnight."""
@@ -272,9 +278,7 @@ class RuleEngine:
 
         if not self._state.enabled or not self._master_enabled_getter():
             return
-        for entity_id in self._config.target_entities:
-            current = self._hass.states.get(entity_id)
-            self._schedule_eval_task(entity_id, current)
+        self._sweep_targets()
 
     def _maybe_reset_today_counter(self) -> None:
         """Reset today counter if persisted reset date is stale."""
@@ -977,11 +981,19 @@ class RuleEngine:
             self._schedule_suppression_timer()
         self._persist()
         self._apply_idle_status()
+        if enabled and self._startup_complete and self._master_enabled_getter():
+            self._sweep_targets()
 
     @callback
     def _handle_master_changed(self) -> None:
         """Re-derive status when the master switch toggles."""
         self._apply_idle_status()
+        if (
+            self._master_enabled_getter()
+            and self._state.enabled
+            and self._startup_complete
+        ):
+            self._sweep_targets()
 
     def current_status(self) -> str:
         """Return the rule's current status string."""
