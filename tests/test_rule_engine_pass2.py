@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from unittest.mock import MagicMock
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.core import HomeAssistant
@@ -168,7 +169,7 @@ async def test_schedule_delayed_fire_via_async_fire_time_changed(hass: HomeAssis
     engine._schedule_delayed_enforcement("light.bedroom")
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=2))
     await hass.async_block_till_done()
-    engine._enforce.assert_awaited_once_with("light.bedroom")
+    engine._enforce.assert_awaited_once_with("light.bedroom", trigger_context_id=None)
 
 
 async def test_schedule_delayed_fire_no_longer_triggered(hass: HomeAssistant):
@@ -215,3 +216,62 @@ async def test_schedule_delayed_fire_flags_mismatch(hass: HomeAssistant):
     async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=2))
     await hass.async_block_till_done()
     engine._enforce.assert_not_awaited()
+
+
+# ---------------------------------------------------------------------------
+# Context propagation
+# ---------------------------------------------------------------------------
+
+
+async def test_trigger_context_id_propagated_to_enforce(hass: HomeAssistant):
+    """Context id from the triggering state_changed event reaches _enforce as
+    parent_id, so HA logbook can chain the enforcement back to its origin."""
+    from homeassistant.core import Context, Event, EventOrigin
+
+    engine = _make_engine(hass, _make_config(delay_seconds=0))
+    engine._startup_complete = True
+    engine._enforce = AsyncMock()
+
+    trigger_ctx = Context()
+    hass.states.async_set("light.bedroom", "on")
+    event = Event(
+        "state_changed",
+        {"entity_id": "light.bedroom", "new_state": hass.states.get("light.bedroom")},
+        EventOrigin.local,
+        context=trigger_ctx,
+    )
+    engine._handle_state_event(event)
+    await hass.async_block_till_done()
+
+    engine._enforce.assert_awaited_once_with(
+        "light.bedroom", trigger_context_id=trigger_ctx.id
+    )
+
+
+async def test_enforce_sets_parent_id_on_service_context(hass: HomeAssistant):
+    """_enforce builds a Context with parent_id=trigger_context_id so the
+    service call carries the chain back to the state_changed event."""
+    from unittest.mock import patch
+
+    from homeassistant.core import Context
+
+    engine = _make_engine(hass, _make_config(delay_seconds=0))
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+
+    service_ctx_captured = []
+
+    async def _capture_ctx(domain, service, data, *, blocking, context):
+        service_ctx_captured.append(context)
+
+    trigger_ctx_id = "test-trigger-ulid-1234"
+    with patch(
+        "homeassistant.core.ServiceRegistry.async_call",
+        side_effect=_capture_ctx,
+    ):
+        await engine._enforce("light.bedroom", trigger_context_id=trigger_ctx_id)
+
+    assert len(service_ctx_captured) == 1
+    ctx = service_ctx_captured[0]
+    assert isinstance(ctx, Context)
+    assert ctx.parent_id == trigger_ctx_id

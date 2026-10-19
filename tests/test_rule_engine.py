@@ -1728,7 +1728,7 @@ async def test_flag_change_triggers_enforcement_on_already_triggered_target(
         # Allow spawned tasks to run.
         await hass.async_block_till_done()
 
-    mock_enforce.assert_awaited_once_with("switch.diffuser")
+    mock_enforce.assert_awaited_once_with("switch.diffuser", trigger_context_id=None)
 
 
 async def test_flag_change_match_state_off_triggers_enforcement(
@@ -1755,7 +1755,7 @@ async def test_flag_change_match_state_off_triggers_enforcement(
         await engine.async_evaluate("binary_sensor.water_ok", flag_st)
         await hass.async_block_till_done()
 
-    mock_enforce.assert_awaited_once_with("switch.diffuser")
+    mock_enforce.assert_awaited_once_with("switch.diffuser", trigger_context_id=None)
 
 
 async def test_flag_change_no_enforcement_when_target_not_triggered(
@@ -1810,7 +1810,7 @@ async def test_flag_change_multi_flag_all_must_match(hass: HomeAssistant):
         await engine.async_evaluate("binary_sensor.no_water", flag_st)
         await hass.async_block_till_done()
 
-    mock_enforce.assert_awaited_once_with("switch.diffuser")
+    mock_enforce.assert_awaited_once_with("switch.diffuser", trigger_context_id=None)
 
 
 async def test_entity_both_flag_and_target_sweeps_other_targets(hass: HomeAssistant):

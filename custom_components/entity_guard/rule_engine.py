@@ -231,14 +231,22 @@ class RuleEngine:
         new_state = event.data.get("new_state")
         if entity_id is None:
             return
-        self._schedule_eval_task(entity_id, new_state)
+        trigger_context_id: str | None = getattr(event.context, "id", None)
+        self._schedule_eval_task(entity_id, new_state, trigger_context_id)
 
-    def _schedule_eval_task(self, entity_id: str, new_state: Any) -> None:
+    def _schedule_eval_task(
+        self,
+        entity_id: str,
+        new_state: Any,
+        trigger_context_id: str | None = None,
+    ) -> None:
         """Schedule async_evaluate for entity_id, cancelling any prior pending task."""
         existing = self._pending_eval_tasks.pop(entity_id, None)
         if existing is not None and not existing.done():
             existing.cancel()
-        task = self._hass.async_create_task(self.async_evaluate(entity_id, new_state))
+        task = self._hass.async_create_task(
+            self.async_evaluate(entity_id, new_state, trigger_context_id)
+        )
         if task is not None:
             self._pending_eval_tasks[entity_id] = task
             task.add_done_callback(
@@ -300,7 +308,12 @@ class RuleEngine:
         self._state.counter_total_since = created or dt_util.now()
         self._persist()
 
-    async def async_evaluate(self, entity_id: str, new_state: Any) -> None:
+    async def async_evaluate(
+        self,
+        entity_id: str,
+        new_state: Any,
+        trigger_context_id: str | None = None,
+    ) -> None:
         """Evaluate a state change against the rule and enforce if appropriate."""
         now = dt_util.now()
         self._prune_expired_cooldowns(now)
@@ -351,7 +364,7 @@ class RuleEngine:
                     continue  # handled below as a target if also a target entity
                 current = self._hass.states.get(target)
                 if current is not None and self._is_triggered(target, current):
-                    self._schedule_eval_task(target, current)
+                    self._schedule_eval_task(target, current, trigger_context_id)
             # If entity is flag-only, stop here; if also a target, fall through.
             if entity_id not in self._config.target_entities:
                 return
@@ -375,11 +388,11 @@ class RuleEngine:
             return
 
         if self._config.delay_seconds > 0:
-            self._schedule_delayed_enforcement(entity_id)
+            self._schedule_delayed_enforcement(entity_id, trigger_context_id)
             self._set_status(STATUS_PENDING)
             return
 
-        await self._enforce(entity_id)
+        await self._enforce(entity_id, trigger_context_id=trigger_context_id)
 
     def _flags_match(self) -> bool:
         """Return True only if every configured flag entity matches its target state."""
@@ -483,7 +496,11 @@ class RuleEngine:
         for eid in expired:
             del self._state.cooldowns[eid]
 
-    def _schedule_delayed_enforcement(self, entity_id: str) -> None:
+    def _schedule_delayed_enforcement(
+        self,
+        entity_id: str,
+        trigger_context_id: str | None = None,
+    ) -> None:
         """Arm a delayed enforcement; cancels any prior pending one for this entity."""
         self._cancel_pending(entity_id)
 
@@ -514,7 +531,7 @@ class RuleEngine:
                     self._pending_enforcement_due.pop(entity_id, None)
                 return
             try:
-                await self._enforce(entity_id)
+                await self._enforce(entity_id, trigger_context_id=trigger_context_id)
             finally:
                 if self._pending_enforcements.get(entity_id) is my_cancel:
                     self._pending_enforcements.pop(entity_id, None)
@@ -553,6 +570,7 @@ class RuleEngine:
         *,
         user_id: str | None = None,
         bypass_rate_limit: bool = False,
+        trigger_context_id: str | None = None,
     ) -> None:
         """Rate-limit, lock, and execute the enforcement service call."""
         now = dt_util.now()
@@ -601,7 +619,8 @@ class RuleEngine:
                 service,
             )
             _LOGGER.debug("Service call data: %s", data)
-            ctx = Context(user_id=user_id) if user_id else None
+            self._state.last_triggered_user_id = user_id
+            ctx = Context(user_id=user_id, parent_id=trigger_context_id) if (user_id or trigger_context_id) else None
             try:
                 await self._hass.services.async_call(
                     domain, service, data, blocking=True, context=ctx
