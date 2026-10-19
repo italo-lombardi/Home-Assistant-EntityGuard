@@ -1,12 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [0.3.1] — 2026-10-19
 
 ### Fixed
 
 - **All non-compliant bound entities now show their individual "Enforcing in …" countdown.** When a rule with `delay_seconds > 0` has multiple non-compliant target entities, only the first entity that triggered the delay showed a countdown in the Lovelace card — all subsequent entities were silently missing from the `pending_enforcement_due` sensor attribute. The root cause was that `_set_status` deduplicates broadcasts (skip-if-same), so when the rule was already `pending` from the first entity, adding a second entity to the pending dict never triggered a sensor update. The engine now forces an explicit broadcast whenever a new entity is scheduled while the rule is already in `pending` state, so every entity's due timestamp reaches the card independently.
-
-## [0.3.1] — 2026-10-19
 
 ### Added
 
