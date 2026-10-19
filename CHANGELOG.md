@@ -4,8 +4,9 @@
 
 ### Added
 
+- **Pending enforcement countdown in the Lovelace card.** When a rule's status is `pending` (conditions met, delay timer running), each bound entity that is waiting to be enforced now shows a live countdown row beneath it — e.g. `⏱ Enforcing in 14 s` — ticking every second. The row uses the same duration formatting as the Configuration section (`s`, `min s`, `h min s`). It disappears as soon as the rule fires, conditions clear, or status leaves `pending`. The countdown is computed entirely in the browser from a `pending_enforcement_due` attribute (ISO timestamp keyed by entity ID) added to `sensor.<rule>_status`; nothing is persisted to storage.
 - **"Show configuration" section in the Lovelace card.** A new `show_config` toggle (off by default, available in the card editor below "Show last enforced") reveals a "Configuration" section with four rows: Delay, Debounce (shows "Off" when disabled), Rate limit (shows "Off" when set to 0), and Loop protection (On/Off).
-- The status sensor (`sensor.<rule>_status`) now exposes five new attributes: `delay_seconds`, `debounce_enabled`, `debounce_seconds`, `rate_limit_enabled`, `max_enforcements_per_minute`. These are read by the card's configuration section and are also available for automations/templates.
+- The status sensor (`sensor.<rule>_status`) now exposes six new attributes: `delay_seconds`, `debounce_enabled`, `debounce_seconds`, `rate_limit_enabled`, `max_enforcements_per_minute`, `pending_enforcement_due`. These are read by the card and are also available for automations/templates.
 
 ### Changed
 

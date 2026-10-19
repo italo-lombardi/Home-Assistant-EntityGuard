@@ -155,6 +155,10 @@ class EntityGuardStatusSensor(EntityGuardSensor):
             "debounce_seconds": self._engine.config.debounce_seconds,
             "rate_limit_enabled": self._engine.config.max_enforcements_per_minute != 0,
             "max_enforcements_per_minute": self._engine.config.max_enforcements_per_minute,
+            "pending_enforcement_due": {
+                eid: due.isoformat()
+                for eid, due in self._engine.pending_enforcement_due().items()
+            },
         }
 
 

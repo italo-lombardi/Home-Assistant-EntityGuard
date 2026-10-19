@@ -98,6 +98,7 @@ class RuleEngine:
         self._state: RuleRuntimeState = RuleRuntimeState()
         self._unsub_callbacks: list[Callable[[], None]] = []
         self._pending_enforcements: dict[str, Callable[[], None]] = {}
+        self._pending_enforcement_due: dict[str, datetime] = {}
         self._pending_eval_tasks: dict[str, asyncio.Task] = {}
         self._startup_complete = False
         self._is_unloaded: bool = False
@@ -204,6 +205,7 @@ class RuleEngine:
             except Exception:
                 _LOGGER.debug("Pending enforcement cancel failed", exc_info=True)
         self._pending_enforcements.clear()
+        self._pending_enforcement_due.clear()
 
         for task in list(self._pending_eval_tasks.values()):
             task.cancel()
@@ -492,6 +494,7 @@ class RuleEngine:
             if skip_reason is not None:
                 if self._pending_enforcements.get(entity_id) is my_cancel:
                     self._pending_enforcements.pop(entity_id, None)
+                    self._pending_enforcement_due.pop(entity_id, None)
                 self._fire_skipped(entity_id, skip_reason)
                 return
             if not triggered:
@@ -499,14 +502,19 @@ class RuleEngine:
                 # `not triggered` already covers the state-gone case.
                 if self._pending_enforcements.get(entity_id) is my_cancel:
                     self._pending_enforcements.pop(entity_id, None)
+                    self._pending_enforcement_due.pop(entity_id, None)
                 return
             if not self._flags_match():
                 if self._pending_enforcements.get(entity_id) is my_cancel:
                     self._pending_enforcements.pop(entity_id, None)
+                    self._pending_enforcement_due.pop(entity_id, None)
                 return
-            await self._enforce(entity_id)
-            if self._pending_enforcements.get(entity_id) is my_cancel:
-                self._pending_enforcements.pop(entity_id, None)
+            try:
+                await self._enforce(entity_id)
+            finally:
+                if self._pending_enforcements.get(entity_id) is my_cancel:
+                    self._pending_enforcements.pop(entity_id, None)
+                    self._pending_enforcement_due.pop(entity_id, None)
 
         @callback
         def _fire_cb(now: datetime) -> None:
@@ -516,10 +524,14 @@ class RuleEngine:
         cancel = async_call_later(self._hass, self._config.delay_seconds, _fire_cb)
         my_cancel = cancel
         self._pending_enforcements[entity_id] = cancel
+        self._pending_enforcement_due[entity_id] = dt_util.now() + timedelta(
+            seconds=self._config.delay_seconds
+        )
 
     def _cancel_pending(self, entity_id: str) -> None:
         """Cancel any pending delayed enforcement for entity_id."""
         cancel = self._pending_enforcements.pop(entity_id, None)
+        self._pending_enforcement_due.pop(entity_id, None)
         if cancel is not None:
             try:
                 cancel()
@@ -974,6 +986,10 @@ class RuleEngine:
     def current_status(self) -> str:
         """Return the rule's current status string."""
         return self._current_status
+
+    def pending_enforcement_due(self) -> dict[str, datetime]:
+        """Return a snapshot of entity_id → fire time for pending enforcements."""
+        return dict(self._pending_enforcement_due)
 
     def is_armed(self) -> bool:
         """Return True if the rule is armed."""

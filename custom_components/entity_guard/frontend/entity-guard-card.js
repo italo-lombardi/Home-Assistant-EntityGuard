@@ -346,6 +346,7 @@ class EntityGuardCard extends LitElement {
     this._refsCacheKey = null;
     this._mountedAt = Date.now();
     this._loadingTimer = null;
+    this._countdownInterval = null;
   }
 
   connectedCallback() {
@@ -363,6 +364,10 @@ class EntityGuardCard extends LitElement {
     if (this._loadingTimer) {
       clearTimeout(this._loadingTimer);
       this._loadingTimer = null;
+    }
+    if (this._countdownInterval) {
+      clearInterval(this._countdownInterval);
+      this._countdownInterval = null;
     }
   }
 
@@ -602,6 +607,18 @@ class EntityGuardCard extends LitElement {
     return "Entity Guard Rule";
   }
 
+  updated(...args) {
+    super.updated(...args);
+    const refs = this._findRuleEntities();
+    const status = refs ? this._stateValue(refs.status, "conditional") : null;
+    if (status === "pending" && !this._countdownInterval) {
+      this._countdownInterval = setInterval(() => this.requestUpdate(), 1000);
+    } else if (status !== "pending" && this._countdownInterval) {
+      clearInterval(this._countdownInterval);
+      this._countdownInterval = null;
+    }
+  }
+
   render() {
     if (!this._config) {
       return html`<ha-card
@@ -646,6 +663,7 @@ class EntityGuardCard extends LitElement {
     const status = this._stateValue(refs.status, "conditional");
     const color = STATUS_COLORS[status] || STATUS_COLORS.conditional;
     const statusEntity = refs.status ? this.hass.states[refs.status] : null;
+
     let label = STATUS_LABELS[status] || status;
     if (statusEntity && this.hass.formatEntityState) {
       try {
@@ -820,6 +838,10 @@ class EntityGuardCard extends LitElement {
   _renderBound(refs) {
     if (!refs.bound || refs.bound.length === 0) return nothing;
     const triggerStates = refs.triggerStates;
+    const statusEntity = refs.status ? this.hass.states[refs.status] : null;
+    const status = statusEntity?.state;
+    const pendingDue = statusEntity?.attributes?.pending_enforcement_due ?? {};
+    const now = Date.now();
     return html`
       <div class="entities">
         <div class="section-title">Bound entities (${refs.bound.length})</div>
@@ -830,6 +852,10 @@ class EntityGuardCard extends LitElement {
           const displayState = this._formatStateDisplay(st, state);
           const displayTarget = this._formatHypotheticalState(id, refs.targetState);
           const compliant = !triggerStates || !triggerStates.includes(state);
+          const dueIso = status === "pending" ? pendingDue[id] : null;
+          const secsLeft = dueIso
+            ? Math.max(0, Math.ceil((new Date(dueIso).getTime() - now) / 1000))
+            : null;
           return html`
             <div
               class="entity-row"
@@ -853,6 +879,13 @@ class EntityGuardCard extends LitElement {
                     >`}
               </span>
             </div>
+            ${secsLeft !== null && secsLeft > 0
+              ? html`<div
+                  style="font-size:12px;color:var(--warning-color,#ff9800);padding:2px 0 4px 0;margin-left:2px"
+                >
+                  <ha-icon icon="mdi:timer-outline" style="--mdi-icon-size:14px;vertical-align:middle;margin-right:2px"></ha-icon> Enforcing in ${this._formatSeconds(secsLeft)}
+                </div>`
+              : nothing}
           `;
         })}
       </div>
