@@ -213,3 +213,42 @@ async def test_unload_rule_with_sibling_rule_does_not_unload_services(
 
     assert result is True
     mock_unload_services.assert_not_called()
+
+
+def test_register_logbook_descriptors_registers_all_events(hass: HomeAssistant) -> None:
+    """_register_logbook_descriptors writes all 4 events into external_events."""
+    from custom_components.entity_guard import _register_logbook_descriptors
+    from custom_components.entity_guard.const import (
+        EVENT_ENFORCED,
+        EVENT_LOOP_DETECTED,
+        EVENT_SKIPPED,
+        EVENT_SUPPRESSED,
+    )
+
+    external_events: dict = {}
+    logbook_config = MagicMock()
+    logbook_config.external_events = external_events
+
+    from homeassistant.components.logbook.const import DOMAIN as LOGBOOK_DOMAIN
+
+    hass.data[LOGBOOK_DOMAIN] = logbook_config
+
+    _register_logbook_descriptors(hass)
+
+    assert EVENT_ENFORCED in external_events
+    assert EVENT_SKIPPED in external_events
+    assert EVENT_LOOP_DETECTED in external_events
+    assert EVENT_SUPPRESSED in external_events
+    domain, callback_fn = external_events[EVENT_ENFORCED]
+    assert domain == DOMAIN
+    assert callable(callback_fn)
+
+
+def test_register_logbook_descriptors_no_logbook(hass: HomeAssistant) -> None:
+    """_register_logbook_descriptors is a no-op when logbook not loaded."""
+    from custom_components.entity_guard import _register_logbook_descriptors
+
+    from homeassistant.components.logbook.const import DOMAIN as LOGBOOK_DOMAIN
+
+    hass.data.pop(LOGBOOK_DOMAIN, None)
+    _register_logbook_descriptors(hass)
