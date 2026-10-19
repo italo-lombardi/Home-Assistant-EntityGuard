@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from unittest.mock import MagicMock
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.core import HomeAssistant

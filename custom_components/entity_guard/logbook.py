@@ -73,7 +73,6 @@ def async_describe_events(
         return {
             "name": rule_name,
             "message": message,
-            "entity_id": data.get("entity_id"),
             "domain": DOMAIN,
         }
 
