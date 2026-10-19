@@ -783,7 +783,7 @@ class EntityGuardCard extends LitElement {
     if (a.debounce_enabled != null) {
       const debounceLabel = a.debounce_enabled
         ? `${a.debounce_seconds} s`
-        : "Disabled";
+        : "disabled";
       rows.push(html`<div class="row">
         <span class="label">Debounce</span>
         <span class="value">${debounceLabel}</span>
