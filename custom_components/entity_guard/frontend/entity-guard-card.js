@@ -789,19 +789,13 @@ class EntityGuardCard extends LitElement {
         <span class="value">${debounceLabel}</span>
       </div>`);
     }
-    if (a.max_enforcements_per_minute != null) {
-      const rateLabel = a.max_enforcements_per_minute === 0
-        ? "Off"
-        : `${a.max_enforcements_per_minute} /min`;
-      rows.push(html`<div class="row">
-        <span class="label">Rate limit</span>
-        <span class="value">${rateLabel}</span>
-      </div>`);
-    }
     if (a.rate_limit_enabled != null) {
+      const loopLabel = a.rate_limit_enabled
+        ? `auto-suppress above ${a.max_enforcements_per_minute}/min`
+        : "Off";
       rows.push(html`<div class="row">
         <span class="label">Loop protection</span>
-        <span class="value">${a.rate_limit_enabled ? "On" : "Off"}</span>
+        <span class="value">${loopLabel}</span>
       </div>`);
     }
     if (rows.length === 0) return nothing;
