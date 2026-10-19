@@ -43,7 +43,7 @@ def test_describe_enforced():
     async_describe_events(MagicMock(), _register)
     describer = registered[EVENT_ENFORCED]
 
-    # target_entity_id present: used for display; entity_id is the rule sensor
+    # target_entity_id present: used for display; entity_id in response is the rule sensor
     result = describer(
         _make_event(
             {
@@ -56,9 +56,10 @@ def test_describe_enforced():
     )
     assert result["name"] == "My Rule"
     assert "off" in result["message"]
-    assert result["entity_id"] == "light.bedroom"
+    assert "light.bedroom" in result["message"]
+    assert result["entity_id"] == "sensor.my_rule_status"
 
-    # fallback: no target_entity_id → use entity_id
+    # fallback: no target_entity_id → message uses entity_id, response entity_id same
     result2 = describer(
         _make_event(
             {

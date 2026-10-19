@@ -27,12 +27,13 @@ def async_describe_events(
     def _describe_enforced(event: Event) -> dict[str, Any]:
         data = event.data
         target_state = data.get("target") or "target"
-        entity_id = data.get("target_entity_id") or data.get("entity_id")
+        target_entity_id = data.get("target_entity_id") or data.get("entity_id")
+        rule_entity_id = data.get("entity_id")
         rule_name = data.get("rule_name") or "Entity Guard"
         return {
             "name": rule_name,
-            "message": f"enforced {entity_id} → {target_state}",
-            "entity_id": entity_id,
+            "message": f"enforced {target_entity_id} → {target_state}",
+            "entity_id": rule_entity_id,
             "domain": DOMAIN,
         }
 
