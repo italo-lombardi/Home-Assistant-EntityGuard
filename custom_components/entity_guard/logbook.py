@@ -31,7 +31,7 @@ def async_describe_events(
         rule_name = data.get("rule_name") or "Entity Guard"
         return {
             "name": rule_name,
-            "message": f"enforced {target_state} on {entity_id}",
+            "message": f"enforced {entity_id} → {target_state}",
             "entity_id": entity_id,
             "domain": DOMAIN,
         }
