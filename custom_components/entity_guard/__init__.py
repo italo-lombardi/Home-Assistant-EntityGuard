@@ -88,14 +88,24 @@ def _register_logbook_descriptors(hass: HomeAssistant) -> None:
 
     logbook_config = hass.data.get(LOGBOOK_DOMAIN)
     if logbook_config is None:
+        _LOGGER.warning(
+            "Logbook not loaded — Entity Guard events won't appear in logbook"
+        )
         return
     external_events = logbook_config.external_events
+    _LOGGER.debug(
+        "Registering Entity Guard logbook descriptors into %d existing entries",
+        len(external_events),
+    )
 
     @callback
     def _async_describe_event(domain: str, event_name: str, describe_callback) -> None:
         external_events[event_name] = (domain, describe_callback)
 
     async_describe_events(hass, _async_describe_event)
+    _LOGGER.info(
+        "Registered Entity Guard logbook descriptors: %s", list(external_events.keys())
+    )
 
 
 def _master_enabled_getter(hass: HomeAssistant):

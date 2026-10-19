@@ -621,11 +621,7 @@ class RuleEngine:
             _LOGGER.debug("Service call data: %s", data)
             self._state.last_triggered_user_id = user_id
             self._state.last_triggered_entity = entity_id
-            ctx = (
-                Context(user_id=user_id, parent_id=trigger_context_id)
-                if (user_id or trigger_context_id)
-                else None
-            )
+            ctx = Context(user_id=user_id, parent_id=trigger_context_id)
             try:
                 await self._hass.services.async_call(
                     domain, service, data, blocking=True, context=ctx
