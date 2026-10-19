@@ -509,10 +509,12 @@ class RuleEngine:
                     self._pending_enforcements.pop(entity_id, None)
                     self._pending_enforcement_due.pop(entity_id, None)
                 return
-            await self._enforce(entity_id)
-            if self._pending_enforcements.get(entity_id) is my_cancel:
-                self._pending_enforcements.pop(entity_id, None)
-                self._pending_enforcement_due.pop(entity_id, None)
+            try:
+                await self._enforce(entity_id)
+            finally:
+                if self._pending_enforcements.get(entity_id) is my_cancel:
+                    self._pending_enforcements.pop(entity_id, None)
+                    self._pending_enforcement_due.pop(entity_id, None)
 
         @callback
         def _fire_cb(now: datetime) -> None:

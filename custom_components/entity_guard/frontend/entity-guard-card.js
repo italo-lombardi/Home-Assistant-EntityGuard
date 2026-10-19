@@ -607,7 +607,8 @@ class EntityGuardCard extends LitElement {
     return "Entity Guard Rule";
   }
 
-  updated() {
+  updated(...args) {
+    super.updated(...args);
     const refs = this._findRuleEntities();
     const status = refs ? this._stateValue(refs.status, "conditional") : null;
     if (status === "pending" && !this._countdownInterval) {
@@ -853,7 +854,7 @@ class EntityGuardCard extends LitElement {
           const compliant = !triggerStates || !triggerStates.includes(state);
           const dueIso = status === "pending" ? pendingDue[id] : null;
           const secsLeft = dueIso
-            ? Math.max(0, Math.round((new Date(dueIso).getTime() - now) / 1000))
+            ? Math.max(0, Math.ceil((new Date(dueIso).getTime() - now) / 1000))
             : null;
           return html`
             <div
@@ -882,7 +883,7 @@ class EntityGuardCard extends LitElement {
               ? html`<div
                   style="font-size:12px;color:var(--warning-color,#ff9800);padding:2px 0 4px 0;margin-left:2px"
                 >
-                  ⏱ Enforcing in ${this._formatSeconds(secsLeft)}
+                  <ha-icon icon="mdi:timer-outline" style="--mdi-icon-size:14px;vertical-align:middle;margin-right:2px"></ha-icon> Enforcing in ${this._formatSeconds(secsLeft)}
                 </div>`
               : nothing}
           `;
