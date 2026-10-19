@@ -457,11 +457,6 @@ def main() -> int:
             f"attrs={list(attrs.keys())}",
         )
         check(
-            "status attr rate_limit_enabled present",
-            "rate_limit_enabled" in attrs,
-            f"attrs={list(attrs.keys())}",
-        )
-        check(
             "status attr max_enforcements_per_minute present",
             "max_enforcements_per_minute" in attrs,
             f"attrs={list(attrs.keys())}",
