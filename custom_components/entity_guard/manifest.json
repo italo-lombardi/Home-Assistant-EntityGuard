@@ -1,7 +1,7 @@
 {
     "domain": "entity_guard",
     "name": "Entity Guard",
-    "after_dependencies": ["http", "lovelace", "recorder"],
+    "after_dependencies": ["http", "lovelace", "recorder", "logbook"],
     "codeowners": ["@italo-lombardi"],
     "config_flow": true,
     "dependencies": [],
