@@ -195,9 +195,11 @@ async def test_two_sliders_within_debounce_persist_together(hass: HomeAssistant)
     assert entry.options[CONF_DEBOUNCE_SECONDS] == 90
 
 
-async def test_unload_cancels_pending_write(hass: HomeAssistant):
-    """Removing the entity cancels a queued debounced write so a late flush can't
-    touch a torn-down entry."""
+async def test_remove_flushes_pending_write(hass: HomeAssistant):
+    """Entity removal always flushes a pending debounced write — the value must
+    survive a restart even if the slider was moved within the 2-second debounce
+    window before HA shut down.  async_update_entry is safe on a tearing-down
+    entry: it updates in-memory options and HA's FINAL_WRITE stage flushes disk."""
     entry = _make_rule_entry()
     entry.add_to_hass(hass)
     engine = _make_engine(delay=0)
@@ -209,12 +211,13 @@ async def test_unload_cancels_pending_write(hass: HomeAssistant):
     # A write is pending (not yet flushed).
     pending = hass.data[DOMAIN]["pending_number_writes"]
     assert entry.entry_id in pending
-    # Fire the on_remove callbacks (as HA does on unload).
+    # Fire the on_remove callback — must flush, not drop.
     num._cancel_pending_write()
     assert entry.entry_id not in pending
-    # The cancelled timer must not persist anything.
-    await _flush_debounce(hass)
-    assert CONF_DELAY_SECONDS not in entry.options
+    assert entry.options[CONF_DELAY_SECONDS] == 30
+    # A second removal with nothing queued is a no-op.
+    num._cancel_pending_write()
+    assert entry.options[CONF_DELAY_SECONDS] == 30
 
 
 async def test_remove_while_loaded_flushes_pending_write(hass: HomeAssistant):
