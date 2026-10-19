@@ -6,7 +6,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from homeassistant.components.number import NumberEntity, NumberMode
-from homeassistant.config_entries import ConfigEntry, ConfigEntryState
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import (
@@ -131,27 +131,23 @@ class EntityGuardNumberBase(NumberEntity):
 
     @callback
     def _cancel_pending_write(self) -> None:
-        """On entity removal: flush a pending debounced write if the entry is still
-        loaded, otherwise cancel it.
+        """On entity removal: flush any pending debounced write.
 
         The pending map is keyed by entry_id and shared across this entry's three
         sliders, so removing ONE slider entity (e.g. it gets disabled, or HA stops
         and removes entities) must not silently drop a coalesced write the other two
-        contributed to. When the config entry itself is unloading we cancel instead —
-        a flush would call async_update_entry on a tearing-down entry.
+        contributed to. Always flush — async_update_entry is safe on an entry that
+        is UNLOAD_IN_PROGRESS: it updates the in-memory options dict, and HA's
+        EVENT_HOMEASSISTANT_FINAL_WRITE stage then flushes those options to disk.
+        Dropping the write here would silently lose a slider change made within the
+        2-second debounce window before a restart.
         """
         pending = self.hass.data.get(DOMAIN, {}).get(_PENDING_WRITES_KEY, {})
         state = pending.get(self._entry.entry_id)
         if state is None or state["cancel"] is None:
             return
-        if self._entry.state is ConfigEntryState.LOADED:
-            # Entry alive (single entity removed / HA stopping) — persist the value.
-            state["cancel"]()
-            self._flush_pending_now()
-        else:
-            # Entry unloading — drop it; the rebuild would re-read options anyway.
-            state["cancel"]()
-            pending.pop(self._entry.entry_id, None)
+        state["cancel"]()
+        self._flush_pending_now()
 
     @callback
     def _handle_update(self, *args: object) -> None:

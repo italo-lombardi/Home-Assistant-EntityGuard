@@ -432,7 +432,10 @@ def main() -> int:
     set_number(token, delay_e, 5)
     set_number(token, debounce_e, 30)
     set_number(token, rate_e, 10)
-    time.sleep(3)
+    # Wait past the 2s number debounce + 1s config_entries store delay so the
+    # restored values are on disk before the next run reads them. 3 s was too
+    # tight: a subsequent smoke run could start with stale options and fail.
+    time.sleep(SAVE_FLUSH)
 
     # --- v0.3.1: status sensor exposes config attributes -------------------
     # The card's "Show configuration" section reads delay_seconds,
