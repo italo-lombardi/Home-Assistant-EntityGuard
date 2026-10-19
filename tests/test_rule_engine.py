@@ -1058,6 +1058,7 @@ async def test_evaluate_delayed_multi_entity_all_get_due_entry(hass: HomeAssista
         mock_later.return_value = MagicMock()
         for eid in ["light.a", "light.b", "light.c"]:
             await engine.async_evaluate(eid, hass.states.get(eid))
+            await hass.async_block_till_done()
 
     due = engine.pending_enforcement_due()
     assert "light.a" in due, "first entity must have a due entry"
@@ -1090,9 +1091,11 @@ async def test_evaluate_delayed_second_entity_broadcasts_when_already_pending(
     ) as mock_later:
         mock_later.return_value = MagicMock()
         await engine.async_evaluate("light.x", hass.states.get("light.x"))
+        await hass.async_block_till_done()
         assert engine.current_status() == STATUS_PENDING
         pre_count = len(broadcasts)
         await engine.async_evaluate("light.y", hass.states.get("light.y"))
+        await hass.async_block_till_done()
 
     assert "light.y" in engine.pending_enforcement_due()
     assert len(broadcasts) > pre_count, "second entity must trigger broadcast"
