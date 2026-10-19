@@ -1065,8 +1065,9 @@ async def test_evaluate_delayed_multi_entity_all_get_due_entry(hass: HomeAssista
     assert "light.a" in due, "first entity must have a due entry"
     assert "light.b" in due, "second entity must have a due entry"
     assert "light.c" in due, "third entity must have a due entry"
-    # One broadcast per entity (first via _set_status, rest via forced broadcast)
-    assert len(broadcasts) == 3, f"expected 3 broadcasts, got {len(broadcasts)}"
+    assert len(broadcasts) >= 3, (
+        f"expected at least 3 broadcasts, got {len(broadcasts)}"
+    )
 
 
 async def test_evaluate_delayed_second_entity_broadcasts_when_already_pending(

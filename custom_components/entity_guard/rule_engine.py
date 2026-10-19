@@ -392,11 +392,13 @@ class RuleEngine:
             return
 
         if self._config.delay_seconds > 0:
+            # Order is load-bearing: schedule first (adds to _pending_enforcement_due),
+            # then broadcast so the sensor receives the updated dict.
             self._schedule_delayed_enforcement(entity_id, trigger_context_id)
             if self._current_status == STATUS_PENDING:
                 # Already PENDING: _set_status dedupes the broadcast, so the
                 # updated pending_enforcement_due dict (now containing this
-                # entity) would never reach the status sensor. Force it.
+                # entity) would never trigger async_write_ha_state. Force it.
                 self._broadcast_status()
             else:
                 self._set_status(STATUS_PENDING)
