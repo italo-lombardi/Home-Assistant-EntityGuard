@@ -393,7 +393,13 @@ class RuleEngine:
 
         if self._config.delay_seconds > 0:
             self._schedule_delayed_enforcement(entity_id, trigger_context_id)
-            self._set_status(STATUS_PENDING)
+            if self._current_status == STATUS_PENDING:
+                # Already PENDING: _set_status dedupes the broadcast, so the
+                # updated pending_enforcement_due dict (now containing this
+                # entity) would never reach the status sensor. Force it.
+                self._broadcast_status()
+            else:
+                self._set_status(STATUS_PENDING)
             return
 
         await self._enforce(entity_id, trigger_context_id=trigger_context_id)

@@ -977,6 +977,7 @@ async def test_flag_change_while_armed_broadcasts(hass: HomeAssistant):
         await engine.async_evaluate(
             "input_boolean.a", hass.states.get("input_boolean.a")
         )
+        await hass.async_block_till_done()
     finally:
         unsub()
 
@@ -1030,6 +1031,75 @@ async def test_evaluate_delayed_sets_pending(hass: HomeAssistant):
     assert engine.current_status() == STATUS_PENDING
     assert "light.bedroom" in engine._pending_enforcements
     assert "light.bedroom" in engine.pending_enforcement_due()
+
+
+async def test_evaluate_delayed_multi_entity_all_get_due_entry(hass: HomeAssistant):
+    """All non-compliant targets must appear in pending_enforcement_due.
+
+    Regression: when status was already PENDING, _set_status deduped the
+    broadcast so later entities never reached the sensor dict.
+    """
+    config = _make_config(
+        delay_seconds=30,
+        target_entities=["light.a", "light.b", "light.c"],
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    for eid in ["light.a", "light.b", "light.c"]:
+        hass.states.async_set(eid, "on")
+
+    broadcasts: list[None] = []
+    async_dispatcher_connect(
+        hass, signal_for_rule(config.unique_id), lambda *_: broadcasts.append(None)
+    )
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later"
+    ) as mock_later:
+        mock_later.return_value = MagicMock()
+        for eid in ["light.a", "light.b", "light.c"]:
+            await engine.async_evaluate(eid, hass.states.get(eid))
+            await hass.async_block_till_done()
+
+    due = engine.pending_enforcement_due()
+    assert "light.a" in due, "first entity must have a due entry"
+    assert "light.b" in due, "second entity must have a due entry"
+    assert "light.c" in due, "third entity must have a due entry"
+    # One broadcast per entity (first via _set_status, rest via forced broadcast)
+    assert len(broadcasts) == 3, f"expected 3 broadcasts, got {len(broadcasts)}"
+
+
+async def test_evaluate_delayed_second_entity_broadcasts_when_already_pending(
+    hass: HomeAssistant,
+):
+    """Adding a second entity while PENDING must trigger a broadcast."""
+    config = _make_config(
+        delay_seconds=30,
+        target_entities=["light.x", "light.y"],
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("light.x", "on")
+    hass.states.async_set("light.y", "on")
+
+    broadcasts: list[None] = []
+    async_dispatcher_connect(
+        hass, signal_for_rule(config.unique_id), lambda *_: broadcasts.append(None)
+    )
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later"
+    ) as mock_later:
+        mock_later.return_value = MagicMock()
+        await engine.async_evaluate("light.x", hass.states.get("light.x"))
+        await hass.async_block_till_done()
+        assert engine.current_status() == STATUS_PENDING
+        pre_count = len(broadcasts)
+        await engine.async_evaluate("light.y", hass.states.get("light.y"))
+        await hass.async_block_till_done()
+
+    assert "light.y" in engine.pending_enforcement_due()
+    assert len(broadcasts) > pre_count, "second entity must trigger broadcast"
 
 
 # ---------------------------------------------------------------------------
