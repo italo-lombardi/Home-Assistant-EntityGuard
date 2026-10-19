@@ -13,6 +13,7 @@ from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import Context, Event, HassJob, HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.dispatcher import (
     async_dispatcher_connect,
     async_dispatcher_send,
@@ -112,6 +113,9 @@ class RuleEngine:
         # One-shot suppression-expiry timer (EG-4). Cancelled and replaced when
         # suppression is set, cleared, or the rule's lifecycle changes.
         self._suppression_timer_unsub: Callable[[], None] | None = None
+        # Cached entity_id of this rule's status sensor — used in EVENT_ENFORCED so
+        # the logbook "filter by integration" query finds the event via event_data match.
+        self._rule_entity_id: str | None = None
 
     @property
     def config(self) -> RuleConfig:
@@ -684,7 +688,8 @@ class RuleEngine:
                 {
                     "rule_id": self._config.unique_id,
                     "rule_name": self._config.name,
-                    "entity_id": entity_id,
+                    "entity_id": self._get_rule_entity_id() or entity_id,
+                    "target_entity_id": entity_id,
                     "domain": entity_id.split(".", 1)[0],
                     "trigger": self._config.mode,
                     "target": self._event_target(),
@@ -819,6 +824,26 @@ class RuleEngine:
                 self._config.attribute, self._config.target_value
             )
         return self._config.target_value
+
+    def _get_rule_entity_id(self) -> str | None:
+        """Return this rule's status sensor entity_id (cached after first call).
+
+        Used as event_data["entity_id"] in EVENT_ENFORCED so the logbook
+        "filter by integration" query (which matches event_data.entity_id against
+        Entity Guard entity_ids) finds enforcement events.
+        """
+        if self._rule_entity_id is not None:
+            return self._rule_entity_id
+        if self._entry is None:
+            return None
+        ent_reg = er.async_get(self._hass)
+        for entry in er.async_entries_for_config_entry(ent_reg, self._entry.entry_id):
+            if entry.entity_id.startswith("sensor.") and entry.entity_id.endswith(
+                "_status"
+            ):
+                self._rule_entity_id = entry.entity_id
+                return self._rule_entity_id
+        return None
 
     def _fire_skipped(
         self, entity_id: str, reason: str, *, error: str | None = None
