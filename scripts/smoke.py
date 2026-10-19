@@ -434,7 +434,7 @@ def main() -> int:
     set_number(token, rate_e, 10)
     time.sleep(3)
 
-    # --- v0.3.2: status sensor exposes config attributes -------------------
+    # --- v0.3.1: status sensor exposes config attributes -------------------
     # The card's "Show configuration" section reads delay_seconds,
     # debounce_enabled, debounce_seconds, and max_enforcements_per_minute
     # from the status sensor's attributes.  Verify they land after the restore.

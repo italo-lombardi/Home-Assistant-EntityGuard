@@ -1,5 +1,5 @@
 /**
- * Entity Guard Card v0.1.4
+ * Entity Guard Card v0.3.1
  * Custom Lovelace card for the Home Assistant Entity Guard integration.
  *
  * Config:
@@ -8,7 +8,7 @@
  *   title: <optional override>
  */
 
-const CARD_VERSION = "0.1.4";
+const CARD_VERSION = "0.3.1";
 
 console.info(
   `%c ENTITY-GUARD-CARD %c v${CARD_VERSION} %c — github.com/italo-lombardi `,
@@ -153,6 +153,9 @@ const cardStyles = css`
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 60%;
+  }
+  .config-section .row {
+    padding: 3px 16px;
   }
   .stats {
     display: flex;
@@ -777,10 +780,13 @@ class EntityGuardCard extends LitElement {
         <span class="value">${a.delay_seconds} s</span>
       </div>`);
     }
-    if (a.debounce_enabled && a.debounce_seconds != null) {
+    if (a.debounce_enabled != null) {
+      const debounceLabel = a.debounce_enabled
+        ? `${a.debounce_seconds} s`
+        : "Off";
       rows.push(html`<div class="row">
         <span class="label">Debounce</span>
-        <span class="value">${a.debounce_seconds} s</span>
+        <span class="value">${debounceLabel}</span>
       </div>`);
     }
     if (a.max_enforcements_per_minute != null) {
@@ -795,10 +801,10 @@ class EntityGuardCard extends LitElement {
     if (rows.length === 0) return nothing;
     return html`
       <div class="divider"></div>
-      <div class="entities">
+      <div class="entities config-section">
         <div class="section-title">Configuration</div>
+        ${rows}
       </div>
-      ${rows}
     `;
   }
 
