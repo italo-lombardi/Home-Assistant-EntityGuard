@@ -46,6 +46,10 @@ def _make_engine(status=STATUS_ARMED, count_today=2, count_total=10):
     engine.config.trigger_states = ["on"]
     engine.config.safety_acknowledged = False
     engine.config.flags = []
+    engine.config.delay_seconds = 5
+    engine.config.debounce_enabled = True
+    engine.config.debounce_seconds = 30
+    engine.config.max_enforcements_per_minute = 10
     engine.state.consecutive_errors = 0
     engine.state.last_error = None
     engine.current_status.return_value = status
@@ -146,6 +150,25 @@ def test_status_sensor_extra_attrs():
     assert attrs["target_state"] == "off"
     assert attrs["trigger_states"] == ["on"]
     assert attrs["flags"] == []
+    assert attrs["delay_seconds"] == 5
+    assert attrs["debounce_enabled"] is True
+    assert attrs["debounce_seconds"] == 30
+    assert attrs["max_enforcements_per_minute"] == 10
+
+
+def test_status_sensor_config_attrs_zero_rate_limit():
+    entry = _make_rule_entry()
+    engine = _make_engine()
+    engine.config.delay_seconds = 0
+    engine.config.debounce_enabled = False
+    engine.config.debounce_seconds = 0
+    engine.config.max_enforcements_per_minute = 0
+    sensor = EntityGuardStatusSensor(entry, engine)
+    attrs = sensor.extra_state_attributes
+    assert attrs["delay_seconds"] == 0
+    assert attrs["debounce_enabled"] is False
+    assert attrs["debounce_seconds"] == 0
+    assert attrs["max_enforcements_per_minute"] == 0
 
 
 def test_status_sensor_flags_attribute(hass: HomeAssistant):

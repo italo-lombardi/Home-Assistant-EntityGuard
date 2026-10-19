@@ -360,6 +360,7 @@ show_stats: true             # default: true  (enforcement counters)
 show_last_enforced: true     # default: true
 show_entities: true          # default: true
 show_conditions: false       # default: false
+show_config: false           # default: false (delay, debounce, rate limit)
 show_actions: false          # default: false
 ```
 
@@ -369,6 +370,7 @@ The card shows:
 - Last enforced timestamp and cooldown indicator — togglable via `show_last_enforced`
 - Bound entities with compliance state (✓ compliant / ⚠ violation); state values show translated labels where HA's device_class provides one — `Clear (off)`, `Detected (on)` — or label-only when the label is just a capitalised raw value (`Off`); non-compliant rows translate both sides: `Detected (on) → Clear (off) ⚠`. **Clicking any entity row opens the HA more-info dialog for that entity.**
 - Optional **Conditions** section (`show_conditions: true`) — lists each flag with current vs required state translated the same way; useful when status is `conditional`. **Each condition row is also clickable** (opens more-info for the flag entity).
+- Optional **Configuration** section (`show_config: true`) — shows Delay, Debounce (when enabled), and Rate limit for the rule.
 - Optional action buttons (Test Enforce, Reset Cooldowns when active, Clear History, Suppress 1h)
 
 **Normal state — rule idle**

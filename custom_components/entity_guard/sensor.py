@@ -150,6 +150,10 @@ class EntityGuardStatusSensor(EntityGuardSensor):
             "consecutive_errors": int(self._engine.state.consecutive_errors or 0),
             "last_error": self._engine.state.last_error,
             "flags": flags,
+            "delay_seconds": self._engine.config.delay_seconds,
+            "debounce_enabled": self._engine.config.debounce_enabled,
+            "debounce_seconds": self._engine.config.debounce_seconds,
+            "max_enforcements_per_minute": self._engine.config.max_enforcements_per_minute,
         }
 
 

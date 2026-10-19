@@ -1,5 +1,5 @@
 /**
- * Entity Guard Card v0.1.3
+ * Entity Guard Card v0.1.4
  * Custom Lovelace card for the Home Assistant Entity Guard integration.
  *
  * Config:
@@ -8,7 +8,7 @@
  *   title: <optional override>
  */
 
-const CARD_VERSION = "0.1.3";
+const CARD_VERSION = "0.1.4";
 
 console.info(
   `%c ENTITY-GUARD-CARD %c v${CARD_VERSION} %c — github.com/italo-lombardi `,
@@ -677,6 +677,7 @@ class EntityGuardCard extends LitElement {
         ${this._config.show_last_enforced !== false
           ? this._renderInfo(refs)
           : nothing}
+        ${this._config.show_config ? this._renderConfig(refs) : nothing}
         ${this._config.show_entities !== false
           ? this._renderBound(refs)
           : nothing}
@@ -763,6 +764,41 @@ class EntityGuardCard extends LitElement {
         <span class="label">Last enforced</span>
         <span class="value">${this._formatTimestamp(last)}</span>
       </div>
+    `;
+  }
+
+  _renderConfig(refs) {
+    const statusEntity = refs.status ? this.hass.states[refs.status] : null;
+    const a = statusEntity?.attributes ?? {};
+    const rows = [];
+    if (a.delay_seconds != null) {
+      rows.push(html`<div class="row">
+        <span class="label">Delay</span>
+        <span class="value">${a.delay_seconds} s</span>
+      </div>`);
+    }
+    if (a.debounce_enabled && a.debounce_seconds != null) {
+      rows.push(html`<div class="row">
+        <span class="label">Debounce</span>
+        <span class="value">${a.debounce_seconds} s</span>
+      </div>`);
+    }
+    if (a.max_enforcements_per_minute != null) {
+      const rateLabel = a.max_enforcements_per_minute === 0
+        ? "Off"
+        : `${a.max_enforcements_per_minute} /min`;
+      rows.push(html`<div class="row">
+        <span class="label">Rate limit</span>
+        <span class="value">${rateLabel}</span>
+      </div>`);
+    }
+    if (rows.length === 0) return nothing;
+    return html`
+      <div class="divider"></div>
+      <div class="entities">
+        <div class="section-title">Configuration</div>
+      </div>
+      ${rows}
     `;
   }
 
@@ -1079,6 +1115,16 @@ class EntityGuardCardEditor extends LitElement {
             .checked=${this._config.show_last_enforced !== false}
             @change=${(e) =>
               this._update("show_last_enforced", e.target.checked)}
+          ></ha-switch>
+        </div>
+        <div
+          class="editor-row"
+          style="display:flex;align-items:center;justify-content:space-between;"
+        >
+          <label style="margin-bottom:0">Show configuration</label>
+          <ha-switch
+            .checked=${!!this._config.show_config}
+            @change=${(e) => this._update("show_config", e.target.checked)}
           ></ha-switch>
         </div>
         <div

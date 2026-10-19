@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.2] — 2026-10-19
+
+### Added
+
+- **"Show configuration" section in the Lovelace card.** A new `show_config` toggle (off by default, available in the card editor below "Show last enforced") reveals a "Configuration" section with the rule's operational parameters: Delay, Debounce (only when enabled), and Rate limit. Rate limit shows `Off` when set to 0.
+- The status sensor (`sensor.<rule>_status`) now exposes four new attributes: `delay_seconds`, `debounce_enabled`, `debounce_seconds`, `max_enforcements_per_minute`. These are read by the card's configuration section and are also available for automations/templates.
+- Card version bumped to `v0.1.4`.
+
 ## [0.3.1] — 2026-10-19
 
 ### Changed
