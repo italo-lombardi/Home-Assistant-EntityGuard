@@ -1048,11 +1048,6 @@ async def test_evaluate_delayed_multi_entity_all_get_due_entry(hass: HomeAssista
         hass.states.async_set(eid, "on")
 
     broadcasts: list[None] = []
-
-    from homeassistant.helpers.dispatcher import async_dispatcher_connect
-
-    from custom_components.entity_guard.rule_engine import signal_for_rule
-
     async_dispatcher_connect(
         hass, signal_for_rule(config.unique_id), lambda *_: broadcasts.append(None)
     )
@@ -1086,11 +1081,6 @@ async def test_evaluate_delayed_second_entity_broadcasts_when_already_pending(
     hass.states.async_set("light.y", "on")
 
     broadcasts: list[None] = []
-
-    from homeassistant.helpers.dispatcher import async_dispatcher_connect
-
-    from custom_components.entity_guard.rule_engine import signal_for_rule
-
     async_dispatcher_connect(
         hass, signal_for_rule(config.unique_id), lambda *_: broadcasts.append(None)
     )
