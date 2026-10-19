@@ -399,3 +399,44 @@ def test_rule_id_sensor_native_value():
     engine.config.unique_id = "uid"
     sensor = EntityGuardRuleIdSensor(entry, engine)
     assert sensor.native_value == "abc123"
+
+
+# ---------------------------------------------------------------------------
+# last_triggered_* sensor attributes
+# ---------------------------------------------------------------------------
+
+
+def test_status_sensor_last_triggered_none_before_enforcement():
+    """Both last_triggered_* attrs are None before any enforcement fires."""
+    entry = _make_rule_entry()
+    engine = _make_engine()
+    engine.state.last_triggered_user_id = None
+    engine.state.last_triggered_entity = None
+    sensor = EntityGuardStatusSensor(entry, engine)
+    attrs = sensor.extra_state_attributes
+    assert attrs["last_triggered_by"] is None
+    assert attrs["last_triggered_entity"] is None
+
+
+def test_status_sensor_last_triggered_by_user_id():
+    """last_triggered_by is the raw user_id when a UI user caused the trigger."""
+    entry = _make_rule_entry()
+    engine = _make_engine()
+    engine.state.last_triggered_user_id = "abc123-user-uuid"
+    engine.state.last_triggered_entity = "light.bedroom"
+    sensor = EntityGuardStatusSensor(entry, engine)
+    attrs = sensor.extra_state_attributes
+    assert attrs["last_triggered_by"] == "abc123-user-uuid"
+    assert attrs["last_triggered_entity"] == "light.bedroom"
+
+
+def test_status_sensor_last_triggered_by_none_for_automation():
+    """last_triggered_by is None (not a string) when automation triggered it."""
+    entry = _make_rule_entry()
+    engine = _make_engine()
+    engine.state.last_triggered_user_id = None
+    engine.state.last_triggered_entity = "switch.fan"
+    sensor = EntityGuardStatusSensor(entry, engine)
+    attrs = sensor.extra_state_attributes
+    assert attrs["last_triggered_by"] is None
+    assert attrs["last_triggered_entity"] == "switch.fan"

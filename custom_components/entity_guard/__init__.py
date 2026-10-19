@@ -68,8 +68,40 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         hass.data[DOMAIN]["storage"] = store
         _LOGGER.debug("Storage initialized")
     await async_register_services(hass)
+    # async_process_integration_platforms skips custom components (dot in name),
+    # so register the logbook descriptor directly into logbook's external_events.
+    _register_logbook_descriptors(hass)
     _LOGGER.info("Entity Guard integration loaded")
     return True
+
+
+@callback
+def _register_logbook_descriptors(hass: HomeAssistant) -> None:
+    """Register Entity Guard logbook event descriptors.
+
+    HA's integration platform mechanism skips custom components, so we wire
+    directly into logbook's external_events dict after logbook is set up.
+    """
+    from homeassistant.components.logbook.const import DOMAIN as LOGBOOK_DOMAIN
+
+    from .logbook import async_describe_events
+
+    logbook_config = hass.data.get(LOGBOOK_DOMAIN)
+    if logbook_config is None:
+        _LOGGER.warning(
+            "Logbook not loaded — Entity Guard events won't appear in logbook"
+        )
+        return
+    external_events = logbook_config.external_events
+    registered_keys: list[str] = []
+
+    @callback
+    def _async_describe_event(domain: str, event_name: str, describe_callback) -> None:
+        external_events[event_name] = (domain, describe_callback)
+        registered_keys.append(event_name)
+
+    async_describe_events(hass, _async_describe_event)
+    _LOGGER.debug("Registered Entity Guard logbook descriptors: %s", registered_keys)
 
 
 def _master_enabled_getter(hass: HomeAssistant):

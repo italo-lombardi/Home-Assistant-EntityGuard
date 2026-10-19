@@ -1728,7 +1728,7 @@ async def test_flag_change_triggers_enforcement_on_already_triggered_target(
         # Allow spawned tasks to run.
         await hass.async_block_till_done()
 
-    mock_enforce.assert_awaited_once_with("switch.diffuser")
+    mock_enforce.assert_awaited_once_with("switch.diffuser", trigger_context_id=None)
 
 
 async def test_flag_change_match_state_off_triggers_enforcement(
@@ -1755,7 +1755,7 @@ async def test_flag_change_match_state_off_triggers_enforcement(
         await engine.async_evaluate("binary_sensor.water_ok", flag_st)
         await hass.async_block_till_done()
 
-    mock_enforce.assert_awaited_once_with("switch.diffuser")
+    mock_enforce.assert_awaited_once_with("switch.diffuser", trigger_context_id=None)
 
 
 async def test_flag_change_no_enforcement_when_target_not_triggered(
@@ -1810,7 +1810,7 @@ async def test_flag_change_multi_flag_all_must_match(hass: HomeAssistant):
         await engine.async_evaluate("binary_sensor.no_water", flag_st)
         await hass.async_block_till_done()
 
-    mock_enforce.assert_awaited_once_with("switch.diffuser")
+    mock_enforce.assert_awaited_once_with("switch.diffuser", trigger_context_id=None)
 
 
 async def test_entity_both_flag_and_target_sweeps_other_targets(hass: HomeAssistant):
@@ -3585,3 +3585,101 @@ async def test_clear_history_broadcasts_when_recently_enforced_and_status_unchan
 
     assert engine._recently_enforced is False
     assert len(broadcasts) >= 1
+
+
+# ---------------------------------------------------------------------------
+# _get_rule_entity_id
+# ---------------------------------------------------------------------------
+
+
+def test_get_rule_entity_id_returns_cached(hass: HomeAssistant) -> None:
+    """Cache hit: second call returns cached value without touching registry."""
+    engine = _make_engine(hass)
+    engine._rule_entity_id = "sensor.cached_status"
+
+    with patch("custom_components.entity_guard.rule_engine.er.async_get") as mock_reg:
+        result = engine._get_rule_entity_id()
+
+    assert result == "sensor.cached_status"
+    mock_reg.assert_not_called()
+
+
+def test_get_rule_entity_id_no_entry_returns_none(hass: HomeAssistant) -> None:
+    """No config entry: returns None without touching registry."""
+    engine = _make_engine(hass)
+    assert engine._entry is None
+
+    with patch("custom_components.entity_guard.rule_engine.er.async_get") as mock_reg:
+        result = engine._get_rule_entity_id()
+
+    assert result is None
+    mock_reg.assert_not_called()
+
+
+def test_get_rule_entity_id_finds_and_caches_status_sensor(
+    hass: HomeAssistant,
+) -> None:
+    """Registry lookup finds status sensor, caches and returns it."""
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.entity_guard.const import DOMAIN
+
+    entry = MockConfigEntry(domain=DOMAIN, title="Test Rule")
+    entry.add_to_hass(hass)
+
+    store = MagicMock(spec=EntityGuardStore)
+    store.get_rule_state.return_value = {}
+    store.set_rule_state.return_value = None
+    store.runtime_to_blob = EntityGuardStore.runtime_to_blob
+    store.blob_to_runtime = EntityGuardStore.blob_to_runtime
+    engine = RuleEngine(hass, _make_config(), store, lambda: True, entry)
+
+    fake_entry = MagicMock()
+    fake_entry.entity_id = "sensor.test_rule_status"
+    fake_entry.unique_id = f"{entry.entry_id}_status"
+
+    with (
+        patch("custom_components.entity_guard.rule_engine.er.async_get"),
+        patch(
+            "custom_components.entity_guard.rule_engine.er.async_entries_for_config_entry",
+            return_value=[fake_entry],
+        ),
+    ):
+        result = engine._get_rule_entity_id()
+
+    assert result == "sensor.test_rule_status"
+    assert engine._rule_entity_id == "sensor.test_rule_status"
+
+
+def test_get_rule_entity_id_no_status_sensor_returns_none(
+    hass: HomeAssistant,
+) -> None:
+    """Registry has entries but none end in _status: returns None."""
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.entity_guard.const import DOMAIN
+
+    entry = MockConfigEntry(domain=DOMAIN, title="Test Rule")
+    entry.add_to_hass(hass)
+
+    store = MagicMock(spec=EntityGuardStore)
+    store.get_rule_state.return_value = {}
+    store.set_rule_state.return_value = None
+    store.runtime_to_blob = EntityGuardStore.runtime_to_blob
+    store.blob_to_runtime = EntityGuardStore.blob_to_runtime
+    engine = RuleEngine(hass, _make_config(), store, lambda: True, entry)
+
+    fake_entry = MagicMock()
+    fake_entry.entity_id = "button.test_rule_arm"
+    fake_entry.unique_id = f"{entry.entry_id}_arm"
+
+    with (
+        patch("custom_components.entity_guard.rule_engine.er.async_get"),
+        patch(
+            "custom_components.entity_guard.rule_engine.er.async_entries_for_config_entry",
+            return_value=[fake_entry],
+        ),
+    ):
+        result = engine._get_rule_entity_id()
+
+    assert result is None
