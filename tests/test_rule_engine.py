@@ -3636,6 +3636,7 @@ def test_get_rule_entity_id_finds_and_caches_status_sensor(
 
     fake_entry = MagicMock()
     fake_entry.entity_id = "sensor.test_rule_status"
+    fake_entry.unique_id = f"{entry.entry_id}_status"
 
     with (
         patch("custom_components.entity_guard.rule_engine.er.async_get"),
@@ -3670,6 +3671,7 @@ def test_get_rule_entity_id_no_status_sensor_returns_none(
 
     fake_entry = MagicMock()
     fake_entry.entity_id = "button.test_rule_arm"
+    fake_entry.unique_id = f"{entry.entry_id}_arm"
 
     with (
         patch("custom_components.entity_guard.rule_engine.er.async_get"),

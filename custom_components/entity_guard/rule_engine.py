@@ -836,11 +836,10 @@ class RuleEngine:
             return self._rule_entity_id
         if self._entry is None:
             return None
+        target_unique_id = f"{self._entry.entry_id}_status"
         ent_reg = er.async_get(self._hass)
         for entry in er.async_entries_for_config_entry(ent_reg, self._entry.entry_id):
-            if entry.entity_id.startswith("sensor.") and entry.entity_id.endswith(
-                "_status"
-            ):
+            if entry.unique_id == target_unique_id:
                 self._rule_entity_id = entry.entity_id
                 return self._rule_entity_id
         return None
