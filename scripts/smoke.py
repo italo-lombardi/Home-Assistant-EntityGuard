@@ -436,8 +436,8 @@ def main() -> int:
 
     # --- v0.3.1: status sensor exposes config attributes -------------------
     # The card's "Show configuration" section reads delay_seconds,
-    # debounce_enabled, debounce_seconds, and max_enforcements_per_minute
-    # from the status sensor's attributes.  Verify they land after the restore.
+    # debounce_enabled, debounce_seconds, rate_limit_enabled, and
+    # max_enforcements_per_minute from the status sensor's attributes.
     status_e = by_unique_suffix("_status")
     if status_e:
         attrs = state(token, status_e).get("attributes", {})
@@ -454,6 +454,11 @@ def main() -> int:
         check(
             "status attr debounce_seconds present",
             "debounce_seconds" in attrs,
+            f"attrs={list(attrs.keys())}",
+        )
+        check(
+            "status attr rate_limit_enabled present",
+            "rate_limit_enabled" in attrs,
             f"attrs={list(attrs.keys())}",
         )
         check(
