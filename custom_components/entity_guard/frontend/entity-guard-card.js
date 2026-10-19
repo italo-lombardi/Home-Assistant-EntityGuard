@@ -798,6 +798,12 @@ class EntityGuardCard extends LitElement {
         <span class="value">${rateLabel}</span>
       </div>`);
     }
+    if (a.rate_limit_enabled != null) {
+      rows.push(html`<div class="row">
+        <span class="label">Loop protect</span>
+        <span class="value">${a.rate_limit_enabled ? "On" : "Off"}</span>
+      </div>`);
+    }
     if (rows.length === 0) return nothing;
     return html`
       <div class="divider"></div>

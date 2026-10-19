@@ -153,6 +153,7 @@ class EntityGuardStatusSensor(EntityGuardSensor):
             "delay_seconds": self._engine.config.delay_seconds,
             "debounce_enabled": self._engine.config.debounce_enabled,
             "debounce_seconds": self._engine.config.debounce_seconds,
+            "rate_limit_enabled": self._engine.config.rate_limit_enabled,
             "max_enforcements_per_minute": self._engine.config.max_enforcements_per_minute,
         }
 
