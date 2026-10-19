@@ -800,7 +800,7 @@ class EntityGuardCard extends LitElement {
     }
     if (a.rate_limit_enabled != null) {
       const loopLabel = a.rate_limit_enabled
-        ? `auto-suppress for 15 min above ${a.max_enforcements_per_minute}/min`
+        ? `suppress >${a.max_enforcements_per_minute}/min (15 min)`
         : "Off";
       rows.push(html`<div class="row">
         <span class="label">Loop protection</span>
