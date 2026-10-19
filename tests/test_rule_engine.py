@@ -1103,6 +1103,118 @@ async def test_evaluate_delayed_second_entity_broadcasts_when_already_pending(
     assert len(broadcasts) > pre_count, "second entity must trigger broadcast"
 
 
+async def test_evaluate_compliant_entity_removed_from_pending_due_broadcasts(
+    hass: HomeAssistant,
+):
+    """When one entity turns compliant while others stay pending, its due entry
+    must be removed AND a broadcast must fire so the card stops showing its countdown.
+
+    Regression: _cancel_pending removed the entity from the dict but _set_status
+    deduped the broadcast (status stayed PENDING), so the sensor never received
+    the updated dict.
+    """
+    config = _make_config(
+        delay_seconds=30,
+        target_entities=["light.a", "light.b", "light.c"],
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    for eid in ["light.a", "light.b", "light.c"]:
+        hass.states.async_set(eid, "on")
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later"
+    ) as mock_later:
+        mock_later.return_value = MagicMock()
+        for eid in ["light.a", "light.b", "light.c"]:
+            await engine.async_evaluate(eid, hass.states.get(eid))
+            await hass.async_block_till_done()
+
+    assert engine.current_status() == STATUS_PENDING
+    assert all(
+        e in engine.pending_enforcement_due() for e in ["light.a", "light.b", "light.c"]
+    )
+
+    broadcasts: list[None] = []
+    async_dispatcher_connect(
+        hass, signal_for_rule(config.unique_id), lambda *_: broadcasts.append(None)
+    )
+
+    # entity A turns compliant (off = target_state)
+    hass.states.async_set("light.a", "off")
+    await engine.async_evaluate("light.a", hass.states.get("light.a"))
+    await hass.async_block_till_done()
+
+    due = engine.pending_enforcement_due()
+    assert "light.a" not in due, (
+        "compliant entity must be removed from pending_enforcement_due"
+    )
+    assert "light.b" in due, "still-pending entity must remain"
+    assert "light.c" in due, "still-pending entity must remain"
+    assert engine.current_status() == STATUS_PENDING, (
+        "rule must stay PENDING (b and c still pending)"
+    )
+    assert broadcasts, "broadcast must fire so card receives updated dict"
+
+
+async def test_evaluate_skip_reason_entity_removed_from_pending_due_broadcasts(
+    hass: HomeAssistant,
+):
+    """When a skip_reason fires for one entity while another stays pending, its
+    due entry must be removed AND a broadcast must fire.
+
+    Uses a color-attribute rule (color_temp_kelvin) where setting the light
+    unavailable triggers the skip_reason path in _color_trigger_decision.
+    """
+    config = _make_config(
+        delay_seconds=30,
+        target_entities=["light.x", "light.y"],
+        mode="attribute",
+        attribute="color_temp_kelvin",
+        operator=None,
+        threshold=None,
+        target_value=3000,
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    # Both lights non-compliant (color_temp_kelvin != 3000 by enough tolerance)
+    hass.states.async_set("light.x", "on", {"color_temp_kelvin": 6000})
+    hass.states.async_set("light.y", "on", {"color_temp_kelvin": 6000})
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later"
+    ) as mock_later:
+        mock_later.return_value = MagicMock()
+        for eid in ["light.x", "light.y"]:
+            await engine.async_evaluate(eid, hass.states.get(eid))
+            await hass.async_block_till_done()
+
+    assert engine.current_status() == STATUS_PENDING
+    assert "light.x" in engine.pending_enforcement_due()
+    assert "light.y" in engine.pending_enforcement_due()
+
+    broadcasts: list[None] = []
+    async_dispatcher_connect(
+        hass, signal_for_rule(config.unique_id), lambda *_: broadcasts.append(None)
+    )
+
+    # light.x goes unavailable → _color_trigger_decision returns skip_reason="light_unavailable"
+    hass.states.async_set("light.x", "unavailable", {"color_temp_kelvin": 6000})
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later"
+    ) as mock_later:
+        mock_later.return_value = MagicMock()
+        await engine.async_evaluate("light.x", hass.states.get("light.x"))
+        await hass.async_block_till_done()
+
+    due = engine.pending_enforcement_due()
+    assert "light.x" not in due, (
+        "skipped entity must be removed from pending_enforcement_due"
+    )
+    assert "light.y" in due, "still-pending entity must remain"
+    assert broadcasts, "broadcast must fire so card receives updated dict"
+
+
 # ---------------------------------------------------------------------------
 # async_suppress / async_unsuppress
 # ---------------------------------------------------------------------------

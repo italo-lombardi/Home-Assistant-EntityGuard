@@ -378,13 +378,27 @@ class RuleEngine:
         if skip_reason is not None:
             self._cancel_pending(entity_id)
             self._fire_skipped(entity_id, skip_reason)
-            self._set_status(self._derive_armed_or_cooldown(now))
+            new_status = self._derive_armed_or_cooldown(now)
+            if new_status == STATUS_PENDING:
+                # Other entities still pending: _set_status dedupes the broadcast,
+                # so the updated _pending_enforcement_due dict (now missing this
+                # entity) would never trigger async_write_ha_state. Force it.
+                self._broadcast_status()
+            else:
+                self._set_status(new_status)
             return
 
         if not triggered:
             # State no longer matches; cancel any pending delayed enforcement.
             self._cancel_pending(entity_id)
-            self._set_status(self._derive_armed_or_cooldown(now))
+            new_status = self._derive_armed_or_cooldown(now)
+            if new_status == STATUS_PENDING:
+                # Other entities still pending: _set_status dedupes the broadcast,
+                # so the updated _pending_enforcement_due dict (now missing this
+                # entity) would never trigger async_write_ha_state. Force it.
+                self._broadcast_status()
+            else:
+                self._set_status(new_status)
             return
 
         if self._config.debounce_enabled and self._in_cooldown(entity_id, now):
