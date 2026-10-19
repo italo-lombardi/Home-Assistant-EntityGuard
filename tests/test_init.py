@@ -246,9 +246,9 @@ def test_register_logbook_descriptors_registers_all_events(hass: HomeAssistant) 
 
 def test_register_logbook_descriptors_no_logbook(hass: HomeAssistant) -> None:
     """_register_logbook_descriptors is a no-op when logbook not loaded."""
-    from custom_components.entity_guard import _register_logbook_descriptors
-
     from homeassistant.components.logbook.const import DOMAIN as LOGBOOK_DOMAIN
+
+    from custom_components.entity_guard import _register_logbook_descriptors
 
     hass.data.pop(LOGBOOK_DOMAIN, None)
     _register_logbook_descriptors(hass)
