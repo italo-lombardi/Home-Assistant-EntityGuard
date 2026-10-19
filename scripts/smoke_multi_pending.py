@@ -162,8 +162,7 @@ def main() -> None:
         )
         check(
             "Both due timestamps are non-null",
-            pending_due.get(FAN_A) is not None
-            and pending_due.get(FAN_B) is not None,
+            pending_due.get(FAN_A) is not None and pending_due.get(FAN_B) is not None,
         )
 
         print("\n=== All checks PASSED — fix confirmed ===")
