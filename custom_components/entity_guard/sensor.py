@@ -159,7 +159,8 @@ class EntityGuardStatusSensor(EntityGuardSensor):
                 eid: due.isoformat()
                 for eid, due in self._engine.pending_enforcement_due().items()
             },
-            "last_triggered_by": self._engine.state.last_triggered_user_id or "automation/integration",
+            "last_triggered_by": self._engine.state.last_triggered_user_id,
+            "last_triggered_entity": self._engine.state.last_triggered_entity,
         }
 
 
