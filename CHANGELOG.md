@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.1] — 2026-10-19
+
+### Added
+
+- **"Show configuration" section in the Lovelace card.** A new `show_config` toggle (off by default, available in the card editor below "Show last enforced") reveals a "Configuration" section with four rows: Delay, Debounce (shows "Off" when disabled), Rate limit (shows "Off" when set to 0), and Loop protection (On/Off).
+- The status sensor (`sensor.<rule>_status`) now exposes five new attributes: `delay_seconds`, `debounce_enabled`, `debounce_seconds`, `rate_limit_enabled`, `max_enforcements_per_minute`. These are read by the card's configuration section and are also available for automations/templates.
+
+### Changed
+
+- **Bound entities and condition flags in the Lovelace card are now clickable.** Clicking (or pressing Enter/Space on) an entity row in the "Bound entities" or "Conditions" sections opens the standard Home Assistant more-info dialog for that entity, giving instant access to its history, attributes, and controls without leaving the dashboard. Both rows have keyboard focus support (`role="button"`, `tabindex="0"`) and show an underline-on-hover visual cue consistent with the EntityStateTracker card.
+- Card version bumped to `v0.3.1`.
+
 ## [0.3.0] — 2026-09-11
 
 ### Fixed

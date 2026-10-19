@@ -434,6 +434,46 @@ def main() -> int:
     set_number(token, rate_e, 10)
     time.sleep(3)
 
+    # --- v0.3.1: status sensor exposes config attributes -------------------
+    # The card's "Show configuration" section reads delay_seconds,
+    # debounce_enabled, debounce_seconds, rate_limit_enabled, and
+    # max_enforcements_per_minute from the status sensor's attributes.
+    status_e = by_unique_suffix("_status")
+    if status_e:
+        attrs = state(token, status_e).get("attributes", {})
+        check(
+            "status attr delay_seconds present",
+            "delay_seconds" in attrs,
+            f"attrs={list(attrs.keys())}",
+        )
+        check(
+            "status attr delay_seconds == 5",
+            attrs.get("delay_seconds") == 5,
+            f"got {attrs.get('delay_seconds')}",
+        )
+        check(
+            "status attr debounce_seconds present",
+            "debounce_seconds" in attrs,
+            f"attrs={list(attrs.keys())}",
+        )
+        check(
+            "status attr rate_limit_enabled present",
+            "rate_limit_enabled" in attrs,
+            f"attrs={list(attrs.keys())}",
+        )
+        check(
+            "status attr max_enforcements_per_minute present",
+            "max_enforcements_per_minute" in attrs,
+            f"attrs={list(attrs.keys())}",
+        )
+        check(
+            "status attr max_enforcements_per_minute == 10",
+            attrs.get("max_enforcements_per_minute") == 10,
+            f"got {attrs.get('max_enforcements_per_minute')}",
+        )
+    else:
+        print("  WARNING: could not resolve status entity — skipping attr checks")
+
     print()
     if FAILS:
         print(f"SMOKE RESULT: {len(FAILS)} FAILED — {', '.join(FAILS)}")

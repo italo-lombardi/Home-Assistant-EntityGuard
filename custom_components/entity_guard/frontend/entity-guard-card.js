@@ -1,5 +1,5 @@
 /**
- * Entity Guard Card v0.1.2
+ * Entity Guard Card v0.3.1
  * Custom Lovelace card for the Home Assistant Entity Guard integration.
  *
  * Config:
@@ -8,7 +8,7 @@
  *   title: <optional override>
  */
 
-const CARD_VERSION = "0.1.1";
+const CARD_VERSION = "0.3.1";
 
 console.info(
   `%c ENTITY-GUARD-CARD %c v${CARD_VERSION} %c — github.com/italo-lombardi `,
@@ -154,6 +154,9 @@ const cardStyles = css`
     white-space: nowrap;
     max-width: 60%;
   }
+  .config-section .row {
+    padding: 3px 16px;
+  }
   .stats {
     display: flex;
     padding: 8px 16px;
@@ -195,6 +198,16 @@ const cardStyles = css`
     gap: 8px;
     padding: 4px 0;
     font-size: 13px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  .entity-row:hover .entity-name {
+    color: var(--primary-color, #03a9f4);
+    text-decoration: underline;
+  }
+  .entity-row:focus-visible {
+    outline: 2px solid var(--primary-color, #03a9f4);
+    outline-offset: 2px;
   }
   .entity-name {
     flex: 1;
@@ -667,6 +680,7 @@ class EntityGuardCard extends LitElement {
         ${this._config.show_last_enforced !== false
           ? this._renderInfo(refs)
           : nothing}
+        ${this._config.show_config ? this._renderConfig(refs) : nothing}
         ${this._config.show_entities !== false
           ? this._renderBound(refs)
           : nothing}
@@ -756,6 +770,44 @@ class EntityGuardCard extends LitElement {
     `;
   }
 
+  _renderConfig(refs) {
+    const statusEntity = refs.status ? this.hass.states[refs.status] : null;
+    const a = statusEntity?.attributes ?? {};
+    const rows = [];
+    if (a.delay_seconds != null) {
+      rows.push(html`<div class="row">
+        <span class="label">Delay</span>
+        <span class="value">${a.delay_seconds} s</span>
+      </div>`);
+    }
+    if (a.debounce_enabled != null) {
+      const debounceLabel = a.debounce_enabled
+        ? `${a.debounce_seconds} s`
+        : "Disabled";
+      rows.push(html`<div class="row">
+        <span class="label">Debounce</span>
+        <span class="value">${debounceLabel}</span>
+      </div>`);
+    }
+    if (a.rate_limit_enabled != null) {
+      const loopLabel = a.rate_limit_enabled
+        ? `auto-suppress for 15 min above ${a.max_enforcements_per_minute}/min`
+        : "Off";
+      rows.push(html`<div class="row">
+        <span class="label">Loop protection</span>
+        <span class="value">${loopLabel}</span>
+      </div>`);
+    }
+    if (rows.length === 0) return nothing;
+    return html`
+      <div class="divider"></div>
+      <div class="entities config-section">
+        <div class="section-title">Configuration</div>
+        ${rows}
+      </div>
+    `;
+  }
+
   _renderBound(refs) {
     if (!refs.bound || refs.bound.length === 0) return nothing;
     const triggerStates = refs.triggerStates;
@@ -770,7 +822,18 @@ class EntityGuardCard extends LitElement {
           const displayTarget = this._formatHypotheticalState(id, refs.targetState);
           const compliant = !triggerStates || !triggerStates.includes(state);
           return html`
-            <div class="entity-row">
+            <div
+              class="entity-row"
+              role="button"
+              tabindex="0"
+              @click=${(e) => this._handleEntityClick(e, id)}
+              @keydown=${(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  this._handleEntityClick(e, id);
+                }
+              }}
+            >
               <span class="entity-name" title="${id}">${name}</span>
               <span class="entity-state">
                 ${compliant
@@ -800,7 +863,18 @@ class EntityGuardCard extends LitElement {
           const displayCurrent = this._formatStateDisplay(st, f.current ?? "unknown");
           const displayRequired = this._formatHypotheticalState(f.entity, f.required ?? null);
           return html`
-            <div class="entity-row">
+            <div
+              class="entity-row"
+              role="button"
+              tabindex="0"
+              @click=${(e) => this._handleEntityClick(e, f.entity)}
+              @keydown=${(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  this._handleEntityClick(e, f.entity);
+                }
+              }}
+            >
               <span class="entity-name" title="${f.entity}">${name}</span>
               <span class="entity-state">
                 ${f.matches
@@ -854,6 +928,18 @@ class EntityGuardCard extends LitElement {
         </div>
       </div>
     `;
+  }
+
+  _handleEntityClick(e, entityId) {
+    e.stopPropagation();
+    if (typeof entityId !== "string" || !entityId) return;
+    this.dispatchEvent(
+      new CustomEvent("hass-more-info", {
+        detail: { entityId },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   async _toggleEnabled(entityId, checked) {
@@ -1035,6 +1121,16 @@ class EntityGuardCardEditor extends LitElement {
             .checked=${this._config.show_last_enforced !== false}
             @change=${(e) =>
               this._update("show_last_enforced", e.target.checked)}
+          ></ha-switch>
+        </div>
+        <div
+          class="editor-row"
+          style="display:flex;align-items:center;justify-content:space-between;"
+        >
+          <label style="margin-bottom:0">Show configuration</label>
+          <ha-switch
+            .checked=${!!this._config.show_config}
+            @change=${(e) => this._update("show_config", e.target.checked)}
           ></ha-switch>
         </div>
         <div
