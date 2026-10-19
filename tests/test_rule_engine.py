@@ -1029,6 +1029,7 @@ async def test_evaluate_delayed_sets_pending(hass: HomeAssistant):
 
     assert engine.current_status() == STATUS_PENDING
     assert "light.bedroom" in engine._pending_enforcements
+    assert "light.bedroom" in engine.pending_enforcement_due()
 
 
 # ---------------------------------------------------------------------------
