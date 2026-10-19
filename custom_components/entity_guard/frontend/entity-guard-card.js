@@ -770,6 +770,15 @@ class EntityGuardCard extends LitElement {
     `;
   }
 
+  _formatSeconds(s) {
+    if (s < 60) return `${s} s`;
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const rem = s % 60;
+    if (h > 0) return rem > 0 ? `${h} h ${m} min ${rem} s` : m > 0 ? `${h} h ${m} min` : `${h} h`;
+    return rem > 0 ? `${m} min ${rem} s` : `${m} min`;
+  }
+
   _renderConfig(refs) {
     const statusEntity = refs.status ? this.hass.states[refs.status] : null;
     const a = statusEntity?.attributes ?? {};
@@ -777,12 +786,12 @@ class EntityGuardCard extends LitElement {
     if (a.delay_seconds != null) {
       rows.push(html`<div class="row">
         <span class="label">Delay</span>
-        <span class="value">${a.delay_seconds} s</span>
+        <span class="value">${this._formatSeconds(a.delay_seconds)}</span>
       </div>`);
     }
     if (a.debounce_enabled != null) {
       const debounceLabel = a.debounce_enabled
-        ? `${a.debounce_seconds} s`
+        ? this._formatSeconds(a.debounce_seconds)
         : "disabled";
       rows.push(html`<div class="row">
         <span class="label">Debounce</span>
@@ -791,7 +800,7 @@ class EntityGuardCard extends LitElement {
     }
     if (a.rate_limit_enabled != null) {
       const loopLabel = a.rate_limit_enabled
-        ? `auto-suppress for 15 min above ${a.max_enforcements_per_minute}/min`
+        ? `suppress >${a.max_enforcements_per_minute}/min (15 min)`
         : "Off";
       rows.push(html`<div class="row">
         <span class="label">Loop protection</span>
