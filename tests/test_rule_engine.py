@@ -977,6 +977,7 @@ async def test_flag_change_while_armed_broadcasts(hass: HomeAssistant):
         await engine.async_evaluate(
             "input_boolean.a", hass.states.get("input_boolean.a")
         )
+        await hass.async_block_till_done()
     finally:
         unsub()
 
