@@ -367,8 +367,8 @@ The card shows:
 - Rule name and color-coded status badge (armed / enforcing / suppressed / cooldown / conditional / error / master_disabled)
 - Enforcement counters (today / total) — togglable via `show_stats`
 - Last enforced timestamp and cooldown indicator — togglable via `show_last_enforced`
-- Bound entities with compliance state (✓ compliant / ⚠ violation); state values show translated labels where HA's device_class provides one — `Clear (off)`, `Detected (on)` — or label-only when the label is just a capitalised raw value (`Off`); non-compliant rows translate both sides: `Detected (on) → Clear (off) ⚠`
-- Optional **Conditions** section (`show_conditions: true`) — lists each flag with current vs required state translated the same way; useful when status is `conditional`
+- Bound entities with compliance state (✓ compliant / ⚠ violation); state values show translated labels where HA's device_class provides one — `Clear (off)`, `Detected (on)` — or label-only when the label is just a capitalised raw value (`Off`); non-compliant rows translate both sides: `Detected (on) → Clear (off) ⚠`. **Clicking any entity row opens the HA more-info dialog for that entity.**
+- Optional **Conditions** section (`show_conditions: true`) — lists each flag with current vs required state translated the same way; useful when status is `conditional`. **Each condition row is also clickable** (opens more-info for the flag entity).
 - Optional action buttons (Test Enforce, Reset Cooldowns when active, Clear History, Suppress 1h)
 
 **Normal state — rule idle**

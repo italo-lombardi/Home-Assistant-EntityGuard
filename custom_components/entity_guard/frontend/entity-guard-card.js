@@ -1,5 +1,5 @@
 /**
- * Entity Guard Card v0.1.2
+ * Entity Guard Card v0.1.3
  * Custom Lovelace card for the Home Assistant Entity Guard integration.
  *
  * Config:
@@ -8,7 +8,7 @@
  *   title: <optional override>
  */
 
-const CARD_VERSION = "0.1.1";
+const CARD_VERSION = "0.1.3";
 
 console.info(
   `%c ENTITY-GUARD-CARD %c v${CARD_VERSION} %c — github.com/italo-lombardi `,
@@ -195,6 +195,16 @@ const cardStyles = css`
     gap: 8px;
     padding: 4px 0;
     font-size: 13px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  .entity-row:hover .entity-name {
+    color: var(--primary-color, #03a9f4);
+    text-decoration: underline;
+  }
+  .entity-row:focus-visible {
+    outline: 2px solid var(--primary-color, #03a9f4);
+    outline-offset: 2px;
   }
   .entity-name {
     flex: 1;
@@ -770,7 +780,18 @@ class EntityGuardCard extends LitElement {
           const displayTarget = this._formatHypotheticalState(id, refs.targetState);
           const compliant = !triggerStates || !triggerStates.includes(state);
           return html`
-            <div class="entity-row">
+            <div
+              class="entity-row"
+              role="button"
+              tabindex="0"
+              @click=${(e) => this._handleEntityClick(e, id)}
+              @keydown=${(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  this._handleEntityClick(e, id);
+                }
+              }}
+            >
               <span class="entity-name" title="${id}">${name}</span>
               <span class="entity-state">
                 ${compliant
@@ -800,7 +821,18 @@ class EntityGuardCard extends LitElement {
           const displayCurrent = this._formatStateDisplay(st, f.current ?? "unknown");
           const displayRequired = this._formatHypotheticalState(f.entity, f.required ?? null);
           return html`
-            <div class="entity-row">
+            <div
+              class="entity-row"
+              role="button"
+              tabindex="0"
+              @click=${(e) => this._handleEntityClick(e, f.entity)}
+              @keydown=${(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  this._handleEntityClick(e, f.entity);
+                }
+              }}
+            >
               <span class="entity-name" title="${f.entity}">${name}</span>
               <span class="entity-state">
                 ${f.matches
@@ -854,6 +886,18 @@ class EntityGuardCard extends LitElement {
         </div>
       </div>
     `;
+  }
+
+  _handleEntityClick(e, entityId) {
+    e.stopPropagation();
+    if (typeof entityId !== "string" || !entityId) return;
+    this.dispatchEvent(
+      new CustomEvent("hass-more-info", {
+        detail: { entityId },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   async _toggleEnabled(entityId, checked) {

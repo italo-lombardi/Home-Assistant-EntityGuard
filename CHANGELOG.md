@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1] — 2026-10-19
+
+### Changed
+
+- **Bound entities and condition flags in the Lovelace card are now clickable.** Clicking (or pressing Enter/Space on) an entity row in the "Bound entities" or "Conditions" sections opens the standard Home Assistant more-info dialog for that entity, giving instant access to its history, attributes, and controls without leaving the dashboard. Both rows have keyboard focus support (`role="button"`, `tabindex="0"`) and show an underline-on-hover visual cue consistent with the EntityStateTracker card.
+- Card version bumped to `v0.1.3`.
+
 ## [0.3.0] — 2026-09-11
 
 ### Fixed
