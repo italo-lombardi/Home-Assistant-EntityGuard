@@ -143,12 +143,12 @@
       },
       "source_attribute_pick": {
         "title": "Pick source attribute",
-        "description": "Choose which attribute of {source} to read. Each option shows the attribute's current value.",
+        "description": "Choose which attribute of {source} to read.",
         "data": {
           "source_attribute": "Source attribute"
         },
         "data_description": {
-          "source_attribute": "The source attribute whose live value is read. Only the attribute name is stored; the shown value is just a current preview."
+          "source_attribute": "The source attribute whose live value is read. Only the attribute name is stored."
         }
       }
     },
@@ -294,12 +294,12 @@
       },
       "edit_source_attribute_pick": {
         "title": "Edit source attribute",
-        "description": "Choose which attribute of {source} to read. Each option shows the attribute's current value.",
+        "description": "Choose which attribute of {source} to read.",
         "data": {
           "source_attribute": "Source attribute"
         },
         "data_description": {
-          "source_attribute": "The source attribute whose live value is read. Only the attribute name is stored; the shown value is just a current preview."
+          "source_attribute": "The source attribute whose live value is read. Only the attribute name is stored."
         }
       }
     },

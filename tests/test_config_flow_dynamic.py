@@ -8,6 +8,7 @@ import pytest
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers import selector
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.entity_guard.config_flow import (
@@ -15,7 +16,6 @@ from custom_components.entity_guard.config_flow import (
     _dynamic_attribute_schema,
     _dynamic_state_schema,
     _source_attribute_options,
-    _stringify_attr_value,
     _validate_dynamic_attribute,
     _validate_dynamic_state,
     _validate_source_attribute_pick,
@@ -147,19 +147,6 @@ def test_validate_source_attribute_pick_ok():
     assert _validate_source_attribute_pick("brightness") == {}
 
 
-def test_stringify_attr_value_list():
-    assert _stringify_attr_value([255, 100, 0]) == "255, 100, 0"
-
-
-def test_stringify_attr_value_dict():
-    assert _stringify_attr_value({"a": 1}) == "a=1"
-
-
-def test_stringify_attr_value_long_clips():
-    out = _stringify_attr_value("x" * 100)
-    assert out.endswith("…") and len(out) == 38
-
-
 def test_source_attribute_options_filters_noise(hass: HomeAssistant):
     hass.states.async_set(
         "sensor.s",
@@ -218,18 +205,41 @@ def test_source_attribute_options_filters_capability_noise(hass: HomeAssistant):
 
 def test_source_attribute_options_label_matches_target_for_known(hass: HomeAssistant):
     # Known attr label uses the target-dropdown display name ("Brightness"); the
-    # option value stays the raw key.
+    # option value stays the raw key. No current-value suffix.
     hass.states.async_set("light.src", "on", {"brightness": 200})
     opts = _source_attribute_options(hass, "light.src")
     opt = next(o for o in opts if o["value"] == "brightness")
-    assert opt["label"] == "Brightness (200)"
+    assert opt["label"] == "Brightness"
 
 
 def test_source_attribute_options_label_prettifies_unknown(hass: HomeAssistant):
     hass.states.async_set("sensor.s", "1", {"my_custom_value": 42})
     opts = _source_attribute_options(hass, "sensor.s")
     opt = next(o for o in opts if o["value"] == "my_custom_value")
-    assert opt["label"] == "My custom value (42)"
+    assert opt["label"] == "My custom value"
+
+
+def test_source_attribute_options_label_has_no_value_even_when_none(
+    hass: HomeAssistant,
+):
+    # Off entity reports None-valued attrs; the label must NOT show "(None)".
+    hass.states.async_set("light.off", "off", {"brightness": None})
+    opts = _source_attribute_options(hass, "light.off")
+    opt = next(o for o in opts if o["value"] == "brightness")
+    assert opt["label"] == "Brightness"
+    assert "None" not in opt["label"] and "(" not in opt["label"]
+
+
+def test_pick_schema_is_dropdown_mode():
+    # DROPDOWN mode so HA shows the beautified label collapsed, not the raw value.
+    from custom_components.entity_guard.config_flow import _source_attribute_pick_schema
+
+    schema = _source_attribute_pick_schema(
+        [selector.SelectOptionDict(value="brightness", label="Brightness")], None
+    )
+    for _key, v in schema.schema.items():
+        assert v.config["mode"] == selector.SelectSelectorMode.DROPDOWN
+        assert v.config["custom_value"] is True
 
 
 async def test_pick_description_uses_friendly_name(hass: HomeAssistant):

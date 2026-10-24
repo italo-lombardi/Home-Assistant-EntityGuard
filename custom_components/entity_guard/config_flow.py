@@ -425,7 +425,7 @@ def _source_value_from_field() -> dict[Any, Any]:
 
     The attribute NAME is not collected here — when the user picks 'attribute',
     the flow advances to a second screen that lists the source's live attributes
-    with their current values (_source_attribute_pick_schema)."""
+    to follow (_source_attribute_pick_schema)."""
     return {
         vol.Required(
             CONF_SOURCE_VALUE_FROM, default=SOURCE_VALUE_FROM_STATE
@@ -482,19 +482,6 @@ def _prettify_attr_name(name: str) -> str:
     return ATTRIBUTE_DISPLAY_NAMES.get(name) or name.replace("_", " ").capitalize()
 
 
-def _stringify_attr_value(value: Any) -> str:
-    """Safe one-line label for an attribute value. Lists/tuples (rgb_color, …) and
-    dicts are compacted so they never break selector rendering; long values clip."""
-    if isinstance(value, (list, tuple)):
-        text = ", ".join(str(v) for v in value)
-    elif isinstance(value, dict):
-        text = ", ".join(f"{k}={v}" for k, v in value.items())
-    else:
-        text = str(value)
-    text = " ".join(text.split())  # collapse newlines/whitespace
-    return text if len(text) <= 40 else text[:37] + "…"
-
-
 def _friendly_name(hass: Any, entity_id: str | None) -> str:
     """Friendly name for an entity_id, falling back to the id (or '' if unset)."""
     if not entity_id:
@@ -510,7 +497,8 @@ def _friendly_name(hass: Any, entity_id: str | None) -> str:
 def _source_attribute_options(hass: Any, source: str | None) -> list[Any]:
     """Live attribute options for the pick step: one per meaningful source
     attribute. The option VALUE is the raw attribute key (what gets stored/read);
-    the LABEL is a prettified name + current value, e.g. 'Battery level (80)'.
+    the LABEL is the beautified name only — no current-value suffix, since off
+    entities report None-valued attributes that read as noise ('Brightness (None)').
     Noise/capability attributes are hidden. Empty when the source has no state or
     no listable attributes (the pick step then shows source_has_no_attributes)."""
     if not source or hass is None:
@@ -519,11 +507,8 @@ def _source_attribute_options(hass: Any, source: str | None) -> list[Any]:
     if state is None:
         return []
     return [
-        selector.SelectOptionDict(
-            value=name,
-            label=f"{_prettify_attr_name(name)} ({_stringify_attr_value(value)})",
-        )
-        for name, value in state.attributes.items()
+        selector.SelectOptionDict(value=name, label=_prettify_attr_name(name))
+        for name in state.attributes
         if not _is_noise_attribute(name)
     ]
 
@@ -531,9 +516,11 @@ def _source_attribute_options(hass: Any, source: str | None) -> list[Any]:
 def _source_attribute_pick_schema(
     options: list[Any], current: str | None
 ) -> vol.Schema:
-    """Second-step schema: pick one of the source's live attributes. custom_value
-    keeps a stored attribute selectable when editing a source that is momentarily
-    offline (its live options are empty/different)."""
+    """Second-step schema: pick one of the source's live attributes. Options carry
+    beautified SelectOptionDict labels, and mode=DROPDOWN so HA shows the label
+    (not the raw value) both in the list and in the collapsed/selected field.
+    custom_value keeps a stored attribute selectable when editing a source that is
+    momentarily offline (its live options are empty/different)."""
     return vol.Schema(
         {
             vol.Required(
@@ -543,6 +530,7 @@ def _source_attribute_pick_schema(
                 selector.SelectSelectorConfig(
                     options=options,
                     custom_value=True,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             )
         }
@@ -1024,7 +1012,7 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Second screen (both dynamic modes, value_from == attribute): pick one of
-        the source entity's live attributes, shown with their current values."""
+        the source entity's live attributes (beautified names)."""
         errors: dict[str, str] = {}
         source = self._rule_data.get(CONF_SOURCE_ENTITY)
         options = _source_attribute_options(self.hass, source)
@@ -1631,7 +1619,7 @@ class EntityGuardOptionsFlow(OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Edit second screen (both dynamic modes, value_from == attribute): pick
-        one of the source's live attributes, shown with their current values."""
+        one of the source's live attributes (beautified names)."""
         errors: dict[str, str] = {}
         source = self._working.get(CONF_SOURCE_ENTITY)
         options = _source_attribute_options(self.hass, source)
