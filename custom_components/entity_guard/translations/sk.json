@@ -108,6 +108,48 @@
           "target_value": "Hodnota na vynútenie. Číselné atribúty sa obmedzia na túto hodnotu; farebné atribúty jej musia zodpovedať.",
           "delay_seconds": "Po spustení počkajte takto dlho pred vynútením. 0 = okamžite. Max 86400 (24 h)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Dynamický stav",
+        "description": "Stav zapnuté/vypnuté cieľa sleduje zdrojovú entitu (napr. svetlo, ktoré sleduje snímač pohybu).",
+        "data": {
+          "source_entity": "Zdrojová entita",
+          "follow_invert": "Invertovať stav",
+          "source_value_from": "Čítať hodnotu z",
+          "delay_seconds": "Oneskorenie (sekundy)"
+        },
+        "data_description": {
+          "source_entity": "Entita, ktorú cieľové entity sledujú. Nesmie byť jednou z cieľových entít.",
+          "follow_invert": "Vypnuté = zrkadlenie (zdroj zapnutý → cieľ zapnutý). Zapnuté = inverzia (zdroj zapnutý → cieľ vypnutý).",
+          "source_value_from": "Či sa má čítať stav zdroja alebo jeden z jeho atribútov.",
+          "delay_seconds": "Po spustení počkajte takto dlho pred vynútením. 0 = okamžite. Max 86400 (24 h)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Dynamický atribút",
+        "description": "Cieľový atribút sa udržiava rovný živej hodnote načítanej zo zdrojovej entity (napr. jas svetla, ktorý sleduje iné svetlo). Hodnota sa kopíruje tak, ako je, kým je cieľ zapnutý.",
+        "data": {
+          "source_entity": "Zdrojová entita",
+          "source_value_from": "Čítať hodnotu z",
+          "attribute": "Cieľový atribút",
+          "delay_seconds": "Oneskorenie (sekundy)"
+        },
+        "data_description": {
+          "source_entity": "Entita, z ktorej sa číta živá hodnota. Nesmie byť jednou z cieľových entít.",
+          "source_value_from": "Či sa má čítať stav zdroja alebo jeden z jeho atribútov.",
+          "attribute": "Atribút nastavený na cieli. Jeho hodnota sa kopíruje doslovne zo zdroja, kým je cieľ zapnutý; uistite sa, že hodnota zdroja sa zmestí do rozsahu tohto atribútu.",
+          "delay_seconds": "Po spustení počkajte takto dlho pred vynútením. 0 = okamžite. Max 86400 (24 h)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Vyberte zdrojový atribút",
+        "description": "Vyberte, ktorý atribút entity {source} sa má čítať. Každá možnosť zobrazuje aktuálnu hodnotu atribútu.",
+        "data": {
+          "source_attribute": "Zdrojový atribút"
+        },
+        "data_description": {
+          "source_attribute": "Zdrojový atribút, ktorého živá hodnota sa číta. Ukladá sa iba názov atribútu; zobrazená hodnota je len aktuálna ukážka."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Na pokračovanie musíte potvrdiť bezpečnostné riziko.",
       "name_already_exists": "Pravidlo s týmto názvom už existuje.",
       "invalid_rgb_color": "Farba RGB musí byť zoznamom troch hodnôt od 0 do 255.",
-      "invalid_color_temp_kelvin": "Teplota farby musí byť od 2000 K do 6500 K."
+      "invalid_color_temp_kelvin": "Teplota farby musí byť od 2000 K do 6500 K.",
+      "empty_source_entity": "Vyberte zdrojovú entitu, ktorú má cieľ sledovať.",
+      "source_in_targets": "Zdrojová entita nemôže byť zároveň cieľom. Vyberte inú zdrojovú entitu.",
+      "attribute_invalid_for_target": "Tento atribút nie je podporovaný žiadnou z domén cieľových entít.",
+      "source_attribute_required": "Vyberte zdrojový atribút na čítanie alebo nastavte „Čítať hodnotu z“ na Stav.",
+      "source_has_no_attributes": "Zdrojová entita nemá žiadne atribúty na čítanie. Napíšte názov atribútu alebo sa vráťte späť a namiesto toho čítajte stav."
     },
     "abort": {
       "single_instance_allowed": "Konfigurovať možno iba jeden rozbočovač Entity Guard.",
@@ -212,6 +259,48 @@
           "target_value": "Cieľová hodnota",
           "delay_seconds": "Oneskorenie (sekundy)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Upraviť dynamický stav",
+        "description": "Stav zapnuté/vypnuté cieľa sleduje zdrojovú entitu (napr. svetlo, ktoré sleduje snímač pohybu).",
+        "data": {
+          "source_entity": "Zdrojová entita",
+          "follow_invert": "Invertovať stav",
+          "source_value_from": "Čítať hodnotu z",
+          "delay_seconds": "Oneskorenie (sekundy)"
+        },
+        "data_description": {
+          "source_entity": "Entita, ktorú cieľové entity sledujú. Nesmie byť jednou z cieľových entít.",
+          "follow_invert": "Vypnuté = zrkadlenie (zdroj zapnutý → cieľ zapnutý). Zapnuté = inverzia (zdroj zapnutý → cieľ vypnutý).",
+          "source_value_from": "Či sa má čítať stav zdroja alebo jeden z jeho atribútov.",
+          "delay_seconds": "Po spustení počkajte takto dlho pred vynútením. 0 = okamžite. Max 86400 (24 h)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Upraviť dynamický atribút",
+        "description": "Cieľový atribút sa udržiava rovný živej hodnote načítanej zo zdrojovej entity (napr. jas svetla, ktorý sleduje iné svetlo). Hodnota sa kopíruje tak, ako je, kým je cieľ zapnutý.",
+        "data": {
+          "source_entity": "Zdrojová entita",
+          "source_value_from": "Čítať hodnotu z",
+          "attribute": "Cieľový atribút",
+          "delay_seconds": "Oneskorenie (sekundy)"
+        },
+        "data_description": {
+          "source_entity": "Entita, z ktorej sa číta živá hodnota. Nesmie byť jednou z cieľových entít.",
+          "source_value_from": "Či sa má čítať stav zdroja alebo jeden z jeho atribútov.",
+          "attribute": "Atribút nastavený na cieli. Jeho hodnota sa kopíruje doslovne zo zdroja, kým je cieľ zapnutý; uistite sa, že hodnota zdroja sa zmestí do rozsahu tohto atribútu.",
+          "delay_seconds": "Po spustení počkajte takto dlho pred vynútením. 0 = okamžite. Max 86400 (24 h)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Upraviť zdrojový atribút",
+        "description": "Vyberte, ktorý atribút entity {source} sa má čítať. Každá možnosť zobrazuje aktuálnu hodnotu atribútu.",
+        "data": {
+          "source_attribute": "Zdrojový atribút"
+        },
+        "data_description": {
+          "source_attribute": "Zdrojový atribút, ktorého živá hodnota sa číta. Ukladá sa iba názov atribútu; zobrazená hodnota je len aktuálna ukážka."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Na pokračovanie musíte potvrdiť bezpečnostné riziko.",
       "name_already_exists": "Pravidlo s týmto názvom už existuje.",
       "invalid_rgb_color": "Farba RGB musí byť zoznamom troch hodnôt od 0 do 255.",
-      "invalid_color_temp_kelvin": "Teplota farby musí byť od 2000 K do 6500 K."
+      "invalid_color_temp_kelvin": "Teplota farby musí byť od 2000 K do 6500 K.",
+      "empty_source_entity": "Vyberte zdrojovú entitu, ktorú má cieľ sledovať.",
+      "source_in_targets": "Zdrojová entita nemôže byť zároveň cieľom. Vyberte inú zdrojovú entitu.",
+      "attribute_invalid_for_target": "Tento atribút nie je podporovaný žiadnou z domén cieľových entít.",
+      "source_attribute_required": "Vyberte zdrojový atribút na čítanie alebo nastavte „Čítať hodnotu z“ na Stav.",
+      "source_has_no_attributes": "Zdrojová entita nemá žiadne atribúty na čítanie. Napíšte názov atribútu alebo sa vráťte späť a namiesto toho čítajte stav."
     },
     "abort": {
       "name_already_exists": "Pravidlo s týmto názvom už existuje.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Stav",
-        "attribute": "Atribút"
+        "fixed_state": "Pevný stav",
+        "fixed_attribute": "Pevný atribút",
+        "dynamic_state": "Dynamický stav (režim sledovania)",
+        "dynamic_attribute": "Dynamický atribút (režim sledovania)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Pridať príznak",
         "replace": "Nahradiť všetky príznaky",
         "clear": "Vymazať všetky príznaky"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Stav",
+        "attribute": "Atribút"
       }
     }
   },

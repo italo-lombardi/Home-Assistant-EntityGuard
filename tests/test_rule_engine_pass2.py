@@ -25,7 +25,7 @@ def _make_config(**overrides) -> RuleConfig:
         "unique_id": "rule-uid",
         "name": "Rule",
         "target_entities": ["light.bedroom"],
-        "mode": "state",
+        "mode": "fixed_state",
         "trigger_states": ["on"],
         "target_state": "off",
         "delay_seconds": 0,

@@ -108,6 +108,48 @@
           "target_value": "Wartość, na którą atrybut zostanie ustawiony, gdy reguła zadziała.",
           "delay_seconds": "Czas oczekiwania po wyzwoleniu przed wymuszeniem. 0 = natychmiast. Maks. 86400 (24h)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Dynamiczny stan",
+        "description": "Stan włączenia/wyłączenia celu podąża za encją źródłową (np. światło podążające za czujnikiem ruchu).",
+        "data": {
+          "source_entity": "Encja źródłowa",
+          "follow_invert": "Odwróć stan",
+          "source_value_from": "Odczytaj wartość z",
+          "delay_seconds": "Opóźnienie (sekundy)"
+        },
+        "data_description": {
+          "source_entity": "Encja, za którą podążają encje docelowe. Nie może być jedną z encji docelowych.",
+          "follow_invert": "Wyłączone = odzwierciedlanie (źródło włączone → cel włączony). Włączone = odwracanie (źródło włączone → cel wyłączony).",
+          "source_value_from": "Czy odczytywać stan źródła, czy jeden z jego atrybutów.",
+          "delay_seconds": "Czas oczekiwania po wyzwoleniu przed wymuszeniem. 0 = natychmiast. Maks. 86400 (24h)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Dynamiczny atrybut",
+        "description": "Atrybut celu jest utrzymywany na poziomie bieżącej wartości odczytanej z encji źródłowej (np. jasność światła podążająca za innym światłem). Wartość jest kopiowana bez zmian, gdy cel jest włączony.",
+        "data": {
+          "source_entity": "Encja źródłowa",
+          "source_value_from": "Odczytaj wartość z",
+          "attribute": "Atrybut docelowy",
+          "delay_seconds": "Opóźnienie (sekundy)"
+        },
+        "data_description": {
+          "source_entity": "Encja, z której odczytywana jest bieżąca wartość. Nie może być jedną z encji docelowych.",
+          "source_value_from": "Czy odczytywać stan źródła, czy jeden z jego atrybutów.",
+          "attribute": "Atrybut ustawiany na celu. Jego wartość jest kopiowana dosłownie ze źródła, gdy cel jest włączony; upewnij się, że wartość źródła mieści się w zakresie tego atrybutu.",
+          "delay_seconds": "Czas oczekiwania po wyzwoleniu przed wymuszeniem. 0 = natychmiast. Maks. 86400 (24h)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Wybierz atrybut źródłowy",
+        "description": "Wybierz, który atrybut encji {source} odczytać. Każda opcja pokazuje bieżącą wartość atrybutu.",
+        "data": {
+          "source_attribute": "Atrybut źródłowy"
+        },
+        "data_description": {
+          "source_attribute": "Atrybut źródłowy, którego bieżąca wartość jest odczytywana. Zapisywana jest tylko nazwa atrybutu; wyświetlana wartość to jedynie bieżący podgląd."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Aby kontynuować, musisz potwierdzić ryzyko związane z bezpieczeństwem.",
       "name_already_exists": "Reguła o tej nazwie już istnieje.",
       "invalid_rgb_color": "Kolor RGB musi być listą trzech wartości z zakresu od 0 do 255.",
-      "invalid_color_temp_kelvin": "Temperatura barwowa musi mieścić się w zakresie od 2000 K do 6500 K."
+      "invalid_color_temp_kelvin": "Temperatura barwowa musi mieścić się w zakresie od 2000 K do 6500 K.",
+      "empty_source_entity": "Wybierz encję źródłową, za którą ma podążać encja docelowa.",
+      "source_in_targets": "Encja źródłowa nie może być jednocześnie encją docelową. Wybierz inne źródło.",
+      "attribute_invalid_for_target": "Ten atrybut nie jest obsługiwany przez domeny żadnej z encji docelowych.",
+      "source_attribute_required": "Wybierz atrybut źródłowy do odczytu lub ustaw opcję „Odczytaj wartość z” na Stan.",
+      "source_has_no_attributes": "Encja źródłowa nie ma atrybutów do odczytu. Wpisz nazwę atrybutu lub wróć i odczytaj zamiast tego stan."
     },
     "abort": {
       "single_instance_allowed": "Można skonfigurować tylko jeden hub Entity Guard.",
@@ -212,6 +259,48 @@
           "target_value": "Wartość docelowa",
           "delay_seconds": "Opóźnienie (sekundy)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Edytuj dynamiczny stan",
+        "description": "Stan włączenia/wyłączenia celu podąża za encją źródłową (np. światło podążające za czujnikiem ruchu).",
+        "data": {
+          "source_entity": "Encja źródłowa",
+          "follow_invert": "Odwróć stan",
+          "source_value_from": "Odczytaj wartość z",
+          "delay_seconds": "Opóźnienie (sekundy)"
+        },
+        "data_description": {
+          "source_entity": "Encja, za którą podążają encje docelowe. Nie może być jedną z encji docelowych.",
+          "follow_invert": "Wyłączone = odzwierciedlanie (źródło włączone → cel włączony). Włączone = odwracanie (źródło włączone → cel wyłączony).",
+          "source_value_from": "Czy odczytywać stan źródła, czy jeden z jego atrybutów.",
+          "delay_seconds": "Czas oczekiwania po wyzwoleniu przed wymuszeniem. 0 = natychmiast. Maks. 86400 (24h)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Edytuj dynamiczny atrybut",
+        "description": "Atrybut celu jest utrzymywany na poziomie bieżącej wartości odczytanej z encji źródłowej (np. jasność światła podążająca za innym światłem). Wartość jest kopiowana bez zmian, gdy cel jest włączony.",
+        "data": {
+          "source_entity": "Encja źródłowa",
+          "source_value_from": "Odczytaj wartość z",
+          "attribute": "Atrybut docelowy",
+          "delay_seconds": "Opóźnienie (sekundy)"
+        },
+        "data_description": {
+          "source_entity": "Encja, z której odczytywana jest bieżąca wartość. Nie może być jedną z encji docelowych.",
+          "source_value_from": "Czy odczytywać stan źródła, czy jeden z jego atrybutów.",
+          "attribute": "Atrybut ustawiany na celu. Jego wartość jest kopiowana dosłownie ze źródła, gdy cel jest włączony; upewnij się, że wartość źródła mieści się w zakresie tego atrybutu.",
+          "delay_seconds": "Czas oczekiwania po wyzwoleniu przed wymuszeniem. 0 = natychmiast. Maks. 86400 (24h)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Edytuj atrybut źródłowy",
+        "description": "Wybierz, który atrybut encji {source} odczytać. Każda opcja pokazuje bieżącą wartość atrybutu.",
+        "data": {
+          "source_attribute": "Atrybut źródłowy"
+        },
+        "data_description": {
+          "source_attribute": "Atrybut źródłowy, którego bieżąca wartość jest odczytywana. Zapisywana jest tylko nazwa atrybutu; wyświetlana wartość to jedynie bieżący podgląd."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Aby kontynuować, musisz potwierdzić ryzyko związane z bezpieczeństwem.",
       "name_already_exists": "Reguła o tej nazwie już istnieje.",
       "invalid_rgb_color": "Kolor RGB musi być listą trzech wartości z zakresu od 0 do 255.",
-      "invalid_color_temp_kelvin": "Temperatura barwowa musi mieścić się w zakresie od 2000 K do 6500 K."
+      "invalid_color_temp_kelvin": "Temperatura barwowa musi mieścić się w zakresie od 2000 K do 6500 K.",
+      "empty_source_entity": "Wybierz encję źródłową, za którą ma podążać encja docelowa.",
+      "source_in_targets": "Encja źródłowa nie może być jednocześnie encją docelową. Wybierz inne źródło.",
+      "attribute_invalid_for_target": "Ten atrybut nie jest obsługiwany przez domeny żadnej z encji docelowych.",
+      "source_attribute_required": "Wybierz atrybut źródłowy do odczytu lub ustaw opcję „Odczytaj wartość z” na Stan.",
+      "source_has_no_attributes": "Encja źródłowa nie ma atrybutów do odczytu. Wpisz nazwę atrybutu lub wróć i odczytaj zamiast tego stan."
     },
     "abort": {
       "name_already_exists": "Reguła o tej nazwie już istnieje.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Stan",
-        "attribute": "Atrybut"
+        "fixed_state": "Stały stan",
+        "fixed_attribute": "Stały atrybut",
+        "dynamic_state": "Dynamiczny stan (tryb podążania)",
+        "dynamic_attribute": "Dynamiczny atrybut (tryb podążania)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Dodaj flagę",
         "replace": "Zastąp wszystkie flagi",
         "clear": "Wyczyść wszystkie flagi"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Stan",
+        "attribute": "Atrybut"
       }
     }
   },

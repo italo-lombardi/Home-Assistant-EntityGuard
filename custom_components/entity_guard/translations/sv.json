@@ -108,6 +108,48 @@
           "target_value": "Värde som attributet sätts till när regeln utlöses.",
           "delay_seconds": "Vänta så här länge efter en utlösare innan tillämpning. 0 = omedelbart. Max 86400 (24h)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Dynamiskt tillstånd",
+        "description": "Målets på/av-tillstånd följer en källentitet (t.ex. en lampa som följer en rörelsesensor).",
+        "data": {
+          "source_entity": "Källentitet",
+          "follow_invert": "Invertera tillstånd",
+          "source_value_from": "Läs värde från",
+          "delay_seconds": "Fördröjning (sekunder)"
+        },
+        "data_description": {
+          "source_entity": "Entiteten som målen följer. Får inte vara en av målentiteterna.",
+          "follow_invert": "Av = spegla (källa på → mål på). På = invertera (källa på → mål av).",
+          "source_value_from": "Om källans tillstånd eller ett av dess attribut ska läsas.",
+          "delay_seconds": "Vänta så här länge efter en utlösare innan tillämpning. 0 = omedelbart. Max 86400 (24h)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Dynamiskt attribut",
+        "description": "Ett målattribut hålls lika med ett aktuellt värde som läses från en källentitet (t.ex. en lampas ljusstyrka som följer en annan lampa). Värdet kopieras som det är medan målet är på.",
+        "data": {
+          "source_entity": "Källentitet",
+          "source_value_from": "Läs värde från",
+          "attribute": "Målattribut",
+          "delay_seconds": "Fördröjning (sekunder)"
+        },
+        "data_description": {
+          "source_entity": "Entiteten som det aktuella värdet läses från. Får inte vara en av målentiteterna.",
+          "source_value_from": "Om källans tillstånd eller ett av dess attribut ska läsas.",
+          "attribute": "Attributet som sätts på målet. Dess värde kopieras ordagrant från källan medan målet är på; se till att källvärdet ryms inom detta attributs intervall.",
+          "delay_seconds": "Vänta så här länge efter en utlösare innan tillämpning. 0 = omedelbart. Max 86400 (24h)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Välj källattribut",
+        "description": "Välj vilket attribut av {source} som ska läsas. Varje alternativ visar attributets aktuella värde.",
+        "data": {
+          "source_attribute": "Källattribut"
+        },
+        "data_description": {
+          "source_attribute": "Källattributet vars aktuella värde läses. Endast attributnamnet lagras; det visade värdet är bara en aktuell förhandsvisning."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Du måste bekräfta säkerhetsrisken för att fortsätta.",
       "name_already_exists": "En regel med detta namn finns redan.",
       "invalid_rgb_color": "RGB-färg måste vara en lista med tre värden mellan 0 och 255.",
-      "invalid_color_temp_kelvin": "Färgtemperaturen måste vara mellan 2000 K och 6500 K."
+      "invalid_color_temp_kelvin": "Färgtemperaturen måste vara mellan 2000 K och 6500 K.",
+      "empty_source_entity": "Välj en källentitet som målet ska följa.",
+      "source_in_targets": "Källentiteten kan inte också vara ett mål. Välj en annan källa.",
+      "attribute_invalid_for_target": "Det attributet stöds inte av någon av målentiteternas domäner.",
+      "source_attribute_required": "Välj källattributet som ska läsas, eller ställ in 'Läs värde från' på Tillstånd.",
+      "source_has_no_attributes": "Källentiteten har inga attribut att läsa. Skriv ett attributnamn, eller gå tillbaka och läs tillståndet i stället."
     },
     "abort": {
       "single_instance_allowed": "Endast en Entity Guard-hubb kan konfigureras.",
@@ -212,6 +259,48 @@
           "target_value": "Målvärde",
           "delay_seconds": "Fördröjning (sekunder)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Redigera dynamiskt tillstånd",
+        "description": "Målets på/av-tillstånd följer en källentitet (t.ex. en lampa som följer en rörelsesensor).",
+        "data": {
+          "source_entity": "Källentitet",
+          "follow_invert": "Invertera tillstånd",
+          "source_value_from": "Läs värde från",
+          "delay_seconds": "Fördröjning (sekunder)"
+        },
+        "data_description": {
+          "source_entity": "Entiteten som målen följer. Får inte vara en av målentiteterna.",
+          "follow_invert": "Av = spegla (källa på → mål på). På = invertera (källa på → mål av).",
+          "source_value_from": "Om källans tillstånd eller ett av dess attribut ska läsas.",
+          "delay_seconds": "Vänta så här länge efter en utlösare innan tillämpning. 0 = omedelbart. Max 86400 (24h)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Redigera dynamiskt attribut",
+        "description": "Ett målattribut hålls lika med ett aktuellt värde som läses från en källentitet (t.ex. en lampas ljusstyrka som följer en annan lampa). Värdet kopieras som det är medan målet är på.",
+        "data": {
+          "source_entity": "Källentitet",
+          "source_value_from": "Läs värde från",
+          "attribute": "Målattribut",
+          "delay_seconds": "Fördröjning (sekunder)"
+        },
+        "data_description": {
+          "source_entity": "Entiteten som det aktuella värdet läses från. Får inte vara en av målentiteterna.",
+          "source_value_from": "Om källans tillstånd eller ett av dess attribut ska läsas.",
+          "attribute": "Attributet som sätts på målet. Dess värde kopieras ordagrant från källan medan målet är på; se till att källvärdet ryms inom detta attributs intervall.",
+          "delay_seconds": "Vänta så här länge efter en utlösare innan tillämpning. 0 = omedelbart. Max 86400 (24h)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Redigera källattribut",
+        "description": "Välj vilket attribut av {source} som ska läsas. Varje alternativ visar attributets aktuella värde.",
+        "data": {
+          "source_attribute": "Källattribut"
+        },
+        "data_description": {
+          "source_attribute": "Källattributet vars aktuella värde läses. Endast attributnamnet lagras; det visade värdet är bara en aktuell förhandsvisning."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Du måste bekräfta säkerhetsrisken för att fortsätta.",
       "name_already_exists": "En regel med detta namn finns redan.",
       "invalid_rgb_color": "RGB-färg måste vara en lista med tre värden mellan 0 och 255.",
-      "invalid_color_temp_kelvin": "Färgtemperaturen måste vara mellan 2000 K och 6500 K."
+      "invalid_color_temp_kelvin": "Färgtemperaturen måste vara mellan 2000 K och 6500 K.",
+      "empty_source_entity": "Välj en källentitet som målet ska följa.",
+      "source_in_targets": "Källentiteten kan inte också vara ett mål. Välj en annan källa.",
+      "attribute_invalid_for_target": "Det attributet stöds inte av någon av målentiteternas domäner.",
+      "source_attribute_required": "Välj källattributet som ska läsas, eller ställ in 'Läs värde från' på Tillstånd.",
+      "source_has_no_attributes": "Källentiteten har inga attribut att läsa. Skriv ett attributnamn, eller gå tillbaka och läs tillståndet i stället."
     },
     "abort": {
       "name_already_exists": "En regel med detta namn finns redan.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Tillstånd",
-        "attribute": "Attribut"
+        "fixed_state": "Fast tillstånd",
+        "fixed_attribute": "Fast attribut",
+        "dynamic_state": "Dynamiskt tillstånd (Följningsläge)",
+        "dynamic_attribute": "Dynamiskt attribut (Följningsläge)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Lägg till flagga",
         "replace": "Ersätt alla flaggor",
         "clear": "Rensa alla flaggor"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Tillstånd",
+        "attribute": "Attribut"
       }
     }
   },

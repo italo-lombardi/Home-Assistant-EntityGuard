@@ -33,10 +33,25 @@ CONF_DEBOUNCE_SECONDS = "debounce_seconds"
 CONF_MAX_ENFORCEMENTS_PER_MINUTE = "max_enforcements_per_minute"
 CONF_SAFETY_ACKNOWLEDGED = "safety_acknowledged"
 CONF_DURATION_MINUTES = "duration_minutes"
+CONF_SOURCE_ENTITY = "source_entity"
+CONF_FOLLOW_INVERT = "follow_invert"
+# Dynamic-attribute source: read the value from the source entity's STATE or one
+# of its ATTRIBUTES. CONF_SOURCE_ATTRIBUTE holds the attribute name when
+# CONF_SOURCE_VALUE_FROM == SOURCE_VALUE_FROM_ATTRIBUTE.
+CONF_SOURCE_VALUE_FROM = "source_value_from"
+CONF_SOURCE_ATTRIBUTE = "source_attribute"
+SOURCE_VALUE_FROM_STATE = "state"
+SOURCE_VALUE_FROM_ATTRIBUTE = "attribute"
 
-# Modes
-MODE_STATE = "state"
-MODE_ATTRIBUTE = "attribute"
+# Modes — 2x2 on the fixed/dynamic axis:
+#   fixed_*   = the enforced target value is one you set in config.
+#   dynamic_* = the target value is read live from a source entity (Follow mode).
+# state vs attribute = which property is enforced. Dynamic modes reuse the matching
+# fixed mode's enforcement path verbatim; only the target value is derived live.
+MODE_FIXED_STATE = "fixed_state"
+MODE_FIXED_ATTRIBUTE = "fixed_attribute"
+MODE_DYNAMIC_STATE = "dynamic_state"
+MODE_DYNAMIC_ATTRIBUTE = "dynamic_attribute"
 
 # Attribute mode supported attributes
 ATTR_BRIGHTNESS = "brightness"
@@ -62,6 +77,22 @@ SUPPORTED_ATTRIBUTES = [
     *NUMERIC_ATTRIBUTES,
     *COLOR_ATTRIBUTES,
 ]
+
+# Human display names for the known attributes. MUST mirror the labels in
+# strings.json selector.attribute.options (the target-attribute dropdown resolves
+# those via translation_key). The source-attribute picker lists LIVE/arbitrary
+# attributes as SelectOptionDicts with explicit labels (which override
+# translation_key), so it reuses this map for the known ones and falls back to a
+# prettified key for anything live that is not listed here — keeping known attrs
+# reading identically in both dropdowns. Keep in sync if a label changes.
+ATTRIBUTE_DISPLAY_NAMES: dict[str, str] = {
+    ATTR_BRIGHTNESS: "Brightness",
+    ATTR_VOLUME_LEVEL: "Volume level",
+    ATTR_TEMPERATURE: "Temperature",
+    ATTR_PERCENTAGE: "Percentage",
+    ATTR_RGB_COLOR: "RGB color",
+    ATTR_COLOR_TEMP_KELVIN: "Color temperature (Kelvin)",
+}
 
 # Operators (no ==/!= due to float precision concerns)
 OPERATOR_LT = "lt"
@@ -187,6 +218,28 @@ DOMAIN_STATE_OPTIONS: dict[str, list[str]] = {
 
 # Fallback when no recognized domain in target list.
 FALLBACK_STATE_OPTIONS = ["on", "off"]
+
+# Follow mode: which LIVE source states count as "on" (see DOMAIN_STATE_OPTIONS /
+# DOMAIN_SERVICE_MAP above for the domain vocab this draws from). Any live state NOT
+# in this set is treated as OFF. Ambiguous states are deliberately pinned OFF
+# (paused/idle/standby/docked/stopped). Offline (STATE_UNAVAILABLE/STATE_UNKNOWN or
+# a missing source) is handled separately by the engine as not-triggered — it is NOT
+# "off". Flat set by design: a per-domain table is deferred until a real domain's
+# semantics require it (ponytail). Engine-only; the config flow does not import this.
+FOLLOW_ON_STATES = frozenset(
+    {
+        "on",
+        "home",
+        "open",
+        "unlocked",
+        "playing",
+        "active",
+        "cleaning",
+        "mowing",
+        "true",
+        "1",
+    }
+)
 
 # States explicitly forbidden as trigger or target — entity is offline / state is undefined.
 FORBIDDEN_STATES = frozenset({"unavailable", "unknown", "none", ""})

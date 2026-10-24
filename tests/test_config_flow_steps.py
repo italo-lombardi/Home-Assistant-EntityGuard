@@ -33,8 +33,8 @@ from custom_components.entity_guard.const import (
     CONF_TRIGGER_STATES,
     DOMAIN,
     ENTRY_TYPE_RULE,
-    MODE_ATTRIBUTE,
-    MODE_STATE,
+    MODE_FIXED_ATTRIBUTE,
+    MODE_FIXED_STATE,
 )
 from custom_components.entity_guard.models import parse_rule_config
 
@@ -73,7 +73,7 @@ async def test_rule_step_empty_name_error(hass: HomeAssistant):
         {
             CONF_RULE_NAME: "   ",
             CONF_TARGET_ENTITIES: ["light.bedroom"],
-            CONF_MODE: MODE_STATE,
+            CONF_MODE: MODE_FIXED_STATE,
         },
     )
     assert res["type"] == FlowResultType.FORM
@@ -95,7 +95,7 @@ async def test_rule_step_duplicate_name(hass: HomeAssistant):
         {
             CONF_RULE_NAME: "Dup",
             CONF_TARGET_ENTITIES: ["light.bedroom"],
-            CONF_MODE: MODE_STATE,
+            CONF_MODE: MODE_FIXED_STATE,
         },
     )
     assert res["errors"][CONF_RULE_NAME] == "name_already_exists"
@@ -110,7 +110,7 @@ async def test_rule_step_no_entities(hass: HomeAssistant):
         {
             CONF_RULE_NAME: "Test",
             CONF_TARGET_ENTITIES: [],
-            CONF_MODE: MODE_STATE,
+            CONF_MODE: MODE_FIXED_STATE,
         },
     )
     assert res["errors"][CONF_TARGET_ENTITIES] == "empty_target_entities"
@@ -130,7 +130,7 @@ async def _begin_state_flow(hass: HomeAssistant, name="StateRule"):
         {
             CONF_RULE_NAME: name,
             CONF_TARGET_ENTITIES: ["light.bedroom"],
-            CONF_MODE: MODE_STATE,
+            CONF_MODE: MODE_FIXED_STATE,
         },
     )
     assert res["step_id"] == "state"
@@ -311,7 +311,7 @@ async def test_attribute_flow(hass: HomeAssistant):
         {
             CONF_RULE_NAME: "AttrRule",
             CONF_TARGET_ENTITIES: ["light.bedroom"],
-            CONF_MODE: MODE_ATTRIBUTE,
+            CONF_MODE: MODE_FIXED_ATTRIBUTE,
         },
     )
     assert res["step_id"] == "attribute"
@@ -343,7 +343,7 @@ async def test_attribute_params_schema_by_selected_attribute_create_flow(
             {
                 CONF_RULE_NAME: f"ColorRule-{attr}",
                 CONF_TARGET_ENTITIES: ["light.bedroom"],
-                CONF_MODE: MODE_ATTRIBUTE,
+                CONF_MODE: MODE_FIXED_ATTRIBUTE,
             },
         )
         assert res["step_id"] == "attribute"
@@ -370,7 +370,7 @@ async def test_attribute_flow_color_temp_kelvin(hass: HomeAssistant):
         {
             CONF_RULE_NAME: "KelvinRule",
             CONF_TARGET_ENTITIES: ["light.bedroom"],
-            CONF_MODE: MODE_ATTRIBUTE,
+            CONF_MODE: MODE_FIXED_ATTRIBUTE,
         },
     )
     res = await hass.config_entries.flow.async_configure(
@@ -393,7 +393,7 @@ async def test_full_attribute_flow_rgb_color_creates_entry(hass: HomeAssistant):
         {
             CONF_RULE_NAME: "Accent Lock",
             CONF_TARGET_ENTITIES: ["light.bedroom"],
-            CONF_MODE: MODE_ATTRIBUTE,
+            CONF_MODE: MODE_FIXED_ATTRIBUTE,
         },
     )
     res = await hass.config_entries.flow.async_configure(
@@ -424,7 +424,7 @@ async def test_full_attribute_flow_color_temp_kelvin_creates_entry(hass: HomeAss
         {
             CONF_RULE_NAME: "Kelvin Lock",
             CONF_TARGET_ENTITIES: ["light.bedroom"],
-            CONF_MODE: MODE_ATTRIBUTE,
+            CONF_MODE: MODE_FIXED_ATTRIBUTE,
         },
     )
     res = await hass.config_entries.flow.async_configure(
@@ -523,7 +523,7 @@ async def test_safety_required_for_lock(hass: HomeAssistant):
         {
             CONF_RULE_NAME: "Lock",
             CONF_TARGET_ENTITIES: ["lock.front"],
-            CONF_MODE: MODE_STATE,
+            CONF_MODE: MODE_FIXED_STATE,
         },
     )
     res = await hass.config_entries.flow.async_configure(
@@ -565,7 +565,7 @@ def options_rule_entry(hass):
             "rule_id": "uid",
             CONF_RULE_NAME: "OptRule",
             CONF_TARGET_ENTITIES: ["light.bedroom"],
-            CONF_MODE: MODE_STATE,
+            CONF_MODE: MODE_FIXED_STATE,
             CONF_TRIGGER_STATES: ["on"],
             CONF_TARGET_STATE: "off",
             CONF_DELAY_SECONDS: 0,

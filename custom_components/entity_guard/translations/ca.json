@@ -108,6 +108,48 @@
           "target_value": "Valor a aplicar. Els atributs numèrics es limiten a aquest valor; els atributs de color hi han de coincidir.",
           "delay_seconds": "Espereu aquest temps després d'una activació abans d'aplicar. 0 = immediat. Màxim 86400 (24 h)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Estat dinàmic",
+        "description": "L'estat encès/apagat de l'objectiu segueix una entitat d'origen (p. ex. un llum que segueix un sensor de moviment).",
+        "data": {
+          "source_entity": "Entitat d'origen",
+          "follow_invert": "Inverteix l'estat",
+          "source_value_from": "Llegeix el valor de",
+          "delay_seconds": "Retard (segons)"
+        },
+        "data_description": {
+          "source_entity": "L'entitat que segueixen els objectius. No pot ser cap de les entitats objectiu.",
+          "follow_invert": "Desactivat = reflecteix (origen encès → objectiu encès). Activat = inverteix (origen encès → objectiu apagat).",
+          "source_value_from": "Si s'ha de llegir l'estat de l'origen o un dels seus atributs.",
+          "delay_seconds": "Espereu aquest temps després d'una activació abans d'aplicar. 0 = immediat. Màxim 86400 (24 h)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Atribut dinàmic",
+        "description": "Un atribut de l'objectiu es manté igual a un valor en directe llegit d'una entitat d'origen (p. ex. la brillantor d'un llum que segueix un altre llum). El valor es copia tal qual mentre l'objectiu està encès.",
+        "data": {
+          "source_entity": "Entitat d'origen",
+          "source_value_from": "Llegeix el valor de",
+          "attribute": "Atribut objectiu",
+          "delay_seconds": "Retard (segons)"
+        },
+        "data_description": {
+          "source_entity": "L'entitat de la qual es llegeix el valor en directe. No pot ser cap de les entitats objectiu.",
+          "source_value_from": "Si s'ha de llegir l'estat de l'origen o un dels seus atributs.",
+          "attribute": "L'atribut establert a l'objectiu. El seu valor es copia literalment des de l'origen mentre l'objectiu està encès; assegureu-vos que el valor de l'origen encaixa en el rang d'aquest atribut.",
+          "delay_seconds": "Espereu aquest temps després d'una activació abans d'aplicar. 0 = immediat. Màxim 86400 (24 h)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Trieu l'atribut d'origen",
+        "description": "Trieu quin atribut de {source} s'ha de llegir. Cada opció mostra el valor actual de l'atribut.",
+        "data": {
+          "source_attribute": "Atribut d'origen"
+        },
+        "data_description": {
+          "source_attribute": "L'atribut d'origen del qual es llegeix el valor en directe. Només es desa el nom de l'atribut; el valor mostrat és només una previsualització actual."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Heu de reconèixer el risc de seguretat per continuar.",
       "name_already_exists": "Ja existeix una regla amb aquest nom.",
       "invalid_rgb_color": "El color RGB ha de ser una llista de tres valors entre 0 i 255.",
-      "invalid_color_temp_kelvin": "La temperatura de color ha d'estar entre 2000 K i 6500 K."
+      "invalid_color_temp_kelvin": "La temperatura de color ha d'estar entre 2000 K i 6500 K.",
+      "empty_source_entity": "Trieu una entitat d'origen perquè l'objectiu la segueixi.",
+      "source_in_targets": "L'entitat d'origen no pot ser també un objectiu. Trieu un origen diferent.",
+      "attribute_invalid_for_target": "Aquest atribut no és compatible amb cap dels dominis de les entitats objectiu.",
+      "source_attribute_required": "Trieu l'atribut d'origen a llegir, o establiu «Llegeix el valor de» a Estat.",
+      "source_has_no_attributes": "L'entitat d'origen no té atributs per llegir. Escriviu un nom d'atribut, o torneu enrere i llegiu l'estat en comptes."
     },
     "abort": {
       "single_instance_allowed": "Només es pot configurar un concentrador d'Entity Guard.",
@@ -212,6 +259,48 @@
           "target_value": "Valor objectiu",
           "delay_seconds": "Retard (segons)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Edita l'estat dinàmic",
+        "description": "L'estat encès/apagat de l'objectiu segueix una entitat d'origen (p. ex. un llum que segueix un sensor de moviment).",
+        "data": {
+          "source_entity": "Entitat d'origen",
+          "follow_invert": "Inverteix l'estat",
+          "source_value_from": "Llegeix el valor de",
+          "delay_seconds": "Retard (segons)"
+        },
+        "data_description": {
+          "source_entity": "L'entitat que segueixen els objectius. No pot ser cap de les entitats objectiu.",
+          "follow_invert": "Desactivat = reflecteix (origen encès → objectiu encès). Activat = inverteix (origen encès → objectiu apagat).",
+          "source_value_from": "Si s'ha de llegir l'estat de l'origen o un dels seus atributs.",
+          "delay_seconds": "Espereu aquest temps després d'una activació abans d'aplicar. 0 = immediat. Màxim 86400 (24 h)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Edita l'atribut dinàmic",
+        "description": "Un atribut de l'objectiu es manté igual a un valor en directe llegit d'una entitat d'origen (p. ex. la brillantor d'un llum que segueix un altre llum). El valor es copia tal qual mentre l'objectiu està encès.",
+        "data": {
+          "source_entity": "Entitat d'origen",
+          "source_value_from": "Llegeix el valor de",
+          "attribute": "Atribut objectiu",
+          "delay_seconds": "Retard (segons)"
+        },
+        "data_description": {
+          "source_entity": "L'entitat de la qual es llegeix el valor en directe. No pot ser cap de les entitats objectiu.",
+          "source_value_from": "Si s'ha de llegir l'estat de l'origen o un dels seus atributs.",
+          "attribute": "L'atribut establert a l'objectiu. El seu valor es copia literalment des de l'origen mentre l'objectiu està encès; assegureu-vos que el valor de l'origen encaixa en el rang d'aquest atribut.",
+          "delay_seconds": "Espereu aquest temps després d'una activació abans d'aplicar. 0 = immediat. Màxim 86400 (24 h)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Edita l'atribut d'origen",
+        "description": "Trieu quin atribut de {source} s'ha de llegir. Cada opció mostra el valor actual de l'atribut.",
+        "data": {
+          "source_attribute": "Atribut d'origen"
+        },
+        "data_description": {
+          "source_attribute": "L'atribut d'origen del qual es llegeix el valor en directe. Només es desa el nom de l'atribut; el valor mostrat és només una previsualització actual."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Heu de reconèixer el risc de seguretat per continuar.",
       "name_already_exists": "Ja existeix una regla amb aquest nom.",
       "invalid_rgb_color": "El color RGB ha de ser una llista de tres valors entre 0 i 255.",
-      "invalid_color_temp_kelvin": "La temperatura de color ha d'estar entre 2000 K i 6500 K."
+      "invalid_color_temp_kelvin": "La temperatura de color ha d'estar entre 2000 K i 6500 K.",
+      "empty_source_entity": "Trieu una entitat d'origen perquè l'objectiu la segueixi.",
+      "source_in_targets": "L'entitat d'origen no pot ser també un objectiu. Trieu un origen diferent.",
+      "attribute_invalid_for_target": "Aquest atribut no és compatible amb cap dels dominis de les entitats objectiu.",
+      "source_attribute_required": "Trieu l'atribut d'origen a llegir, o establiu «Llegeix el valor de» a Estat.",
+      "source_has_no_attributes": "L'entitat d'origen no té atributs per llegir. Escriviu un nom d'atribut, o torneu enrere i llegiu l'estat en comptes."
     },
     "abort": {
       "name_already_exists": "Ja existeix una regla amb aquest nom.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Estat",
-        "attribute": "Atribut"
+        "fixed_state": "Estat fix",
+        "fixed_attribute": "Atribut fix",
+        "dynamic_state": "Estat dinàmic (mode de seguiment)",
+        "dynamic_attribute": "Atribut dinàmic (mode de seguiment)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Afegeix una bandera",
         "replace": "Reemplaça totes les banderes",
         "clear": "Neteja totes les banderes"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Estat",
+        "attribute": "Atribut"
       }
     }
   },

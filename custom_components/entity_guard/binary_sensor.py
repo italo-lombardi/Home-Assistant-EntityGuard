@@ -17,7 +17,7 @@ from .const import (
     CONF_ENTRY_TYPE,
     DOMAIN,
     ENTRY_TYPE_RULE,
-    MODE_STATE,
+    MODE_FIXED_STATE,
     signal_master,
     signal_rule_update,
 )
@@ -193,6 +193,8 @@ class EntityGuardRecentlyEnforcedSensor(EntityGuardBinarySensor):
             "rule_name": self._entry.title,
             "target_entities": entities,
             "target_entity_names": names,
-            "target": cfg.target_state if cfg.mode == MODE_STATE else cfg.target_value,
+            "target": cfg.target_state
+            if cfg.mode == MODE_FIXED_STATE
+            else cfg.target_value,
             "delay_seconds": cfg.delay_seconds,
         }

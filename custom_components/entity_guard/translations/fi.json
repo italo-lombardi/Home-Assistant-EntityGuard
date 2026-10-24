@@ -108,6 +108,48 @@
           "target_value": "Pakotettava arvo. Numeeriset attribuutit rajataan tähän arvoon; väriattribuuttien on vastattava sitä.",
           "delay_seconds": "Odota tämän verran laukaisun jälkeen ennen valvonnan käynnistymistä. 0 = välitön. Enintään 86400 (24 h)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Dynaaminen tila",
+        "description": "Kohteen päällä/pois-tila seuraa lähde-entiteettiä (esim. valo, joka seuraa liiketunnistinta).",
+        "data": {
+          "source_entity": "Lähde-entiteetti",
+          "follow_invert": "Käännä tila",
+          "source_value_from": "Lue arvo kohteesta",
+          "delay_seconds": "Viive (sekuntia)"
+        },
+        "data_description": {
+          "source_entity": "Entiteetti, jota kohteet seuraavat. Ei saa olla yksi kohde-entiteeteistä.",
+          "follow_invert": "Pois = peilaa (lähde päällä → kohde päällä). Päällä = käännä (lähde päällä → kohde pois).",
+          "source_value_from": "Luetaanko lähteen tila vai jokin sen attribuuteista.",
+          "delay_seconds": "Odota tämän verran laukaisun jälkeen ennen valvonnan käynnistymistä. 0 = välitön. Enintään 86400 (24 h)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Dynaaminen attribuutti",
+        "description": "Kohdeattribuutti pidetään yhtä suurena kuin lähde-entiteetistä luettu elävä arvo (esim. valon kirkkaus, joka seuraa toista valoa). Arvo kopioidaan sellaisenaan, kun kohde on päällä.",
+        "data": {
+          "source_entity": "Lähde-entiteetti",
+          "source_value_from": "Lue arvo kohteesta",
+          "attribute": "Kohdeattribuutti",
+          "delay_seconds": "Viive (sekuntia)"
+        },
+        "data_description": {
+          "source_entity": "Entiteetti, josta elävä arvo luetaan. Ei saa olla yksi kohde-entiteeteistä.",
+          "source_value_from": "Luetaanko lähteen tila vai jokin sen attribuuteista.",
+          "attribute": "Kohteeseen asetettava attribuutti. Sen arvo kopioidaan sanatarkasti lähteestä, kun kohde on päällä; varmista, että lähteen arvo sopii tämän attribuutin vaihteluväliin.",
+          "delay_seconds": "Odota tämän verran laukaisun jälkeen ennen valvonnan käynnistymistä. 0 = välitön. Enintään 86400 (24 h)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Valitse lähdeattribuutti",
+        "description": "Valitse, mitä entiteetin {source} attribuuttia luetaan. Jokainen vaihtoehto näyttää attribuutin nykyisen arvon.",
+        "data": {
+          "source_attribute": "Lähdeattribuutti"
+        },
+        "data_description": {
+          "source_attribute": "Lähdeattribuutti, jonka ajantasainen arvo luetaan. Vain attribuutin nimi tallennetaan; näytetty arvo on vain nykyinen esikatselu."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Sinun on vahvistettava turvallisuusriski jatkaaksesi.",
       "name_already_exists": "Tämänniminen sääntö on jo olemassa.",
       "invalid_rgb_color": "RGB-värin on oltava luettelo kolmesta arvosta välillä 0–255.",
-      "invalid_color_temp_kelvin": "Värilämpötilan on oltava välillä 2000 K – 6500 K."
+      "invalid_color_temp_kelvin": "Värilämpötilan on oltava välillä 2000 K – 6500 K.",
+      "empty_source_entity": "Valitse lähde-entiteetti, jota kohde seuraa.",
+      "source_in_targets": "Lähde-entiteetti ei voi olla myös kohde. Valitse toinen lähde.",
+      "attribute_invalid_for_target": "Mikään kohde-entiteettien toimialueista ei tue tätä attribuuttia.",
+      "source_attribute_required": "Valitse luettava lähdeattribuutti tai aseta 'Lue arvo kohteesta' tilaksi Tila.",
+      "source_has_no_attributes": "Lähde-entiteetillä ei ole luettavia attribuutteja. Kirjoita attribuutin nimi tai palaa takaisin ja lue tila sen sijaan."
     },
     "abort": {
       "single_instance_allowed": "Vain yksi Entity Guard -keskitin voidaan määrittää.",
@@ -212,6 +259,48 @@
           "target_value": "Kohdearvo",
           "delay_seconds": "Viive (sekuntia)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Muokkaa dynaamista tilaa",
+        "description": "Kohteen päällä/pois-tila seuraa lähde-entiteettiä (esim. valo, joka seuraa liiketunnistinta).",
+        "data": {
+          "source_entity": "Lähde-entiteetti",
+          "follow_invert": "Käännä tila",
+          "source_value_from": "Lue arvo kohteesta",
+          "delay_seconds": "Viive (sekuntia)"
+        },
+        "data_description": {
+          "source_entity": "Entiteetti, jota kohteet seuraavat. Ei saa olla yksi kohde-entiteeteistä.",
+          "follow_invert": "Pois = peilaa (lähde päällä → kohde päällä). Päällä = käännä (lähde päällä → kohde pois).",
+          "source_value_from": "Luetaanko lähteen tila vai jokin sen attribuuteista.",
+          "delay_seconds": "Odota tämän verran laukaisun jälkeen ennen valvonnan käynnistymistä. 0 = välitön. Enintään 86400 (24 h)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Muokkaa dynaamista attribuuttia",
+        "description": "Kohdeattribuutti pidetään yhtä suurena kuin lähde-entiteetistä luettu elävä arvo (esim. valon kirkkaus, joka seuraa toista valoa). Arvo kopioidaan sellaisenaan, kun kohde on päällä.",
+        "data": {
+          "source_entity": "Lähde-entiteetti",
+          "source_value_from": "Lue arvo kohteesta",
+          "attribute": "Kohdeattribuutti",
+          "delay_seconds": "Viive (sekuntia)"
+        },
+        "data_description": {
+          "source_entity": "Entiteetti, josta elävä arvo luetaan. Ei saa olla yksi kohde-entiteeteistä.",
+          "source_value_from": "Luetaanko lähteen tila vai jokin sen attribuuteista.",
+          "attribute": "Kohteeseen asetettava attribuutti. Sen arvo kopioidaan sanatarkasti lähteestä, kun kohde on päällä; varmista, että lähteen arvo sopii tämän attribuutin vaihteluväliin.",
+          "delay_seconds": "Odota tämän verran laukaisun jälkeen ennen valvonnan käynnistymistä. 0 = välitön. Enintään 86400 (24 h)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Muokkaa lähdeattribuuttia",
+        "description": "Valitse, mitä entiteetin {source} attribuuttia luetaan. Jokainen vaihtoehto näyttää attribuutin nykyisen arvon.",
+        "data": {
+          "source_attribute": "Lähdeattribuutti"
+        },
+        "data_description": {
+          "source_attribute": "Lähdeattribuutti, jonka ajantasainen arvo luetaan. Vain attribuutin nimi tallennetaan; näytetty arvo on vain nykyinen esikatselu."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Sinun on vahvistettava turvallisuusriski jatkaaksesi.",
       "name_already_exists": "Tämänniminen sääntö on jo olemassa.",
       "invalid_rgb_color": "RGB-värin on oltava luettelo kolmesta arvosta välillä 0–255.",
-      "invalid_color_temp_kelvin": "Värilämpötilan on oltava välillä 2000 K – 6500 K."
+      "invalid_color_temp_kelvin": "Värilämpötilan on oltava välillä 2000 K – 6500 K.",
+      "empty_source_entity": "Valitse lähde-entiteetti, jota kohde seuraa.",
+      "source_in_targets": "Lähde-entiteetti ei voi olla myös kohde. Valitse toinen lähde.",
+      "attribute_invalid_for_target": "Mikään kohde-entiteettien toimialueista ei tue tätä attribuuttia.",
+      "source_attribute_required": "Valitse luettava lähdeattribuutti tai aseta 'Lue arvo kohteesta' tilaksi Tila.",
+      "source_has_no_attributes": "Lähde-entiteetillä ei ole luettavia attribuutteja. Kirjoita attribuutin nimi tai palaa takaisin ja lue tila sen sijaan."
     },
     "abort": {
       "name_already_exists": "Tämänniminen sääntö on jo olemassa.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Tila",
-        "attribute": "Attribuutti"
+        "fixed_state": "Kiinteä tila",
+        "fixed_attribute": "Kiinteä attribuutti",
+        "dynamic_state": "Dynaaminen tila (Seurantatila)",
+        "dynamic_attribute": "Dynaaminen attribuutti (Seurantatila)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Lisää ehto",
         "replace": "Korvaa kaikki ehdot",
         "clear": "Tyhjennä kaikki ehdot"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Tila",
+        "attribute": "Attribuutti"
       }
     }
   },

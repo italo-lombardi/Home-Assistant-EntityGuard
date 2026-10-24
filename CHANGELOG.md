@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.4.0] — 2026-10-24
+
+### Added
+
+- **Dynamic rule modes — bind a target to a live source entity.** Rules now come in a clean 2×2: **Fixed state**, **Fixed attribute**, **Dynamic state (Follow mode)**, **Dynamic attribute (Follow mode)**. A *dynamic* mode behaves exactly like its *fixed* counterpart — same enforcement, debounce, delay, conditions (flags), rate limit, loop protection, suppression, counters, status model — except the target value is read **live from a source entity** instead of a value you type.
+  - **Dynamic state (Follow mode):** the target mirrors (or, with *invert*, opposes) a source entity's on/off. The classic "light follows motion sensor" setup that needed two rules is now one. By default the source's **state** decides on/off (on-ish states — `on`, `home`, `open`, `unlocked`, `playing`, `active`, `cleaning`, `mowing`, `true`, `1` — are on; anything else off); you can instead read one of the source's **attributes**, whose value is reduced to on/off (a non-zero number, or an on-ish state string, is on). `invert` flips the result.
+  - **Dynamic attribute (Follow mode):** the target's attribute (brightness, volume, temperature, percentage, color) tracks a live value read from the source — either the source entity's **state** or one of its **attributes** (you choose). Raw value copy (v1, no range scaling — you ensure the value type/range matches the target attribute). Behaves like Fixed attribute otherwise: acts while the target is on, color matching within tolerance.
+  - When the source is unavailable/unknown or a chosen source attribute is missing, the rule holds — no enforcement, no error — matching the fixed modes' offline behaviour.
+  - Enforcement is idempotent: a target changes only when its current value differs from the live source value, so a steady source produces no repeated service calls.
+- The status sensor (`sensor.<rule>_status`) exposes `mode`, `source_entity`, `follow_invert`, `follow_desired_on`, and `attribute`. The `mode` and `attribute` keys are present for all rules.
+- **Lovelace card renders dynamic rules** with a follow summary and per-target compliance driven by the engine's authoritative value.
+
+### Changed
+
+- **Rule modes renamed for a clear fixed-vs-dynamic axis:**
+  | Old | New (label) |
+  | `State` | `Fixed state` |
+  | `Attribute` | `Fixed attribute` |
+  | *(new)* | `Dynamic state (Follow mode)` |
+  | *(new)* | `Dynamic attribute (Follow mode)` |
+  Existing rules migrate automatically on upgrade (config-entry schema v1 → v2): `state` → `fixed_state`, `attribute` → `fixed_attribute`. Rule behaviour is unchanged by the rename; no user action required.
+- Card version bumped to `v0.4.0`; the integration version bump cache-busts the auto-registered Lovelace resource.
+
 ## [0.3.1] — 2026-10-19
 
 ### Fixed

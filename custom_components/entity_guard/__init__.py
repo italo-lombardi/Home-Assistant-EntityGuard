@@ -17,7 +17,9 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.issue_registry import async_delete_issue
 
 from .const import (
+    CONF_ATTRIBUTE,
     CONF_ENTRY_TYPE,
+    CONF_MODE,
     DOMAIN,
     ENTRY_TYPE_HUB,
     ENTRY_TYPE_RULE,
@@ -53,6 +55,60 @@ def _get_version() -> str:
     manifest = Path(__file__).parent / "manifest.json"
     with manifest.open() as f:
         return json.load(f).get("version", "0.0.0")
+
+
+# Config-entry schema version → async_migrate_entry below. v1 stored the rule
+# `mode` as "state"/"attribute"/"follow"; v2 renames to the fixed/dynamic axis:
+#   state->fixed_state, attribute->fixed_attribute, follow(+_entity)->dynamic_state.
+# The pre-release follow mode's optional attribute add-on is DROPPED on migration
+# (dynamic_state is state-only; dynamic_attribute is a separate, fresh-only mode).
+# follow_entity + its attribute add-on never shipped, so no production rule carries
+# one — only dev/smoke entries, recreated. ConfigFlow.VERSION must match this target.
+_MODE_V1_TO_V2 = {
+    "state": "fixed_state",
+    "attribute": "fixed_attribute",
+    "follow": "dynamic_state",
+    "follow_entity": "dynamic_state",
+}
+# Modes whose migration also drops the pre-release attribute add-on.
+_DROP_ATTRIBUTE_ON_MIGRATE = frozenset({"follow", "follow_entity"})
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Migrate a config entry to the current schema version.
+
+    v1 → v2: rename the rule `mode` value. Remaps in BOTH entry.data and
+    entry.options (the runtime mode is resolved options-over-data, so a live edit
+    may sit in either). A pre-release follow(+_entity) rule becomes dynamic_state
+    and its CONF_ATTRIBUTE add-on is dropped (dynamic_state is state-only; this
+    never shipped, dev/smoke only). Unknown/missing mode values pass through
+    unchanged so a hub entry (no mode) or an unexpected value never raises.
+    Idempotent: an entry already at the current version is left untouched.
+    """
+    if entry.version >= 2:
+        return True
+
+    def _remap(mapping: dict) -> dict:
+        mode = mapping.get(CONF_MODE)
+        if mode not in _MODE_V1_TO_V2:
+            return dict(mapping)
+        out = {**mapping, CONF_MODE: _MODE_V1_TO_V2[mode]}
+        if mode in _DROP_ATTRIBUTE_ON_MIGRATE:
+            out.pop(CONF_ATTRIBUTE, None)
+        return out
+
+    new_data = _remap(dict(entry.data))
+    new_options = _remap(dict(entry.options or {}))
+    hass.config_entries.async_update_entry(
+        entry, data=new_data, options=new_options, version=2
+    )
+    _LOGGER.info(
+        "Migrated entry %s to schema v2 (mode rename): data mode=%s options mode=%s",
+        entry.entry_id,
+        new_data.get(CONF_MODE),
+        new_options.get(CONF_MODE),
+    )
+    return True
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:

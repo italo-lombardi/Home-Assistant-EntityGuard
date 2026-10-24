@@ -108,6 +108,48 @@
           "target_value": "Valore a cui impostare l'attributo quando la regola si attiva.",
           "delay_seconds": "Attendi questo tempo dopo un'attivazione prima di applicare la regola. 0 = immediato. Massimo 86400 (24h)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Stato dinamico",
+        "description": "Lo stato on/off della destinazione segue un'entità sorgente (es. una luce che segue un sensore di movimento).",
+        "data": {
+          "source_entity": "Entità sorgente",
+          "follow_invert": "Inverti stato",
+          "source_value_from": "Leggi il valore da",
+          "delay_seconds": "Ritardo (secondi)"
+        },
+        "data_description": {
+          "source_entity": "L'entità che le destinazioni seguono. Non deve essere una delle entità di destinazione.",
+          "follow_invert": "Disattivato = rispecchia (sorgente on → destinazione on). Attivato = inverti (sorgente on → destinazione off).",
+          "source_value_from": "Se leggere lo stato della sorgente o uno dei suoi attributi.",
+          "delay_seconds": "Attendi questo tempo dopo un'attivazione prima di applicare la regola. 0 = immediato. Massimo 86400 (24h)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Attributo dinamico",
+        "description": "Un attributo di destinazione viene mantenuto uguale a un valore in tempo reale letto da un'entità sorgente (es. la luminosità di una luce che segue un'altra luce). Il valore viene copiato così com'è mentre la destinazione è on.",
+        "data": {
+          "source_entity": "Entità sorgente",
+          "source_value_from": "Leggi il valore da",
+          "attribute": "Attributo di destinazione",
+          "delay_seconds": "Ritardo (secondi)"
+        },
+        "data_description": {
+          "source_entity": "L'entità da cui leggere il valore in tempo reale. Non deve essere una delle entità di destinazione.",
+          "source_value_from": "Se leggere lo stato della sorgente o uno dei suoi attributi.",
+          "attribute": "L'attributo impostato sulla destinazione. Il suo valore viene copiato alla lettera dalla sorgente mentre la destinazione è on; assicurati che il valore della sorgente rientri nell'intervallo di questo attributo.",
+          "delay_seconds": "Attendi questo tempo dopo un'attivazione prima di applicare la regola. 0 = immediato. Massimo 86400 (24h)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Scegli l'attributo sorgente",
+        "description": "Scegli quale attributo di {source} leggere. Ogni opzione mostra il valore attuale dell'attributo.",
+        "data": {
+          "source_attribute": "Attributo sorgente"
+        },
+        "data_description": {
+          "source_attribute": "L'attributo sorgente il cui valore in tempo reale viene letto. Viene memorizzato solo il nome dell'attributo; il valore mostrato è solo un'anteprima attuale."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Devi confermare il rischio di sicurezza per continuare.",
       "name_already_exists": "Esiste già una regola con questo nome.",
       "invalid_rgb_color": "Il colore RGB deve essere un elenco di tre valori compresi tra 0 e 255.",
-      "invalid_color_temp_kelvin": "La temperatura colore deve essere compresa tra 2000 K e 6500 K."
+      "invalid_color_temp_kelvin": "La temperatura colore deve essere compresa tra 2000 K e 6500 K.",
+      "empty_source_entity": "Scegli un'entità sorgente che la destinazione dovrà seguire.",
+      "source_in_targets": "L'entità sorgente non può essere anche una destinazione. Scegli una sorgente diversa.",
+      "attribute_invalid_for_target": "Quell'attributo non è supportato dai domini di nessuna delle entità di destinazione.",
+      "source_attribute_required": "Scegli l'attributo sorgente da leggere, oppure imposta 'Leggi il valore da' su Stato.",
+      "source_has_no_attributes": "L'entità sorgente non ha attributi da leggere. Digita un nome di attributo, oppure torna indietro e leggi invece lo stato."
     },
     "abort": {
       "single_instance_allowed": "Può essere configurato un solo hub Entity Guard.",
@@ -212,6 +259,48 @@
           "target_value": "Valore di destinazione",
           "delay_seconds": "Ritardo (secondi)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Modifica stato dinamico",
+        "description": "Lo stato on/off della destinazione segue un'entità sorgente (es. una luce che segue un sensore di movimento).",
+        "data": {
+          "source_entity": "Entità sorgente",
+          "follow_invert": "Inverti stato",
+          "source_value_from": "Leggi il valore da",
+          "delay_seconds": "Ritardo (secondi)"
+        },
+        "data_description": {
+          "source_entity": "L'entità che le destinazioni seguono. Non deve essere una delle entità di destinazione.",
+          "follow_invert": "Disattivato = rispecchia (sorgente on → destinazione on). Attivato = inverti (sorgente on → destinazione off).",
+          "source_value_from": "Se leggere lo stato della sorgente o uno dei suoi attributi.",
+          "delay_seconds": "Attendi questo tempo dopo un'attivazione prima di applicare la regola. 0 = immediato. Massimo 86400 (24h)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Modifica attributo dinamico",
+        "description": "Un attributo di destinazione viene mantenuto uguale a un valore in tempo reale letto da un'entità sorgente (es. la luminosità di una luce che segue un'altra luce). Il valore viene copiato così com'è mentre la destinazione è on.",
+        "data": {
+          "source_entity": "Entità sorgente",
+          "source_value_from": "Leggi il valore da",
+          "attribute": "Attributo di destinazione",
+          "delay_seconds": "Ritardo (secondi)"
+        },
+        "data_description": {
+          "source_entity": "L'entità da cui leggere il valore in tempo reale. Non deve essere una delle entità di destinazione.",
+          "source_value_from": "Se leggere lo stato della sorgente o uno dei suoi attributi.",
+          "attribute": "L'attributo impostato sulla destinazione. Il suo valore viene copiato alla lettera dalla sorgente mentre la destinazione è on; assicurati che il valore della sorgente rientri nell'intervallo di questo attributo.",
+          "delay_seconds": "Attendi questo tempo dopo un'attivazione prima di applicare la regola. 0 = immediato. Massimo 86400 (24h)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Modifica attributo sorgente",
+        "description": "Scegli quale attributo di {source} leggere. Ogni opzione mostra il valore attuale dell'attributo.",
+        "data": {
+          "source_attribute": "Attributo sorgente"
+        },
+        "data_description": {
+          "source_attribute": "L'attributo sorgente il cui valore in tempo reale viene letto. Viene memorizzato solo il nome dell'attributo; il valore mostrato è solo un'anteprima attuale."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Devi confermare il rischio di sicurezza per continuare.",
       "name_already_exists": "Esiste già una regola con questo nome.",
       "invalid_rgb_color": "Il colore RGB deve essere un elenco di tre valori compresi tra 0 e 255.",
-      "invalid_color_temp_kelvin": "La temperatura colore deve essere compresa tra 2000 K e 6500 K."
+      "invalid_color_temp_kelvin": "La temperatura colore deve essere compresa tra 2000 K e 6500 K.",
+      "empty_source_entity": "Scegli un'entità sorgente che la destinazione dovrà seguire.",
+      "source_in_targets": "L'entità sorgente non può essere anche una destinazione. Scegli una sorgente diversa.",
+      "attribute_invalid_for_target": "Quell'attributo non è supportato dai domini di nessuna delle entità di destinazione.",
+      "source_attribute_required": "Scegli l'attributo sorgente da leggere, oppure imposta 'Leggi il valore da' su Stato.",
+      "source_has_no_attributes": "L'entità sorgente non ha attributi da leggere. Digita un nome di attributo, oppure torna indietro e leggi invece lo stato."
     },
     "abort": {
       "name_already_exists": "Esiste già una regola con questo nome.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Stato",
-        "attribute": "Attributo"
+        "fixed_state": "Stato fisso",
+        "fixed_attribute": "Attributo fisso",
+        "dynamic_state": "Stato dinamico (Modalità Segui)",
+        "dynamic_attribute": "Attributo dinamico (Modalità Segui)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Aggiungi condizione",
         "replace": "Sostituisci tutte le condizioni",
         "clear": "Cancella tutte le condizioni"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Stato",
+        "attribute": "Attributo"
       }
     }
   },

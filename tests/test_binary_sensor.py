@@ -254,7 +254,7 @@ def test_recently_enforced_sensor_extra_state_attributes():
         CONF_ENTRY_TYPE,
         DOMAIN,
         ENTRY_TYPE_RULE,
-        MODE_STATE,
+        MODE_FIXED_STATE,
     )
 
     entry = MockConfigEntry(
@@ -262,7 +262,7 @@ def test_recently_enforced_sensor_extra_state_attributes():
     )
     engine = MagicMock()
     engine.config.unique_id = "uid"
-    engine.config.mode = MODE_STATE
+    engine.config.mode = MODE_FIXED_STATE
     engine.config.target_entities = ["light.balcony"]
     engine.config.target_state = "off"
     engine.config.target_value = None
@@ -293,7 +293,7 @@ async def test_recently_enforced_sensor_target_entity_names_with_hass(
         CONF_ENTRY_TYPE,
         DOMAIN,
         ENTRY_TYPE_RULE,
-        MODE_STATE,
+        MODE_FIXED_STATE,
     )
 
     # Entity with friendly_name in state attributes
@@ -306,7 +306,7 @@ async def test_recently_enforced_sensor_target_entity_names_with_hass(
     )
     engine = MagicMock()
     engine.config.unique_id = "uid"
-    engine.config.mode = MODE_STATE
+    engine.config.mode = MODE_FIXED_STATE
     engine.config.target_entities = ["light.balcony", "light.kitchen", "light.missing"]
     engine.config.target_state = "off"
     engine.config.target_value = None
@@ -339,7 +339,7 @@ async def test_recently_enforced_subscribes_to_target_entity_changes(
         CONF_ENTRY_TYPE,
         DOMAIN,
         ENTRY_TYPE_RULE,
-        MODE_STATE,
+        MODE_FIXED_STATE,
     )
 
     er = async_get_er(hass)
@@ -350,7 +350,7 @@ async def test_recently_enforced_subscribes_to_target_entity_changes(
     )
     engine = MagicMock()
     engine.config.unique_id = "uid"
-    engine.config.mode = MODE_STATE
+    engine.config.mode = MODE_FIXED_STATE
     engine.config.target_entities = ["light.balcony"]
     engine.config.target_state = "off"
     engine.config.target_value = None
@@ -384,7 +384,7 @@ async def test_recently_enforced_no_target_entities_no_subscription(
         CONF_ENTRY_TYPE,
         DOMAIN,
         ENTRY_TYPE_RULE,
-        MODE_STATE,
+        MODE_FIXED_STATE,
     )
 
     entry = MockConfigEntry(
@@ -392,7 +392,7 @@ async def test_recently_enforced_no_target_entities_no_subscription(
     )
     engine = MagicMock()
     engine.config.unique_id = "uid"
-    engine.config.mode = MODE_STATE
+    engine.config.mode = MODE_FIXED_STATE
     engine.config.target_entities = []
     engine.config.target_state = "off"
     engine.config.target_value = None

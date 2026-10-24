@@ -108,6 +108,48 @@
           "target_value": "Uygulanacak değer. Sayısal öznitelikler bu değere sınırlanır; renk öznitelikleri bununla eşleşmelidir.",
           "delay_seconds": "Uygulamadan önce bir tetiklemenin ardından bu kadar bekleyin. 0 = anında. En fazla 86400 (24s)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Dinamik durum",
+        "description": "Hedefin açık/kapalı durumu bir kaynak varlığı izler (ör. bir hareket sensörünü takip eden bir ışık).",
+        "data": {
+          "source_entity": "Kaynak varlık",
+          "follow_invert": "Durumu tersine çevir",
+          "source_value_from": "Değeri şuradan oku",
+          "delay_seconds": "Gecikme (saniye)"
+        },
+        "data_description": {
+          "source_entity": "Hedeflerin izlediği varlık. Hedef varlıklardan biri olmamalıdır.",
+          "follow_invert": "Kapalı = yansıt (kaynak açık → hedef açık). Açık = tersine çevir (kaynak açık → hedef kapalı).",
+          "source_value_from": "Kaynağın durumunun mu yoksa özniteliklerinden birinin mi okunacağı.",
+          "delay_seconds": "Uygulamadan önce bir tetiklemenin ardından bu kadar bekleyin. 0 = anında. En fazla 86400 (24s)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Dinamik öznitelik",
+        "description": "Bir hedef öznitelik, bir kaynak varlıktan okunan canlı bir değere eşit tutulur (ör. başka bir ışığı takip eden bir ışığın parlaklığı). Değer, hedef açıkken olduğu gibi kopyalanır.",
+        "data": {
+          "source_entity": "Kaynak varlık",
+          "source_value_from": "Değeri şuradan oku",
+          "attribute": "Hedef öznitelik",
+          "delay_seconds": "Gecikme (saniye)"
+        },
+        "data_description": {
+          "source_entity": "Canlı değerin okunacağı varlık. Hedef varlıklardan biri olmamalıdır.",
+          "source_value_from": "Kaynağın durumunun mu yoksa özniteliklerinden birinin mi okunacağı.",
+          "attribute": "Hedefte ayarlanan öznitelik. Değeri, hedef açıkken kaynaktan olduğu gibi kopyalanır; kaynak değerinin bu özniteliğin aralığına uyduğundan emin olun.",
+          "delay_seconds": "Uygulamadan önce bir tetiklemenin ardından bu kadar bekleyin. 0 = anında. En fazla 86400 (24s)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Kaynak özniteliğini seçin",
+        "description": "{source} kaynağının hangi özniteliğinin okunacağını seçin. Her seçenek özniteliğin geçerli değerini gösterir.",
+        "data": {
+          "source_attribute": "Kaynak öznitelik"
+        },
+        "data_description": {
+          "source_attribute": "Canlı değeri okunan kaynak öznitelik. Yalnızca öznitelik adı saklanır; gösterilen değer yalnızca geçerli bir önizlemedir."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Devam etmek için güvenlik riskini onaylamanız gerekir.",
       "name_already_exists": "Bu ada sahip bir kural zaten var.",
       "invalid_rgb_color": "RGB rengi, 0 ile 255 arasında üç değerden oluşan bir liste olmalıdır.",
-      "invalid_color_temp_kelvin": "Renk sıcaklığı 2000 K ile 6500 K arasında olmalıdır."
+      "invalid_color_temp_kelvin": "Renk sıcaklığı 2000 K ile 6500 K arasında olmalıdır.",
+      "empty_source_entity": "Hedefin takip edeceği bir kaynak varlık seçin.",
+      "source_in_targets": "Kaynak varlık aynı zamanda bir hedef olamaz. Farklı bir kaynak seçin.",
+      "attribute_invalid_for_target": "Bu öznitelik, hedef varlıkların alanlarının hiçbiri tarafından desteklenmiyor.",
+      "source_attribute_required": "Okunacak kaynak özniteliğini seçin veya 'Değeri şuradan oku' seçeneğini Durum olarak ayarlayın.",
+      "source_has_no_attributes": "Kaynak varlığın okunacak özniteliği yok. Bir öznitelik adı yazın veya geri dönüp durumu okuyun."
     },
     "abort": {
       "single_instance_allowed": "Yalnızca bir Entity Guard merkezi yapılandırılabilir.",
@@ -212,6 +259,48 @@
           "target_value": "Hedef değer",
           "delay_seconds": "Gecikme (saniye)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Dinamik durumu düzenle",
+        "description": "Hedefin açık/kapalı durumu bir kaynak varlığı izler (ör. bir hareket sensörünü takip eden bir ışık).",
+        "data": {
+          "source_entity": "Kaynak varlık",
+          "follow_invert": "Durumu tersine çevir",
+          "source_value_from": "Değeri şuradan oku",
+          "delay_seconds": "Gecikme (saniye)"
+        },
+        "data_description": {
+          "source_entity": "Hedeflerin izlediği varlık. Hedef varlıklardan biri olmamalıdır.",
+          "follow_invert": "Kapalı = yansıt (kaynak açık → hedef açık). Açık = tersine çevir (kaynak açık → hedef kapalı).",
+          "source_value_from": "Kaynağın durumunun mu yoksa özniteliklerinden birinin mi okunacağı.",
+          "delay_seconds": "Uygulamadan önce bir tetiklemenin ardından bu kadar bekleyin. 0 = anında. En fazla 86400 (24s)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Dinamik özniteliği düzenle",
+        "description": "Bir hedef öznitelik, bir kaynak varlıktan okunan canlı bir değere eşit tutulur (ör. başka bir ışığı takip eden bir ışığın parlaklığı). Değer, hedef açıkken olduğu gibi kopyalanır.",
+        "data": {
+          "source_entity": "Kaynak varlık",
+          "source_value_from": "Değeri şuradan oku",
+          "attribute": "Hedef öznitelik",
+          "delay_seconds": "Gecikme (saniye)"
+        },
+        "data_description": {
+          "source_entity": "Canlı değerin okunacağı varlık. Hedef varlıklardan biri olmamalıdır.",
+          "source_value_from": "Kaynağın durumunun mu yoksa özniteliklerinden birinin mi okunacağı.",
+          "attribute": "Hedefte ayarlanan öznitelik. Değeri, hedef açıkken kaynaktan olduğu gibi kopyalanır; kaynak değerinin bu özniteliğin aralığına uyduğundan emin olun.",
+          "delay_seconds": "Uygulamadan önce bir tetiklemenin ardından bu kadar bekleyin. 0 = anında. En fazla 86400 (24s)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Kaynak özniteliğini düzenle",
+        "description": "{source} kaynağının hangi özniteliğinin okunacağını seçin. Her seçenek özniteliğin geçerli değerini gösterir.",
+        "data": {
+          "source_attribute": "Kaynak öznitelik"
+        },
+        "data_description": {
+          "source_attribute": "Canlı değeri okunan kaynak öznitelik. Yalnızca öznitelik adı saklanır; gösterilen değer yalnızca geçerli bir önizlemedir."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Devam etmek için güvenlik riskini onaylamanız gerekir.",
       "name_already_exists": "Bu ada sahip bir kural zaten var.",
       "invalid_rgb_color": "RGB rengi, 0 ile 255 arasında üç değerden oluşan bir liste olmalıdır.",
-      "invalid_color_temp_kelvin": "Renk sıcaklığı 2000 K ile 6500 K arasında olmalıdır."
+      "invalid_color_temp_kelvin": "Renk sıcaklığı 2000 K ile 6500 K arasında olmalıdır.",
+      "empty_source_entity": "Hedefin takip edeceği bir kaynak varlık seçin.",
+      "source_in_targets": "Kaynak varlık aynı zamanda bir hedef olamaz. Farklı bir kaynak seçin.",
+      "attribute_invalid_for_target": "Bu öznitelik, hedef varlıkların alanlarının hiçbiri tarafından desteklenmiyor.",
+      "source_attribute_required": "Okunacak kaynak özniteliğini seçin veya 'Değeri şuradan oku' seçeneğini Durum olarak ayarlayın.",
+      "source_has_no_attributes": "Kaynak varlığın okunacak özniteliği yok. Bir öznitelik adı yazın veya geri dönüp durumu okuyun."
     },
     "abort": {
       "name_already_exists": "Bu ada sahip bir kural zaten var.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Durum",
-        "attribute": "Öznitelik"
+        "fixed_state": "Sabit durum",
+        "fixed_attribute": "Sabit öznitelik",
+        "dynamic_state": "Dinamik durum (Takip modu)",
+        "dynamic_attribute": "Dinamik öznitelik (Takip modu)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Bayrak ekle",
         "replace": "Tüm bayrakları değiştir",
         "clear": "Tüm bayrakları temizle"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Durum",
+        "attribute": "Öznitelik"
       }
     }
   },

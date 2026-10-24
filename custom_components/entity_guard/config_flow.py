@@ -20,6 +20,7 @@ from homeassistant.helpers import selector
 from .const import (
     ATTR_COLOR_TEMP_KELVIN,
     ATTR_RGB_COLOR,
+    ATTRIBUTE_DISPLAY_NAMES,
     ATTRIBUTES_BY_DOMAIN,
     COLOR_ATTRIBUTES,
     CONF_ADD_DEBOUNCE,
@@ -33,6 +34,7 @@ from .const import (
     CONF_FLAG_ENTITY,
     CONF_FLAG_MATCH_STATE,
     CONF_FLAGS,
+    CONF_FOLLOW_INVERT,
     CONF_MAX_ENFORCEMENTS_PER_MINUTE,
     CONF_MODE,
     CONF_OPERATOR,
@@ -40,6 +42,9 @@ from .const import (
     CONF_RULE_ID,
     CONF_RULE_NAME,
     CONF_SAFETY_ACKNOWLEDGED,
+    CONF_SOURCE_ATTRIBUTE,
+    CONF_SOURCE_ENTITY,
+    CONF_SOURCE_VALUE_FROM,
     CONF_TARGET_ENTITIES,
     CONF_TARGET_STATE,
     CONF_TARGET_VALUE,
@@ -66,10 +71,14 @@ from .const import (
     MIN_DEBOUNCE_SECONDS,
     MIN_DELAY_SECONDS,
     MIN_RATE_LIMIT,
-    MODE_ATTRIBUTE,
-    MODE_STATE,
+    MODE_DYNAMIC_ATTRIBUTE,
+    MODE_DYNAMIC_STATE,
+    MODE_FIXED_ATTRIBUTE,
+    MODE_FIXED_STATE,
     NUMERIC_ATTRIBUTES,
     SAFETY_DOMAINS,
+    SOURCE_VALUE_FROM_ATTRIBUTE,
+    SOURCE_VALUE_FROM_STATE,
     SUPPORTED_OPERATORS,
     has_safety_target,
 )
@@ -133,11 +142,27 @@ def _build_summary(data: dict[str, Any], hass: Any = None) -> str:
         lines.extend(f"  - {_label(t)}" for t in targets)
 
     mode = data.get(CONF_MODE)
-    if mode == MODE_STATE:
+    if mode == MODE_FIXED_STATE:
         triggers = ", ".join(f"`{t}`" for t in data.get(CONF_TRIGGER_STATES, []))
         target_state = data.get(CONF_TARGET_STATE, "")
         lines.append(f"**Rule:** when state is {triggers} → force `{target_state}`")
-    elif mode == MODE_ATTRIBUTE:
+    elif mode == MODE_DYNAMIC_STATE:
+        direction = "invert" if data.get(CONF_FOLLOW_INVERT) else "mirror"
+        source = _label(data.get(CONF_SOURCE_ENTITY, ""))
+        if data.get(CONF_SOURCE_VALUE_FROM) == SOURCE_VALUE_FROM_ATTRIBUTE:
+            src = f"{source}.{data.get(CONF_SOURCE_ATTRIBUTE, '')}"
+        else:
+            src = source
+        lines.append(f"**Rule:** dynamic state — follows {src} ({direction})")
+    elif mode == MODE_DYNAMIC_ATTRIBUTE:
+        target_attr = data.get(CONF_ATTRIBUTE, "")
+        source = _label(data.get(CONF_SOURCE_ENTITY, ""))
+        if data.get(CONF_SOURCE_VALUE_FROM) == SOURCE_VALUE_FROM_ATTRIBUTE:
+            src_val = f"{source}.{data.get(CONF_SOURCE_ATTRIBUTE, '')}"
+        else:
+            src_val = f"{source}.state"
+        lines.append(f"**Rule:** dynamic attribute — `{target_attr}` follows {src_val}")
+    elif mode == MODE_FIXED_ATTRIBUTE:
         attribute = data.get(CONF_ATTRIBUTE)
         if _is_color_attribute(attribute):
             lines.append(
@@ -378,6 +403,259 @@ def _attribute_choice_schema(
     )
 
 
+# Sentinel option for dynamic_attribute's "read the source's state" choice. A valid
+# slug (no leading/trailing underscore — Hassfest requirement).
+SOURCE_VALUE_FROM_OPTIONS = [SOURCE_VALUE_FROM_STATE, SOURCE_VALUE_FROM_ATTRIBUTE]
+
+
+def _source_selector(exclude_targets: list[str] | None) -> selector.EntitySelector:
+    """Single-entity source selector, excluding the rule's target entities.
+
+    Excluding the targets (SPEC §9) stops a target being picked as its own source;
+    the submit-time validators still guard the pair for hand-edited options.
+    """
+    cfg: dict[str, Any] = {}
+    if exclude_targets:
+        cfg["exclude_entities"] = exclude_targets
+    return selector.EntitySelector(selector.EntitySelectorConfig(**cfg))
+
+
+def _source_value_from_field() -> dict[Any, Any]:
+    """Shared first-step field: where to read the live value (state|attribute).
+
+    The attribute NAME is not collected here — when the user picks 'attribute',
+    the flow advances to a second screen that lists the source's live attributes
+    to follow (_source_attribute_pick_schema)."""
+    return {
+        vol.Required(
+            CONF_SOURCE_VALUE_FROM, default=SOURCE_VALUE_FROM_STATE
+        ): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=SOURCE_VALUE_FROM_OPTIONS,
+                translation_key="source_value_from",
+            )
+        ),
+    }
+
+
+# Attributes HA puts on most entities that are noise in a "pick a value to follow"
+# list — hide them so the picker shows meaningful source values only.
+_NOISE_SOURCE_ATTRIBUTES = frozenset(
+    {
+        "friendly_name",
+        "supported_features",
+        "icon",
+        "entity_picture",
+        "device_class",
+        "attribution",
+        "assumed_state",
+        "restored",
+        # Capability / enumeration attributes: describe what the entity CAN do,
+        # not a current value to follow. (User flagged supported_color_modes.)
+        "supported_color_modes",
+        "color_mode",
+        "effect_list",
+        "min_color_temp_kelvin",
+        "max_color_temp_kelvin",
+        "min_mireds",
+        "max_mireds",
+    }
+)
+
+# Prefixes/suffixes marking capability/bound attrs (not followable current values).
+_NOISE_ATTR_PREFIXES = ("supported_", "min_", "max_")
+_NOISE_ATTR_SUFFIXES = ("_list",)
+
+
+def _is_noise_attribute(name: str) -> bool:
+    """True for capability/enumeration/bound attrs that aren't a followable value."""
+    if name in _NOISE_SOURCE_ATTRIBUTES:
+        return True
+    return name.startswith(_NOISE_ATTR_PREFIXES) or name.endswith(_NOISE_ATTR_SUFFIXES)
+
+
+def _prettify_attr_name(name: str) -> str:
+    """Human label for an attribute key. Known attributes use the SAME display name
+    as the target-attribute dropdown (ATTRIBUTE_DISPLAY_NAMES, mirroring
+    selector.attribute.options); live/unknown attrs fall back to a prettified key,
+    e.g. 'supported_color_modes' → 'Supported color modes'."""
+    return ATTRIBUTE_DISPLAY_NAMES.get(name) or name.replace("_", " ").capitalize()
+
+
+def _friendly_name(hass: Any, entity_id: str | None) -> str:
+    """Friendly name for an entity_id, falling back to the id (or '' if unset)."""
+    if not entity_id:
+        return ""
+    if hass is None:
+        return entity_id
+    state = hass.states.get(entity_id)
+    if state is None:
+        return entity_id
+    return state.attributes.get("friendly_name") or entity_id
+
+
+def _source_attribute_options(
+    hass: Any, source: str | None, current: str | None = None
+) -> list[Any]:
+    """Live attribute options for the pick step: one per meaningful source
+    attribute. The option VALUE is the raw attribute key (what gets stored/read);
+    the LABEL is the beautified name only — no current-value suffix, since off
+    entities report None-valued attributes that read as noise ('Brightness (None)').
+    Noise/capability attributes are hidden.
+
+    ``current`` (the stored source_attribute, on edit) is injected as a synthetic
+    option when it is not among the live attributes — e.g. the source is offline
+    and reports none. This preserves the stored value in the LIST without
+    custom_value (LIST and custom_value conflict in HA — the latter forces a
+    dropdown), so an offline-source edit keeps the attribute selectable/preselected
+    (SPEC/-89 edge #4). Empty result → the pick step shows source_has_no_attributes."""
+    state = hass.states.get(source) if source and hass is not None else None
+    options = (
+        [
+            selector.SelectOptionDict(value=name, label=_prettify_attr_name(name))
+            for name in state.attributes
+            if not _is_noise_attribute(name)
+        ]
+        if state is not None
+        else []
+    )
+    if current and not any(o["value"] == current for o in options):
+        options.append(
+            selector.SelectOptionDict(value=current, label=_prettify_attr_name(current))
+        )
+    return options
+
+
+def _source_attribute_pick_schema(
+    options: list[Any], current: str | None
+) -> vol.Schema:
+    """Second-step schema: pick one of the source's live attributes. Options carry
+    beautified SelectOptionDict labels, mode=LIST (radio, all options visible —
+    consistent with the fixed/dynamic target-attribute pickers and the mode
+    selector). Each radio shows its label ('Brightness').
+
+    No custom_value: HA ignores mode=LIST when custom_value is set (forces a
+    dropdown), so the offline-edit case is handled by injecting the stored
+    attribute as a synthetic option in _source_attribute_options instead."""
+    return vol.Schema(
+        {
+            vol.Required(
+                CONF_SOURCE_ATTRIBUTE,
+                **({"default": current} if current else {}),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=options,
+                    mode=selector.SelectSelectorMode.LIST,
+                )
+            )
+        }
+    )
+
+
+def _dynamic_state_schema(
+    *,
+    exclude_targets: list[str] | None = None,
+    source_default: str | None = None,
+    invert_default: bool = False,
+    delay_default: int = DEFAULT_DELAY_SECONDS,
+) -> vol.Schema:
+    """dynamic_state first-step schema: source + invert + value-from + delay.
+    When value-from is attribute, the flow advances to the attribute pick step."""
+    return vol.Schema(
+        {
+            vol.Required(
+                CONF_SOURCE_ENTITY,
+                **({"default": source_default} if source_default else {}),
+            ): _source_selector(exclude_targets),
+            vol.Required(
+                CONF_FOLLOW_INVERT, default=invert_default
+            ): selector.BooleanSelector(),
+            **_source_value_from_field(),
+            vol.Required(CONF_DELAY_SECONDS, default=delay_default): _delay_selector(),
+        }
+    )
+
+
+def _dynamic_attribute_schema(
+    attr_options: list[str],
+    *,
+    exclude_targets: list[str] | None = None,
+    source_default: str | None = None,
+    target_attribute_default: str | None = None,
+    delay_default: int = DEFAULT_DELAY_SECONDS,
+) -> vol.Schema:
+    """dynamic_attribute first-step schema: target attribute + delay + source +
+    value-from. When value-from is attribute, the flow advances to the attribute
+    pick step. Raw copy — no operator/threshold/target_value.
+
+    Field order (user-requested): target attribute, delay, source entity, read
+    value from. HA renders fields in schema insertion order.
+    """
+    target_default = (
+        target_attribute_default
+        if target_attribute_default in attr_options
+        else (attr_options[0] if attr_options else None)
+    )
+    schema: dict[Any, Any] = {
+        vol.Required(CONF_ATTRIBUTE, default=target_default): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=attr_options,
+                translation_key="attribute",
+                mode=selector.SelectSelectorMode.LIST,
+            )
+        ),
+        vol.Required(CONF_DELAY_SECONDS, default=delay_default): _delay_selector(),
+        vol.Required(
+            CONF_SOURCE_ENTITY,
+            **({"default": source_default} if source_default else {}),
+        ): _source_selector(exclude_targets),
+        **_source_value_from_field(),
+    }
+    return vol.Schema(schema)
+
+
+def _validate_source_target(source: str | None, targets: list[str]) -> dict[str, str]:
+    """Shared source checks for both dynamic modes: source set + not a target."""
+    if not source:
+        return {CONF_SOURCE_ENTITY: "empty_source_entity"}
+    if source in targets:
+        return {CONF_SOURCE_ENTITY: "source_in_targets"}
+    return {}
+
+
+def _validate_dynamic_state(source: str | None, targets: list[str]) -> dict[str, str]:
+    """Validate dynamic_state first step: source set + not a target. The attribute
+    name (when reading from an attribute) is collected on the pick step."""
+    return _validate_source_target(source, targets)
+
+
+def _validate_dynamic_attribute(
+    source: str | None,
+    targets: list[str],
+    target_attribute: str | None,
+) -> dict[str, str]:
+    """Validate dynamic_attribute first step (structural only — the live value is
+    not type-checked at config time; that degrades as a clean enforce skip).
+
+    - source set + not a target.
+    - target_attribute valid for at least one target's domain.
+
+    The source attribute name is collected on the pick step when reading from an
+    attribute.
+    """
+    errors = _validate_source_target(source, targets)
+    if target_attribute and target_attribute not in _attributes_for_entities(targets):
+        errors[CONF_ATTRIBUTE] = "attribute_invalid_for_target"
+    return errors
+
+
+def _validate_source_attribute_pick(source_attribute: str | None) -> dict[str, str]:
+    """Validate the attribute pick step: a source attribute must be chosen."""
+    if not (source_attribute and source_attribute.strip()):
+        return {CONF_SOURCE_ATTRIBUTE: "source_attribute_required"}
+    return {}
+
+
 def _trigger_states_selector(options: list[str]) -> selector.SelectSelector:
     """Multi-select trigger-states selector. custom_value lets users add unlisted states."""
     return selector.SelectSelector(
@@ -403,7 +681,7 @@ def _target_state_selector(options: list[str]) -> selector.SelectSelector:
 class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle config flow for Entity Guard."""
 
-    VERSION = 1
+    VERSION = 2
 
     def __init__(self) -> None:
         """Initialize the flow."""
@@ -477,8 +755,12 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
                     CONF_MODE: user_input[CONF_MODE],
                     CONF_FLAGS: [],
                 }
-                if user_input[CONF_MODE] == MODE_STATE:
+                if user_input[CONF_MODE] == MODE_FIXED_STATE:
                     return await self.async_step_state()
+                if user_input[CONF_MODE] == MODE_DYNAMIC_STATE:
+                    return await self.async_step_dynamic_state_params()
+                if user_input[CONF_MODE] == MODE_DYNAMIC_ATTRIBUTE:
+                    return await self.async_step_dynamic_attribute_params()
                 return await self.async_step_attribute()
 
         schema = vol.Schema(
@@ -487,9 +769,16 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_TARGET_ENTITIES): selector.EntitySelector(
                     selector.EntitySelectorConfig(multiple=True)
                 ),
-                vol.Required(CONF_MODE, default=MODE_STATE): selector.SelectSelector(
+                vol.Required(
+                    CONF_MODE, default=MODE_FIXED_STATE
+                ): selector.SelectSelector(
                     selector.SelectSelectorConfig(
-                        options=[MODE_STATE, MODE_ATTRIBUTE],
+                        options=[
+                            MODE_FIXED_STATE,
+                            MODE_FIXED_ATTRIBUTE,
+                            MODE_DYNAMIC_STATE,
+                            MODE_DYNAMIC_ATTRIBUTE,
+                        ],
                         translation_key="mode",
                         mode=selector.SelectSelectorMode.LIST,
                     )
@@ -637,6 +926,130 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
                 ),
             ),
             errors=errors,
+        )
+
+    # ------------------------------------------------------------------ Dynamic state
+
+    async def async_step_dynamic_state_params(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """dynamic_state first step: source + invert + value-from.
+
+        Target on/off follows the source's state, or (value_from == attribute) a
+        source attribute reduced to on/off, then XOR invert. Picking 'attribute'
+        advances to the live attribute pick step.
+        """
+        errors: dict[str, str] = {}
+        targets = self._rule_data.get(CONF_TARGET_ENTITIES, [])
+
+        if user_input is not None:
+            source = user_input.get(CONF_SOURCE_ENTITY)
+            delay = _coerce_delay(user_input.get(CONF_DELAY_SECONDS))
+            errors = _validate_dynamic_state(source, targets)
+            if delay is None:
+                errors[CONF_DELAY_SECONDS] = "invalid_delay"
+            if not errors:
+                self._rule_data[CONF_SOURCE_ENTITY] = source
+                self._rule_data[CONF_FOLLOW_INVERT] = bool(
+                    user_input.get(CONF_FOLLOW_INVERT, False)
+                )
+                self._rule_data[CONF_DELAY_SECONDS] = delay
+                value_from = user_input.get(
+                    CONF_SOURCE_VALUE_FROM, SOURCE_VALUE_FROM_STATE
+                )
+                self._rule_data[CONF_SOURCE_VALUE_FROM] = value_from
+                if value_from == SOURCE_VALUE_FROM_ATTRIBUTE:
+                    return await self.async_step_source_attribute_pick()
+                self._rule_data[CONF_SOURCE_ATTRIBUTE] = None
+                return await self.async_step_extras()
+
+        return self.async_show_form(
+            step_id="dynamic_state_params",
+            data_schema=_dynamic_state_schema(
+                exclude_targets=targets,
+                source_default=self._rule_data.get(CONF_SOURCE_ENTITY),
+                invert_default=bool(self._rule_data.get(CONF_FOLLOW_INVERT, False)),
+                delay_default=self._rule_data.get(
+                    CONF_DELAY_SECONDS, DEFAULT_DELAY_SECONDS
+                ),
+            ),
+            errors=errors,
+        )
+
+    # ------------------------------------------------------------------ Dynamic attribute
+
+    async def async_step_dynamic_attribute_params(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """dynamic_attribute first step: source + value-from + target attribute.
+        Picking 'attribute' advances to the live attribute pick step."""
+        errors: dict[str, str] = {}
+        targets = self._rule_data.get(CONF_TARGET_ENTITIES, [])
+        attr_options = _attributes_for_entities(targets)
+
+        if user_input is not None:
+            source = user_input.get(CONF_SOURCE_ENTITY)
+            target_attribute = user_input.get(CONF_ATTRIBUTE)
+            delay = _coerce_delay(user_input.get(CONF_DELAY_SECONDS))
+            errors = _validate_dynamic_attribute(source, targets, target_attribute)
+            if delay is None:
+                errors[CONF_DELAY_SECONDS] = "invalid_delay"
+            if not errors:
+                self._rule_data[CONF_SOURCE_ENTITY] = source
+                self._rule_data[CONF_ATTRIBUTE] = target_attribute
+                self._rule_data[CONF_DELAY_SECONDS] = delay
+                value_from = user_input.get(
+                    CONF_SOURCE_VALUE_FROM, SOURCE_VALUE_FROM_STATE
+                )
+                self._rule_data[CONF_SOURCE_VALUE_FROM] = value_from
+                # Raw copy: no operator/threshold/target_value in dynamic_attribute.
+                if value_from == SOURCE_VALUE_FROM_ATTRIBUTE:
+                    return await self.async_step_source_attribute_pick()
+                self._rule_data[CONF_SOURCE_ATTRIBUTE] = None
+                return await self.async_step_extras()
+
+        return self.async_show_form(
+            step_id="dynamic_attribute_params",
+            data_schema=_dynamic_attribute_schema(
+                attr_options,
+                exclude_targets=targets,
+                source_default=self._rule_data.get(CONF_SOURCE_ENTITY),
+                target_attribute_default=self._rule_data.get(CONF_ATTRIBUTE),
+                delay_default=self._rule_data.get(
+                    CONF_DELAY_SECONDS, DEFAULT_DELAY_SECONDS
+                ),
+            ),
+            errors=errors,
+        )
+
+    # ------------------------------------------------ Source attribute pick (shared)
+
+    async def async_step_source_attribute_pick(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Second screen (both dynamic modes, value_from == attribute): pick one of
+        the source entity's live attributes (beautified names)."""
+        errors: dict[str, str] = {}
+        source = self._rule_data.get(CONF_SOURCE_ENTITY)
+        current = self._rule_data.get(CONF_SOURCE_ATTRIBUTE)
+        options = _source_attribute_options(self.hass, source, current)
+
+        if user_input is not None:
+            source_attribute = (user_input.get(CONF_SOURCE_ATTRIBUTE) or "").strip()
+            errors = _validate_source_attribute_pick(source_attribute)
+            if not errors:
+                self._rule_data[CONF_SOURCE_ATTRIBUTE] = source_attribute
+                return await self.async_step_extras()
+        elif not options:
+            # No live attributes and no stored attribute to inject — nothing to
+            # show in the radio list; surface the hint instead of an empty list.
+            errors["base"] = "source_has_no_attributes"
+
+        return self.async_show_form(
+            step_id="source_attribute_pick",
+            data_schema=_source_attribute_pick_schema(options, current),
+            errors=errors,
+            description_placeholders={"source": _friendly_name(self.hass, source)},
         )
 
     # ------------------------------------------------------------------ Options toggles
@@ -1070,8 +1483,13 @@ class EntityGuardOptionsFlow(OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Dispatch to the correct mode-specific edit step."""
-        if self._working.get(CONF_MODE) == MODE_STATE:
+        mode = self._working.get(CONF_MODE)
+        if mode == MODE_FIXED_STATE:
             return await self.async_step_edit_state()
+        if mode == MODE_DYNAMIC_STATE:
+            return await self.async_step_edit_dynamic_state_params()
+        if mode == MODE_DYNAMIC_ATTRIBUTE:
+            return await self.async_step_edit_dynamic_attribute_params()
         return await self.async_step_edit_attribute()
 
     async def async_step_edit_state(
@@ -1127,6 +1545,115 @@ class EntityGuardOptionsFlow(OptionsFlow):
         )
         return self.async_show_form(
             step_id="edit_state", data_schema=schema, errors=errors
+        )
+
+    async def async_step_edit_dynamic_state_params(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Edit dynamic_state first step: source + invert + value-from."""
+        errors: dict[str, str] = {}
+        targets = self._working.get(CONF_TARGET_ENTITIES, [])
+
+        if user_input is not None:
+            source = user_input.get(CONF_SOURCE_ENTITY)
+            delay = _coerce_delay(user_input.get(CONF_DELAY_SECONDS))
+            errors = _validate_dynamic_state(source, targets)
+            if delay is None:
+                errors[CONF_DELAY_SECONDS] = "invalid_delay"
+            if not errors:
+                self._working[CONF_SOURCE_ENTITY] = source
+                self._working[CONF_FOLLOW_INVERT] = bool(
+                    user_input.get(CONF_FOLLOW_INVERT, False)
+                )
+                self._working[CONF_DELAY_SECONDS] = delay
+                value_from = user_input.get(
+                    CONF_SOURCE_VALUE_FROM, SOURCE_VALUE_FROM_STATE
+                )
+                self._working[CONF_SOURCE_VALUE_FROM] = value_from
+                if value_from == SOURCE_VALUE_FROM_ATTRIBUTE:
+                    return await self.async_step_edit_source_attribute_pick()
+                self._working[CONF_SOURCE_ATTRIBUTE] = None
+                return self._save()
+
+        return self.async_show_form(
+            step_id="edit_dynamic_state_params",
+            data_schema=_dynamic_state_schema(
+                exclude_targets=targets,
+                source_default=self._working.get(CONF_SOURCE_ENTITY),
+                invert_default=bool(self._working.get(CONF_FOLLOW_INVERT, False)),
+                delay_default=self._working.get(
+                    CONF_DELAY_SECONDS, DEFAULT_DELAY_SECONDS
+                ),
+            ),
+            errors=errors,
+        )
+
+    async def async_step_edit_dynamic_attribute_params(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Edit dynamic_attribute first step: source + value-from + target attr."""
+        errors: dict[str, str] = {}
+        targets = self._working.get(CONF_TARGET_ENTITIES, [])
+        attr_options = _attributes_for_entities(targets)
+
+        if user_input is not None:
+            source = user_input.get(CONF_SOURCE_ENTITY)
+            target_attribute = user_input.get(CONF_ATTRIBUTE)
+            delay = _coerce_delay(user_input.get(CONF_DELAY_SECONDS))
+            errors = _validate_dynamic_attribute(source, targets, target_attribute)
+            if delay is None:
+                errors[CONF_DELAY_SECONDS] = "invalid_delay"
+            if not errors:
+                self._working[CONF_SOURCE_ENTITY] = source
+                self._working[CONF_ATTRIBUTE] = target_attribute
+                self._working[CONF_DELAY_SECONDS] = delay
+                value_from = user_input.get(
+                    CONF_SOURCE_VALUE_FROM, SOURCE_VALUE_FROM_STATE
+                )
+                self._working[CONF_SOURCE_VALUE_FROM] = value_from
+                if value_from == SOURCE_VALUE_FROM_ATTRIBUTE:
+                    return await self.async_step_edit_source_attribute_pick()
+                self._working[CONF_SOURCE_ATTRIBUTE] = None
+                return self._save()
+
+        return self.async_show_form(
+            step_id="edit_dynamic_attribute_params",
+            data_schema=_dynamic_attribute_schema(
+                attr_options,
+                exclude_targets=targets,
+                source_default=self._working.get(CONF_SOURCE_ENTITY),
+                target_attribute_default=self._working.get(CONF_ATTRIBUTE),
+                delay_default=self._working.get(
+                    CONF_DELAY_SECONDS, DEFAULT_DELAY_SECONDS
+                ),
+            ),
+            errors=errors,
+        )
+
+    async def async_step_edit_source_attribute_pick(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Edit second screen (both dynamic modes, value_from == attribute): pick
+        one of the source's live attributes (beautified names)."""
+        errors: dict[str, str] = {}
+        source = self._working.get(CONF_SOURCE_ENTITY)
+        current = self._working.get(CONF_SOURCE_ATTRIBUTE)
+        options = _source_attribute_options(self.hass, source, current)
+
+        if user_input is not None:
+            source_attribute = (user_input.get(CONF_SOURCE_ATTRIBUTE) or "").strip()
+            errors = _validate_source_attribute_pick(source_attribute)
+            if not errors:
+                self._working[CONF_SOURCE_ATTRIBUTE] = source_attribute
+                return self._save()
+        elif not options:
+            errors["base"] = "source_has_no_attributes"
+
+        return self.async_show_form(
+            step_id="edit_source_attribute_pick",
+            data_schema=_source_attribute_pick_schema(options, current),
+            errors=errors,
+            description_placeholders={"source": _friendly_name(self.hass, source)},
         )
 
     async def async_step_edit_attribute(

@@ -19,12 +19,16 @@ from .const import (
     CONF_FLAG_ENTITY,
     CONF_FLAG_MATCH_STATE,
     CONF_FLAGS,
+    CONF_FOLLOW_INVERT,
     CONF_MAX_ENFORCEMENTS_PER_MINUTE,
     CONF_MODE,
     CONF_OPERATOR,
     CONF_RULE_ID,
     CONF_RULE_NAME,
     CONF_SAFETY_ACKNOWLEDGED,
+    CONF_SOURCE_ATTRIBUTE,
+    CONF_SOURCE_ENTITY,
+    CONF_SOURCE_VALUE_FROM,
     CONF_TARGET_ENTITIES,
     CONF_TARGET_STATE,
     CONF_TARGET_VALUE,
@@ -43,7 +47,8 @@ from .const import (
     MIN_COLOR_TEMP_KELVIN,
     MIN_DEBOUNCE_SECONDS,
     MIN_DELAY_SECONDS,
-    MODE_STATE,
+    MODE_FIXED_STATE,
+    SOURCE_VALUE_FROM_STATE,
 )
 
 
@@ -90,6 +95,14 @@ class RuleConfig:
     debounce_seconds: int
     max_enforcements_per_minute: int
     safety_acknowledged: bool
+    # Dynamic modes. source_entity is the followed entity (None for fixed rules).
+    # dynamic_state: follow_invert flips the mirrored on/off. dynamic_attribute:
+    # source_value_from selects whether the live value is the source's state or a
+    # named attribute (source_attribute); CONF_ATTRIBUTE holds the TARGET attribute.
+    source_entity: str | None = None
+    follow_invert: bool = False
+    source_value_from: str = "state"
+    source_attribute: str | None = None
 
 
 @dataclass
@@ -178,7 +191,7 @@ def parse_rule_config(entry: ConfigEntry) -> RuleConfig:
         name=raw.get(CONF_RULE_NAME, entry.title),
         unique_id=raw.get(CONF_RULE_ID, entry.entry_id),
         target_entities=list(raw.get(CONF_TARGET_ENTITIES, []) or []),
-        mode=raw.get(CONF_MODE, MODE_STATE),
+        mode=raw.get(CONF_MODE, MODE_FIXED_STATE),
         trigger_states=list(raw.get(CONF_TRIGGER_STATES, DEFAULT_TRIGGER_STATES)),
         target_state=raw.get(CONF_TARGET_STATE, DEFAULT_TARGET_STATE),
         delay_seconds=_delay,
@@ -193,6 +206,13 @@ def parse_rule_config(entry: ConfigEntry) -> RuleConfig:
         debounce_seconds=_debounce,
         max_enforcements_per_minute=_max_enf,
         safety_acknowledged=bool(raw.get(CONF_SAFETY_ACKNOWLEDGED, False)),
+        # Dynamic modes: source entity + how to read its value. Defaults keep fixed
+        # rules identical. source_attribute only meaningful when
+        # source_value_from == attribute (dynamic_attribute).
+        source_entity=raw.get(CONF_SOURCE_ENTITY) or None,
+        follow_invert=bool(raw.get(CONF_FOLLOW_INVERT, False)),
+        source_value_from=raw.get(CONF_SOURCE_VALUE_FROM, SOURCE_VALUE_FROM_STATE),
+        source_attribute=raw.get(CONF_SOURCE_ATTRIBUTE) or None,
     )
 
 

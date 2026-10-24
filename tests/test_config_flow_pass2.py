@@ -30,8 +30,8 @@ from custom_components.entity_guard.const import (
     CONF_TRIGGER_STATES,
     DOMAIN,
     ENTRY_TYPE_RULE,
-    MODE_ATTRIBUTE,
-    MODE_STATE,
+    MODE_FIXED_ATTRIBUTE,
+    MODE_FIXED_STATE,
 )
 
 
@@ -55,7 +55,9 @@ def _no_setup():
         yield
 
 
-def _state_entry(hass, name="StateOpt", entities=None, mode=MODE_STATE, extra=None):
+def _state_entry(
+    hass, name="StateOpt", entities=None, mode=MODE_FIXED_STATE, extra=None
+):
     data = {
         CONF_ENTRY_TYPE: ENTRY_TYPE_RULE,
         "rule_id": "uid-state",
@@ -84,7 +86,7 @@ def _attr_entry(hass, name="AttrOpt"):
         "rule_id": "uid-attr",
         CONF_RULE_NAME: name,
         CONF_TARGET_ENTITIES: ["light.bedroom"],
-        CONF_MODE: MODE_ATTRIBUTE,
+        CONF_MODE: MODE_FIXED_ATTRIBUTE,
         CONF_ATTRIBUTE: "brightness",
         CONF_OPERATOR: "gt",
         CONF_THRESHOLD: 64,
@@ -115,7 +117,7 @@ async def _begin_state(hass: HomeAssistant, name):
         {
             CONF_RULE_NAME: name,
             CONF_TARGET_ENTITIES: ["light.bedroom"],
-            CONF_MODE: MODE_STATE,
+            CONF_MODE: MODE_FIXED_STATE,
         },
     )
 
@@ -163,7 +165,7 @@ async def test_attribute_invalid_delay_create(hass: HomeAssistant):
         {
             CONF_RULE_NAME: "AttrDel",
             CONF_TARGET_ENTITIES: ["light.bedroom"],
-            CONF_MODE: MODE_ATTRIBUTE,
+            CONF_MODE: MODE_FIXED_ATTRIBUTE,
         },
     )
     with patch(
@@ -193,7 +195,7 @@ async def test_attribute_invalid_rgb_color_create(hass: HomeAssistant):
         {
             CONF_RULE_NAME: "AttrRgbBad",
             CONF_TARGET_ENTITIES: ["light.bedroom"],
-            CONF_MODE: MODE_ATTRIBUTE,
+            CONF_MODE: MODE_FIXED_ATTRIBUTE,
         },
     )
     res = await hass.config_entries.flow.async_configure(
@@ -218,7 +220,7 @@ async def test_attribute_invalid_color_temp_kelvin_create(hass: HomeAssistant):
         {
             CONF_RULE_NAME: "AttrKelvinBad",
             CONF_TARGET_ENTITIES: ["light.bedroom"],
-            CONF_MODE: MODE_ATTRIBUTE,
+            CONF_MODE: MODE_FIXED_ATTRIBUTE,
         },
     )
     res = await hass.config_entries.flow.async_configure(

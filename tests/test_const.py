@@ -70,3 +70,21 @@ def test_color_attributes_supported() -> None:
     assert const.ATTR_COLOR_TEMP_KELVIN in const.SUPPORTED_ATTRIBUTES
     assert const.ATTR_RGB_COLOR in const.ATTRIBUTES_BY_DOMAIN["light"]
     assert const.ATTR_COLOR_TEMP_KELVIN in const.ATTRIBUTES_BY_DOMAIN["light"]
+
+
+def test_attribute_display_names_match_strings_selector() -> None:
+    """ATTRIBUTE_DISPLAY_NAMES (used by the dynamic source-attribute picker) is a
+    hand-maintained copy of strings.json selector.attribute.options (used by the
+    target-attribute dropdown). They MUST match so known attributes read identically
+    in both; this turns silent drift into a red test instead of a stale comment."""
+    strings = json.loads(
+        (
+            pathlib.Path(__file__).parent.parent
+            / "custom_components/entity_guard/strings.json"
+        ).read_text()
+    )
+    options = strings["selector"]["attribute"]["options"]
+    assert dict(const.ATTRIBUTE_DISPLAY_NAMES) == dict(options), (
+        "const.ATTRIBUTE_DISPLAY_NAMES must stay in sync with strings.json "
+        "selector.attribute.options"
+    )

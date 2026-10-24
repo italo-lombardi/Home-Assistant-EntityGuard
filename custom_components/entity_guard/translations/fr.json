@@ -108,6 +108,48 @@
           "target_value": "Valeur à laquelle l'attribut sera défini lorsque la règle se déclenche.",
           "delay_seconds": "Attendre cette durée après un déclenchement avant d'appliquer. 0 = immédiat. Maximum 86400 (24 h)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "État dynamique",
+        "description": "L'état on/off de la cible suit une entité source (par ex. une lumière qui suit un détecteur de mouvement).",
+        "data": {
+          "source_entity": "Entité source",
+          "follow_invert": "Inverser l'état",
+          "source_value_from": "Lire la valeur depuis",
+          "delay_seconds": "Délai (secondes)"
+        },
+        "data_description": {
+          "source_entity": "L'entité que les cibles suivent. Ne doit pas faire partie des entités cibles.",
+          "follow_invert": "Désactivé = recopier (source on → cible on). Activé = inverser (source on → cible off).",
+          "source_value_from": "Indique s'il faut lire l'état de la source ou l'un de ses attributs.",
+          "delay_seconds": "Attendre cette durée après un déclenchement avant d'appliquer. 0 = immédiat. Maximum 86400 (24 h)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Attribut dynamique",
+        "description": "Un attribut de la cible est maintenu égal à une valeur en temps réel lue depuis une entité source (par ex. la luminosité d'une lumière qui suit une autre lumière). La valeur est recopiée telle quelle tant que la cible est on.",
+        "data": {
+          "source_entity": "Entité source",
+          "source_value_from": "Lire la valeur depuis",
+          "attribute": "Attribut cible",
+          "delay_seconds": "Délai (secondes)"
+        },
+        "data_description": {
+          "source_entity": "L'entité depuis laquelle lire la valeur en temps réel. Ne doit pas faire partie des entités cibles.",
+          "source_value_from": "Indique s'il faut lire l'état de la source ou l'un de ses attributs.",
+          "attribute": "L'attribut défini sur la cible. Sa valeur est recopiée telle quelle depuis la source tant que la cible est on ; assurez-vous que la valeur de la source correspond à la plage de cet attribut.",
+          "delay_seconds": "Attendre cette durée après un déclenchement avant d'appliquer. 0 = immédiat. Maximum 86400 (24 h)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Choisir l'attribut source",
+        "description": "Choisissez quel attribut de {source} lire. Chaque option affiche la valeur actuelle de l'attribut.",
+        "data": {
+          "source_attribute": "Attribut source"
+        },
+        "data_description": {
+          "source_attribute": "L'attribut source dont la valeur en temps réel est lue. Seul le nom de l'attribut est enregistré ; la valeur affichée n'est qu'un aperçu actuel."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Vous devez reconnaître le risque de sécurité pour continuer.",
       "name_already_exists": "Une règle portant ce nom existe déjà.",
       "invalid_rgb_color": "La couleur RGB doit être une liste de trois valeurs entre 0 et 255.",
-      "invalid_color_temp_kelvin": "La température de couleur doit être comprise entre 2000 K et 6500 K."
+      "invalid_color_temp_kelvin": "La température de couleur doit être comprise entre 2000 K et 6500 K.",
+      "empty_source_entity": "Sélectionnez une entité source que la cible doit suivre.",
+      "source_in_targets": "L'entité source ne peut pas également être une cible. Choisissez une autre source.",
+      "attribute_invalid_for_target": "Cet attribut n'est pris en charge par aucun des domaines des entités cibles.",
+      "source_attribute_required": "Choisissez l'attribut source à lire, ou réglez « Lire la valeur depuis » sur État.",
+      "source_has_no_attributes": "L'entité source n'a aucun attribut à lire. Saisissez un nom d'attribut, ou revenez en arrière pour lire l'état à la place."
     },
     "abort": {
       "single_instance_allowed": "Un seul concentrateur Entity Guard peut être configuré.",
@@ -212,6 +259,48 @@
           "target_value": "Valeur cible",
           "delay_seconds": "Délai (secondes)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Modifier l'état dynamique",
+        "description": "L'état on/off de la cible suit une entité source (par ex. une lumière qui suit un détecteur de mouvement).",
+        "data": {
+          "source_entity": "Entité source",
+          "follow_invert": "Inverser l'état",
+          "source_value_from": "Lire la valeur depuis",
+          "delay_seconds": "Délai (secondes)"
+        },
+        "data_description": {
+          "source_entity": "L'entité que les cibles suivent. Ne doit pas faire partie des entités cibles.",
+          "follow_invert": "Désactivé = recopier (source on → cible on). Activé = inverser (source on → cible off).",
+          "source_value_from": "Indique s'il faut lire l'état de la source ou l'un de ses attributs.",
+          "delay_seconds": "Attendre cette durée après un déclenchement avant d'appliquer. 0 = immédiat. Maximum 86400 (24 h)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Modifier l'attribut dynamique",
+        "description": "Un attribut de la cible est maintenu égal à une valeur en temps réel lue depuis une entité source (par ex. la luminosité d'une lumière qui suit une autre lumière). La valeur est recopiée telle quelle tant que la cible est on.",
+        "data": {
+          "source_entity": "Entité source",
+          "source_value_from": "Lire la valeur depuis",
+          "attribute": "Attribut cible",
+          "delay_seconds": "Délai (secondes)"
+        },
+        "data_description": {
+          "source_entity": "L'entité depuis laquelle lire la valeur en temps réel. Ne doit pas faire partie des entités cibles.",
+          "source_value_from": "Indique s'il faut lire l'état de la source ou l'un de ses attributs.",
+          "attribute": "L'attribut défini sur la cible. Sa valeur est recopiée telle quelle depuis la source tant que la cible est on ; assurez-vous que la valeur de la source correspond à la plage de cet attribut.",
+          "delay_seconds": "Attendre cette durée après un déclenchement avant d'appliquer. 0 = immédiat. Maximum 86400 (24 h)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Modifier l'attribut source",
+        "description": "Choisissez quel attribut de {source} lire. Chaque option affiche la valeur actuelle de l'attribut.",
+        "data": {
+          "source_attribute": "Attribut source"
+        },
+        "data_description": {
+          "source_attribute": "L'attribut source dont la valeur en temps réel est lue. Seul le nom de l'attribut est enregistré ; la valeur affichée n'est qu'un aperçu actuel."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Vous devez reconnaître le risque de sécurité pour continuer.",
       "name_already_exists": "Une règle portant ce nom existe déjà.",
       "invalid_rgb_color": "La couleur RGB doit être une liste de trois valeurs entre 0 et 255.",
-      "invalid_color_temp_kelvin": "La température de couleur doit être comprise entre 2000 K et 6500 K."
+      "invalid_color_temp_kelvin": "La température de couleur doit être comprise entre 2000 K et 6500 K.",
+      "empty_source_entity": "Sélectionnez une entité source que la cible doit suivre.",
+      "source_in_targets": "L'entité source ne peut pas également être une cible. Choisissez une autre source.",
+      "attribute_invalid_for_target": "Cet attribut n'est pris en charge par aucun des domaines des entités cibles.",
+      "source_attribute_required": "Choisissez l'attribut source à lire, ou réglez « Lire la valeur depuis » sur État.",
+      "source_has_no_attributes": "L'entité source n'a aucun attribut à lire. Saisissez un nom d'attribut, ou revenez en arrière pour lire l'état à la place."
     },
     "abort": {
       "name_already_exists": "Une règle portant ce nom existe déjà.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "État",
-        "attribute": "Attribut"
+        "fixed_state": "État fixe",
+        "fixed_attribute": "Attribut fixe",
+        "dynamic_state": "État dynamique (Mode Suivi)",
+        "dynamic_attribute": "Attribut dynamique (Mode Suivi)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Ajouter une condition",
         "replace": "Remplacer toutes les conditions",
         "clear": "Effacer toutes les conditions"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "État",
+        "attribute": "Attribut"
       }
     }
   },

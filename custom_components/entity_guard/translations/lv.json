@@ -108,6 +108,48 @@
           "target_value": "Piemērojamā vērtība. Skaitliskie atribūti tiek ierobežoti līdz šai vērtībai; krāsu atribūtiem tai jāatbilst.",
           "delay_seconds": "Uzgaidiet tik ilgi pēc aktivizēšanas pirms piemērošanas. 0 = tūlītēji. Maks. 86400 (24 h)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Dinamisks stāvoklis",
+        "description": "Mērķa ieslēgts/izslēgts stāvoklis seko avota entītijai (piem., gaisma, kas seko kustības sensoram).",
+        "data": {
+          "source_entity": "Avota entītija",
+          "follow_invert": "Apgriezt stāvokli pretēji",
+          "source_value_from": "Nolasīt vērtību no",
+          "delay_seconds": "Aizkave (sekundes)"
+        },
+        "data_description": {
+          "source_entity": "Entītija, kurai seko mērķi. Nedrīkst būt viena no mērķa entītijām.",
+          "follow_invert": "Izslēgts = atspoguļot (avots ieslēgts → mērķis ieslēgts). Ieslēgts = apgriezt pretēji (avots ieslēgts → mērķis izslēgts).",
+          "source_value_from": "Vai nolasīt avota stāvokli, vai vienu no tā atribūtiem.",
+          "delay_seconds": "Uzgaidiet tik ilgi pēc aktivizēšanas pirms piemērošanas. 0 = tūlītēji. Maks. 86400 (24 h)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Dinamisks atribūts",
+        "description": "Mērķa atribūts tiek uzturēts vienāds ar aktuālu vērtību, kas nolasīta no avota entītijas (piem., gaismas spilgtums, kas seko citai gaismai). Vērtība tiek kopēta tāda, kāda tā ir, kamēr mērķis ir ieslēgts.",
+        "data": {
+          "source_entity": "Avota entītija",
+          "source_value_from": "Nolasīt vērtību no",
+          "attribute": "Mērķa atribūts",
+          "delay_seconds": "Aizkave (sekundes)"
+        },
+        "data_description": {
+          "source_entity": "Entītija, no kuras nolasīt aktuālo vērtību. Nedrīkst būt viena no mērķa entītijām.",
+          "source_value_from": "Vai nolasīt avota stāvokli, vai vienu no tā atribūtiem.",
+          "attribute": "Atribūts, kas tiek iestatīts mērķim. Tā vērtība tiek kopēta burtiski no avota, kamēr mērķis ir ieslēgts; pārliecinieties, ka avota vērtība iekļaujas šī atribūta diapazonā.",
+          "delay_seconds": "Uzgaidiet tik ilgi pēc aktivizēšanas pirms piemērošanas. 0 = tūlītēji. Maks. 86400 (24 h)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Izvēlieties avota atribūtu",
+        "description": "Izvēlieties, kuru {source} atribūtu nolasīt. Katra opcija rāda atribūta pašreizējo vērtību.",
+        "data": {
+          "source_attribute": "Avota atribūts"
+        },
+        "data_description": {
+          "source_attribute": "Avota atribūts, kura aktuālā vērtība tiek nolasīta. Tiek saglabāts tikai atribūta nosaukums; parādītā vērtība ir tikai pašreizējs priekšskatījums."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Lai turpinātu, jums jāapstiprina drošības risks.",
       "name_already_exists": "Noteikums ar šādu nosaukumu jau pastāv.",
       "invalid_rgb_color": "RGB krāsai jābūt sarakstam ar trim vērtībām no 0 līdz 255.",
-      "invalid_color_temp_kelvin": "Krāsas temperatūrai jābūt no 2000 K līdz 6500 K."
+      "invalid_color_temp_kelvin": "Krāsas temperatūrai jābūt no 2000 K līdz 6500 K.",
+      "empty_source_entity": "Izvēlieties avota entītiju, kurai mērķis sekos.",
+      "source_in_targets": "Avota entītija nevar būt arī mērķis. Izvēlieties citu avotu.",
+      "attribute_invalid_for_target": "Šo atribūtu neatbalsta neviens no mērķa entītiju domēniem.",
+      "source_attribute_required": "Izvēlieties nolasāmo avota atribūtu vai iestatiet “Nolasīt vērtību no” uz Stāvoklis.",
+      "source_has_no_attributes": "Avota entītijai nav atribūtu, ko nolasīt. Ievadiet atribūta nosaukumu vai dodieties atpakaļ un nolasiet stāvokli."
     },
     "abort": {
       "single_instance_allowed": "Var konfigurēt tikai vienu Entity Guard centrmezglu.",
@@ -212,6 +259,48 @@
           "target_value": "Mērķa vērtība",
           "delay_seconds": "Aizkave (sekundes)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Rediģēt dinamisko stāvokli",
+        "description": "Mērķa ieslēgts/izslēgts stāvoklis seko avota entītijai (piem., gaisma, kas seko kustības sensoram).",
+        "data": {
+          "source_entity": "Avota entītija",
+          "follow_invert": "Apgriezt stāvokli pretēji",
+          "source_value_from": "Nolasīt vērtību no",
+          "delay_seconds": "Aizkave (sekundes)"
+        },
+        "data_description": {
+          "source_entity": "Entītija, kurai seko mērķi. Nedrīkst būt viena no mērķa entītijām.",
+          "follow_invert": "Izslēgts = atspoguļot (avots ieslēgts → mērķis ieslēgts). Ieslēgts = apgriezt pretēji (avots ieslēgts → mērķis izslēgts).",
+          "source_value_from": "Vai nolasīt avota stāvokli, vai vienu no tā atribūtiem.",
+          "delay_seconds": "Uzgaidiet tik ilgi pēc aktivizēšanas pirms piemērošanas. 0 = tūlītēji. Maks. 86400 (24 h)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Rediģēt dinamisko atribūtu",
+        "description": "Mērķa atribūts tiek uzturēts vienāds ar aktuālu vērtību, kas nolasīta no avota entītijas (piem., gaismas spilgtums, kas seko citai gaismai). Vērtība tiek kopēta tāda, kāda tā ir, kamēr mērķis ir ieslēgts.",
+        "data": {
+          "source_entity": "Avota entītija",
+          "source_value_from": "Nolasīt vērtību no",
+          "attribute": "Mērķa atribūts",
+          "delay_seconds": "Aizkave (sekundes)"
+        },
+        "data_description": {
+          "source_entity": "Entītija, no kuras nolasīt aktuālo vērtību. Nedrīkst būt viena no mērķa entītijām.",
+          "source_value_from": "Vai nolasīt avota stāvokli, vai vienu no tā atribūtiem.",
+          "attribute": "Atribūts, kas tiek iestatīts mērķim. Tā vērtība tiek kopēta burtiski no avota, kamēr mērķis ir ieslēgts; pārliecinieties, ka avota vērtība iekļaujas šī atribūta diapazonā.",
+          "delay_seconds": "Uzgaidiet tik ilgi pēc aktivizēšanas pirms piemērošanas. 0 = tūlītēji. Maks. 86400 (24 h)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Rediģēt avota atribūtu",
+        "description": "Izvēlieties, kuru {source} atribūtu nolasīt. Katra opcija rāda atribūta pašreizējo vērtību.",
+        "data": {
+          "source_attribute": "Avota atribūts"
+        },
+        "data_description": {
+          "source_attribute": "Avota atribūts, kura aktuālā vērtība tiek nolasīta. Tiek saglabāts tikai atribūta nosaukums; parādītā vērtība ir tikai pašreizējs priekšskatījums."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Lai turpinātu, jums jāapstiprina drošības risks.",
       "name_already_exists": "Noteikums ar šādu nosaukumu jau pastāv.",
       "invalid_rgb_color": "RGB krāsai jābūt sarakstam ar trim vērtībām no 0 līdz 255.",
-      "invalid_color_temp_kelvin": "Krāsas temperatūrai jābūt no 2000 K līdz 6500 K."
+      "invalid_color_temp_kelvin": "Krāsas temperatūrai jābūt no 2000 K līdz 6500 K.",
+      "empty_source_entity": "Izvēlieties avota entītiju, kurai mērķis sekos.",
+      "source_in_targets": "Avota entītija nevar būt arī mērķis. Izvēlieties citu avotu.",
+      "attribute_invalid_for_target": "Šo atribūtu neatbalsta neviens no mērķa entītiju domēniem.",
+      "source_attribute_required": "Izvēlieties nolasāmo avota atribūtu vai iestatiet “Nolasīt vērtību no” uz Stāvoklis.",
+      "source_has_no_attributes": "Avota entītijai nav atribūtu, ko nolasīt. Ievadiet atribūta nosaukumu vai dodieties atpakaļ un nolasiet stāvokli."
     },
     "abort": {
       "name_already_exists": "Noteikums ar šādu nosaukumu jau pastāv.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Stāvoklis",
-        "attribute": "Atribūts"
+        "fixed_state": "Fiksēts stāvoklis",
+        "fixed_attribute": "Fiksēts atribūts",
+        "dynamic_state": "Dinamisks stāvoklis (sekošanas režīms)",
+        "dynamic_attribute": "Dinamisks atribūts (sekošanas režīms)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Pievienot karodziņu",
         "replace": "Aizstāt visus karodziņus",
         "clear": "Notīrīt visus karodziņus"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Stāvoklis",
+        "attribute": "Atribūts"
       }
     }
   },

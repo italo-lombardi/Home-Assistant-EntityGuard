@@ -21,8 +21,12 @@ Enforce desired entity state in Home Assistant via declarative rules. Replaces N
 ## Features
 
 - **Declarative rules** -- bind 1+ target entities to a trigger and target state; integration enforces it
-- **State mode** -- force entity to a target state when it enters one of N trigger states
-- **Attribute mode** -- clamp numeric attributes or match a color target (`rgb_color`, `color_temp_kelvin`)
+- **Four rule modes (fixed × dynamic, state × attribute)** -- enforce a target's **state** or an **attribute**, against either a value you **type** (*fixed*) or one read **live from a source entity** (*dynamic*, a.k.a. Follow mode):
+  - **Fixed state** -- force an entity to a target state when it enters one of N trigger states
+  - **Fixed attribute** -- clamp numeric attributes or match a color target (`rgb_color`, `color_temp_kelvin`)
+  - **Dynamic state (Follow mode)** -- the target's on/off follows a source entity; mirror or invert. "Light follows motion" in one rule instead of two
+  - **Dynamic attribute (Follow mode)** -- the target's attribute follows a value read live from a source entity
+  A *dynamic* mode behaves exactly like its *fixed* counterpart (same debounce, delay, flags, rate limit, suppression, counters, status) — only the target value is read live instead of typed. Because any entity works as a source, you can **bind to a template**: create a [Template helper](https://www.home-assistant.io/integrations/template/) (e.g. a Template binary sensor whose `state` is any Jinja expression) and point a dynamic rule's source at it — the target follows your template's result.
 - **Conditional flags** -- list of `(entity, match_state)` conditions AND'd; rule only fires when all match
 - **Per-entity cooldown / debounce** -- avoid loop fights with the original cause
 - **Per-rule rate limiter** -- cap enforcements/min; auto-suppress on overshoot to break loops
@@ -69,11 +73,11 @@ Adding the integration takes you straight into rule creation. The **Entity Guard
 |-------|-------------|
 | Rule name | A descriptive name for the rule (e.g., "Front door auto-lock") |
 | Target entities | One or more entities the rule will enforce |
-| Mode | `state` (force a specific state) or `attribute` (clamp a numeric attribute / match a color target) |
+| Mode | One of four: **Fixed state** (force a state you pick), **Fixed attribute** (clamp a numeric attribute / match a color you pick), **Dynamic state (Follow mode)** (on/off follows a source entity), or **Dynamic attribute (Follow mode)** (an attribute follows a value read live from a source entity) |
 
 ![Step 1: Rule Basics](assets/02_rule_basics.png)
 
-### Step 2a: State Mode
+### Step 2a: Fixed State Mode
 
 | Field | Default | Description |
 |-------|---------|-------------|
@@ -83,9 +87,9 @@ Adding the integration takes you straight into rule creation. The **Entity Guard
 
 ![Step 2a: State Mode](assets/03a_state_mode.png)
 
-### Step 2b: Attribute Mode
+### Step 2b: Fixed Attribute Mode
 
-Attribute mode is configured in two screens. First choose **which** attribute to enforce; the parameters screen then adapts to that choice.
+Fixed attribute mode is configured in two screens. First choose **which** attribute to enforce; the parameters screen then adapts to that choice.
 
 **Choose the attribute**
 
@@ -123,7 +127,43 @@ If the light is on and its current color differs from the target beyond a small 
 
 ![Step 2b: Color temperature parameters](assets/03c_attribute_params_kelvin.png)
 
-### Step 2c: Optional Features
+### Step 2c: Dynamic State Mode (Follow mode)
+
+Dynamic state binds the target's **on/off** to a live value read from a **source** entity, instead of fixed trigger/target states. It behaves exactly like Fixed state — same delay, debounce, flags, rate limit, status — only the desired on/off is read live.
+
+| Field | Description |
+|-------|-------------|
+| Source entity | The entity the target(s) follow. Must not be one of the target entities. |
+| Read value from | **State** (default) — use the source's on/off state. **Attribute** — use one of the source's attributes instead. |
+| Source attribute | *(only when reading from an attribute)* Name of the source attribute to read. Its value is reduced to on/off: a non-zero number, or an on-ish state string, is **on**; `0`, an off-ish word, or empty is **off**. |
+| Invert | Off (default) = *mirror* (source on → target on). On = *invert* (source on → target off). |
+| Delay (seconds) | Wait this long before enforcing (0-86400) |
+
+Source on/off (when reading the **state**) is derived from a documented set of "on-ish" states (`on`, `home`, `open`, `unlocked`, `playing`, `active`, `cleaning`, `mowing`, `true`, `1`); any other live state is treated as off. When the source is `unavailable`/`unknown` (or a chosen source attribute is missing), the rule holds — no enforcement, no error. Enforcement is idempotent: the target changes only when its current on/off differs from the source-derived value.
+
+> **Tip — bind to a template.** Any entity can be a source, including a [Template helper](https://www.home-assistant.io/integrations/template/). Create a Template binary sensor whose `state` is any Jinja expression (combine several sensors, add time windows, whatever), then point a dynamic rule's source at that helper — the target now follows your template's result, with all of Entity Guard's debounce / delay / conditions / rate-limiting on top.
+
+<!-- SCREENSHOT PLACEHOLDER: replace with latest UX. -->
+![Step 2c: Dynamic State Mode](assets/03d_dynamic_state.png)
+
+### Step 2d: Dynamic Attribute Mode (Follow mode)
+
+Dynamic attribute binds a target **attribute** to a live value read from a **source** entity. It behaves exactly like Fixed attribute (acts while the target is on, color matching within tolerance) — only the value is read live instead of typed.
+
+| Field | Description |
+|-------|-------------|
+| Source entity | The entity the target(s) follow. Must not be one of the target entities. |
+| Read value from | **State** — use the source's state as the value. **Attribute** — use one of the source's attributes. |
+| Source attribute | *(only when reading from an attribute)* Name of the source attribute to read. |
+| Attribute | The **target** attribute to drive (`brightness`, `volume_level`, `temperature`, `percentage`, `rgb_color`, `color_temp_kelvin`). |
+| Delay (seconds) | Wait this long before enforcing (0-86400) |
+
+The read value is copied to the target attribute as-is (v1: raw copy, no range scaling — make sure the source value's type and range suit the target attribute, e.g. a 0–255 brightness). The rule acts only while the target is on; a source that is unavailable/unknown, or a missing source attribute, holds the rule. Enforcement is idempotent: the target changes only when its current attribute value differs from the live source value (color within tolerance).
+
+<!-- SCREENSHOT PLACEHOLDER: replace with latest UX. -->
+![Step 2d: Dynamic Attribute Mode](assets/03e_dynamic_attribute.png)
+
+### Step 2e: Optional Features
 
 Tick any features to configure. Each ticked option adds a follow-up screen. Skip all to go straight to review.
 
@@ -281,12 +321,62 @@ All four are described in the Logbook.
 
 ## Examples
 
+### Light follows motion (Dynamic state)
+
+| Setting | Value |
+|---------|-------|
+| Target entities | `light.hallway` |
+| Mode | Dynamic state (Follow mode) |
+| Source entity | `binary_sensor.hallway_motion` |
+| Read value from | State |
+| Invert | off (mirror) |
+| Delay (seconds) | `0` |
+
+Motion `on` → light on; motion `off` → light off. Replaces the previous two-rule setup (one turn-on rule, one turn-off rule). Add a debounce or a delay to hold the light briefly after motion clears.
+
+### Nursery light follows a template helper (Dynamic state)
+
+| Setting | Value |
+|---------|-------|
+| Target entities | `light.nursery` |
+| Mode | Dynamic state (Follow mode) |
+| Source entity | `binary_sensor.nursery_should_be_on` (a Template helper) |
+| Read value from | State |
+| Invert | off (mirror) |
+
+`binary_sensor.nursery_should_be_on` is a [Template binary sensor](https://www.home-assistant.io/integrations/template/) whose state is any Jinja expression (e.g. "someone home AND after sunset AND before 22:00"). The nursery light's on/off follows that result — a single dynamic-state rule binds a light to an arbitrarily complex template.
+
+### Under-cabinet lights track the main light's brightness (Dynamic attribute)
+
+| Setting | Value |
+|---------|-------|
+| Target entities | `light.under_cabinet` |
+| Mode | Dynamic attribute (Follow mode) |
+| Source entity | `light.kitchen_main` |
+| Read value from | Attribute |
+| Source attribute | `brightness` |
+| Attribute (target) | `brightness` |
+
+While `light.under_cabinet` is on, its brightness tracks `light.kitchen_main`'s `brightness` attribute live. The value is copied as-is (both are 0–255 brightness), so the two lights stay in sync. Pair with a Dynamic state rule on the same source if you also want the under-cabinet light to turn on/off with the main light.
+
+### Exhaust fan opposite a humidity switch (Dynamic state, invert)
+
+| Setting | Value |
+|---------|-------|
+| Target entities | `switch.bathroom_fan` |
+| Mode | Dynamic state (Follow mode) |
+| Source entity | `input_boolean.humidity_ok` |
+| Read value from | State |
+| Invert | on |
+
+When humidity is OK the fan is off; when not OK (`input_boolean.humidity_ok` off) the fan turns on — invert flips the state direction.
+
 ### Auto-lock front door 10 seconds after unlock
 
 | Setting | Value |
 |---------|-------|
 | Target entities | `lock.front_door` |
-| Mode | state |
+| Mode | Fixed state |
 | Trigger states | `unlocked` |
 | Target state | `locked` |
 | Delay (seconds) | `10` |
@@ -298,7 +388,7 @@ All four are described in the Logbook.
 | Setting | Value |
 |---------|-------|
 | Target entities | `media_player.kids_tv` |
-| Mode | state |
+| Mode | Fixed state |
 | Trigger states | `on`, `playing`, `paused` |
 | Target state | `off` |
 | Flags | `input_boolean.kids_curfew == on` |
@@ -308,7 +398,7 @@ All four are described in the Logbook.
 | Setting | Value |
 |---------|-------|
 | Target entities | `switch.diffuser_mist` |
-| Mode | state |
+| Mode | Fixed state |
 | Trigger states | `on` |
 | Target state | `off` |
 | Flags | `binary_sensor.diffuser_water_low == on` |
@@ -318,7 +408,7 @@ All four are described in the Logbook.
 | Setting | Value |
 |---------|-------|
 | Target entities | `light.kids_bedroom` |
-| Mode | attribute |
+| Mode | Fixed attribute |
 | Attribute | `brightness` |
 | Operator | `>` |
 | Threshold | `64` |
@@ -330,7 +420,7 @@ All four are described in the Logbook.
 | Setting | Value |
 |---------|-------|
 | Target entities | `light.living_room_lamps` |
-| Mode | attribute |
+| Mode | Fixed attribute |
 | Attribute | `color_temp_kelvin` |
 | Target value | `2700` |
 | Delay (seconds) | `0` |
@@ -341,7 +431,7 @@ All four are described in the Logbook.
 | Setting | Value |
 |---------|-------|
 | Target entities | `light.accent_strip` |
-| Mode | attribute |
+| Mode | Fixed attribute |
 | Attribute | `rgb_color` |
 | Target value | `[255, 0, 0]` |
 | Delay (seconds) | `0` |

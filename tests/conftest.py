@@ -44,7 +44,7 @@ def rule_entry():
             "rule_id": "test-rule-uuid",
             "rule_name": "Test Rule",
             "target_entities": ["light.test"],
-            "mode": "state",
+            "mode": "fixed_state",
             "trigger_states": ["on"],
             "target_state": "off",
             "delay_seconds": 0,

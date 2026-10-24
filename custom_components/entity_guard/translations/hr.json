@@ -108,6 +108,48 @@
           "target_value": "Vrijednost koja se provodi. Numerički atributi ograničavaju se na ovu vrijednost; atributi boje moraju joj odgovarati.",
           "delay_seconds": "Pričekajte ovoliko dugo nakon okidača prije provedbe. 0 = odmah. Maksimalno 86400 (24 h)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Dinamičko stanje",
+        "description": "Uključeno/isključeno stanje cilja prati izvorni entitet (npr. svjetlo koje prati senzor pokreta).",
+        "data": {
+          "source_entity": "Izvorni entitet",
+          "follow_invert": "Invertiraj stanje",
+          "source_value_from": "Čitaj vrijednost iz",
+          "delay_seconds": "Odgoda (sekunde)"
+        },
+        "data_description": {
+          "source_entity": "Entitet koji ciljevi prate. Ne smije biti jedan od ciljnih entiteta.",
+          "follow_invert": "Isključeno = zrcaljenje (izvor uključen → cilj uključen). Uključeno = inverzija (izvor uključen → cilj isključen).",
+          "source_value_from": "Hoće li se čitati stanje izvora ili jedan od njegovih atributa.",
+          "delay_seconds": "Pričekajte ovoliko dugo nakon okidača prije provedbe. 0 = odmah. Maksimalno 86400 (24 h)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Dinamički atribut",
+        "description": "Atribut cilja održava se jednakim živoj vrijednosti pročitanoj s izvornog entiteta (npr. svjetlina svjetla koja prati drugo svjetlo). Vrijednost se kopira takva kakva jest dok je cilj uključen.",
+        "data": {
+          "source_entity": "Izvorni entitet",
+          "source_value_from": "Čitaj vrijednost iz",
+          "attribute": "Ciljni atribut",
+          "delay_seconds": "Odgoda (sekunde)"
+        },
+        "data_description": {
+          "source_entity": "Entitet s kojeg se čita živa vrijednost. Ne smije biti jedan od ciljnih entiteta.",
+          "source_value_from": "Hoće li se čitati stanje izvora ili jedan od njegovih atributa.",
+          "attribute": "Atribut postavljen na cilj. Njegova se vrijednost doslovno kopira s izvora dok je cilj uključen; pobrinite se da vrijednost izvora odgovara rasponu ovog atributa.",
+          "delay_seconds": "Pričekajte ovoliko dugo nakon okidača prije provedbe. 0 = odmah. Maksimalno 86400 (24 h)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Odaberi izvorni atribut",
+        "description": "Odaberite koji atribut entiteta {source} čitati. Svaka opcija prikazuje trenutačnu vrijednost atributa.",
+        "data": {
+          "source_attribute": "Izvorni atribut"
+        },
+        "data_description": {
+          "source_attribute": "Izvorni atribut čija se živa vrijednost čita. Pohranjuje se samo naziv atributa; prikazana je vrijednost samo trenutačni pregled."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Morate potvrditi sigurnosni rizik za nastavak.",
       "name_already_exists": "Pravilo s ovim nazivom već postoji.",
       "invalid_rgb_color": "RGB boja mora biti popis od tri vrijednosti između 0 i 255.",
-      "invalid_color_temp_kelvin": "Temperatura boje mora biti između 2000 K i 6500 K."
+      "invalid_color_temp_kelvin": "Temperatura boje mora biti između 2000 K i 6500 K.",
+      "empty_source_entity": "Odaberite izvorni entitet koji će cilj pratiti.",
+      "source_in_targets": "Izvorni entitet ne može ujedno biti i cilj. Odaberite drugi izvor.",
+      "attribute_invalid_for_target": "Taj atribut ne podržava nijedna domena ciljnih entiteta.",
+      "source_attribute_required": "Odaberite izvorni atribut za čitanje ili postavite 'Čitaj vrijednost iz' na Stanje.",
+      "source_has_no_attributes": "Izvorni entitet nema atribute za čitanje. Upišite naziv atributa ili se vratite natrag i čitajte stanje."
     },
     "abort": {
       "single_instance_allowed": "Može se konfigurirati samo jedno Entity Guard čvorište.",
@@ -212,6 +259,48 @@
           "target_value": "Ciljna vrijednost",
           "delay_seconds": "Odgoda (sekunde)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Uredi dinamičko stanje",
+        "description": "Uključeno/isključeno stanje cilja prati izvorni entitet (npr. svjetlo koje prati senzor pokreta).",
+        "data": {
+          "source_entity": "Izvorni entitet",
+          "follow_invert": "Invertiraj stanje",
+          "source_value_from": "Čitaj vrijednost iz",
+          "delay_seconds": "Odgoda (sekunde)"
+        },
+        "data_description": {
+          "source_entity": "Entitet koji ciljevi prate. Ne smije biti jedan od ciljnih entiteta.",
+          "follow_invert": "Isključeno = zrcaljenje (izvor uključen → cilj uključen). Uključeno = inverzija (izvor uključen → cilj isključen).",
+          "source_value_from": "Hoće li se čitati stanje izvora ili jedan od njegovih atributa.",
+          "delay_seconds": "Pričekajte ovoliko dugo nakon okidača prije provedbe. 0 = odmah. Maksimalno 86400 (24 h)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Uredi dinamički atribut",
+        "description": "Atribut cilja održava se jednakim živoj vrijednosti pročitanoj s izvornog entiteta (npr. svjetlina svjetla koja prati drugo svjetlo). Vrijednost se kopira takva kakva jest dok je cilj uključen.",
+        "data": {
+          "source_entity": "Izvorni entitet",
+          "source_value_from": "Čitaj vrijednost iz",
+          "attribute": "Ciljni atribut",
+          "delay_seconds": "Odgoda (sekunde)"
+        },
+        "data_description": {
+          "source_entity": "Entitet s kojeg se čita živa vrijednost. Ne smije biti jedan od ciljnih entiteta.",
+          "source_value_from": "Hoće li se čitati stanje izvora ili jedan od njegovih atributa.",
+          "attribute": "Atribut postavljen na cilj. Njegova se vrijednost doslovno kopira s izvora dok je cilj uključen; pobrinite se da vrijednost izvora odgovara rasponu ovog atributa.",
+          "delay_seconds": "Pričekajte ovoliko dugo nakon okidača prije provedbe. 0 = odmah. Maksimalno 86400 (24 h)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Uredi izvorni atribut",
+        "description": "Odaberite koji atribut entiteta {source} čitati. Svaka opcija prikazuje trenutačnu vrijednost atributa.",
+        "data": {
+          "source_attribute": "Izvorni atribut"
+        },
+        "data_description": {
+          "source_attribute": "Izvorni atribut čija se živa vrijednost čita. Pohranjuje se samo naziv atributa; prikazana je vrijednost samo trenutačni pregled."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Morate potvrditi sigurnosni rizik za nastavak.",
       "name_already_exists": "Pravilo s ovim nazivom već postoji.",
       "invalid_rgb_color": "RGB boja mora biti popis od tri vrijednosti između 0 i 255.",
-      "invalid_color_temp_kelvin": "Temperatura boje mora biti između 2000 K i 6500 K."
+      "invalid_color_temp_kelvin": "Temperatura boje mora biti između 2000 K i 6500 K.",
+      "empty_source_entity": "Odaberite izvorni entitet koji će cilj pratiti.",
+      "source_in_targets": "Izvorni entitet ne može ujedno biti i cilj. Odaberite drugi izvor.",
+      "attribute_invalid_for_target": "Taj atribut ne podržava nijedna domena ciljnih entiteta.",
+      "source_attribute_required": "Odaberite izvorni atribut za čitanje ili postavite 'Čitaj vrijednost iz' na Stanje.",
+      "source_has_no_attributes": "Izvorni entitet nema atribute za čitanje. Upišite naziv atributa ili se vratite natrag i čitajte stanje."
     },
     "abort": {
       "name_already_exists": "Pravilo s ovim nazivom već postoji.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Stanje",
-        "attribute": "Atribut"
+        "fixed_state": "Fiksno stanje",
+        "fixed_attribute": "Fiksni atribut",
+        "dynamic_state": "Dinamičko stanje (Način rada praćenja)",
+        "dynamic_attribute": "Dinamički atribut (Način rada praćenja)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Dodaj zastavicu",
         "replace": "Zamijeni sve zastavice",
         "clear": "Očisti sve zastavice"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Stanje",
+        "attribute": "Atribut"
       }
     }
   },
