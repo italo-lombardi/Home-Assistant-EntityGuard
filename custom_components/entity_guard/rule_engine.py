@@ -1366,6 +1366,21 @@ class RuleEngine:
             return None
         return self._follow_desired_on()
 
+    def attribute_desired_value(self) -> Any | None:
+        """Public view of the DESIRED attribute value for the attribute modes, for
+        the card's bound-row '→ <attr>: <current> → <desired>' + match indicator.
+
+        fixed_attribute → the configured target_value.
+        dynamic_attribute → the live value read from the source (None when the
+        source is offline or the chosen attribute is missing — card shows holding).
+        Other modes → None (no attribute desired).
+        """
+        if self._config.mode == MODE_FIXED_ATTRIBUTE:
+            return self._config.target_value
+        if self._config.mode == MODE_DYNAMIC_ATTRIBUTE:
+            return self._dynamic_source_value()
+        return None
+
     def pending_enforcement_due(self) -> dict[str, datetime]:
         """Return a snapshot of entity_id → fire time for pending enforcements."""
         return dict(self._pending_enforcement_due)

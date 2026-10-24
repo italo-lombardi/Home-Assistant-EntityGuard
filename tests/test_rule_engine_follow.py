@@ -23,6 +23,7 @@ from custom_components.entity_guard.const import (
     EVENT_SKIPPED,
     MODE_DYNAMIC_ATTRIBUTE,
     MODE_DYNAMIC_STATE,
+    MODE_FIXED_ATTRIBUTE,
     MODE_FIXED_STATE,
     SOURCE_VALUE_FROM_ATTRIBUTE,
     SOURCE_VALUE_FROM_STATE,
@@ -888,3 +889,37 @@ async def test_dynamic_state_from_attribute_offline_none(hass: HomeAssistant):
 )
 def test_value_is_on(value, expected):
     assert _value_is_on(value) is expected
+
+
+# ---------------------------------------------------------------------------
+# attribute_desired_value accessor (card bound-row desired value)
+# ---------------------------------------------------------------------------
+
+
+async def test_attribute_desired_value_dynamic_attribute(hass: HomeAssistant):
+    """dynamic_attribute → live source value (via _dynamic_source_value)."""
+    config = _make_attr_config(
+        source_value_from=SOURCE_VALUE_FROM_ATTRIBUTE, source_attribute="brightness"
+    )
+    engine = _make_engine(hass, config)
+    hass.states.async_set("binary_sensor.motion", "on", {"brightness": 180})
+    assert engine.attribute_desired_value() == 180
+    # Source attribute missing → None (card shows holding).
+    hass.states.async_set("binary_sensor.motion", "on", {})
+    assert engine.attribute_desired_value() is None
+
+
+async def test_attribute_desired_value_fixed_attribute(hass: HomeAssistant):
+    """fixed_attribute → the configured target_value."""
+    config = _make_config(mode=MODE_FIXED_ATTRIBUTE, attribute="brightness")
+    config.target_value = 120
+    engine = _make_engine(hass, config)
+    assert engine.attribute_desired_value() == 120
+
+
+async def test_attribute_desired_value_none_for_state_modes(hass: HomeAssistant):
+    """State modes have no attribute desired value → None."""
+    engine = _make_engine(hass, _make_config(mode=MODE_DYNAMIC_STATE))
+    assert engine.attribute_desired_value() is None
+    engine2 = _make_engine(hass, _make_config(mode=MODE_FIXED_STATE))
+    assert engine2.attribute_desired_value() is None

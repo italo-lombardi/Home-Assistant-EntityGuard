@@ -494,33 +494,49 @@ def _friendly_name(hass: Any, entity_id: str | None) -> str:
     return state.attributes.get("friendly_name") or entity_id
 
 
-def _source_attribute_options(hass: Any, source: str | None) -> list[Any]:
+def _source_attribute_options(
+    hass: Any, source: str | None, current: str | None = None
+) -> list[Any]:
     """Live attribute options for the pick step: one per meaningful source
     attribute. The option VALUE is the raw attribute key (what gets stored/read);
     the LABEL is the beautified name only — no current-value suffix, since off
     entities report None-valued attributes that read as noise ('Brightness (None)').
-    Noise/capability attributes are hidden. Empty when the source has no state or
-    no listable attributes (the pick step then shows source_has_no_attributes)."""
-    if not source or hass is None:
-        return []
-    state = hass.states.get(source)
-    if state is None:
-        return []
-    return [
-        selector.SelectOptionDict(value=name, label=_prettify_attr_name(name))
-        for name in state.attributes
-        if not _is_noise_attribute(name)
-    ]
+    Noise/capability attributes are hidden.
+
+    ``current`` (the stored source_attribute, on edit) is injected as a synthetic
+    option when it is not among the live attributes — e.g. the source is offline
+    and reports none. This preserves the stored value in the LIST without
+    custom_value (LIST and custom_value conflict in HA — the latter forces a
+    dropdown), so an offline-source edit keeps the attribute selectable/preselected
+    (SPEC/-89 edge #4). Empty result → the pick step shows source_has_no_attributes."""
+    state = hass.states.get(source) if source and hass is not None else None
+    options = (
+        [
+            selector.SelectOptionDict(value=name, label=_prettify_attr_name(name))
+            for name in state.attributes
+            if not _is_noise_attribute(name)
+        ]
+        if state is not None
+        else []
+    )
+    if current and not any(o["value"] == current for o in options):
+        options.append(
+            selector.SelectOptionDict(value=current, label=_prettify_attr_name(current))
+        )
+    return options
 
 
 def _source_attribute_pick_schema(
     options: list[Any], current: str | None
 ) -> vol.Schema:
     """Second-step schema: pick one of the source's live attributes. Options carry
-    beautified SelectOptionDict labels, and mode=DROPDOWN so HA shows the label
-    (not the raw value) both in the list and in the collapsed/selected field.
-    custom_value keeps a stored attribute selectable when editing a source that is
-    momentarily offline (its live options are empty/different)."""
+    beautified SelectOptionDict labels, mode=LIST (radio, all options visible —
+    consistent with the fixed/dynamic target-attribute pickers and the mode
+    selector). Each radio shows its label ('Brightness').
+
+    No custom_value: HA ignores mode=LIST when custom_value is set (forces a
+    dropdown), so the offline-edit case is handled by injecting the stored
+    attribute as a synthetic option in _source_attribute_options instead."""
     return vol.Schema(
         {
             vol.Required(
@@ -529,8 +545,7 @@ def _source_attribute_pick_schema(
             ): selector.SelectSelector(
                 selector.SelectSelectorConfig(
                     options=options,
-                    custom_value=True,
-                    mode=selector.SelectSelectorMode.DROPDOWN,
+                    mode=selector.SelectSelectorMode.LIST,
                 )
             )
         }
@@ -586,6 +601,7 @@ def _dynamic_attribute_schema(
             selector.SelectSelectorConfig(
                 options=attr_options,
                 translation_key="attribute",
+                mode=selector.SelectSelectorMode.LIST,
             )
         ),
         vol.Required(CONF_DELAY_SECONDS, default=delay_default): _delay_selector(),
@@ -1015,7 +1031,8 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
         the source entity's live attributes (beautified names)."""
         errors: dict[str, str] = {}
         source = self._rule_data.get(CONF_SOURCE_ENTITY)
-        options = _source_attribute_options(self.hass, source)
+        current = self._rule_data.get(CONF_SOURCE_ATTRIBUTE)
+        options = _source_attribute_options(self.hass, source, current)
 
         if user_input is not None:
             source_attribute = (user_input.get(CONF_SOURCE_ATTRIBUTE) or "").strip()
@@ -1023,16 +1040,14 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
             if not errors:
                 self._rule_data[CONF_SOURCE_ATTRIBUTE] = source_attribute
                 return await self.async_step_extras()
-        elif not options and not self._rule_data.get(CONF_SOURCE_ATTRIBUTE):
-            # Source has no listable attributes and nothing stored to fall back on.
-            # custom_value still lets the user type a name; the hint explains why.
+        elif not options:
+            # No live attributes and no stored attribute to inject — nothing to
+            # show in the radio list; surface the hint instead of an empty list.
             errors["base"] = "source_has_no_attributes"
 
         return self.async_show_form(
             step_id="source_attribute_pick",
-            data_schema=_source_attribute_pick_schema(
-                options, self._rule_data.get(CONF_SOURCE_ATTRIBUTE)
-            ),
+            data_schema=_source_attribute_pick_schema(options, current),
             errors=errors,
             description_placeholders={"source": _friendly_name(self.hass, source)},
         )
@@ -1622,7 +1637,8 @@ class EntityGuardOptionsFlow(OptionsFlow):
         one of the source's live attributes (beautified names)."""
         errors: dict[str, str] = {}
         source = self._working.get(CONF_SOURCE_ENTITY)
-        options = _source_attribute_options(self.hass, source)
+        current = self._working.get(CONF_SOURCE_ATTRIBUTE)
+        options = _source_attribute_options(self.hass, source, current)
 
         if user_input is not None:
             source_attribute = (user_input.get(CONF_SOURCE_ATTRIBUTE) or "").strip()
@@ -1630,14 +1646,12 @@ class EntityGuardOptionsFlow(OptionsFlow):
             if not errors:
                 self._working[CONF_SOURCE_ATTRIBUTE] = source_attribute
                 return self._save()
-        elif not options and not self._working.get(CONF_SOURCE_ATTRIBUTE):
+        elif not options:
             errors["base"] = "source_has_no_attributes"
 
         return self.async_show_form(
             step_id="edit_source_attribute_pick",
-            data_schema=_source_attribute_pick_schema(
-                options, self._working.get(CONF_SOURCE_ATTRIBUTE)
-            ),
+            data_schema=_source_attribute_pick_schema(options, current),
             errors=errors,
             description_placeholders={"source": _friendly_name(self.hass, source)},
         )

@@ -143,6 +143,9 @@ def wait_for_attr(
 
 
 FAILS: list[str] = []
+# Every rule entry_id this run creates, so cleanup() can delete them all even on
+# an early exit (memory rule: smoke must clean up its own rules).
+CREATED: list[str] = []
 
 
 def check(name: str, cond: bool, detail: str = "") -> None:
@@ -150,6 +153,64 @@ def check(name: str, cond: bool, detail: str = "") -> None:
     print(f"  [{mark}] {name}" + (f" — {detail}" if detail else ""))
     if not cond:
         FAILS.append(name)
+
+
+def cleanup(token: str) -> None:
+    """Delete every rule entry this run created. Best-effort — a failed delete is
+    logged but never masks the smoke result."""
+    for entry_id in CREATED:
+        try:
+            api(token, "DELETE", f"/api/config/config_entries/entry/{entry_id}")
+            print(f"  cleaned up entry {entry_id}")
+        except Exception as e:
+            print(f"  [WARN] cleanup failed for {entry_id}: {e}")
+
+
+def guard_form(result: dict) -> None:
+    """Fail loudly if a config-flow form came back WITH validation errors.
+
+    Without this, the create loop re-POSTs an empty payload to a re-shown form
+    (e.g. a duplicate rule_name re-shows step 'rule' with errors), which HA then
+    rejects as "required key not provided" — a confusing 400 that hides the real
+    cause. Raise the actual field errors instead."""
+    errors = result.get("errors")
+    if errors:
+        raise RuntimeError(
+            f"flow step '{result.get('step_id')}' returned errors: {errors}"
+        )
+
+
+def wait_for_armed(
+    token: str, mode: str, targets: list[str], timeout: int = 100
+) -> bool:
+    """Wait until THIS run's freshly-created rule (matched by mode AND its unique
+    target set) leaves startup grace and is actually enforcing.
+
+    The engine IGNORES target state events during startup grace
+    (_startup_complete gate, ~60s), so violating the target before grace ends sees
+    no enforcement — a false FAIL. Matching on mode ALONE is not enough: the
+    container has pre-existing DISABLED rules of the same mode whose status reads
+    'disabled' (also not 'starting'), so a mode-only match returns instantly on
+    the wrong rule. Require the target set to match ours AND the status to be a
+    live/enforcing state (armed/conditional/enforcing/cooldown/pending), never
+    disabled/starting. Returns True once ready, False on timeout."""
+    live = {"armed", "conditional", "enforcing", "cooldown", "pending"}
+    want = sorted(targets)
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        for s in api(token, "GET", "/api/states"):
+            eid = s.get("entity_id", "")
+            a = s.get("attributes", {})
+            if (
+                eid.startswith("sensor.")
+                and eid.endswith("_status")
+                and a.get("mode") == mode
+                and sorted(a.get("target_entities") or []) == want
+                and s.get("state") in live
+            ):
+                return True
+        time.sleep(3)
+    return False
 
 
 def create_dynamic_state_rule(
@@ -172,6 +233,7 @@ def create_dynamic_state_rule(
         {"rule_name": name, "target_entities": targets, "mode": "dynamic_state"},
     )
     while result.get("type") == "form":
+        guard_form(result)
         step = result.get("step_id", "")
         if step in ("dynamic_state_params",):
             payload = {"source_entity": source, "follow_invert": invert}
@@ -182,7 +244,9 @@ def create_dynamic_state_rule(
         )
     if result.get("type") != "create_entry":
         raise RuntimeError(f"dynamic_state create flow did not finish: {result}")
-    return result["result"]["entry_id"]
+    entry_id = result["result"]["entry_id"]
+    CREATED.append(entry_id)
+    return entry_id
 
 
 def create_dynamic_attribute_rule(
@@ -211,15 +275,19 @@ def create_dynamic_attribute_rule(
         {"rule_name": name, "target_entities": targets, "mode": "dynamic_attribute"},
     )
     while result.get("type") == "form":
+        guard_form(result)
         step = result.get("step_id", "")
         if step in ("dynamic_attribute_params",):
+            # source_attribute is NOT accepted here — it lives in the separate
+            # source_attribute_pick step reached when source_value_from=attribute.
+            # Sending it here makes HA reject the extra key (400).
             payload = {
                 "source_entity": source,
                 "source_value_from": value_from,
                 "attribute": target_attribute,
             }
-            if source_attribute is not None:
-                payload["source_attribute"] = source_attribute
+        elif step == "source_attribute_pick":
+            payload = {"source_attribute": source_attribute}
         else:
             payload = {}
         result = api(
@@ -227,7 +295,99 @@ def create_dynamic_attribute_rule(
         )
     if result.get("type") != "create_entry":
         raise RuntimeError(f"dynamic_attribute create flow did not finish: {result}")
-    return result["result"]["entry_id"]
+    entry_id = result["result"]["entry_id"]
+    CREATED.append(entry_id)
+    return entry_id
+
+
+def create_fixed_state_rule(
+    token: str,
+    name: str,
+    targets: list[str],
+    target_state: str,
+    trigger_states: list[str],
+) -> str:
+    """Create a fixed_state rule. Returns entry_id.
+
+    Flow: rule(mode=fixed_state) -> state (trigger_states / target_state /
+    delay_seconds) -> extras (skip) -> preview -> create.
+    """
+    flow = api(
+        token, "POST", "/api/config/config_entries/flow", {"handler": "entity_guard"}
+    )
+    flow_id = flow["flow_id"]
+    result = api(
+        token,
+        "POST",
+        f"/api/config/config_entries/flow/{flow_id}",
+        {"rule_name": name, "target_entities": targets, "mode": "fixed_state"},
+    )
+    while result.get("type") == "form":
+        guard_form(result)
+        if result.get("step_id") == "state":
+            payload = {
+                "trigger_states": trigger_states,
+                "target_state": target_state,
+                "delay_seconds": 0,
+            }
+        else:
+            payload = {}  # extras / preview — accept defaults
+        result = api(
+            token, "POST", f"/api/config/config_entries/flow/{flow_id}", payload
+        )
+    if result.get("type") != "create_entry":
+        raise RuntimeError(f"fixed_state create flow did not finish: {result}")
+    entry_id = result["result"]["entry_id"]
+    CREATED.append(entry_id)
+    return entry_id
+
+
+def create_fixed_attribute_rule(
+    token: str,
+    name: str,
+    targets: list[str],
+    attribute: str,
+    target_value: float,
+) -> str:
+    """Create a fixed_attribute rule for a NUMERIC attribute (e.g. brightness).
+
+    Flow: rule(mode=fixed_attribute) -> attribute (pick attribute) ->
+    attribute_params (operator / threshold / target_value / delay_seconds) ->
+    extras (skip) -> preview -> create. Numeric attrs require operator+threshold
+    (the "clamp" model); we use gt 0 so any on-value is driven to target_value.
+    """
+    flow = api(
+        token, "POST", "/api/config/config_entries/flow", {"handler": "entity_guard"}
+    )
+    flow_id = flow["flow_id"]
+    result = api(
+        token,
+        "POST",
+        f"/api/config/config_entries/flow/{flow_id}",
+        {"rule_name": name, "target_entities": targets, "mode": "fixed_attribute"},
+    )
+    while result.get("type") == "form":
+        guard_form(result)
+        step = result.get("step_id")
+        if step == "attribute":
+            payload = {"attribute": attribute}
+        elif step == "attribute_params":
+            payload = {
+                "operator": "gt",
+                "threshold": 0,
+                "target_value": target_value,
+                "delay_seconds": 0,
+            }
+        else:
+            payload = {}  # extras / preview — accept defaults
+        result = api(
+            token, "POST", f"/api/config/config_entries/flow/{flow_id}", payload
+        )
+    if result.get("type") != "create_entry":
+        raise RuntimeError(f"fixed_attribute create flow did not finish: {result}")
+    entry_id = result["result"]["entry_id"]
+    CREATED.append(entry_id)
+    return entry_id
 
 
 def main() -> int:
@@ -424,6 +584,62 @@ def main() -> int:
             f"target brightness={get_state(token, ATTR_TARGET).get('attributes', {}).get('brightness')}",
         )
 
+    # Delete the dynamic-mode rules now so the fixed-mode rules below own their
+    # targets outright (only two actuatable lights exist; overlapping rules on the
+    # same target would race each other and make the fixed assertions flaky).
+    cleanup(token)
+    CREATED.clear()
+
+    # --- fixed_state: a non-target state is clamped back to target_state --
+    print("Creating fixed_state rule…")
+    try:
+        create_fixed_state_rule(
+            token,
+            "EG Smoke Fixed State",
+            [TARGET],
+            target_state="off",
+            trigger_states=["on"],
+        )
+        armed = wait_for_armed(token, "fixed_state", [TARGET])
+        check("fixed_state: rule armed past startup grace", armed)
+        actuate_target(token, "on")  # violate: target must be driven back to off
+        check(
+            "fixed_state: 'on' violation clamped back to target 'off'",
+            wait_for_state(token, TARGET, "off", timeout=20),
+            f"target={get_state(token, TARGET).get('state')}",
+        )
+    except Exception as e:
+        check("fixed_state: create+enforce", False, str(e))
+    cleanup(token)
+    CREATED.clear()
+
+    # --- fixed_attribute: brightness clamped to a fixed target_value ------
+    print("Creating fixed_attribute rule…")
+    try:
+        create_fixed_attribute_rule(
+            token,
+            "EG Smoke Fixed Attribute",
+            [ATTR_TARGET],
+            attribute="brightness",
+            target_value=180,
+        )
+        armed = wait_for_armed(token, "fixed_attribute", [ATTR_TARGET])
+        check("fixed_attribute: rule armed past startup grace", armed)
+        # Drive target to a different brightness; the rule must clamp it to 180.
+        api(
+            token,
+            "POST",
+            "/api/services/light/turn_on",
+            {"entity_id": ATTR_TARGET, "brightness": 50},
+        )
+        check(
+            "fixed_attribute: brightness clamped to fixed target 180",
+            wait_for_attr(token, ATTR_TARGET, "brightness", 180, timeout=20),
+            f"target brightness={get_state(token, ATTR_TARGET).get('attributes', {}).get('brightness')}",
+        )
+    except Exception as e:
+        check("fixed_attribute: create+enforce", False, str(e))
+
     print()
     if FAILS:
         print(f"SMOKE RESULT: {len(FAILS)} FAILED — {', '.join(FAILS)}")
@@ -435,4 +651,14 @@ def main() -> int:
 if __name__ == "__main__":
     import sys
 
-    sys.exit(main())
+    try:
+        rc = main()
+    finally:
+        # Last-ditch: if main() threw after creating rules, delete whatever is
+        # still tracked so a crashed run never leaves smoke rules behind.
+        if CREATED:
+            try:
+                cleanup(mint_token())
+            except Exception as e:
+                print(f"  [WARN] final cleanup failed: {e}")
+    sys.exit(rc)

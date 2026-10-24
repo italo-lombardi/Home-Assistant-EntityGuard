@@ -230,16 +230,30 @@ def test_source_attribute_options_label_has_no_value_even_when_none(
     assert "None" not in opt["label"] and "(" not in opt["label"]
 
 
-def test_pick_schema_is_dropdown_mode():
-    # DROPDOWN mode so HA shows the beautified label collapsed, not the raw value.
+def test_pick_schema_is_list_mode():
+    # LIST (radio) mode; NO custom_value (HA ignores LIST when custom_value is set).
     from custom_components.entity_guard.config_flow import _source_attribute_pick_schema
 
     schema = _source_attribute_pick_schema(
         [selector.SelectOptionDict(value="brightness", label="Brightness")], None
     )
     for _key, v in schema.schema.items():
-        assert v.config["mode"] == selector.SelectSelectorMode.DROPDOWN
-        assert v.config["custom_value"] is True
+        assert v.config["mode"] == selector.SelectSelectorMode.LIST
+        assert v.config.get("custom_value", False) is False
+
+
+def test_source_attribute_options_injects_offline_stored(hass: HomeAssistant):
+    # Offline source (no state) + a stored attr → injected as a synthetic option.
+    opts = _source_attribute_options(hass, "sensor.offline", current="battery_level")
+    assert [o["value"] for o in opts] == ["battery_level"]
+    assert opts[0]["label"] == "Battery level"
+
+
+def test_source_attribute_options_no_duplicate_when_live(hass: HomeAssistant):
+    # Stored attr already live → not injected twice.
+    hass.states.async_set("sensor.s", "1", {"battery_level": 80})
+    opts = _source_attribute_options(hass, "sensor.s", current="battery_level")
+    assert [o["value"] for o in opts].count("battery_level") == 1
 
 
 async def test_pick_description_uses_friendly_name(hass: HomeAssistant):
@@ -434,20 +448,21 @@ async def test_create_dynamic_state_from_attribute_two_step(hass: HomeAssistant)
     assert cfg.source_attribute == "battery_level"
 
 
-async def test_create_dynamic_state_pick_requires_choice(hass: HomeAssistant):
+async def test_pick_requires_choice_handler(hass: HomeAssistant):
+    # With LIST + no custom_value, a blank submission is schema-rejected before the
+    # handler, so the source_attribute_required branch is form-unreachable — drive
+    # the handler directly to cover the backstop validation.
+    from custom_components.entity_guard.config_flow import EntityGuardConfigFlow
+
     hass.states.async_set("sensor.lux", "on", {"battery_level": 80})
-    res = await _begin(hass, "DynStatePickBad", MODE_DYNAMIC_STATE)
-    res = await hass.config_entries.flow.async_configure(
-        res["flow_id"],
-        {
-            CONF_SOURCE_ENTITY: "sensor.lux",
-            CONF_FOLLOW_INVERT: False,
-            CONF_SOURCE_VALUE_FROM: SOURCE_VALUE_FROM_ATTRIBUTE,
-        },
-    )
-    res = await hass.config_entries.flow.async_configure(
-        res["flow_id"], {CONF_SOURCE_ATTRIBUTE: "  "}
-    )
+    flow = EntityGuardConfigFlow()
+    flow.hass = hass
+    flow._rule_data = {
+        CONF_TARGET_ENTITIES: ["light.bedroom"],
+        CONF_MODE: MODE_DYNAMIC_STATE,
+        CONF_SOURCE_ENTITY: "sensor.lux",
+    }
+    res = await flow.async_step_source_attribute_pick({CONF_SOURCE_ATTRIBUTE: "  "})
     assert res["step_id"] == "source_attribute_pick"
     assert res["errors"][CONF_SOURCE_ATTRIBUTE] == "source_attribute_required"
 
@@ -610,9 +625,15 @@ async def test_options_edit_dynamic_state_offline_source_preserves_attr(
             CONF_SOURCE_VALUE_FROM: SOURCE_VALUE_FROM_ATTRIBUTE,
         },
     )
-    # Pick step opens with no error (stored battery_level falls back via custom_value).
+    # Pick step opens with no error; the stored battery_level is injected as a
+    # synthetic LIST option (source offline → no live attrs), so it stays
+    # selectable/preselected without custom_value.
     assert res["step_id"] == "edit_source_attribute_pick"
     assert res["errors"] in (None, {})
+    opts = res["data_schema"].schema
+    # The schema's one field offers battery_level as an option.
+    for _k, v in opts.items():
+        assert any(o["value"] == "battery_level" for o in v.config["options"])
     res = await hass.config_entries.options.async_configure(
         res["flow_id"], {CONF_SOURCE_ATTRIBUTE: "battery_level"}
     )

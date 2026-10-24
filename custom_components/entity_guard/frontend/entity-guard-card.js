@@ -502,6 +502,7 @@ class EntityGuardCard extends LitElement {
       followInvert: false,
       followDesiredOn: null,
       followAttribute: null,
+      attributeDesiredValue: null,
     };
 
     const entities = this.hass.entities || {};
@@ -553,6 +554,8 @@ class EntityGuardCard extends LitElement {
     out.followInvert = statusEntity?.attributes?.follow_invert ?? false;
     out.followDesiredOn = statusEntity?.attributes?.follow_desired_on ?? null;
     out.followAttribute = statusEntity?.attributes?.attribute ?? null;
+    out.attributeDesiredValue =
+      statusEntity?.attributes?.attribute_desired_value ?? null;
 
     return out;
   }
@@ -840,6 +843,72 @@ class EntityGuardCard extends LitElement {
         </div>`,
       });
     }
+    // Tracked attribute — shown for attribute modes (fixed_attribute /
+    // dynamic_attribute). Beautified name ("Brightness"). Clickable: opens the
+    // more-info of the entity the attribute lives on — the source entity for
+    // dynamic, the first bound target for fixed.
+    if (
+      (a.mode === "fixed_attribute" || a.mode === "dynamic_attribute") &&
+      a.attribute
+    ) {
+      const attrEntity =
+        a.mode === "dynamic_attribute"
+          ? a.source_entity
+          : (a.target_entities || [])[0];
+      const attrName = this._attributeDisplayName(a.attribute);
+      rows.push({
+        label: "Tracked attribute",
+        tpl: attrEntity
+          ? html`<div
+              class="row"
+              role="button"
+              tabindex="0"
+              style="cursor:pointer"
+              @click=${(e) => this._handleEntityClick(e, attrEntity)}
+              @keydown=${(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  this._handleEntityClick(e, attrEntity);
+                }
+              }}
+            >
+              <span class="label">Tracked attribute</span>
+              <span class="value" title="${attrEntity}">${attrName}</span>
+            </div>`
+          : html`<div class="row">
+              <span class="label">Tracked attribute</span>
+              <span class="value">${attrName}</span>
+            </div>`,
+      });
+    }
+    // Mode row — shown for ALL rules (authoritative from the engine, not the
+    // user-typed rule title). Distinguishes fixed vs dynamic at a glance.
+    const MODE_LABELS = {
+      fixed_state: "Fixed state",
+      fixed_attribute: "Fixed attribute",
+      dynamic_state: "Dynamic state",
+      dynamic_attribute: "Dynamic attribute",
+    };
+    if (a.mode) {
+      rows.push({
+        label: "Mode",
+        tpl: html`<div class="row">
+          <span class="label">Mode</span>
+          <span class="value">${MODE_LABELS[a.mode] || a.mode}</span>
+        </div>`,
+      });
+    }
+    // Invert — dynamic_state only, shown ONLY when invert is ON (hidden when off,
+    // since "mirror" is the default/implied behavior).
+    if (a.mode === "dynamic_state" && a.follow_invert) {
+      rows.push({
+        label: "Invert",
+        tpl: html`<div class="row">
+          <span class="label">Invert</span>
+          <span class="value">On</span>
+        </div>`,
+      });
+    }
     if (a.delay_seconds != null) {
       rows.push({
         label: "Delay",
@@ -889,7 +958,11 @@ class EntityGuardCard extends LitElement {
     const triggerStates = refs.triggerStates;
     const isDynamic =
       refs.mode === "dynamic_state" || refs.mode === "dynamic_attribute";
-    const desiredOn = refs.followDesiredOn; // dynamic only: true | false | null
+    const isAttributeMode =
+      refs.mode === "fixed_attribute" || refs.mode === "dynamic_attribute";
+    const desiredOn = refs.followDesiredOn; // dynamic_state only: true|false|null
+    const attr = refs.followAttribute; // attribute modes: the enforced attribute
+    const attrDesired = refs.attributeDesiredValue; // attribute modes: desired value (null=unavailable)
     const statusEntity = refs.status ? this.hass.states[refs.status] : null;
     const status = statusEntity?.state;
     const pendingDue = statusEntity?.attributes?.pending_enforcement_due ?? {};
@@ -902,15 +975,73 @@ class EntityGuardCard extends LitElement {
           const name = st?.attributes?.friendly_name || id;
           const state = st ? st.state : "unknown";
           const displayState = this._formatStateDisplay(st, state);
-          // Fixed modes: compliance = state not in trigger states, target from config.
-          // Dynamic modes: compliance = target's on/off matches the live source-derived
-          // desired (follow_desired_on); null desired (source offline) → neutral/compliant.
+
+          // Attribute modes (fixed_attribute / dynamic_attribute): TWO lines.
+          // We track the ATTRIBUTE, not the state — so line 1 shows the entity's
+          // own state PLAIN (no ✓/⚠), and line 2 is the tracked attribute sub-row
+          // "↳ <Attribute>: <current> → <desired>" carrying the ✓/⚠. Desired
+          // unavailable (dynamic source offline / attr missing) → "holding".
+          if (isAttributeMode && attr) {
+            const curVal = st?.attributes?.[attr];
+            const holding = attrDesired === null || attrDesired === undefined;
+            const match = !holding && this._attrValuesMatch(curVal, attrDesired);
+            const curTxt = curVal === null || curVal === undefined ? "—" : curVal;
+            const attrLabel = this._attributeDisplayName(attr);
+            return html`
+              <div
+                class="entity-row"
+                role="button"
+                tabindex="0"
+                @click=${(e) => this._handleEntityClick(e, id)}
+                @keydown=${(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    this._handleEntityClick(e, id);
+                  }
+                }}
+              >
+                <span class="entity-name" title="${id}">${name}</span>
+                <span class="entity-state">${displayState}</span>
+              </div>
+              <div
+                style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:0 0 4px 0;margin-left:14px"
+              >
+                <span style="color:var(--secondary-text-color,#888)"
+                  >↳ ${attrLabel}</span
+                >
+                ${holding
+                  ? html`<span style="color:var(--secondary-text-color,#888)"
+                      >${curVal === null || curVal === undefined
+                        ? "n/a"
+                        : curVal}
+                      · no source value</span
+                    >`
+                  : match
+                    ? html`<span
+                        ><span style="color:var(--secondary-text-color,#888)"
+                          >${curTxt}</span
+                        >
+                        <span style="color:var(--success-color,#4caf50)">✓</span></span
+                      >`
+                    : html`<span style="color:var(--warning-color,#ff9800)"
+                        >${curTxt} → ${attrDesired} ⚠</span
+                      >`}
+              </div>
+            `;
+          }
+
+          // State modes. Fixed: compliance = state not in trigger states, target
+          // from config. Dynamic state: compliance = on/off matches the live
+          // source-derived desired; null desired (source offline) → neutral.
           let compliant;
           let displayTarget;
           if (isDynamic) {
             compliant =
               desiredOn === null || this._followLooksOn(state) === desiredOn;
-            displayTarget = desiredOn ? "on" : "off";
+            displayTarget = this._formatHypotheticalState(
+              id,
+              desiredOn ? "on" : "off",
+            );
           } else {
             compliant = !triggerStates || !triggerStates.includes(state);
             displayTarget = this._formatHypotheticalState(id, refs.targetState);
@@ -955,6 +1086,18 @@ class EntityGuardCard extends LitElement {
     `;
   }
 
+  // Loose value match for attribute display compliance — numeric-aware (so
+  // "50"==50) with a string fallback. Display-only; the engine is authoritative.
+  _attrValuesMatch(a, b) {
+    if (a === null || a === undefined || b === null || b === undefined) {
+      return false;
+    }
+    const na = parseFloat(a);
+    const nb = parseFloat(b);
+    if (!isNaN(na) && !isNaN(nb)) return na === nb;
+    return String(a) === String(b);
+  }
+
   // Display-only on/off heuristic for follow targets. Mirrors the backend
   // FOLLOW_ON_STATES set (const.py) — keep the two in sync; the backend stays
   // authoritative for enforcement, this only drives the ✓/⚠ hint.
@@ -971,6 +1114,24 @@ class EntityGuardCard extends LitElement {
       "true",
       "1",
     ].includes(state);
+  }
+
+  // Beautified attribute label — mirrors const.ATTRIBUTE_DISPLAY_NAMES /
+  // strings.json selector.attribute.options; prettified fallback for anything
+  // outside the known set.
+  _attributeDisplayName(name) {
+    const known = {
+      brightness: "Brightness",
+      volume_level: "Volume level",
+      temperature: "Temperature",
+      percentage: "Percentage",
+      rgb_color: "RGB color",
+      color_temp_kelvin: "Color temperature (Kelvin)",
+    };
+    if (known[name]) return known[name];
+    if (!name) return name;
+    const s = name.replace(/_/g, " ");
+    return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
   _renderConditions(refs) {
