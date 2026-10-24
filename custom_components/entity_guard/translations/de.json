@@ -108,6 +108,48 @@
           "target_value": "Wert, auf den das Attribut gesetzt wird, wenn die Regel auslöst.",
           "delay_seconds": "Wartezeit nach einem Auslöser, bevor durchgesetzt wird. 0 = sofort. Max. 86400 (24 Std.)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Dynamischer Status",
+        "description": "Der An/Aus-Status des Ziels folgt einer Quellentität (z. B. eine Lampe, die einem Bewegungsmelder folgt).",
+        "data": {
+          "source_entity": "Quellentität",
+          "follow_invert": "Status invertieren",
+          "source_value_from": "Wert lesen aus",
+          "delay_seconds": "Verzögerung (Sekunden)"
+        },
+        "data_description": {
+          "source_entity": "Die Entität, der die Ziele folgen. Darf keine der Zielentitäten sein.",
+          "follow_invert": "Aus = spiegeln (Quelle an → Ziel an). An = invertieren (Quelle an → Ziel aus).",
+          "source_value_from": "Ob der Status der Quelle oder eines ihrer Attribute gelesen wird.",
+          "delay_seconds": "Wartezeit nach einem Auslöser, bevor durchgesetzt wird. 0 = sofort. Max. 86400 (24 Std.)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Dynamisches Attribut",
+        "description": "Ein Zielattribut wird gleich einem aktuellen Wert gehalten, der aus einer Quellentität gelesen wird (z. B. die Helligkeit einer Lampe, die einer anderen Lampe folgt). Der Wert wird unverändert übernommen, solange das Ziel eingeschaltet ist.",
+        "data": {
+          "source_entity": "Quellentität",
+          "source_value_from": "Wert lesen aus",
+          "attribute": "Zielattribut",
+          "delay_seconds": "Verzögerung (Sekunden)"
+        },
+        "data_description": {
+          "source_entity": "Die Entität, aus der der aktuelle Wert gelesen wird. Darf keine der Zielentitäten sein.",
+          "source_value_from": "Ob der Status der Quelle oder eines ihrer Attribute gelesen wird.",
+          "attribute": "Das auf dem Ziel gesetzte Attribut. Sein Wert wird unverändert von der Quelle übernommen, solange das Ziel eingeschaltet ist; stelle sicher, dass der Quellwert zum Wertebereich dieses Attributs passt.",
+          "delay_seconds": "Wartezeit nach einem Auslöser, bevor durchgesetzt wird. 0 = sofort. Max. 86400 (24 Std.)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Quellattribut auswählen",
+        "description": "Wähle aus, welches Attribut von {source} gelesen werden soll. Jede Option zeigt den aktuellen Wert des Attributs.",
+        "data": {
+          "source_attribute": "Quellattribut"
+        },
+        "data_description": {
+          "source_attribute": "Das Quellattribut, dessen aktueller Wert gelesen wird. Nur der Attributname wird gespeichert; der angezeigte Wert ist lediglich eine aktuelle Vorschau."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Du musst das Sicherheitsrisiko bestätigen, um fortzufahren.",
       "name_already_exists": "Eine Regel mit diesem Namen existiert bereits.",
       "invalid_rgb_color": "RGB-Farbe muss eine Liste mit drei Werten zwischen 0 und 255 sein.",
-      "invalid_color_temp_kelvin": "Die Farbtemperatur muss zwischen 2000 K und 6500 K liegen."
+      "invalid_color_temp_kelvin": "Die Farbtemperatur muss zwischen 2000 K und 6500 K liegen.",
+      "empty_source_entity": "Wähle eine Quellentität aus, der das Ziel folgen soll.",
+      "source_in_targets": "Die Quellentität darf nicht zugleich ein Ziel sein. Wähle eine andere Quelle.",
+      "attribute_invalid_for_target": "Dieses Attribut wird von keiner der Domänen der Zielentitäten unterstützt.",
+      "source_attribute_required": "Wähle das zu lesende Quellattribut aus oder setze „Wert lesen aus“ auf Status.",
+      "source_has_no_attributes": "Die Quellentität hat keine lesbaren Attribute. Gib einen Attributnamen ein oder gehe zurück und lies stattdessen den Status."
     },
     "abort": {
       "single_instance_allowed": "Es kann nur ein Entity Guard-Hub konfiguriert werden.",
@@ -212,6 +259,48 @@
           "target_value": "Zielwert",
           "delay_seconds": "Verzögerung (Sekunden)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Dynamischen Status bearbeiten",
+        "description": "Der An/Aus-Status des Ziels folgt einer Quellentität (z. B. eine Lampe, die einem Bewegungsmelder folgt).",
+        "data": {
+          "source_entity": "Quellentität",
+          "follow_invert": "Status invertieren",
+          "source_value_from": "Wert lesen aus",
+          "delay_seconds": "Verzögerung (Sekunden)"
+        },
+        "data_description": {
+          "source_entity": "Die Entität, der die Ziele folgen. Darf keine der Zielentitäten sein.",
+          "follow_invert": "Aus = spiegeln (Quelle an → Ziel an). An = invertieren (Quelle an → Ziel aus).",
+          "source_value_from": "Ob der Status der Quelle oder eines ihrer Attribute gelesen wird.",
+          "delay_seconds": "Wartezeit nach einem Auslöser, bevor durchgesetzt wird. 0 = sofort. Max. 86400 (24 Std.)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Dynamisches Attribut bearbeiten",
+        "description": "Ein Zielattribut wird gleich einem aktuellen Wert gehalten, der aus einer Quellentität gelesen wird (z. B. die Helligkeit einer Lampe, die einer anderen Lampe folgt). Der Wert wird unverändert übernommen, solange das Ziel eingeschaltet ist.",
+        "data": {
+          "source_entity": "Quellentität",
+          "source_value_from": "Wert lesen aus",
+          "attribute": "Zielattribut",
+          "delay_seconds": "Verzögerung (Sekunden)"
+        },
+        "data_description": {
+          "source_entity": "Die Entität, aus der der aktuelle Wert gelesen wird. Darf keine der Zielentitäten sein.",
+          "source_value_from": "Ob der Status der Quelle oder eines ihrer Attribute gelesen wird.",
+          "attribute": "Das auf dem Ziel gesetzte Attribut. Sein Wert wird unverändert von der Quelle übernommen, solange das Ziel eingeschaltet ist; stelle sicher, dass der Quellwert zum Wertebereich dieses Attributs passt.",
+          "delay_seconds": "Wartezeit nach einem Auslöser, bevor durchgesetzt wird. 0 = sofort. Max. 86400 (24 Std.)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Quellattribut bearbeiten",
+        "description": "Wähle aus, welches Attribut von {source} gelesen werden soll. Jede Option zeigt den aktuellen Wert des Attributs.",
+        "data": {
+          "source_attribute": "Quellattribut"
+        },
+        "data_description": {
+          "source_attribute": "Das Quellattribut, dessen aktueller Wert gelesen wird. Nur der Attributname wird gespeichert; der angezeigte Wert ist lediglich eine aktuelle Vorschau."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Du musst das Sicherheitsrisiko bestätigen, um fortzufahren.",
       "name_already_exists": "Eine Regel mit diesem Namen existiert bereits.",
       "invalid_rgb_color": "RGB-Farbe muss eine Liste mit drei Werten zwischen 0 und 255 sein.",
-      "invalid_color_temp_kelvin": "Die Farbtemperatur muss zwischen 2000 K und 6500 K liegen."
+      "invalid_color_temp_kelvin": "Die Farbtemperatur muss zwischen 2000 K und 6500 K liegen.",
+      "empty_source_entity": "Wähle eine Quellentität aus, der das Ziel folgen soll.",
+      "source_in_targets": "Die Quellentität darf nicht zugleich ein Ziel sein. Wähle eine andere Quelle.",
+      "attribute_invalid_for_target": "Dieses Attribut wird von keiner der Domänen der Zielentitäten unterstützt.",
+      "source_attribute_required": "Wähle das zu lesende Quellattribut aus oder setze „Wert lesen aus“ auf Status.",
+      "source_has_no_attributes": "Die Quellentität hat keine lesbaren Attribute. Gib einen Attributnamen ein oder gehe zurück und lies stattdessen den Status."
     },
     "abort": {
       "name_already_exists": "Eine Regel mit diesem Namen existiert bereits.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Status",
-        "attribute": "Attribut"
+        "fixed_state": "Fester Status",
+        "fixed_attribute": "Festes Attribut",
+        "dynamic_state": "Dynamischer Status (Folgemodus)",
+        "dynamic_attribute": "Dynamisches Attribut (Folgemodus)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Flag hinzufügen",
         "replace": "Alle Flags ersetzen",
         "clear": "Alle Flags löschen"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Status",
+        "attribute": "Attribut"
       }
     }
   },

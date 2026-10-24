@@ -108,6 +108,48 @@
           "target_value": "Taikoma reikšmė. Skaitiniai atributai apribojami iki šios reikšmės; spalvų atributai turi ją atitikti.",
           "delay_seconds": "Palaukite tiek laiko po aktyvinimo prieš taikydami. 0 = iškart. Daugiausia 86400 (24 val.)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Dinaminė būsena",
+        "description": "Tikslo įjungta/išjungta būsena seka šaltinio esybę (pvz., šviestuvas, sekantis judesio jutiklį).",
+        "data": {
+          "source_entity": "Šaltinio esybė",
+          "follow_invert": "Apversti būseną",
+          "source_value_from": "Reikšmę nuskaityti iš",
+          "delay_seconds": "Delsimas (sekundės)"
+        },
+        "data_description": {
+          "source_entity": "Esybė, kurią seka tikslai. Negali būti viena iš tikslinių esybių.",
+          "follow_invert": "Išjungta = atkartoti (šaltinis įjungtas → tikslas įjungtas). Įjungta = apversti (šaltinis įjungtas → tikslas išjungtas).",
+          "source_value_from": "Ar nuskaityti šaltinio būseną, ar vieną iš jo atributų.",
+          "delay_seconds": "Palaukite tiek laiko po aktyvinimo prieš taikydami. 0 = iškart. Daugiausia 86400 (24 val.)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Dinaminis atributas",
+        "description": "Tikslo atributas palaikomas lygus tiesioginei reikšmei, nuskaitomai iš šaltinio esybės (pvz., šviestuvo ryškumas, sekantis kitą šviestuvą). Reikšmė kopijuojama tokia, kokia yra, kol tikslas yra įjungtas.",
+        "data": {
+          "source_entity": "Šaltinio esybė",
+          "source_value_from": "Reikšmę nuskaityti iš",
+          "attribute": "Tikslinis atributas",
+          "delay_seconds": "Delsimas (sekundės)"
+        },
+        "data_description": {
+          "source_entity": "Esybė, iš kurios nuskaitoma tiesioginė reikšmė. Negali būti viena iš tikslinių esybių.",
+          "source_value_from": "Ar nuskaityti šaltinio būseną, ar vieną iš jo atributų.",
+          "attribute": "Tiksle nustatomas atributas. Jo reikšmė pažodžiui kopijuojama iš šaltinio, kol tikslas yra įjungtas; įsitikinkite, kad šaltinio reikšmė telpa į šio atributo ribas.",
+          "delay_seconds": "Palaukite tiek laiko po aktyvinimo prieš taikydami. 0 = iškart. Daugiausia 86400 (24 val.)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Pasirinkite šaltinio atributą",
+        "description": "Pasirinkite, kurį {source} atributą nuskaityti. Kiekviena parinktis rodo dabartinę atributo reikšmę.",
+        "data": {
+          "source_attribute": "Šaltinio atributas"
+        },
+        "data_description": {
+          "source_attribute": "Šaltinio atributas, kurio tiesioginė reikšmė nuskaitoma. Įrašomas tik atributo pavadinimas; rodoma reikšmė yra tik dabartinė peržiūra."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Kad tęstumėte, turite patvirtinti saugos riziką.",
       "name_already_exists": "Taisyklė tokiu pavadinimu jau egzistuoja.",
       "invalid_rgb_color": "RGB spalva turi būti trijų reikšmių nuo 0 iki 255 sąrašas.",
-      "invalid_color_temp_kelvin": "Spalvos temperatūra turi būti nuo 2000 K iki 6500 K."
+      "invalid_color_temp_kelvin": "Spalvos temperatūra turi būti nuo 2000 K iki 6500 K.",
+      "empty_source_entity": "Pasirinkite šaltinio esybę, kurią seks tikslas.",
+      "source_in_targets": "Šaltinio esybė negali būti ir tikslas. Pasirinkite kitą šaltinį.",
+      "attribute_invalid_for_target": "Šio atributo nepalaiko nė vienos tikslinės esybės sritis.",
+      "source_attribute_required": "Pasirinkite šaltinio atributą, kurį nuskaityti, arba nustatykite „Reikšmę nuskaityti iš“ į Būseną.",
+      "source_has_no_attributes": "Šaltinio esybė neturi atributų, kuriuos būtų galima nuskaityti. Įveskite atributo pavadinimą arba grįžkite atgal ir nuskaitykite būseną."
     },
     "abort": {
       "single_instance_allowed": "Galima sukonfigūruoti tik vieną Entity Guard mazgą.",
@@ -212,6 +259,48 @@
           "target_value": "Tikslinė reikšmė",
           "delay_seconds": "Delsimas (sekundės)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Redaguoti dinaminę būseną",
+        "description": "Tikslo įjungta/išjungta būsena seka šaltinio esybę (pvz., šviestuvas, sekantis judesio jutiklį).",
+        "data": {
+          "source_entity": "Šaltinio esybė",
+          "follow_invert": "Apversti būseną",
+          "source_value_from": "Reikšmę nuskaityti iš",
+          "delay_seconds": "Delsimas (sekundės)"
+        },
+        "data_description": {
+          "source_entity": "Esybė, kurią seka tikslai. Negali būti viena iš tikslinių esybių.",
+          "follow_invert": "Išjungta = atkartoti (šaltinis įjungtas → tikslas įjungtas). Įjungta = apversti (šaltinis įjungtas → tikslas išjungtas).",
+          "source_value_from": "Ar nuskaityti šaltinio būseną, ar vieną iš jo atributų.",
+          "delay_seconds": "Palaukite tiek laiko po aktyvinimo prieš taikydami. 0 = iškart. Daugiausia 86400 (24 val.)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Redaguoti dinaminį atributą",
+        "description": "Tikslo atributas palaikomas lygus tiesioginei reikšmei, nuskaitomai iš šaltinio esybės (pvz., šviestuvo ryškumas, sekantis kitą šviestuvą). Reikšmė kopijuojama tokia, kokia yra, kol tikslas yra įjungtas.",
+        "data": {
+          "source_entity": "Šaltinio esybė",
+          "source_value_from": "Reikšmę nuskaityti iš",
+          "attribute": "Tikslinis atributas",
+          "delay_seconds": "Delsimas (sekundės)"
+        },
+        "data_description": {
+          "source_entity": "Esybė, iš kurios nuskaitoma tiesioginė reikšmė. Negali būti viena iš tikslinių esybių.",
+          "source_value_from": "Ar nuskaityti šaltinio būseną, ar vieną iš jo atributų.",
+          "attribute": "Tiksle nustatomas atributas. Jo reikšmė pažodžiui kopijuojama iš šaltinio, kol tikslas yra įjungtas; įsitikinkite, kad šaltinio reikšmė telpa į šio atributo ribas.",
+          "delay_seconds": "Palaukite tiek laiko po aktyvinimo prieš taikydami. 0 = iškart. Daugiausia 86400 (24 val.)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Redaguoti šaltinio atributą",
+        "description": "Pasirinkite, kurį {source} atributą nuskaityti. Kiekviena parinktis rodo dabartinę atributo reikšmę.",
+        "data": {
+          "source_attribute": "Šaltinio atributas"
+        },
+        "data_description": {
+          "source_attribute": "Šaltinio atributas, kurio tiesioginė reikšmė nuskaitoma. Įrašomas tik atributo pavadinimas; rodoma reikšmė yra tik dabartinė peržiūra."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Kad tęstumėte, turite patvirtinti saugos riziką.",
       "name_already_exists": "Taisyklė tokiu pavadinimu jau egzistuoja.",
       "invalid_rgb_color": "RGB spalva turi būti trijų reikšmių nuo 0 iki 255 sąrašas.",
-      "invalid_color_temp_kelvin": "Spalvos temperatūra turi būti nuo 2000 K iki 6500 K."
+      "invalid_color_temp_kelvin": "Spalvos temperatūra turi būti nuo 2000 K iki 6500 K.",
+      "empty_source_entity": "Pasirinkite šaltinio esybę, kurią seks tikslas.",
+      "source_in_targets": "Šaltinio esybė negali būti ir tikslas. Pasirinkite kitą šaltinį.",
+      "attribute_invalid_for_target": "Šio atributo nepalaiko nė vienos tikslinės esybės sritis.",
+      "source_attribute_required": "Pasirinkite šaltinio atributą, kurį nuskaityti, arba nustatykite „Reikšmę nuskaityti iš“ į Būseną.",
+      "source_has_no_attributes": "Šaltinio esybė neturi atributų, kuriuos būtų galima nuskaityti. Įveskite atributo pavadinimą arba grįžkite atgal ir nuskaitykite būseną."
     },
     "abort": {
       "name_already_exists": "Taisyklė tokiu pavadinimu jau egzistuoja.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Būsena",
-        "attribute": "Atributas"
+        "fixed_state": "Fiksuota būsena",
+        "fixed_attribute": "Fiksuotas atributas",
+        "dynamic_state": "Dinaminė būsena (Sekimo režimas)",
+        "dynamic_attribute": "Dinaminis atributas (Sekimo režimas)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Pridėti vėliavą",
         "replace": "Pakeisti visas vėliavas",
         "clear": "Išvalyti visas vėliavas"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Būsena",
+        "attribute": "Atributas"
       }
     }
   },

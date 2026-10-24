@@ -1,5 +1,5 @@
 /**
- * Entity Guard Card v0.3.1
+ * Entity Guard Card v0.4.0
  * Custom Lovelace card for the Home Assistant Entity Guard integration.
  *
  * Config:
@@ -8,7 +8,7 @@
  *   title: <optional override>
  */
 
-const CARD_VERSION = "0.3.1";
+const CARD_VERSION = "0.4.0";
 
 console.info(
   `%c ENTITY-GUARD-CARD %c v${CARD_VERSION} %c — github.com/italo-lombardi `,
@@ -497,6 +497,11 @@ class EntityGuardCard extends LitElement {
       bound: [],
       targetState: null,
       triggerStates: null,
+      mode: null,
+      sourceEntity: null,
+      followInvert: false,
+      followDesiredOn: null,
+      followAttribute: null,
     };
 
     const entities = this.hass.entities || {};
@@ -542,6 +547,12 @@ class EntityGuardCard extends LitElement {
     }
     out.targetState = statusEntity?.attributes?.target_state ?? null;
     out.triggerStates = statusEntity?.attributes?.trigger_states ?? null;
+    // Follow mode (additive; absent for state/attribute rules → all null/false).
+    out.mode = statusEntity?.attributes?.mode ?? null;
+    out.sourceEntity = statusEntity?.attributes?.source_entity ?? null;
+    out.followInvert = statusEntity?.attributes?.follow_invert ?? false;
+    out.followDesiredOn = statusEntity?.attributes?.follow_desired_on ?? null;
+    out.followAttribute = statusEntity?.attributes?.attribute ?? null;
 
     return out;
   }
@@ -800,37 +811,75 @@ class EntityGuardCard extends LitElement {
   _renderConfig(refs) {
     const statusEntity = refs.status ? this.hass.states[refs.status] : null;
     const a = statusEntity?.attributes ?? {};
+    // Rows are collected with a sort key and rendered alphabetically by label so
+    // the order is stable regardless of which fields a given mode exposes.
     const rows = [];
+    // Dynamic (follow) rules expose source_entity — show it as a clickable row
+    // (friendly name) that opens the source entity's more-info dialog.
+    if (a.source_entity) {
+      const srcId = a.source_entity;
+      const srcName =
+        this.hass.states[srcId]?.attributes?.friendly_name || srcId;
+      rows.push({
+        label: "Source entity",
+        tpl: html`<div
+          class="row"
+          role="button"
+          tabindex="0"
+          style="cursor:pointer"
+          @click=${(e) => this._handleEntityClick(e, srcId)}
+          @keydown=${(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              this._handleEntityClick(e, srcId);
+            }
+          }}
+        >
+          <span class="label">Source entity</span>
+          <span class="value" title="${srcId}">${srcName}</span>
+        </div>`,
+      });
+    }
     if (a.delay_seconds != null) {
-      rows.push(html`<div class="row">
-        <span class="label">Delay</span>
-        <span class="value">${this._formatSeconds(a.delay_seconds)}</span>
-      </div>`);
+      rows.push({
+        label: "Delay",
+        tpl: html`<div class="row">
+          <span class="label">Delay</span>
+          <span class="value">${this._formatSeconds(a.delay_seconds)}</span>
+        </div>`,
+      });
     }
     if (a.debounce_enabled != null) {
       const debounceLabel = a.debounce_enabled
         ? this._formatSeconds(a.debounce_seconds)
         : "disabled";
-      rows.push(html`<div class="row">
-        <span class="label">Debounce</span>
-        <span class="value">${debounceLabel}</span>
-      </div>`);
+      rows.push({
+        label: "Debounce",
+        tpl: html`<div class="row">
+          <span class="label">Debounce</span>
+          <span class="value">${debounceLabel}</span>
+        </div>`,
+      });
     }
     if (a.rate_limit_enabled != null) {
       const loopLabel = a.rate_limit_enabled
         ? `suppress >${a.max_enforcements_per_minute}/min (15 min)`
         : "Off";
-      rows.push(html`<div class="row">
-        <span class="label">Loop protection</span>
-        <span class="value">${loopLabel}</span>
-      </div>`);
+      rows.push({
+        label: "Loop protection",
+        tpl: html`<div class="row">
+          <span class="label">Loop protection</span>
+          <span class="value">${loopLabel}</span>
+        </div>`,
+      });
     }
     if (rows.length === 0) return nothing;
+    rows.sort((x, y) => x.label.localeCompare(y.label));
     return html`
       <div class="divider"></div>
       <div class="entities config-section">
         <div class="section-title">Configuration</div>
-        ${rows}
+        ${rows.map((r) => r.tpl)}
       </div>
     `;
   }
@@ -838,6 +887,9 @@ class EntityGuardCard extends LitElement {
   _renderBound(refs) {
     if (!refs.bound || refs.bound.length === 0) return nothing;
     const triggerStates = refs.triggerStates;
+    const isDynamic =
+      refs.mode === "dynamic_state" || refs.mode === "dynamic_attribute";
+    const desiredOn = refs.followDesiredOn; // dynamic only: true | false | null
     const statusEntity = refs.status ? this.hass.states[refs.status] : null;
     const status = statusEntity?.state;
     const pendingDue = statusEntity?.attributes?.pending_enforcement_due ?? {};
@@ -850,8 +902,19 @@ class EntityGuardCard extends LitElement {
           const name = st?.attributes?.friendly_name || id;
           const state = st ? st.state : "unknown";
           const displayState = this._formatStateDisplay(st, state);
-          const displayTarget = this._formatHypotheticalState(id, refs.targetState);
-          const compliant = !triggerStates || !triggerStates.includes(state);
+          // Fixed modes: compliance = state not in trigger states, target from config.
+          // Dynamic modes: compliance = target's on/off matches the live source-derived
+          // desired (follow_desired_on); null desired (source offline) → neutral/compliant.
+          let compliant;
+          let displayTarget;
+          if (isDynamic) {
+            compliant =
+              desiredOn === null || this._followLooksOn(state) === desiredOn;
+            displayTarget = desiredOn ? "on" : "off";
+          } else {
+            compliant = !triggerStates || !triggerStates.includes(state);
+            displayTarget = this._formatHypotheticalState(id, refs.targetState);
+          }
           const dueIso = status === "pending" ? pendingDue[id] : null;
           const secsLeft = dueIso
             ? Math.max(0, Math.ceil((new Date(dueIso).getTime() - now) / 1000))
@@ -890,6 +953,24 @@ class EntityGuardCard extends LitElement {
         })}
       </div>
     `;
+  }
+
+  // Display-only on/off heuristic for follow targets. Mirrors the backend
+  // FOLLOW_ON_STATES set (const.py) — keep the two in sync; the backend stays
+  // authoritative for enforcement, this only drives the ✓/⚠ hint.
+  _followLooksOn(state) {
+    return [
+      "on",
+      "home",
+      "open",
+      "unlocked",
+      "playing",
+      "active",
+      "cleaning",
+      "mowing",
+      "true",
+      "1",
+    ].includes(state);
   }
 
   _renderConditions(refs) {

@@ -108,6 +108,48 @@
           "target_value": "Værdi attributten skal sættes til, når reglen udløses.",
           "delay_seconds": "Vent så lang tid efter en udløser før der håndhæves. 0 = øjeblikkeligt. Maks. 86400 (24t)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Dynamisk tilstand",
+        "description": "Målets til/fra-tilstand følger en kildeentitet (f.eks. et lys der følger en bevægelsessensor).",
+        "data": {
+          "source_entity": "Kildeentitet",
+          "follow_invert": "Inverter tilstand",
+          "source_value_from": "Læs værdi fra",
+          "delay_seconds": "Forsinkelse (sekunder)"
+        },
+        "data_description": {
+          "source_entity": "Den entitet målene følger. Må ikke være en af målentiteterne.",
+          "follow_invert": "Fra = spejl (kilde til → mål til). Til = inverter (kilde til → mål fra).",
+          "source_value_from": "Om kildens tilstand eller en af dens attributter skal læses.",
+          "delay_seconds": "Vent så lang tid efter en udløser før der håndhæves. 0 = øjeblikkeligt. Maks. 86400 (24t)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Dynamisk attribut",
+        "description": "En målattribut holdes lig med en aktuel værdi, der læses fra en kildeentitet (f.eks. et lys' lysstyrke der følger et andet lys). Værdien kopieres som den er, mens målet er tændt.",
+        "data": {
+          "source_entity": "Kildeentitet",
+          "source_value_from": "Læs værdi fra",
+          "attribute": "Målattribut",
+          "delay_seconds": "Forsinkelse (sekunder)"
+        },
+        "data_description": {
+          "source_entity": "Den entitet den aktuelle værdi læses fra. Må ikke være en af målentiteterne.",
+          "source_value_from": "Om kildens tilstand eller en af dens attributter skal læses.",
+          "attribute": "Attributten der sættes på målet. Dens værdi kopieres ordret fra kilden, mens målet er tændt; sørg for, at kildeværdien passer til denne attributs interval.",
+          "delay_seconds": "Vent så lang tid efter en udløser før der håndhæves. 0 = øjeblikkeligt. Maks. 86400 (24t)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Vælg kildeattribut",
+        "description": "Vælg hvilken attribut af {source} der skal læses. Hver valgmulighed viser attributtens aktuelle værdi.",
+        "data": {
+          "source_attribute": "Kildeattribut"
+        },
+        "data_description": {
+          "source_attribute": "Den kildeattribut, hvis aktuelle værdi læses. Kun attributnavnet gemmes; den viste værdi er blot en aktuel forhåndsvisning."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Du skal anerkende sikkerhedsrisikoen for at fortsætte.",
       "name_already_exists": "Der findes allerede en regel med dette navn.",
       "invalid_rgb_color": "RGB-farve skal være en liste med tre værdier mellem 0 og 255.",
-      "invalid_color_temp_kelvin": "Farvetemperaturen skal være mellem 2000 K og 6500 K."
+      "invalid_color_temp_kelvin": "Farvetemperaturen skal være mellem 2000 K og 6500 K.",
+      "empty_source_entity": "Vælg en kildeentitet, som målet skal følge.",
+      "source_in_targets": "Kildeentiteten kan ikke også være et mål. Vælg en anden kilde.",
+      "attribute_invalid_for_target": "Det attribut understøttes ikke af nogen af målentiteternes domæner.",
+      "source_attribute_required": "Vælg kildeattributten der skal læses, eller sæt 'Læs værdi fra' til Tilstand.",
+      "source_has_no_attributes": "Kildeentiteten har ingen attributter at læse. Skriv et attributnavn, eller gå tilbage og læs tilstanden i stedet."
     },
     "abort": {
       "single_instance_allowed": "Kun ét Entity Guard-hub kan konfigureres.",
@@ -212,6 +259,48 @@
           "target_value": "Målværdi",
           "delay_seconds": "Forsinkelse (sekunder)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Rediger dynamisk tilstand",
+        "description": "Målets til/fra-tilstand følger en kildeentitet (f.eks. et lys der følger en bevægelsessensor).",
+        "data": {
+          "source_entity": "Kildeentitet",
+          "follow_invert": "Inverter tilstand",
+          "source_value_from": "Læs værdi fra",
+          "delay_seconds": "Forsinkelse (sekunder)"
+        },
+        "data_description": {
+          "source_entity": "Den entitet målene følger. Må ikke være en af målentiteterne.",
+          "follow_invert": "Fra = spejl (kilde til → mål til). Til = inverter (kilde til → mål fra).",
+          "source_value_from": "Om kildens tilstand eller en af dens attributter skal læses.",
+          "delay_seconds": "Vent så lang tid efter en udløser før der håndhæves. 0 = øjeblikkeligt. Maks. 86400 (24t)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Rediger dynamisk attribut",
+        "description": "En målattribut holdes lig med en aktuel værdi, der læses fra en kildeentitet (f.eks. et lys' lysstyrke der følger et andet lys). Værdien kopieres som den er, mens målet er tændt.",
+        "data": {
+          "source_entity": "Kildeentitet",
+          "source_value_from": "Læs værdi fra",
+          "attribute": "Målattribut",
+          "delay_seconds": "Forsinkelse (sekunder)"
+        },
+        "data_description": {
+          "source_entity": "Den entitet den aktuelle værdi læses fra. Må ikke være en af målentiteterne.",
+          "source_value_from": "Om kildens tilstand eller en af dens attributter skal læses.",
+          "attribute": "Attributten der sættes på målet. Dens værdi kopieres ordret fra kilden, mens målet er tændt; sørg for, at kildeværdien passer til denne attributs interval.",
+          "delay_seconds": "Vent så lang tid efter en udløser før der håndhæves. 0 = øjeblikkeligt. Maks. 86400 (24t)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Rediger kildeattribut",
+        "description": "Vælg hvilken attribut af {source} der skal læses. Hver valgmulighed viser attributtens aktuelle værdi.",
+        "data": {
+          "source_attribute": "Kildeattribut"
+        },
+        "data_description": {
+          "source_attribute": "Den kildeattribut, hvis aktuelle værdi læses. Kun attributnavnet gemmes; den viste værdi er blot en aktuel forhåndsvisning."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Du skal anerkende sikkerhedsrisikoen for at fortsætte.",
       "name_already_exists": "Der findes allerede en regel med dette navn.",
       "invalid_rgb_color": "RGB-farve skal være en liste med tre værdier mellem 0 og 255.",
-      "invalid_color_temp_kelvin": "Farvetemperaturen skal være mellem 2000 K og 6500 K."
+      "invalid_color_temp_kelvin": "Farvetemperaturen skal være mellem 2000 K og 6500 K.",
+      "empty_source_entity": "Vælg en kildeentitet, som målet skal følge.",
+      "source_in_targets": "Kildeentiteten kan ikke også være et mål. Vælg en anden kilde.",
+      "attribute_invalid_for_target": "Det attribut understøttes ikke af nogen af målentiteternes domæner.",
+      "source_attribute_required": "Vælg kildeattributten der skal læses, eller sæt 'Læs værdi fra' til Tilstand.",
+      "source_has_no_attributes": "Kildeentiteten har ingen attributter at læse. Skriv et attributnavn, eller gå tilbage og læs tilstanden i stedet."
     },
     "abort": {
       "name_already_exists": "Der findes allerede en regel med dette navn.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Tilstand",
-        "attribute": "Attribut"
+        "fixed_state": "Fast tilstand",
+        "fixed_attribute": "Fast attribut",
+        "dynamic_state": "Dynamisk tilstand (Følgemode)",
+        "dynamic_attribute": "Dynamisk attribut (Følgemode)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Tilføj flag",
         "replace": "Erstat alle flag",
         "clear": "Ryd alle flag"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Tilstand",
+        "attribute": "Attribut"
       }
     }
   },

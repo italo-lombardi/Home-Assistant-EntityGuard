@@ -12,8 +12,8 @@ from custom_components.entity_guard.const import (
     ATTR_RGB_COLOR,
     DOMAIN,
     ENTRY_TYPE_RULE,
-    MODE_ATTRIBUTE,
-    MODE_STATE,
+    MODE_FIXED_ATTRIBUTE,
+    MODE_FIXED_STATE,
 )
 from custom_components.entity_guard.models import (
     Flag,
@@ -79,7 +79,7 @@ def _make_entry(**overrides):
         "rule_id": "rule-uuid",
         "rule_name": "My Rule",
         "target_entities": ["light.bedroom"],
-        "mode": MODE_STATE,
+        "mode": MODE_FIXED_STATE,
         "trigger_states": ["on"],
         "target_state": "off",
         "delay_seconds": 0,
@@ -99,7 +99,7 @@ def test_parse_rule_config_basic():
     assert config.name == "My Rule"
     assert config.unique_id == "rule-uuid"
     assert config.target_entities == ["light.bedroom"]
-    assert config.mode == MODE_STATE
+    assert config.mode == MODE_FIXED_STATE
     assert config.trigger_states == ["on"]
     assert config.target_state == "off"
     assert config.delay_seconds == 0
@@ -120,14 +120,14 @@ def test_parse_rule_config_with_flags():
 
 def test_parse_rule_config_attribute_mode():
     entry = _make_entry(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute="brightness",
         operator="le",
         threshold=50.0,
         target_value=0.0,
     )
     config = parse_rule_config(entry)
-    assert config.mode == MODE_ATTRIBUTE
+    assert config.mode == MODE_FIXED_ATTRIBUTE
     assert config.attribute == "brightness"
     assert config.operator == "le"
     assert config.threshold == 50.0
@@ -136,7 +136,7 @@ def test_parse_rule_config_attribute_mode():
 
 def test_parse_rule_config_attribute_mode_rgb_color():
     entry = _make_entry(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_RGB_COLOR,
         operator=None,
         threshold=None,
@@ -152,7 +152,7 @@ def test_parse_rule_config_options_override_color_target():
     entry = MockConfigEntry(
         domain=DOMAIN,
         data=_make_entry(
-            mode=MODE_ATTRIBUTE,
+            mode=MODE_FIXED_ATTRIBUTE,
             attribute=ATTR_COLOR_TEMP_KELVIN,
             target_value=3000,
         ).data,
@@ -170,7 +170,7 @@ def test_parse_rule_config_options_override_data():
         "rule_id": "uid",
         "rule_name": "Old Name",
         "target_entities": ["light.x"],
-        "mode": MODE_STATE,
+        "mode": MODE_FIXED_STATE,
         "trigger_states": ["on"],
         "target_state": "off",
         "delay_seconds": 0,
@@ -194,7 +194,7 @@ def test_parse_rule_config_missing_rule_id_falls_back_to_entry_id():
             "entry_type": ENTRY_TYPE_RULE,
             "rule_name": "No ID",
             "target_entities": [],
-            "mode": MODE_STATE,
+            "mode": MODE_FIXED_STATE,
             "trigger_states": [],
             "target_state": "off",
             "delay_seconds": 0,
@@ -277,7 +277,7 @@ def test_parse_rule_config_non_list_flags_treated_as_empty():
             "rule_id": "uid",
             "rule_name": "R",
             "target_entities": ["light.x"],
-            "mode": "state",
+            "mode": "fixed_state",
             "trigger_states": ["on"],
             "target_state": "off",
             "flags": "not-a-list",
@@ -296,7 +296,7 @@ def test_parse_rule_config_skips_corrupt_flag():
             "rule_id": "uid",
             "rule_name": "R",
             "target_entities": ["light.x"],
-            "mode": "state",
+            "mode": "fixed_state",
             "trigger_states": ["on"],
             "target_state": "off",
             "flags": [{"entity": "light.x"}],  # missing match_state

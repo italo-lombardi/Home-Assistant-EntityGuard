@@ -49,8 +49,8 @@ from custom_components.entity_guard.const import (
     FALLBACK_STATE_OPTIONS,
     MAX_DELAY_SECONDS,
     MIN_DELAY_SECONDS,
-    MODE_ATTRIBUTE,
-    MODE_STATE,
+    MODE_FIXED_ATTRIBUTE,
+    MODE_FIXED_STATE,
     NUMERIC_ATTRIBUTES,
     has_safety_target,
 )
@@ -268,7 +268,7 @@ def test_build_summary_state_mode_minimal():
     data = {
         CONF_RULE_NAME: "Test",
         CONF_TARGET_ENTITIES: ["light.bedroom"],
-        CONF_MODE: MODE_STATE,
+        CONF_MODE: MODE_FIXED_STATE,
         CONF_TRIGGER_STATES: ["on"],
         CONF_TARGET_STATE: "off",
         CONF_DELAY_SECONDS: 0,
@@ -286,7 +286,7 @@ def test_build_summary_attribute_mode():
     data = {
         CONF_RULE_NAME: "Clamp",
         CONF_TARGET_ENTITIES: ["light.a", "light.b"],
-        CONF_MODE: MODE_ATTRIBUTE,
+        CONF_MODE: MODE_FIXED_ATTRIBUTE,
         CONF_ATTRIBUTE: "brightness",
         CONF_OPERATOR: ">",
         CONF_THRESHOLD: 64,
@@ -304,7 +304,7 @@ def test_build_summary_attribute_mode_rgb_color():
     data = {
         CONF_RULE_NAME: "Accent",
         CONF_TARGET_ENTITIES: ["light.strip"],
-        CONF_MODE: MODE_ATTRIBUTE,
+        CONF_MODE: MODE_FIXED_ATTRIBUTE,
         CONF_ATTRIBUTE: ATTR_RGB_COLOR,
         CONF_TARGET_VALUE: [255, 0, 0],
         CONF_DELAY_SECONDS: 0,
@@ -319,7 +319,7 @@ def test_build_summary_with_flags():
     data = {
         CONF_RULE_NAME: "WithFlags",
         CONF_TARGET_ENTITIES: ["light.bedroom"],
-        CONF_MODE: MODE_STATE,
+        CONF_MODE: MODE_FIXED_STATE,
         CONF_TRIGGER_STATES: ["on"],
         CONF_TARGET_STATE: "off",
         CONF_DELAY_SECONDS: 0,
@@ -336,7 +336,7 @@ def test_build_summary_with_debounce_and_rate():
     data = {
         CONF_RULE_NAME: "Adv",
         CONF_TARGET_ENTITIES: ["light.bedroom"],
-        CONF_MODE: MODE_STATE,
+        CONF_MODE: MODE_FIXED_STATE,
         CONF_TRIGGER_STATES: ["on"],
         CONF_TARGET_STATE: "off",
         CONF_DELAY_SECONDS: 0,
@@ -356,7 +356,7 @@ def test_build_summary_rate_disabled():
     data = {
         CONF_RULE_NAME: "NoRate",
         CONF_TARGET_ENTITIES: ["light.bedroom"],
-        CONF_MODE: MODE_STATE,
+        CONF_MODE: MODE_FIXED_STATE,
         CONF_TRIGGER_STATES: ["on"],
         CONF_TARGET_STATE: "off",
         CONF_DELAY_SECONDS: 0,
@@ -372,7 +372,7 @@ def test_build_summary_with_hass_friendly_name(hass: HomeAssistant):
     data = {
         CONF_RULE_NAME: "Friendly",
         CONF_TARGET_ENTITIES: ["light.bedroom"],
-        CONF_MODE: MODE_STATE,
+        CONF_MODE: MODE_FIXED_STATE,
         CONF_TRIGGER_STATES: ["on"],
         CONF_TARGET_STATE: "off",
         CONF_DELAY_SECONDS: 0,
@@ -386,7 +386,7 @@ def test_build_summary_hass_no_state_keeps_id(hass: HomeAssistant):
     data = {
         CONF_RULE_NAME: "NoState",
         CONF_TARGET_ENTITIES: ["light.missing"],
-        CONF_MODE: MODE_STATE,
+        CONF_MODE: MODE_FIXED_STATE,
         CONF_TRIGGER_STATES: ["on"],
         CONF_TARGET_STATE: "off",
         CONF_DELAY_SECONDS: 0,

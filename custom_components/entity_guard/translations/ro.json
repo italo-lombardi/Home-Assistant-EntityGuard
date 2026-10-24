@@ -108,6 +108,48 @@
           "target_value": "Valoarea de impus. Atributele numerice se limitează la această valoare; atributele de culoare trebuie să o potrivească.",
           "delay_seconds": "Așteaptă acest interval după o declanșare înainte de a impune. 0 = imediat. Maxim 86400 (24h)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Stare dinamică",
+        "description": "Starea pornit/oprit a țintei urmărește o entitate sursă (de ex. o lumină care urmărește un senzor de mișcare).",
+        "data": {
+          "source_entity": "Entitate sursă",
+          "follow_invert": "Inversează starea",
+          "source_value_from": "Citește valoarea din",
+          "delay_seconds": "Întârziere (secunde)"
+        },
+        "data_description": {
+          "source_entity": "Entitatea pe care o urmăresc țintele. Nu trebuie să fie una dintre entitățile țintă.",
+          "follow_invert": "Dezactivat = oglindire (sursă pornit → țintă pornit). Activat = inversare (sursă pornit → țintă oprit).",
+          "source_value_from": "Dacă se citește starea sursei sau unul dintre atributele sale.",
+          "delay_seconds": "Așteaptă acest interval după o declanșare înainte de a impune. 0 = imediat. Maxim 86400 (24h)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Atribut dinamic",
+        "description": "Un atribut al țintei este menținut egal cu o valoare live citită dintr-o entitate sursă (de ex. luminozitatea unei lumini care urmărește o altă lumină). Valoarea este copiată ca atare cât timp ținta este pornită.",
+        "data": {
+          "source_entity": "Entitate sursă",
+          "source_value_from": "Citește valoarea din",
+          "attribute": "Atribut țintă",
+          "delay_seconds": "Întârziere (secunde)"
+        },
+        "data_description": {
+          "source_entity": "Entitatea din care se citește valoarea live. Nu trebuie să fie una dintre entitățile țintă.",
+          "source_value_from": "Dacă se citește starea sursei sau unul dintre atributele sale.",
+          "attribute": "Atributul setat pe țintă. Valoarea sa este copiată întocmai din sursă cât timp ținta este pornită; asigurați-vă că valoarea sursei se încadrează în intervalul acestui atribut.",
+          "delay_seconds": "Așteaptă acest interval după o declanșare înainte de a impune. 0 = imediat. Maxim 86400 (24h)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Alegeți atributul sursă",
+        "description": "Alegeți ce atribut al {source} să fie citit. Fiecare opțiune afișează valoarea curentă a atributului.",
+        "data": {
+          "source_attribute": "Atribut sursă"
+        },
+        "data_description": {
+          "source_attribute": "Atributul sursă a cărui valoare live este citită. Se stochează doar numele atributului; valoarea afișată este doar o previzualizare curentă."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Trebuie să confirmați riscul de siguranță pentru a continua.",
       "name_already_exists": "O regulă cu acest nume există deja.",
       "invalid_rgb_color": "Culoarea RGB trebuie să fie o listă de trei valori între 0 și 255.",
-      "invalid_color_temp_kelvin": "Temperatura de culoare trebuie să fie între 2000 K și 6500 K."
+      "invalid_color_temp_kelvin": "Temperatura de culoare trebuie să fie între 2000 K și 6500 K.",
+      "empty_source_entity": "Alegeți o entitate sursă pe care ținta să o urmărească.",
+      "source_in_targets": "Entitatea sursă nu poate fi și o țintă. Alegeți o altă sursă.",
+      "attribute_invalid_for_target": "Acel atribut nu este acceptat de niciunul dintre domeniile entităților țintă.",
+      "source_attribute_required": "Alegeți atributul sursă de citit sau setați „Citește valoarea din” pe Stare.",
+      "source_has_no_attributes": "Entitatea sursă nu are atribute de citit. Tastați un nume de atribut sau reveniți și citiți starea în schimb."
     },
     "abort": {
       "single_instance_allowed": "Poate fi configurat un singur hub Entity Guard.",
@@ -212,6 +259,48 @@
           "target_value": "Valoare țintă",
           "delay_seconds": "Întârziere (secunde)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Editează starea dinamică",
+        "description": "Starea pornit/oprit a țintei urmărește o entitate sursă (de ex. o lumină care urmărește un senzor de mișcare).",
+        "data": {
+          "source_entity": "Entitate sursă",
+          "follow_invert": "Inversează starea",
+          "source_value_from": "Citește valoarea din",
+          "delay_seconds": "Întârziere (secunde)"
+        },
+        "data_description": {
+          "source_entity": "Entitatea pe care o urmăresc țintele. Nu trebuie să fie una dintre entitățile țintă.",
+          "follow_invert": "Dezactivat = oglindire (sursă pornit → țintă pornit). Activat = inversare (sursă pornit → țintă oprit).",
+          "source_value_from": "Dacă se citește starea sursei sau unul dintre atributele sale.",
+          "delay_seconds": "Așteaptă acest interval după o declanșare înainte de a impune. 0 = imediat. Maxim 86400 (24h)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Editează atributul dinamic",
+        "description": "Un atribut al țintei este menținut egal cu o valoare live citită dintr-o entitate sursă (de ex. luminozitatea unei lumini care urmărește o altă lumină). Valoarea este copiată ca atare cât timp ținta este pornită.",
+        "data": {
+          "source_entity": "Entitate sursă",
+          "source_value_from": "Citește valoarea din",
+          "attribute": "Atribut țintă",
+          "delay_seconds": "Întârziere (secunde)"
+        },
+        "data_description": {
+          "source_entity": "Entitatea din care se citește valoarea live. Nu trebuie să fie una dintre entitățile țintă.",
+          "source_value_from": "Dacă se citește starea sursei sau unul dintre atributele sale.",
+          "attribute": "Atributul setat pe țintă. Valoarea sa este copiată întocmai din sursă cât timp ținta este pornită; asigurați-vă că valoarea sursei se încadrează în intervalul acestui atribut.",
+          "delay_seconds": "Așteaptă acest interval după o declanșare înainte de a impune. 0 = imediat. Maxim 86400 (24h)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Editează atributul sursă",
+        "description": "Alegeți ce atribut al {source} să fie citit. Fiecare opțiune afișează valoarea curentă a atributului.",
+        "data": {
+          "source_attribute": "Atribut sursă"
+        },
+        "data_description": {
+          "source_attribute": "Atributul sursă a cărui valoare live este citită. Se stochează doar numele atributului; valoarea afișată este doar o previzualizare curentă."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Trebuie să confirmați riscul de siguranță pentru a continua.",
       "name_already_exists": "O regulă cu acest nume există deja.",
       "invalid_rgb_color": "Culoarea RGB trebuie să fie o listă de trei valori între 0 și 255.",
-      "invalid_color_temp_kelvin": "Temperatura de culoare trebuie să fie între 2000 K și 6500 K."
+      "invalid_color_temp_kelvin": "Temperatura de culoare trebuie să fie între 2000 K și 6500 K.",
+      "empty_source_entity": "Alegeți o entitate sursă pe care ținta să o urmărească.",
+      "source_in_targets": "Entitatea sursă nu poate fi și o țintă. Alegeți o altă sursă.",
+      "attribute_invalid_for_target": "Acel atribut nu este acceptat de niciunul dintre domeniile entităților țintă.",
+      "source_attribute_required": "Alegeți atributul sursă de citit sau setați „Citește valoarea din” pe Stare.",
+      "source_has_no_attributes": "Entitatea sursă nu are atribute de citit. Tastați un nume de atribut sau reveniți și citiți starea în schimb."
     },
     "abort": {
       "name_already_exists": "O regulă cu acest nume există deja.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Stare",
-        "attribute": "Atribut"
+        "fixed_state": "Stare fixă",
+        "fixed_attribute": "Atribut fix",
+        "dynamic_state": "Stare dinamică (Mod urmărire)",
+        "dynamic_attribute": "Atribut dinamic (Mod urmărire)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Adaugă condiție",
         "replace": "Înlocuiește toate condițiile",
         "clear": "Șterge toate condițiile"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Stare",
+        "attribute": "Atribut"
       }
     }
   },

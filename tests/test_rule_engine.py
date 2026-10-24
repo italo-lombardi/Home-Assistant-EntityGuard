@@ -19,8 +19,8 @@ from custom_components.entity_guard.const import (
     ERROR_THRESHOLD,
     EVENT_ENFORCED,
     EVENT_SKIPPED,
-    MODE_ATTRIBUTE,
-    MODE_STATE,
+    MODE_FIXED_ATTRIBUTE,
+    MODE_FIXED_STATE,
     OPERATOR_GE,
     OPERATOR_GT,
     OPERATOR_LE,
@@ -59,7 +59,7 @@ def _make_config(**overrides) -> RuleConfig:
         "name": "Test Rule",
         "unique_id": "test-uid",
         "target_entities": ["light.bedroom"],
-        "mode": MODE_STATE,
+        "mode": MODE_FIXED_STATE,
         "trigger_states": ["on"],
         "target_state": "off",
         "delay_seconds": 0,
@@ -316,7 +316,7 @@ async def test_is_triggered_none_state(hass: HomeAssistant):
 
 async def test_is_triggered_attribute_mode(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute="brightness",
         operator=OPERATOR_GT,
         threshold=50.0,
@@ -330,7 +330,7 @@ async def test_is_triggered_attribute_mode(hass: HomeAssistant):
 
 async def test_is_triggered_attribute_below_threshold(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute="brightness",
         operator=OPERATOR_GT,
         threshold=50.0,
@@ -344,7 +344,7 @@ async def test_is_triggered_attribute_below_threshold(hass: HomeAssistant):
 
 async def test_is_triggered_attribute_non_numeric(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute="brightness",
         operator=OPERATOR_GT,
         threshold=50.0,
@@ -358,7 +358,7 @@ async def test_is_triggered_attribute_non_numeric(hass: HomeAssistant):
 
 async def test_color_trigger_decision_missing_target_returns_false(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE, attribute=ATTR_RGB_COLOR, target_value=None
+        mode=MODE_FIXED_ATTRIBUTE, attribute=ATTR_RGB_COLOR, target_value=None
     )
     engine = _make_engine(hass, config)
     st = _state("on", {"rgb_color": [1, 2, 3]})
@@ -368,7 +368,9 @@ async def test_color_trigger_decision_missing_target_returns_false(hass: HomeAss
 async def test_color_trigger_decision_missing_attribute_returns_false(
     hass: HomeAssistant,
 ):
-    config = _make_config(mode=MODE_ATTRIBUTE, attribute=None, target_value=[255, 0, 0])
+    config = _make_config(
+        mode=MODE_FIXED_ATTRIBUTE, attribute=None, target_value=[255, 0, 0]
+    )
     engine = _make_engine(hass, config)
     st = _state("on", {"rgb_color": [1, 2, 3]})
     assert engine._color_trigger_decision(st) == (False, None)
@@ -376,7 +378,7 @@ async def test_color_trigger_decision_missing_attribute_returns_false(
 
 async def test_color_trigger_decision_missing_current_value_skips(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_COLOR_TEMP_KELVIN,
         target_value=2700,
     )
@@ -389,7 +391,7 @@ async def test_color_trigger_decision_missing_current_rgb_value_skips(
     hass: HomeAssistant,
 ):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_RGB_COLOR,
         target_value=[255, 0, 0],
     )
@@ -402,7 +404,7 @@ async def test_color_trigger_decision_missing_kelvin_target_returns_false(
     hass: HomeAssistant,
 ):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_COLOR_TEMP_KELVIN,
         target_value=None,
     )
@@ -415,7 +417,7 @@ async def test_color_trigger_decision_unknown_color_attribute_returns_false(
     hass: HomeAssistant,
 ):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute="color_effect",
         target_value="red",
     )
@@ -426,7 +428,7 @@ async def test_color_trigger_decision_unknown_color_attribute_returns_false(
 
 async def test_is_triggered_rgb_color_within_tolerance(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_RGB_COLOR,
         target_value=[255, 0, 0],
         trigger_states=[],
@@ -438,7 +440,7 @@ async def test_is_triggered_rgb_color_within_tolerance(hass: HomeAssistant):
 
 async def test_is_triggered_rgb_color_outside_tolerance(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_RGB_COLOR,
         target_value=[255, 0, 0],
         trigger_states=[],
@@ -450,7 +452,7 @@ async def test_is_triggered_rgb_color_outside_tolerance(hass: HomeAssistant):
 
 async def test_is_triggered_color_temp_kelvin_within_tolerance(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_COLOR_TEMP_KELVIN,
         target_value=2700,
         trigger_states=[],
@@ -465,7 +467,7 @@ async def test_is_triggered_color_temp_kelvin_within_tolerance(hass: HomeAssista
 
 async def test_is_triggered_color_temp_kelvin_outside_tolerance(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_COLOR_TEMP_KELVIN,
         target_value=2700,
         trigger_states=[],
@@ -487,7 +489,7 @@ async def test_is_triggered_unknown_mode(hass: HomeAssistant):
 
 async def test_color_enforcement_calls_light_turn_on_with_rgb(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_RGB_COLOR,
         target_value=[255, 0, 0],
         trigger_states=[],
@@ -513,7 +515,7 @@ async def test_color_enforcement_calls_light_turn_on_with_rgb(hass: HomeAssistan
 
 async def test_color_enforcement_calls_light_turn_on_with_kelvin(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_COLOR_TEMP_KELVIN,
         target_value=2700,
         trigger_states=[],
@@ -535,7 +537,7 @@ async def test_color_enforcement_calls_light_turn_on_with_kelvin(hass: HomeAssis
 
 async def test_color_enforcement_skips_when_light_off(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_RGB_COLOR,
         target_value=[255, 0, 0],
         trigger_states=[],
@@ -557,7 +559,7 @@ async def test_color_enforcement_skips_when_light_off(hass: HomeAssistant):
 
 async def test_color_enforcement_skips_when_light_unavailable(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_COLOR_TEMP_KELVIN,
         target_value=2700,
         trigger_states=[],
@@ -578,7 +580,7 @@ async def test_color_enforcement_skips_when_rgb_attribute_unavailable(
     hass: HomeAssistant,
 ):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_RGB_COLOR,
         target_value=[255, 0, 0],
         trigger_states=[],
@@ -602,7 +604,7 @@ async def test_color_enforcement_skips_when_kelvin_attribute_unavailable(
     hass: HomeAssistant,
 ):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_COLOR_TEMP_KELVIN,
         target_value=2700,
         trigger_states=[],
@@ -626,7 +628,7 @@ async def test_delayed_color_enforcement_skips_if_light_turns_off(hass: HomeAssi
     from pytest_homeassistant_custom_component.common import async_fire_time_changed
 
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_RGB_COLOR,
         target_value=[255, 0, 0],
         trigger_states=[],
@@ -648,7 +650,7 @@ async def test_delayed_color_enforcement_skips_if_light_turns_off(hass: HomeAssi
 
 async def test_manual_color_enforce_skips_when_light_off(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_RGB_COLOR,
         target_value=[255, 0, 0],
         trigger_states=[],
@@ -670,7 +672,7 @@ async def test_manual_color_enforce_skips_when_light_off(hass: HomeAssistant):
 
 async def test_color_enforcement_respects_debounce_cooldown(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=ATTR_RGB_COLOR,
         target_value=[255, 0, 0],
         trigger_states=[],
@@ -695,7 +697,7 @@ async def test_color_enforcement_respects_debounce_cooldown(hass: HomeAssistant)
 
 def test_event_target_numeric_attribute(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute="brightness",
         operator=OPERATOR_GT,
         threshold=50.0,
@@ -774,7 +776,7 @@ async def test_resolve_service_domain_map(hass: HomeAssistant):
 
 async def test_resolve_service_attribute_mode(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute="brightness",
         operator=OPERATOR_LE,
         threshold=50.0,
@@ -797,7 +799,7 @@ async def test_resolve_service_unknown_target(hass: HomeAssistant):
 
 async def test_resolve_service_attribute_none(hass: HomeAssistant):
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute=None,
         target_value=None,
         trigger_states=[],
@@ -1169,7 +1171,7 @@ async def test_evaluate_skip_reason_entity_removed_from_pending_due_broadcasts(
     config = _make_config(
         delay_seconds=30,
         target_entities=["light.x", "light.y"],
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute="color_temp_kelvin",
         operator=None,
         threshold=None,
@@ -2040,9 +2042,9 @@ def test_is_triggered_ignores_unknown_state():
 
 
 def test_is_triggered_attribute_mode_missing_config_returns_false():
-    """MODE_ATTRIBUTE with None attr/op/threshold must return False."""
+    """MODE_FIXED_ATTRIBUTE with None attr/op/threshold must return False."""
     config = _make_config(
-        mode=MODE_ATTRIBUTE, attribute=None, operator=None, threshold=None
+        mode=MODE_FIXED_ATTRIBUTE, attribute=None, operator=None, threshold=None
     )
     engine = _make_engine(None, config)
     assert (
@@ -2052,9 +2054,9 @@ def test_is_triggered_attribute_mode_missing_config_returns_false():
 
 
 def test_is_triggered_attribute_no_attributes_attr():
-    """MODE_ATTRIBUTE state object without attributes must return False gracefully."""
+    """MODE_FIXED_ATTRIBUTE state object without attributes must return False gracefully."""
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute="brightness",
         operator=OPERATOR_GT,
         threshold=50.0,
@@ -2083,7 +2085,7 @@ def test_cancel_pending_swallows_exception():
 def test_resolve_service_attribute_mode_no_mapping():
     """_resolve_service returns None when attribute has no service mapping."""
     config = _make_config(
-        mode=MODE_ATTRIBUTE,
+        mode=MODE_FIXED_ATTRIBUTE,
         attribute="unmapped_attr",
         target_value=50.0,
     )
@@ -2093,7 +2095,7 @@ def test_resolve_service_attribute_mode_no_mapping():
 
 def test_resolve_service_attribute_mode_missing_attr():
     """_resolve_service returns None when attribute or target_value is None."""
-    config = _make_config(mode=MODE_ATTRIBUTE, attribute=None, target_value=None)
+    config = _make_config(mode=MODE_FIXED_ATTRIBUTE, attribute=None, target_value=None)
     engine = _make_engine(None, config)
     assert engine._resolve_service("light.bedroom") is None
 

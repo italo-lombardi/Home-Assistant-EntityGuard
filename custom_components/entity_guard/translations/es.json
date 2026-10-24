@@ -108,6 +108,48 @@
           "target_value": "Valor al que se establecerá el atributo cuando se dispare la regla.",
           "delay_seconds": "Esperar este tiempo tras un disparador antes de actuar. 0 = inmediato. Máx. 86400 (24h)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Estado dinámico",
+        "description": "El estado on/off del objetivo sigue a una entidad de origen (p. ej. una luz que sigue a un sensor de movimiento).",
+        "data": {
+          "source_entity": "Entidad de origen",
+          "follow_invert": "Invertir estado",
+          "source_value_from": "Leer valor desde",
+          "delay_seconds": "Retardo (segundos)"
+        },
+        "data_description": {
+          "source_entity": "La entidad a la que siguen los objetivos. No puede ser una de las entidades objetivo.",
+          "follow_invert": "Desactivado = replicar (origen on → objetivo on). Activado = invertir (origen on → objetivo off).",
+          "source_value_from": "Si se debe leer el estado del origen o uno de sus atributos.",
+          "delay_seconds": "Esperar este tiempo tras un disparador antes de actuar. 0 = inmediato. Máx. 86400 (24h)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Atributo dinámico",
+        "description": "Un atributo del objetivo se mantiene igual a un valor en vivo leído de una entidad de origen (p. ej. el brillo de una luz que sigue a otra luz). El valor se copia tal cual mientras el objetivo está encendido.",
+        "data": {
+          "source_entity": "Entidad de origen",
+          "source_value_from": "Leer valor desde",
+          "attribute": "Atributo objetivo",
+          "delay_seconds": "Retardo (segundos)"
+        },
+        "data_description": {
+          "source_entity": "La entidad de la que se lee el valor en vivo. No puede ser una de las entidades objetivo.",
+          "source_value_from": "Si se debe leer el estado del origen o uno de sus atributos.",
+          "attribute": "El atributo que se establece en el objetivo. Su valor se copia literalmente desde el origen mientras el objetivo está encendido; asegúrese de que el valor del origen encaje en el rango de este atributo.",
+          "delay_seconds": "Esperar este tiempo tras un disparador antes de actuar. 0 = inmediato. Máx. 86400 (24h)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Elegir atributo de origen",
+        "description": "Elija qué atributo de {source} leer. Cada opción muestra el valor actual del atributo.",
+        "data": {
+          "source_attribute": "Atributo de origen"
+        },
+        "data_description": {
+          "source_attribute": "El atributo de origen cuyo valor en vivo se lee. Solo se almacena el nombre del atributo; el valor mostrado es únicamente una vista previa actual."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Debe reconocer el riesgo de seguridad para continuar.",
       "name_already_exists": "Ya existe una regla con este nombre.",
       "invalid_rgb_color": "El color RGB debe ser una lista de tres valores entre 0 y 255.",
-      "invalid_color_temp_kelvin": "La temperatura de color debe estar entre 2000 K y 6500 K."
+      "invalid_color_temp_kelvin": "La temperatura de color debe estar entre 2000 K y 6500 K.",
+      "empty_source_entity": "Elija una entidad de origen a la que seguirá el objetivo.",
+      "source_in_targets": "La entidad de origen no puede ser también un objetivo. Elija un origen diferente.",
+      "attribute_invalid_for_target": "Ese atributo no es compatible con los dominios de ninguna de las entidades objetivo.",
+      "source_attribute_required": "Elija el atributo de origen a leer, o establezca 'Leer valor desde' en Estado.",
+      "source_has_no_attributes": "La entidad de origen no tiene atributos que leer. Escriba un nombre de atributo, o vuelva atrás y lea el estado en su lugar."
     },
     "abort": {
       "single_instance_allowed": "Solo se puede configurar un hub de Entity Guard.",
@@ -212,6 +259,48 @@
           "target_value": "Valor objetivo",
           "delay_seconds": "Retardo (segundos)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Editar estado dinámico",
+        "description": "El estado on/off del objetivo sigue a una entidad de origen (p. ej. una luz que sigue a un sensor de movimiento).",
+        "data": {
+          "source_entity": "Entidad de origen",
+          "follow_invert": "Invertir estado",
+          "source_value_from": "Leer valor desde",
+          "delay_seconds": "Retardo (segundos)"
+        },
+        "data_description": {
+          "source_entity": "La entidad a la que siguen los objetivos. No puede ser una de las entidades objetivo.",
+          "follow_invert": "Desactivado = replicar (origen on → objetivo on). Activado = invertir (origen on → objetivo off).",
+          "source_value_from": "Si se debe leer el estado del origen o uno de sus atributos.",
+          "delay_seconds": "Esperar este tiempo tras un disparador antes de actuar. 0 = inmediato. Máx. 86400 (24h)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Editar atributo dinámico",
+        "description": "Un atributo del objetivo se mantiene igual a un valor en vivo leído de una entidad de origen (p. ej. el brillo de una luz que sigue a otra luz). El valor se copia tal cual mientras el objetivo está encendido.",
+        "data": {
+          "source_entity": "Entidad de origen",
+          "source_value_from": "Leer valor desde",
+          "attribute": "Atributo objetivo",
+          "delay_seconds": "Retardo (segundos)"
+        },
+        "data_description": {
+          "source_entity": "La entidad de la que se lee el valor en vivo. No puede ser una de las entidades objetivo.",
+          "source_value_from": "Si se debe leer el estado del origen o uno de sus atributos.",
+          "attribute": "El atributo que se establece en el objetivo. Su valor se copia literalmente desde el origen mientras el objetivo está encendido; asegúrese de que el valor del origen encaje en el rango de este atributo.",
+          "delay_seconds": "Esperar este tiempo tras un disparador antes de actuar. 0 = inmediato. Máx. 86400 (24h)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Editar atributo de origen",
+        "description": "Elija qué atributo de {source} leer. Cada opción muestra el valor actual del atributo.",
+        "data": {
+          "source_attribute": "Atributo de origen"
+        },
+        "data_description": {
+          "source_attribute": "El atributo de origen cuyo valor en vivo se lee. Solo se almacena el nombre del atributo; el valor mostrado es únicamente una vista previa actual."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Debe reconocer el riesgo de seguridad para continuar.",
       "name_already_exists": "Ya existe una regla con este nombre.",
       "invalid_rgb_color": "El color RGB debe ser una lista de tres valores entre 0 y 255.",
-      "invalid_color_temp_kelvin": "La temperatura de color debe estar entre 2000 K y 6500 K."
+      "invalid_color_temp_kelvin": "La temperatura de color debe estar entre 2000 K y 6500 K.",
+      "empty_source_entity": "Elija una entidad de origen a la que seguirá el objetivo.",
+      "source_in_targets": "La entidad de origen no puede ser también un objetivo. Elija un origen diferente.",
+      "attribute_invalid_for_target": "Ese atributo no es compatible con los dominios de ninguna de las entidades objetivo.",
+      "source_attribute_required": "Elija el atributo de origen a leer, o establezca 'Leer valor desde' en Estado.",
+      "source_has_no_attributes": "La entidad de origen no tiene atributos que leer. Escriba un nombre de atributo, o vuelva atrás y lea el estado en su lugar."
     },
     "abort": {
       "name_already_exists": "Ya existe una regla con este nombre.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Estado",
-        "attribute": "Atributo"
+        "fixed_state": "Estado fijo",
+        "fixed_attribute": "Atributo fijo",
+        "dynamic_state": "Estado dinámico (Modo Seguir)",
+        "dynamic_attribute": "Atributo dinámico (Modo Seguir)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Añadir marca",
         "replace": "Reemplazar todas las marcas",
         "clear": "Borrar todas las marcas"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Estado",
+        "attribute": "Atributo"
       }
     }
   },

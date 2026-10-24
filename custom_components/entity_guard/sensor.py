@@ -144,6 +144,11 @@ class EntityGuardStatusSensor(EntityGuardSensor):
             )
         return {
             "suppression_reason": self._engine.state.suppression_reason,
+            "mode": self._engine.config.mode,
+            "source_entity": self._engine.config.source_entity,
+            "follow_invert": self._engine.config.follow_invert,
+            "follow_desired_on": self._engine.follow_desired_on(),
+            "attribute": self._engine.config.attribute,
             "target_entities": list(self._engine.config.target_entities or []),
             "target_state": self._engine.config.target_state,
             "trigger_states": list(self._engine.config.trigger_states or []),

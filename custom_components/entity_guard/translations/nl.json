@@ -37,7 +37,7 @@
           "attribute": "Attribuut"
         },
         "data_description": {
-          "attribute": "Attribuut om te bewaken."
+          "attribute": "Attribuut om te bewaken en af te dwingen."
         }
       },
       "extras": {
@@ -103,10 +103,52 @@
           "delay_seconds": "Vertraging (seconden)"
         },
         "data_description": {
-          "operator": "Vergelijkingsoperator. Gelijkheid wordt opzettelijk niet ondersteund (precisie van floats).",
-          "threshold": "Numerieke waarde die wordt vergeleken met het live attribuut.",
-          "target_value": "Waarde waarop het attribuut wordt ingesteld wanneer de regel wordt geactiveerd.",
+          "operator": "Vergelijkingsoperator die wordt gebruikt voor numerieke begrenzingsregels.",
+          "threshold": "Numerieke waarde die wordt vergeleken met het live attribuut. Alleen gebruikt voor numerieke begrenzingsregels.",
+          "target_value": "Waarde die wordt afgedwongen. Numerieke attributen worden teruggezet naar deze waarde; kleurattributen moeten ermee overeenkomen.",
           "delay_seconds": "Wacht zo lang na een trigger voordat de regel afdwingt. 0 = direct. Max 86400 (24u)."
+        }
+      },
+      "dynamic_state_params": {
+        "title": "Dynamische status",
+        "description": "De aan/uit-status van het doel volgt een bronentiteit (bijv. een lamp die een bewegingssensor volgt).",
+        "data": {
+          "source_entity": "Bronentiteit",
+          "follow_invert": "Status omkeren",
+          "source_value_from": "Waarde lezen uit",
+          "delay_seconds": "Vertraging (seconden)"
+        },
+        "data_description": {
+          "source_entity": "De entiteit die de doelen volgen. Mag niet een van de doelentiteiten zijn.",
+          "follow_invert": "Uit = spiegelen (bron aan → doel aan). Aan = omkeren (bron aan → doel uit).",
+          "source_value_from": "Of de status van de bron moet worden gelezen of een van de attributen ervan.",
+          "delay_seconds": "Wacht zo lang na een trigger voordat de regel afdwingt. 0 = direct. Max 86400 (24u)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Dynamisch attribuut",
+        "description": "Een doelattribuut wordt gelijk gehouden aan een live waarde die van een bronentiteit wordt gelezen (bijv. de helderheid van een lamp die een andere lamp volgt). De waarde wordt ongewijzigd gekopieerd terwijl het doel aan is.",
+        "data": {
+          "source_entity": "Bronentiteit",
+          "source_value_from": "Waarde lezen uit",
+          "attribute": "Doelattribuut",
+          "delay_seconds": "Vertraging (seconden)"
+        },
+        "data_description": {
+          "source_entity": "De entiteit waaruit de live waarde wordt gelezen. Mag niet een van de doelentiteiten zijn.",
+          "source_value_from": "Of de status van de bron moet worden gelezen of een van de attributen ervan.",
+          "attribute": "Het attribuut dat op het doel wordt ingesteld. De waarde wordt letterlijk gekopieerd van de bron terwijl het doel aan is; zorg ervoor dat de bronwaarde binnen het bereik van dit attribuut past.",
+          "delay_seconds": "Wacht zo lang na een trigger voordat de regel afdwingt. 0 = direct. Max 86400 (24u)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Bronattribuut kiezen",
+        "description": "Kies welk attribuut van {source} moet worden gelezen. Elke optie toont de huidige waarde van het attribuut.",
+        "data": {
+          "source_attribute": "Bronattribuut"
+        },
+        "data_description": {
+          "source_attribute": "Het bronattribuut waarvan de live waarde wordt gelezen. Alleen de naam van het attribuut wordt opgeslagen; de getoonde waarde is slechts een huidig voorbeeld."
         }
       }
     },
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Je moet het veiligheidsrisico bevestigen om door te gaan.",
       "name_already_exists": "Er bestaat al een regel met deze naam.",
       "invalid_rgb_color": "RGB-kleur moet een lijst met drie waarden tussen 0 en 255 zijn.",
-      "invalid_color_temp_kelvin": "De kleurtemperatuur moet tussen 2000 K en 6500 K liggen."
+      "invalid_color_temp_kelvin": "De kleurtemperatuur moet tussen 2000 K en 6500 K liggen.",
+      "empty_source_entity": "Kies een bronentiteit die het doel moet volgen.",
+      "source_in_targets": "De bronentiteit mag niet ook een doel zijn. Kies een andere bron.",
+      "attribute_invalid_for_target": "Dat attribuut wordt niet ondersteund door de domeinen van de doelentiteiten.",
+      "source_attribute_required": "Kies het bronattribuut dat moet worden gelezen, of stel 'Waarde lezen uit' in op Status.",
+      "source_has_no_attributes": "De bronentiteit heeft geen attributen om te lezen. Typ een attribuutnaam, of ga terug en lees in plaats daarvan de status."
     },
     "abort": {
       "single_instance_allowed": "Er kan slechts één Entity Guard-hub worden geconfigureerd.",
@@ -212,6 +259,48 @@
           "target_value": "Doelwaarde",
           "delay_seconds": "Vertraging (seconden)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Dynamische status bewerken",
+        "description": "De aan/uit-status van het doel volgt een bronentiteit (bijv. een lamp die een bewegingssensor volgt).",
+        "data": {
+          "source_entity": "Bronentiteit",
+          "follow_invert": "Status omkeren",
+          "source_value_from": "Waarde lezen uit",
+          "delay_seconds": "Vertraging (seconden)"
+        },
+        "data_description": {
+          "source_entity": "De entiteit die de doelen volgen. Mag niet een van de doelentiteiten zijn.",
+          "follow_invert": "Uit = spiegelen (bron aan → doel aan). Aan = omkeren (bron aan → doel uit).",
+          "source_value_from": "Of de status van de bron moet worden gelezen of een van de attributen ervan.",
+          "delay_seconds": "Wacht zo lang na een trigger voordat de regel afdwingt. 0 = direct. Max 86400 (24u)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Dynamisch attribuut bewerken",
+        "description": "Een doelattribuut wordt gelijk gehouden aan een live waarde die van een bronentiteit wordt gelezen (bijv. de helderheid van een lamp die een andere lamp volgt). De waarde wordt ongewijzigd gekopieerd terwijl het doel aan is.",
+        "data": {
+          "source_entity": "Bronentiteit",
+          "source_value_from": "Waarde lezen uit",
+          "attribute": "Doelattribuut",
+          "delay_seconds": "Vertraging (seconden)"
+        },
+        "data_description": {
+          "source_entity": "De entiteit waaruit de live waarde wordt gelezen. Mag niet een van de doelentiteiten zijn.",
+          "source_value_from": "Of de status van de bron moet worden gelezen of een van de attributen ervan.",
+          "attribute": "Het attribuut dat op het doel wordt ingesteld. De waarde wordt letterlijk gekopieerd van de bron terwijl het doel aan is; zorg ervoor dat de bronwaarde binnen het bereik van dit attribuut past.",
+          "delay_seconds": "Wacht zo lang na een trigger voordat de regel afdwingt. 0 = direct. Max 86400 (24u)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Bronattribuut bewerken",
+        "description": "Kies welk attribuut van {source} moet worden gelezen. Elke optie toont de huidige waarde van het attribuut.",
+        "data": {
+          "source_attribute": "Bronattribuut"
+        },
+        "data_description": {
+          "source_attribute": "Het bronattribuut waarvan de live waarde wordt gelezen. Alleen de naam van het attribuut wordt opgeslagen; de getoonde waarde is slechts een huidig voorbeeld."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Je moet het veiligheidsrisico bevestigen om door te gaan.",
       "name_already_exists": "Er bestaat al een regel met deze naam.",
       "invalid_rgb_color": "RGB-kleur moet een lijst met drie waarden tussen 0 en 255 zijn.",
-      "invalid_color_temp_kelvin": "De kleurtemperatuur moet tussen 2000 K en 6500 K liggen."
+      "invalid_color_temp_kelvin": "De kleurtemperatuur moet tussen 2000 K en 6500 K liggen.",
+      "empty_source_entity": "Kies een bronentiteit die het doel moet volgen.",
+      "source_in_targets": "De bronentiteit mag niet ook een doel zijn. Kies een andere bron.",
+      "attribute_invalid_for_target": "Dat attribuut wordt niet ondersteund door de domeinen van de doelentiteiten.",
+      "source_attribute_required": "Kies het bronattribuut dat moet worden gelezen, of stel 'Waarde lezen uit' in op Status.",
+      "source_has_no_attributes": "De bronentiteit heeft geen attributen om te lezen. Typ een attribuutnaam, of ga terug en lees in plaats daarvan de status."
     },
     "abort": {
       "name_already_exists": "Er bestaat al een regel met deze naam.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Status",
-        "attribute": "Attribuut"
+        "fixed_state": "Vaste status",
+        "fixed_attribute": "Vast attribuut",
+        "dynamic_state": "Dynamische status (Volgmodus)",
+        "dynamic_attribute": "Dynamisch attribuut (Volgmodus)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Voorwaarde toevoegen",
         "replace": "Alle voorwaarden vervangen",
         "clear": "Alle voorwaarden wissen"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Status",
+        "attribute": "Attribuut"
       }
     }
   },

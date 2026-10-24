@@ -108,6 +108,48 @@
           "target_value": "Verdi attributtet settes til når regelen utløses.",
           "delay_seconds": "Vent så lenge etter en utløser før håndheving. 0 = umiddelbart. Maks 86400 (24t)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Dynamisk tilstand",
+        "description": "Målets på/av-tilstand følger en kildeenhet (f.eks. et lys som følger en bevegelsessensor).",
+        "data": {
+          "source_entity": "Kildeenhet",
+          "follow_invert": "Inverter tilstand",
+          "source_value_from": "Les verdi fra",
+          "delay_seconds": "Forsinkelse (sekunder)"
+        },
+        "data_description": {
+          "source_entity": "Enheten målene følger. Må ikke være en av målenhetene.",
+          "follow_invert": "Av = speil (kilde på → mål på). På = inverter (kilde på → mål av).",
+          "source_value_from": "Om kildens tilstand eller ett av dens attributter skal leses.",
+          "delay_seconds": "Vent så lenge etter en utløser før håndheving. 0 = umiddelbart. Maks 86400 (24t)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Dynamisk attributt",
+        "description": "Et målattributt holdes likt en aktiv verdi som leses fra en kildeenhet (f.eks. et lys sin lysstyrke som følger et annet lys). Verdien kopieres som den er mens målet er på.",
+        "data": {
+          "source_entity": "Kildeenhet",
+          "source_value_from": "Les verdi fra",
+          "attribute": "Målattributt",
+          "delay_seconds": "Forsinkelse (sekunder)"
+        },
+        "data_description": {
+          "source_entity": "Enheten den aktive verdien leses fra. Må ikke være en av målenhetene.",
+          "source_value_from": "Om kildens tilstand eller ett av dens attributter skal leses.",
+          "attribute": "Attributtet som settes på målet. Verdien kopieres ordrett fra kilden mens målet er på; sørg for at kildeverdien passer innenfor dette attributtets område.",
+          "delay_seconds": "Vent så lenge etter en utløser før håndheving. 0 = umiddelbart. Maks 86400 (24t)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Velg kildeattributt",
+        "description": "Velg hvilket attributt av {source} som skal leses. Hvert valg viser attributtets gjeldende verdi.",
+        "data": {
+          "source_attribute": "Kildeattributt"
+        },
+        "data_description": {
+          "source_attribute": "Kildeattributtet hvis aktive verdi leses. Bare attributtnavnet lagres; den viste verdien er kun en gjeldende forhåndsvisning."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Du må bekrefte sikkerhetsrisikoen for å fortsette.",
       "name_already_exists": "En regel med dette navnet finnes allerede.",
       "invalid_rgb_color": "RGB-farge må være en liste med tre verdier mellom 0 og 255.",
-      "invalid_color_temp_kelvin": "Fargetemperaturen må være mellom 2000 K og 6500 K."
+      "invalid_color_temp_kelvin": "Fargetemperaturen må være mellom 2000 K og 6500 K.",
+      "empty_source_entity": "Velg en kildeenhet som målet skal følge.",
+      "source_in_targets": "Kildeenheten kan ikke også være et mål. Velg en annen kilde.",
+      "attribute_invalid_for_target": "Det attributtet støttes ikke av noen av målenhetenes domener.",
+      "source_attribute_required": "Velg kildeattributtet som skal leses, eller sett «Les verdi fra» til Tilstand.",
+      "source_has_no_attributes": "Kildeenheten har ingen attributter å lese. Skriv inn et attributtnavn, eller gå tilbake og les tilstanden i stedet."
     },
     "abort": {
       "single_instance_allowed": "Bare én Entity Guard-hub kan konfigureres.",
@@ -212,6 +259,48 @@
           "target_value": "Målverdi",
           "delay_seconds": "Forsinkelse (sekunder)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Rediger dynamisk tilstand",
+        "description": "Målets på/av-tilstand følger en kildeenhet (f.eks. et lys som følger en bevegelsessensor).",
+        "data": {
+          "source_entity": "Kildeenhet",
+          "follow_invert": "Inverter tilstand",
+          "source_value_from": "Les verdi fra",
+          "delay_seconds": "Forsinkelse (sekunder)"
+        },
+        "data_description": {
+          "source_entity": "Enheten målene følger. Må ikke være en av målenhetene.",
+          "follow_invert": "Av = speil (kilde på → mål på). På = inverter (kilde på → mål av).",
+          "source_value_from": "Om kildens tilstand eller ett av dens attributter skal leses.",
+          "delay_seconds": "Vent så lenge etter en utløser før håndheving. 0 = umiddelbart. Maks 86400 (24t)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Rediger dynamisk attributt",
+        "description": "Et målattributt holdes likt en aktiv verdi som leses fra en kildeenhet (f.eks. et lys sin lysstyrke som følger et annet lys). Verdien kopieres som den er mens målet er på.",
+        "data": {
+          "source_entity": "Kildeenhet",
+          "source_value_from": "Les verdi fra",
+          "attribute": "Målattributt",
+          "delay_seconds": "Forsinkelse (sekunder)"
+        },
+        "data_description": {
+          "source_entity": "Enheten den aktive verdien leses fra. Må ikke være en av målenhetene.",
+          "source_value_from": "Om kildens tilstand eller ett av dens attributter skal leses.",
+          "attribute": "Attributtet som settes på målet. Verdien kopieres ordrett fra kilden mens målet er på; sørg for at kildeverdien passer innenfor dette attributtets område.",
+          "delay_seconds": "Vent så lenge etter en utløser før håndheving. 0 = umiddelbart. Maks 86400 (24t)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Rediger kildeattributt",
+        "description": "Velg hvilket attributt av {source} som skal leses. Hvert valg viser attributtets gjeldende verdi.",
+        "data": {
+          "source_attribute": "Kildeattributt"
+        },
+        "data_description": {
+          "source_attribute": "Kildeattributtet hvis aktive verdi leses. Bare attributtnavnet lagres; den viste verdien er kun en gjeldende forhåndsvisning."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Du må bekrefte sikkerhetsrisikoen for å fortsette.",
       "name_already_exists": "En regel med dette navnet finnes allerede.",
       "invalid_rgb_color": "RGB-farge må være en liste med tre verdier mellom 0 og 255.",
-      "invalid_color_temp_kelvin": "Fargetemperaturen må være mellom 2000 K og 6500 K."
+      "invalid_color_temp_kelvin": "Fargetemperaturen må være mellom 2000 K og 6500 K.",
+      "empty_source_entity": "Velg en kildeenhet som målet skal følge.",
+      "source_in_targets": "Kildeenheten kan ikke også være et mål. Velg en annen kilde.",
+      "attribute_invalid_for_target": "Det attributtet støttes ikke av noen av målenhetenes domener.",
+      "source_attribute_required": "Velg kildeattributtet som skal leses, eller sett «Les verdi fra» til Tilstand.",
+      "source_has_no_attributes": "Kildeenheten har ingen attributter å lese. Skriv inn et attributtnavn, eller gå tilbake og les tilstanden i stedet."
     },
     "abort": {
       "name_already_exists": "En regel med dette navnet finnes allerede.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Tilstand",
-        "attribute": "Attributt"
+        "fixed_state": "Fast tilstand",
+        "fixed_attribute": "Fast attributt",
+        "dynamic_state": "Dynamisk tilstand (Følgemodus)",
+        "dynamic_attribute": "Dynamisk attributt (Følgemodus)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Legg til flagg",
         "replace": "Erstatt alle flagg",
         "clear": "Fjern alle flagg"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Tilstand",
+        "attribute": "Attributt"
       }
     }
   },

@@ -108,6 +108,48 @@
           "target_value": "Value to enforce. Numeric attributes clamp to this value; color attributes must match it.",
           "delay_seconds": "Wait this long after a trigger before enforcing. 0 = immediate. Max 86400 (24h)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Dynamic state",
+        "description": "The target's on/off state follows a source entity (e.g. a light that follows a motion sensor).",
+        "data": {
+          "source_entity": "Source entity",
+          "follow_invert": "Invert state",
+          "source_value_from": "Read value from",
+          "delay_seconds": "Delay (seconds)"
+        },
+        "data_description": {
+          "source_entity": "The entity the targets follow. Must not be one of the target entities.",
+          "follow_invert": "Off = mirror (source on → target on). On = invert (source on → target off).",
+          "source_value_from": "Whether to read the source's state or one of its attributes.",
+          "delay_seconds": "Wait this long after a trigger before enforcing. 0 = immediate. Max 86400 (24h)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Dynamic attribute",
+        "description": "A target attribute is kept equal to a live value read from a source entity (e.g. a light's brightness that follows another light). The value is copied as-is while the target is on.",
+        "data": {
+          "source_entity": "Source entity",
+          "source_value_from": "Read value from",
+          "attribute": "Target attribute",
+          "delay_seconds": "Delay (seconds)"
+        },
+        "data_description": {
+          "source_entity": "The entity to read the live value from. Must not be one of the target entities.",
+          "source_value_from": "Whether to read the source's state or one of its attributes.",
+          "attribute": "The attribute set on the target. Its value is copied verbatim from the source while the target is on; make sure the source value fits this attribute's range.",
+          "delay_seconds": "Wait this long after a trigger before enforcing. 0 = immediate. Max 86400 (24h)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Pick source attribute",
+        "description": "Choose which attribute of {source} to read. Each option shows the attribute's current value.",
+        "data": {
+          "source_attribute": "Source attribute"
+        },
+        "data_description": {
+          "source_attribute": "The source attribute whose live value is read. Only the attribute name is stored; the shown value is just a current preview."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "You must acknowledge the safety risk to continue.",
       "name_already_exists": "A rule with this name already exists.",
       "invalid_rgb_color": "RGB color must be a list of three values between 0 and 255.",
-      "invalid_color_temp_kelvin": "Color temperature must be between 2000 K and 6500 K."
+      "invalid_color_temp_kelvin": "Color temperature must be between 2000 K and 6500 K.",
+      "empty_source_entity": "Pick a source entity for the target to follow.",
+      "source_in_targets": "The source entity cannot also be a target. Pick a different source.",
+      "attribute_invalid_for_target": "That attribute is not supported by any of the target entities' domains.",
+      "source_attribute_required": "Choose the source attribute to read, or set 'Read value from' to State.",
+      "source_has_no_attributes": "The source entity has no attributes to read. Type an attribute name, or go back and read the state instead."
     },
     "abort": {
       "single_instance_allowed": "Only one Entity Guard hub can be configured.",
@@ -212,6 +259,48 @@
           "target_value": "Target value",
           "delay_seconds": "Delay (seconds)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Edit dynamic state",
+        "description": "The target's on/off state follows a source entity (e.g. a light that follows a motion sensor).",
+        "data": {
+          "source_entity": "Source entity",
+          "follow_invert": "Invert state",
+          "source_value_from": "Read value from",
+          "delay_seconds": "Delay (seconds)"
+        },
+        "data_description": {
+          "source_entity": "The entity the targets follow. Must not be one of the target entities.",
+          "follow_invert": "Off = mirror (source on → target on). On = invert (source on → target off).",
+          "source_value_from": "Whether to read the source's state or one of its attributes.",
+          "delay_seconds": "Wait this long after a trigger before enforcing. 0 = immediate. Max 86400 (24h)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Edit dynamic attribute",
+        "description": "A target attribute is kept equal to a live value read from a source entity (e.g. a light's brightness that follows another light). The value is copied as-is while the target is on.",
+        "data": {
+          "source_entity": "Source entity",
+          "source_value_from": "Read value from",
+          "attribute": "Target attribute",
+          "delay_seconds": "Delay (seconds)"
+        },
+        "data_description": {
+          "source_entity": "The entity to read the live value from. Must not be one of the target entities.",
+          "source_value_from": "Whether to read the source's state or one of its attributes.",
+          "attribute": "The attribute set on the target. Its value is copied verbatim from the source while the target is on; make sure the source value fits this attribute's range.",
+          "delay_seconds": "Wait this long after a trigger before enforcing. 0 = immediate. Max 86400 (24h)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Edit source attribute",
+        "description": "Choose which attribute of {source} to read. Each option shows the attribute's current value.",
+        "data": {
+          "source_attribute": "Source attribute"
+        },
+        "data_description": {
+          "source_attribute": "The source attribute whose live value is read. Only the attribute name is stored; the shown value is just a current preview."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "You must acknowledge the safety risk to continue.",
       "name_already_exists": "A rule with this name already exists.",
       "invalid_rgb_color": "RGB color must be a list of three values between 0 and 255.",
-      "invalid_color_temp_kelvin": "Color temperature must be between 2000 K and 6500 K."
+      "invalid_color_temp_kelvin": "Color temperature must be between 2000 K and 6500 K.",
+      "empty_source_entity": "Pick a source entity for the target to follow.",
+      "source_in_targets": "The source entity cannot also be a target. Pick a different source.",
+      "attribute_invalid_for_target": "That attribute is not supported by any of the target entities' domains.",
+      "source_attribute_required": "Choose the source attribute to read, or set 'Read value from' to State.",
+      "source_has_no_attributes": "The source entity has no attributes to read. Type an attribute name, or go back and read the state instead."
     },
     "abort": {
       "name_already_exists": "A rule with this name already exists.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "State",
-        "attribute": "Attribute"
+        "fixed_state": "Fixed state",
+        "fixed_attribute": "Fixed attribute",
+        "dynamic_state": "Dynamic state (Follow mode)",
+        "dynamic_attribute": "Dynamic attribute (Follow mode)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Add flag",
         "replace": "Replace all flags",
         "clear": "Clear all flags"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "State",
+        "attribute": "Attribute"
       }
     }
   },

@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import bisect
 import logging
+import math
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import Any
@@ -42,13 +43,17 @@ from .const import (
     EVENT_LOOP_DETECTED,
     EVENT_SKIPPED,
     EVENT_SUPPRESSED,
-    MODE_ATTRIBUTE,
-    MODE_STATE,
+    FOLLOW_ON_STATES,
+    MODE_DYNAMIC_ATTRIBUTE,
+    MODE_DYNAMIC_STATE,
+    MODE_FIXED_ATTRIBUTE,
+    MODE_FIXED_STATE,
     OPERATOR_GE,
     OPERATOR_GT,
     OPERATOR_LE,
     OPERATOR_LT,
     RECENTLY_ENFORCED_WINDOW_SECONDS,
+    SOURCE_VALUE_FROM_ATTRIBUTE,
     STARTUP_GRACE_PERIOD_SECONDS,
     STATUS_ARMED,
     STATUS_CONDITIONAL,
@@ -123,6 +128,11 @@ class RuleEngine:
         return self._config
 
     @property
+    def _is_dynamic(self) -> bool:
+        """True for the source-driven modes (dynamic_state / dynamic_attribute)."""
+        return self._config.mode in (MODE_DYNAMIC_STATE, MODE_DYNAMIC_ATTRIBUTE)
+
+    @property
     def state(self) -> RuleRuntimeState:
         """Return the live runtime state."""
         return self._state
@@ -157,6 +167,10 @@ class RuleEngine:
 
         watched: set[str] = set(self._config.target_entities)
         watched.update(f.entity for f in self._config.flags)
+        # Dynamic modes: the source entity is an extra watched input (never a
+        # target, never enforced). Its changes drive a sweep of all targets.
+        if self._is_dynamic and self._config.source_entity:
+            watched.add(self._config.source_entity)
         if watched:
             self._unsub_callbacks.append(
                 async_track_state_change_event(
@@ -330,6 +344,13 @@ class RuleEngine:
             # During grace, ignore target state events; flag changes still re-evaluate.
             if entity_id not in self._flag_entity_ids:
                 return
+        if (
+            not self._startup_complete
+            and self._is_dynamic
+            and entity_id == self._config.source_entity
+        ):
+            # During grace, ignore source changes too (sweep happens post-grace).
+            return
 
         if self._state.suppressed_until and self._state.suppressed_until > now:
             self._set_status(STATUS_SUPPRESSED)
@@ -372,6 +393,23 @@ class RuleEngine:
             # If entity is flag-only, stop here; if also a target, fall through.
             if entity_id not in self._config.target_entities:
                 return
+
+        # Dynamic modes: a source change drives a sweep of all targets. The source
+        # is never itself enforced (config flow forbids source in targets; the
+        # dynamic trigger decision guards defensively). Mirrors the flag-change sweep.
+        if self._is_dynamic and entity_id == self._config.source_entity:
+            prev_status = self._current_status
+            self._set_status(self._derive_armed_or_cooldown(now))
+            # A source change moves follow_desired_on (exposed on the status sensor
+            # for the card). If the overall status didn't move, _set_status dedupes
+            # the broadcast and the stale desired value would stick — force a refresh,
+            # same guard as the flag-change sweep above.
+            if prev_status == self._current_status:
+                self._broadcast_status()
+            for target in self._config.target_entities:
+                current = self._hass.states.get(target)
+                self._schedule_eval_task(target, current, trigger_context_id)
+            return
 
         triggered, skip_reason = self._trigger_decision(entity_id, new_state)
 
@@ -422,16 +460,25 @@ class RuleEngine:
     def _trigger_decision(
         self, entity_id: str, new_state: Any
     ) -> tuple[bool, str | None]:
-        """Return trigger result and optional skip reason."""
+        """Return trigger result and optional skip reason.
+
+        In dynamic modes entity_id is a TARGET; the decision reads the SOURCE's
+        current value and returns triggered when the target differs from it.
+        """
+        if self._config.mode == MODE_DYNAMIC_STATE:
+            return self._dynamic_state_trigger_decision(entity_id, new_state)
+        if self._config.mode == MODE_DYNAMIC_ATTRIBUTE:
+            return self._dynamic_attribute_trigger_decision(entity_id, new_state)
+
         if new_state is None:
             return False, None
 
-        if self._config.mode == MODE_STATE:
+        if self._config.mode == MODE_FIXED_STATE:
             if new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
                 return False, None
             return new_state.state in self._config.trigger_states, None
 
-        if self._config.mode == MODE_ATTRIBUTE:
+        if self._config.mode == MODE_FIXED_ATTRIBUTE:
             attr = self._config.attribute
             if attr in COLOR_ATTRIBUTES:
                 return self._color_trigger_decision(new_state)
@@ -451,6 +498,144 @@ class RuleEngine:
             return _compare(value_f, op, threshold), None
 
         return False, None
+
+    def _follow_desired_on(self) -> bool | None:
+        """Compute the desired on/off for a dynamic_state rule from the SOURCE.
+
+        Reads the source's STATE by default, or a named source ATTRIBUTE when
+        source_value_from == attribute (the common source picker shared with
+        dynamic_attribute). The read value is reduced to on/off via the on-ish
+        rule (_value_is_on): a state string in FOLLOW_ON_STATES, or a truthy
+        attribute value (non-zero number, on-ish string, non-empty), is ON.
+        follow_invert flips it. Returns None when the source is absent/offline or
+        the chosen attribute is missing — caller treats None as not-triggered.
+        """
+        source_id = self._config.source_entity
+        if not source_id:
+            return None
+        src = self._hass.states.get(source_id)
+        if src is None:
+            return None
+        if src.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            return None
+        if self._config.source_value_from == SOURCE_VALUE_FROM_ATTRIBUTE:
+            name = self._config.source_attribute
+            if not name or not hasattr(src, "attributes"):
+                return None
+            value = src.attributes.get(name)
+            if value is None:
+                return None
+            on = _value_is_on(value)
+        else:
+            on = src.state in FOLLOW_ON_STATES
+        return (not on) if self._config.follow_invert else on
+
+    def _dynamic_state_trigger_decision(
+        self, entity_id: str, new_state: Any
+    ) -> tuple[bool, str | None]:
+        """dynamic_state comparator for a single TARGET entity.
+
+        Enforce only when the target's current on/off differs from the desired
+        derived from the live source. Pure state — no attribute (dynamic_attribute
+        is a separate mode). Primary guard against a service call per source tick.
+        """
+        # Defensive: the config flow forbids source ∈ targets, but never silently
+        # enforce the source itself.
+        if entity_id == self._config.source_entity:
+            return False, "source_is_target"
+
+        desired_on = self._follow_desired_on()
+        if desired_on is None:
+            # Source absent/offline — not-triggered (matches existing offline path).
+            return False, None
+
+        if new_state is None or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            # Target offline/unknown — can't compare; leave it alone.
+            return False, None
+
+        cur_on = new_state.state in FOLLOW_ON_STATES
+        return (cur_on != desired_on), None
+
+    def _dynamic_source_value(self) -> Any | None:
+        """Return the live value driving a dynamic_attribute rule's target attr.
+
+        Read from the source entity's STATE or a named ATTRIBUTE per config. None
+        when the source is absent/offline or the named attribute is missing — the
+        caller treats None as not-triggered (never writes None to the target),
+        reusing the fixed_attribute missing-value behavior. No type coercion (v1
+        raw copy); a type-mismatched value degrades at the guarded service call.
+        """
+        source_id = self._config.source_entity
+        if not source_id:
+            return None
+        src = self._hass.states.get(source_id)
+        if src is None:
+            return None
+        if src.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            return None
+        if self._config.source_value_from == SOURCE_VALUE_FROM_ATTRIBUTE:
+            name = self._config.source_attribute
+            if not name or not hasattr(src, "attributes"):
+                return None
+            return src.attributes.get(name)
+        # Default: source state.
+        return src.state
+
+    def _dynamic_attribute_trigger_decision(
+        self, entity_id: str, new_state: Any
+    ) -> tuple[bool, str | None]:
+        """dynamic_attribute comparator for a single TARGET entity.
+
+        Same shape as fixed_attribute enforcement, but the desired value is read
+        live from the source. Enforce only when the target's current value for the
+        bound attribute differs from the source value (color within tolerance,
+        numeric/scalar exact). Source or target offline / missing value →
+        not-triggered.
+        """
+        if entity_id == self._config.source_entity:
+            return False, "source_is_target"
+
+        value = self._dynamic_source_value()
+        if value is None:
+            return False, None
+
+        attr = self._config.attribute
+        if attr is None:
+            return False, None
+        if new_state is None or new_state.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            return False, None
+
+        tgt_val = (
+            new_state.attributes.get(attr) if hasattr(new_state, "attributes") else None
+        )
+        if self._attr_values_match(attr, value, tgt_val):
+            return False, None
+        return True, None
+
+    def _attr_values_match(self, attr: str, desired: Any, current: Any) -> bool:
+        """Return True when current equals desired for attribute attr.
+
+        Color attrs use the engine's existing tolerances; everything else compares
+        for equality after a best-effort numeric coercion so "50" (string state)
+        and 50 (int attr) are treated as equal and don't cause a re-enforce loop.
+        """
+        if attr == ATTR_RGB_COLOR:
+            d = _normalize_rgb_color(desired)
+            c = _normalize_rgb_color(current)
+            if d is None or c is None:
+                return False
+            return _rgb_matches(c, d)
+        if attr == ATTR_COLOR_TEMP_KELVIN:
+            d = _normalize_kelvin(desired)
+            c = _normalize_kelvin(current)
+            if d is None or c is None:
+                return False
+            return abs(c - d) <= COLOR_TEMP_KELVIN_TOLERANCE
+        # Numeric best-effort: compare as floats when both coerce, else as strings.
+        try:
+            return float(desired) == float(current)
+        except (TypeError, ValueError):
+            return str(desired) == str(current)
 
     def _color_trigger_decision(self, new_state: Any) -> tuple[bool, str | None]:
         """Return trigger result and skip reason for color-match attributes."""
@@ -623,14 +808,39 @@ class RuleEngine:
             self._set_status(STATUS_ENFORCING)
 
             current_state = self._hass.states.get(entity_id)
-            if self._config.attribute in COLOR_ATTRIBUTES and current_state is not None:
+            if (
+                self._config.mode == MODE_FIXED_ATTRIBUTE
+                and self._config.attribute in COLOR_ATTRIBUTES
+                and current_state is not None
+            ):
                 _triggered, skip_reason = self._color_trigger_decision(current_state)
                 if skip_reason is not None:
                     self._fire_skipped(entity_id, skip_reason)
                     self._set_status(self._derive_armed_or_cooldown(now))
                     return
 
-            service_call = self._resolve_service(entity_id)
+            # Dynamic modes compute the live target value at enforce time (source
+            # may have moved since the decision). None → source offline/missing →
+            # skip cleanly (never write None to the target).
+            state_override: str | None = None
+            value_override: Any | None = None
+            if self._config.mode == MODE_DYNAMIC_STATE:
+                desired_on = self._follow_desired_on()
+                if desired_on is None:
+                    self._fire_skipped(entity_id, "source_offline")
+                    self._set_status(self._derive_armed_or_cooldown(now))
+                    return
+                state_override = "on" if desired_on else "off"
+            elif self._config.mode == MODE_DYNAMIC_ATTRIBUTE:
+                value_override = self._dynamic_source_value()
+                if value_override is None:
+                    self._fire_skipped(entity_id, "source_value_unavailable")
+                    self._set_status(self._derive_armed_or_cooldown(now))
+                    return
+
+            service_call = self._resolve_service(
+                entity_id, state_override=state_override, value_override=value_override
+            )
             if service_call is None:
                 self._fire_skipped(entity_id, "no_service_mapping")
                 _LOGGER.debug("No service mapping resolved for %s", entity_id)
@@ -715,7 +925,9 @@ class RuleEngine:
                     "target_entity_id": entity_id,
                     "domain": entity_id.split(".", 1)[0],
                     "trigger": self._config.mode,
-                    "target": self._event_target(),
+                    "target": self._event_target(
+                        follow_direction=state_override, follow_value=value_override
+                    ),
                     "reason": "rule_match",
                     "user_id": user_id,
                 },
@@ -802,46 +1014,123 @@ class RuleEngine:
         self._set_status(STATUS_SUPPRESSED)
 
     def _resolve_service(
-        self, entity_id: str
+        self,
+        entity_id: str,
+        *,
+        state_override: str | None = None,
+        value_override: Any | None = None,
     ) -> tuple[str, str, dict[str, Any]] | None:
-        """Pick the right service call for the entity given the rule mode."""
+        """Pick the right service call for the entity given the rule mode.
+
+        state_override (dynamic_state) and value_override (dynamic_attribute) pass
+        the live-derived target value; the fixed modes never pass them and keep
+        their existing behavior byte-identically.
+        """
         domain = entity_id.split(".", 1)[0]
 
-        if self._config.mode == MODE_STATE:
-            domain_map = DOMAIN_SERVICE_MAP.get(domain)
-            target_state = self._config.target_state
-            if domain_map and target_state in domain_map:
-                full = domain_map[target_state]
-                svc_domain, svc_name = full.split(".", 1)
-                return svc_domain, svc_name, {"entity_id": entity_id}
+        if self._config.mode == MODE_FIXED_STATE:
+            return self._resolve_state_service(
+                entity_id, domain, self._config.target_state
+            )
 
-            # Fallback: homeassistant.turn_on / turn_off when target maps to on/off.
-            if target_state in ("on", "off"):
-                return (
-                    "homeassistant",
-                    f"turn_{target_state}",
-                    {"entity_id": entity_id},
-                )
-            return None
+        if self._config.mode == MODE_DYNAMIC_STATE:
+            # Dynamic state MUST pass a computed direction; never fall back to
+            # config.target_state (parse fills it "on" even for dynamic rules).
+            assert state_override is not None, (
+                "dynamic_state enforce without state_override"
+            )
+            return self._resolve_state_service(entity_id, domain, state_override)
 
-        if self._config.mode == MODE_ATTRIBUTE:
-            attr = self._config.attribute
-            value = self._config.target_value
-            if attr is None or value is None:
-                return None
-            mapping = ATTRIBUTE_SERVICE_MAP.get(attr)
-            if mapping is None:
-                return None
-            full, kwarg = mapping
-            svc_domain, svc_name = full.split(".", 1)
-            return svc_domain, svc_name, {"entity_id": entity_id, kwarg: value}
+        if self._config.mode == MODE_FIXED_ATTRIBUTE:
+            return self._resolve_attribute_service(
+                entity_id, self._config.attribute, self._config.target_value
+            )
+
+        if self._config.mode == MODE_DYNAMIC_ATTRIBUTE:
+            # Dynamic attribute MUST pass a live value; never fall back to
+            # config.target_value (parse writes none for dynamic rules).
+            assert value_override is not None, (
+                "dynamic_attribute enforce without value_override"
+            )
+            return self._resolve_attribute_service(
+                entity_id, self._config.attribute, value_override
+            )
 
         return None
 
-    def _event_target(self) -> Any:
-        """Return the event/logbook target payload."""
-        if self._config.mode == MODE_STATE:
+    def _resolve_attribute_service(
+        self, entity_id: str, attr: str | None, value: Any
+    ) -> tuple[str, str, dict[str, Any]] | None:
+        """Resolve the attribute-set service call. Shared by fixed + dynamic
+        attribute modes; only the source of `value` differs (config vs live)."""
+        if attr is None or value is None:
+            return None
+        mapping = ATTRIBUTE_SERVICE_MAP.get(attr)
+        if mapping is None:
+            return None
+        full, kwarg = mapping
+        svc_domain, svc_name = full.split(".", 1)
+        return svc_domain, svc_name, {"entity_id": entity_id, kwarg: value}
+
+    def _resolve_state_service(
+        self, entity_id: str, domain: str, target_state: str
+    ) -> tuple[str, str, dict[str, Any]] | None:
+        """Resolve the on/off-style service for a target state.
+
+        Extracted from the former MODE_FIXED_STATE body verbatim so follow mode can reuse
+        the exact same domain-service resolution with a computed direction.
+        """
+        domain_map = DOMAIN_SERVICE_MAP.get(domain)
+        if domain_map and target_state in domain_map:
+            full = domain_map[target_state]
+            svc_domain, svc_name = full.split(".", 1)
+            return svc_domain, svc_name, {"entity_id": entity_id}
+
+        # Fallback: homeassistant.turn_on / turn_off when target maps to on/off.
+        if target_state in ("on", "off"):
+            return (
+                "homeassistant",
+                f"turn_{target_state}",
+                {"entity_id": entity_id},
+            )
+        return None
+
+    def _event_target(
+        self,
+        *,
+        follow_direction: str | None = None,
+        follow_value: Any | None = None,
+    ) -> Any:
+        """Return the event/logbook target payload.
+
+        follow_direction (dynamic_state) / follow_value (dynamic_attribute) are the
+        value actually driven by the current enforce, captured before the service
+        call. Passing them avoids re-reading the volatile source — a re-read could
+        mislabel the logbook if the source moved between the decision and the event
+        fire. Callers outside _enforce omit them (diagnostic) and fall back to a
+        live read.
+        """
+        if self._config.mode == MODE_FIXED_STATE:
             return self._config.target_state
+        if self._config.mode == MODE_DYNAMIC_STATE:
+            if follow_direction is not None:
+                direction = follow_direction
+            else:
+                desired_on = self._follow_desired_on()
+                direction = "on" if desired_on else "off"
+            return f"follow:{self._config.source_entity}:{direction}"
+        if self._config.mode == MODE_DYNAMIC_ATTRIBUTE:
+            value = (
+                follow_value
+                if follow_value is not None
+                else self._dynamic_source_value()
+            )
+            src_from = (
+                f"{self._config.source_entity}.{self._config.source_attribute}"
+                if self._config.source_value_from == SOURCE_VALUE_FROM_ATTRIBUTE
+                else self._config.source_entity
+            )
+            return f"follow:{src_from}->{self._config.attribute}={value}"
         if self._config.attribute in COLOR_ATTRIBUTES:
             return _describe_color_target(
                 self._config.attribute, self._config.target_value
@@ -1067,6 +1356,16 @@ class RuleEngine:
         """Return the rule's current status string."""
         return self._current_status
 
+    def follow_desired_on(self) -> bool | None:
+        """Public view of the follow desired on/off (None if N/A or source offline).
+
+        Used by the status sensor so the frontend card can show per-target
+        compliance without re-implementing the FOLLOW_ON_STATES normalizer in JS.
+        """
+        if self._config.mode != MODE_DYNAMIC_STATE:
+            return None
+        return self._follow_desired_on()
+
     def pending_enforcement_due(self) -> dict[str, datetime]:
         """Return a snapshot of entity_id → fire time for pending enforcements."""
         return dict(self._pending_enforcement_due)
@@ -1252,6 +1551,43 @@ class RuleEngine:
         ):
             self._clear_suppression_state()
         self._apply_idle_status()
+
+
+def _value_is_on(value: Any) -> bool:
+    """Reduce an arbitrary LIVE source value to on/off for dynamic_state.
+
+    Called only when dynamic_state reads a source ATTRIBUTE (never for None — the
+    caller returns not-triggered for a missing attribute before calling here).
+    Precedence is load-bearing:
+      1. bool            → itself.
+      2. number          → non-zero is on (0 / 0.0 off; any non-zero, incl negative,
+                           is on — a non-zero signal).
+      3. string          → numeric first ("0"/"0.0" off, other numbers on); then the
+                           SAME FOLLOW_ON_STATES set the state path uses (one source
+                           of truth for on-ness) — on-ish → on; anything else → OFF.
+                           A non-on-ish word ("idle", "paused", "") is OFF, matching
+                           the state path (not-in-FOLLOW_ON_STATES = off), NOT a
+                           generic non-empty-truthy.
+      4. other non-None  → Python truthiness (e.g. a non-empty list/tuple).
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        # Non-finite (nan/inf) is not a meaningful on signal → off.
+        return math.isfinite(value) and value != 0
+    if isinstance(value, str):
+        s = value.strip().lower()
+        try:
+            f = float(s)
+        except ValueError:
+            return s in FOLLOW_ON_STATES
+        # A numeric string that parsed to nan/inf falls through to the on-ish
+        # check (so a literal "nan"/"inf" is not on unless it is in FOLLOW_ON_STATES,
+        # which it is not) rather than reading as on.
+        if not math.isfinite(f):
+            return s in FOLLOW_ON_STATES
+        return f != 0
+    return bool(value)
 
 
 def _compare(value: float, op: str, threshold: float) -> bool:

@@ -108,6 +108,48 @@
           "target_value": "Hodnota, která se má vynutit. Číselné atributy se omezí na tuto hodnotu; barevné atributy jí musí odpovídat.",
           "delay_seconds": "Počkat takto dlouho po spuštění před vynucením. 0 = okamžitě. Maximum 86400 (24 h)."
         }
+      },
+      "dynamic_state_params": {
+        "title": "Dynamický stav",
+        "description": "Stav zapnuto/vypnuto cíle sleduje zdrojovou entitu (např. světlo, které sleduje čidlo pohybu).",
+        "data": {
+          "source_entity": "Zdrojová entita",
+          "follow_invert": "Invertovat stav",
+          "source_value_from": "Číst hodnotu z",
+          "delay_seconds": "Prodleva (sekundy)"
+        },
+        "data_description": {
+          "source_entity": "Entita, kterou cíle sledují. Nesmí být jednou z cílových entit.",
+          "follow_invert": "Vypnuto = zrcadlit (zdroj zapnuto → cíl zapnuto). Zapnuto = invertovat (zdroj zapnuto → cíl vypnuto).",
+          "source_value_from": "Zda číst stav zdroje, nebo jeden z jeho atributů.",
+          "delay_seconds": "Počkat takto dlouho po spuštění před vynucením. 0 = okamžitě. Maximum 86400 (24 h)."
+        }
+      },
+      "dynamic_attribute_params": {
+        "title": "Dynamický atribut",
+        "description": "Atribut cíle je udržován roven živé hodnotě čtené ze zdrojové entity (např. jas světla, který sleduje jiné světlo). Hodnota se kopíruje tak, jak je, dokud je cíl zapnutý.",
+        "data": {
+          "source_entity": "Zdrojová entita",
+          "source_value_from": "Číst hodnotu z",
+          "attribute": "Cílový atribut",
+          "delay_seconds": "Prodleva (sekundy)"
+        },
+        "data_description": {
+          "source_entity": "Entita, ze které se čte živá hodnota. Nesmí být jednou z cílových entit.",
+          "source_value_from": "Zda číst stav zdroje, nebo jeden z jeho atributů.",
+          "attribute": "Atribut nastavený na cíli. Jeho hodnota se kopíruje doslovně ze zdroje, dokud je cíl zapnutý; ujistěte se, že hodnota zdroje odpovídá rozsahu tohoto atributu.",
+          "delay_seconds": "Počkat takto dlouho po spuštění před vynucením. 0 = okamžitě. Maximum 86400 (24 h)."
+        }
+      },
+      "source_attribute_pick": {
+        "title": "Vyberte zdrojový atribut",
+        "description": "Zvolte, který atribut entity {source} se má číst. Každá možnost zobrazuje aktuální hodnotu atributu.",
+        "data": {
+          "source_attribute": "Zdrojový atribut"
+        },
+        "data_description": {
+          "source_attribute": "Zdrojový atribut, jehož živá hodnota se čte. Ukládá se pouze název atributu; zobrazená hodnota je jen aktuální náhled."
+        }
       }
     },
     "error": {
@@ -124,7 +166,12 @@
       "safety_not_acknowledged": "Abyste mohli pokračovat, musíte potvrdit bezpečnostní riziko.",
       "name_already_exists": "Pravidlo s tímto názvem již existuje.",
       "invalid_rgb_color": "Barva RGB musí být seznam tří hodnot mezi 0 a 255.",
-      "invalid_color_temp_kelvin": "Teplota barvy musí být mezi 2000 K a 6500 K."
+      "invalid_color_temp_kelvin": "Teplota barvy musí být mezi 2000 K a 6500 K.",
+      "empty_source_entity": "Vyberte zdrojovou entitu, kterou má cíl sledovat.",
+      "source_in_targets": "Zdrojová entita nemůže být zároveň cílem. Vyberte jinou zdrojovou entitu.",
+      "attribute_invalid_for_target": "Tento atribut není podporován žádnou z domén cílových entit.",
+      "source_attribute_required": "Vyberte zdrojový atribut ke čtení, nebo nastavte „Číst hodnotu z“ na Stav.",
+      "source_has_no_attributes": "Zdrojová entita nemá žádné atributy ke čtení. Zadejte název atributu, nebo se vraťte zpět a čtěte místo toho stav."
     },
     "abort": {
       "single_instance_allowed": "Lze nakonfigurovat pouze jeden rozbočovač Entity Guard.",
@@ -212,6 +259,48 @@
           "target_value": "Cílová hodnota",
           "delay_seconds": "Prodleva (sekundy)"
         }
+      },
+      "edit_dynamic_state_params": {
+        "title": "Upravit dynamický stav",
+        "description": "Stav zapnuto/vypnuto cíle sleduje zdrojovou entitu (např. světlo, které sleduje čidlo pohybu).",
+        "data": {
+          "source_entity": "Zdrojová entita",
+          "follow_invert": "Invertovat stav",
+          "source_value_from": "Číst hodnotu z",
+          "delay_seconds": "Prodleva (sekundy)"
+        },
+        "data_description": {
+          "source_entity": "Entita, kterou cíle sledují. Nesmí být jednou z cílových entit.",
+          "follow_invert": "Vypnuto = zrcadlit (zdroj zapnuto → cíl zapnuto). Zapnuto = invertovat (zdroj zapnuto → cíl vypnuto).",
+          "source_value_from": "Zda číst stav zdroje, nebo jeden z jeho atributů.",
+          "delay_seconds": "Počkat takto dlouho po spuštění před vynucením. 0 = okamžitě. Maximum 86400 (24 h)."
+        }
+      },
+      "edit_dynamic_attribute_params": {
+        "title": "Upravit dynamický atribut",
+        "description": "Atribut cíle je udržován roven živé hodnotě čtené ze zdrojové entity (např. jas světla, který sleduje jiné světlo). Hodnota se kopíruje tak, jak je, dokud je cíl zapnutý.",
+        "data": {
+          "source_entity": "Zdrojová entita",
+          "source_value_from": "Číst hodnotu z",
+          "attribute": "Cílový atribut",
+          "delay_seconds": "Prodleva (sekundy)"
+        },
+        "data_description": {
+          "source_entity": "Entita, ze které se čte živá hodnota. Nesmí být jednou z cílových entit.",
+          "source_value_from": "Zda číst stav zdroje, nebo jeden z jeho atributů.",
+          "attribute": "Atribut nastavený na cíli. Jeho hodnota se kopíruje doslovně ze zdroje, dokud je cíl zapnutý; ujistěte se, že hodnota zdroje odpovídá rozsahu tohoto atributu.",
+          "delay_seconds": "Počkat takto dlouho po spuštění před vynucením. 0 = okamžitě. Maximum 86400 (24 h)."
+        }
+      },
+      "edit_source_attribute_pick": {
+        "title": "Upravit zdrojový atribut",
+        "description": "Zvolte, který atribut entity {source} se má číst. Každá možnost zobrazuje aktuální hodnotu atributu.",
+        "data": {
+          "source_attribute": "Zdrojový atribut"
+        },
+        "data_description": {
+          "source_attribute": "Zdrojový atribut, jehož živá hodnota se čte. Ukládá se pouze název atributu; zobrazená hodnota je jen aktuální náhled."
+        }
       }
     },
     "error": {
@@ -228,7 +317,12 @@
       "safety_not_acknowledged": "Abyste mohli pokračovat, musíte potvrdit bezpečnostní riziko.",
       "name_already_exists": "Pravidlo s tímto názvem již existuje.",
       "invalid_rgb_color": "Barva RGB musí být seznam tří hodnot mezi 0 a 255.",
-      "invalid_color_temp_kelvin": "Teplota barvy musí být mezi 2000 K a 6500 K."
+      "invalid_color_temp_kelvin": "Teplota barvy musí být mezi 2000 K a 6500 K.",
+      "empty_source_entity": "Vyberte zdrojovou entitu, kterou má cíl sledovat.",
+      "source_in_targets": "Zdrojová entita nemůže být zároveň cílem. Vyberte jinou zdrojovou entitu.",
+      "attribute_invalid_for_target": "Tento atribut není podporován žádnou z domén cílových entit.",
+      "source_attribute_required": "Vyberte zdrojový atribut ke čtení, nebo nastavte „Číst hodnotu z“ na Stav.",
+      "source_has_no_attributes": "Zdrojová entita nemá žádné atributy ke čtení. Zadejte název atributu, nebo se vraťte zpět a čtěte místo toho stav."
     },
     "abort": {
       "name_already_exists": "Pravidlo s tímto názvem již existuje.",
@@ -301,8 +395,10 @@
     },
     "mode": {
       "options": {
-        "state": "Stav",
-        "attribute": "Atribut"
+        "fixed_state": "Pevný stav",
+        "fixed_attribute": "Pevný atribut",
+        "dynamic_state": "Dynamický stav (Režim sledování)",
+        "dynamic_attribute": "Dynamický atribut (Režim sledování)"
       }
     },
     "attribute": {
@@ -329,6 +425,12 @@
         "add": "Přidat příznak",
         "replace": "Nahradit všechny příznaky",
         "clear": "Vymazat všechny příznaky"
+      }
+    },
+    "source_value_from": {
+      "options": {
+        "state": "Stav",
+        "attribute": "Atribut"
       }
     }
   },

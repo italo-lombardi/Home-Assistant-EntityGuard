@@ -22,7 +22,7 @@ def _rule_entry(**overrides) -> MockConfigEntry:
         "rule_id": "rule-abc",
         "rule_name": "My Rule",
         "target_entities": ["light.bedroom"],
-        "mode": "state",
+        "mode": "fixed_state",
         "trigger_states": ["on"],
         "target_state": "off",
         "delay_seconds": 0,
