@@ -15,6 +15,7 @@ from homeassistant.util import dt as dt_util
 
 from custom_components.entity_guard.const import (
     MODE_DYNAMIC_STATE,
+    SOURCE_VALUE_FROM_ATTRIBUTE,
     SOURCE_VALUE_FROM_STATE,
     STATUS_PENDING,
 )
@@ -142,3 +143,64 @@ async def test_unset_direction_falls_back_to_shared_delay(hass: HomeAssistant):
     assert engine.current_status() == STATUS_PENDING
     assert _scheduled_delay(engine, "light.target") == 25
     await engine.async_unload()
+
+
+async def test_invert_keys_delay_to_target_direction_not_source(hass: HomeAssistant):
+    """follow_invert=True: the delay follows the TARGET's driven direction, not the source.
+
+    Locks the subtlest property — _follow_desired_on applies invert LAST, so the value
+    effective_delay sees IS the desired target state. With invert, source OFF means
+    desired target ON, so driving the target ON must use delay_on (10), not delay_off (90).
+    If the mapping were keyed to the source (source off → "off" → delay_off) it would be 90.
+    """
+    config = _make_config(follow_invert=True, delay_on_seconds=10, delay_off_seconds=90)
+    engine = _make_engine(hass, config)
+    engine._enforce = AsyncMock()
+    hass.states.async_set("binary_sensor.motion", "off")  # invert → desired target ON
+    hass.states.async_set("light.target", "off")  # target off → must be driven ON
+
+    await engine.async_evaluate("light.target", hass.states.get("light.target"))
+
+    assert engine.current_status() == STATUS_PENDING
+    assert _scheduled_delay(engine, "light.target") == 10  # delay_on, not 90
+    await engine.async_unload()
+
+    # And the mirror: source ON + invert → desired target OFF → delay_off (90).
+    engine2 = _make_engine(hass, config)
+    engine2._enforce = AsyncMock()
+    hass.states.async_set("binary_sensor.motion", "on")  # invert → desired target OFF
+    hass.states.async_set("light.target", "on")  # target on → must be driven OFF
+    await engine2.async_evaluate("light.target", hass.states.get("light.target"))
+    assert _scheduled_delay(engine2, "light.target") == 90  # delay_off
+    await engine2.async_unload()
+
+
+async def test_attribute_source_resolves_direction_and_delay(hass: HomeAssistant):
+    """source_value_from=attribute: desired direction (and thus the delay) comes from a
+    source ATTRIBUTE reduced to on/off, same per-direction pick as state-sourced rules."""
+    config = _make_config(
+        source_value_from=SOURCE_VALUE_FROM_ATTRIBUTE,
+        source_attribute="occupancy",
+        delay_on_seconds=15,
+        delay_off_seconds=75,
+    )
+    engine = _make_engine(hass, config)
+    engine._enforce = AsyncMock()
+    # Attribute truthy → desired target ON; target off → drive ON → delay_on.
+    hass.states.async_set("binary_sensor.motion", "on", {"occupancy": True})
+    hass.states.async_set("light.target", "off")
+
+    await engine.async_evaluate("light.target", hass.states.get("light.target"))
+
+    assert engine.current_status() == STATUS_PENDING
+    assert _scheduled_delay(engine, "light.target") == 15
+    await engine.async_unload()
+
+    # Attribute falsy → desired target OFF; target on → drive OFF → delay_off.
+    engine2 = _make_engine(hass, config)
+    engine2._enforce = AsyncMock()
+    hass.states.async_set("binary_sensor.motion", "on", {"occupancy": False})
+    hass.states.async_set("light.target", "on")
+    await engine2.async_evaluate("light.target", hass.states.get("light.target"))
+    assert _scheduled_delay(engine2, "light.target") == 75
+    await engine2.async_unload()
