@@ -361,14 +361,26 @@ class RuleEngine:
             # all-targets re-arm sweep will NOT fire. This event only re-evaluates
             # `entity_id` (fall-through below); sweep the SIBLING targets now so a
             # still-non-compliant target that emits no event of its own is not left
-            # unguarded. Guard mirrors the expiry callback; the triggering entity is
-            # handled by the fall-through, so skip it here (and _schedule_eval_task
-            # dedupes per entity anyway).
+            # unguarded.
+            #
+            # BUT only for a PLAIN-TARGET trigger. A flag or dynamic-source trigger
+            # has a dedicated branch below that already sweeps ALL targets — running
+            # the lazy sibling sweep too would double-schedule them. The per-entity
+            # cancel in _schedule_eval_task does NOT save us at delay 0: the first
+            # eval task runs to completion (synchronous enforce) before the second
+            # schedule, so the cancel is a no-op and both enforce. Skip the lazy
+            # sweep for flag/source triggers; their own branch owns the sweep.
             self._clear_suppression_state()
+            is_flag_trigger = entity_id in self._flag_entity_ids
+            is_source_trigger = (
+                self._is_dynamic and entity_id == self._config.source_entity
+            )
             if (
                 self._state.enabled
                 and self._startup_complete
                 and self._master_enabled_getter()
+                and not is_flag_trigger
+                and not is_source_trigger
             ):
                 for target in self._config.target_entities:
                     if target == entity_id:
