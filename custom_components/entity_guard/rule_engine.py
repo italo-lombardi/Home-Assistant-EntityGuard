@@ -356,7 +356,25 @@ class RuleEngine:
             self._set_status(STATUS_SUPPRESSED)
             return
         if self._state.suppressed_until and self._state.suppressed_until <= now:
+            # Lazy suppression expiry (the timer may not have drained yet). Clearing
+            # here cancels the pending expiry timer, so _handle_suppression_expired's
+            # all-targets re-arm sweep will NOT fire. This event only re-evaluates
+            # `entity_id` (fall-through below); sweep the SIBLING targets now so a
+            # still-non-compliant target that emits no event of its own is not left
+            # unguarded. Guard mirrors the expiry callback; the triggering entity is
+            # handled by the fall-through, so skip it here (and _schedule_eval_task
+            # dedupes per entity anyway).
             self._clear_suppression_state()
+            if (
+                self._state.enabled
+                and self._startup_complete
+                and self._master_enabled_getter()
+            ):
+                for target in self._config.target_entities:
+                    if target == entity_id:
+                        continue
+                    current = self._hass.states.get(target)
+                    self._schedule_eval_task(target, current, trigger_context_id)
 
         if not self._flags_match():
             prev_status = self._current_status
@@ -714,6 +732,18 @@ class RuleEngine:
             if not self._state.enabled or not self._master_enabled_getter():
                 self._apply_idle_status()
                 return
+            # Defense-in-depth: never enforce while suppressed. async_suppress /
+            # loop-protection cancel pending timers, but guard here too for the
+            # race where suppression lands in the same tick this timer fires.
+            if (
+                self._state.suppressed_until
+                and self._state.suppressed_until > dt_util.now()
+            ):
+                if self._pending_enforcements.get(entity_id) is my_cancel:
+                    self._pending_enforcements.pop(entity_id, None)
+                    self._pending_enforcement_due.pop(entity_id, None)
+                    self._apply_idle_status()
+                return
             current = self._hass.states.get(entity_id)
             triggered, skip_reason = self._trigger_decision(entity_id, current)
             if skip_reason is not None:
@@ -992,6 +1022,8 @@ class RuleEngine:
         self._state.suppression_reason = "loop_protection"
         self._persist()
         self._schedule_suppression_timer()
+        # Stop any pending enforcement too (same reason as manual suppress).
+        self._cancel_pending_for_entities(self._config.target_entities)
 
         self._hass.bus.async_fire(
             EVENT_LOOP_DETECTED,
@@ -1245,6 +1277,11 @@ class RuleEngine:
         self._state.suppression_reason = "manual"
         self._persist()
         self._schedule_suppression_timer()
+        # Cancel any in-flight pending enforcements (delay_seconds countdown): a
+        # suppression must stop a rule that is about to fire, and clear the
+        # per-entity due times so the card countdown disappears. Without this the
+        # already-scheduled _fire timers run and enforce despite suppression.
+        self._cancel_pending_for_entities(self._config.target_entities)
 
         self._hass.bus.async_fire(
             EVENT_SUPPRESSED,
@@ -1263,6 +1300,15 @@ class RuleEngine:
         _LOGGER.info("Unsuppressing rule '%s'", self._config.name)
         self._clear_suppression_state()
         self._apply_idle_status()
+        # Re-arm on manual clear too (same inactive→active transition as expiry):
+        # a still-non-compliant target that emits no new event would otherwise go
+        # unguarded until its next state change.
+        if (
+            self._state.enabled
+            and self._startup_complete
+            and self._master_enabled_getter()
+        ):
+            self._sweep_targets()
 
     async def async_clear_history(self) -> None:
         """Reset persisted counters and cooldowns.
@@ -1566,6 +1612,17 @@ class RuleEngine:
         ):
             self._clear_suppression_state()
         self._apply_idle_status()
+        # Re-arm: suppression is an inactive→active transition, same as re-enabling
+        # or the master switch coming back on (both sweep). Without this, a target
+        # that was non-compliant when suppressed — and emits no new state event
+        # while suppressed — is never re-evaluated after expiry, so the rule
+        # silently stops guarding it. Mirror the guard used in set_enabled.
+        if (
+            self._state.enabled
+            and self._startup_complete
+            and self._master_enabled_getter()
+        ):
+            self._sweep_targets()
 
 
 def _value_is_on(value: Any) -> bool:
