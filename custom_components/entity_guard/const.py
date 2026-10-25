@@ -17,6 +17,11 @@ CONF_MODE = "mode"
 CONF_TRIGGER_STATES = "trigger_states"
 CONF_TARGET_STATE = "target_state"
 CONF_DELAY_SECONDS = "delay_seconds"
+# dynamic_state only: per-direction delay overrides. When set, they override
+# delay_seconds for the matching target direction (on/off); when unset, the rule
+# falls back to delay_seconds. See RuleConfig.effective_delay.
+CONF_DELAY_ON_SECONDS = "delay_on_seconds"
+CONF_DELAY_OFF_SECONDS = "delay_off_seconds"
 CONF_ATTRIBUTE = "attribute"
 CONF_OPERATOR = "operator"
 CONF_THRESHOLD = "threshold"
