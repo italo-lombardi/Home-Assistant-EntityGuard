@@ -153,9 +153,11 @@ async def test_dynamic_source_lazy_expiry_enforces_each_target_once(
     """dynamic_state: a SOURCE event that lazily expires suppression re-arms each
     target exactly once.
 
-    The lazy-clear sibling sweep schedules every target, then the source-branch
-    sweep schedules them again; _schedule_eval_task cancel-replaces per entity, so
-    each target enforces once (no double), and none is dropped.
+    The GAP-4 gate SKIPS the lazy sibling sweep for a source trigger (is_source_trigger),
+    so only the dynamic source-branch sweeps all targets — each is scheduled once. Before
+    the gate, the lazy sweep AND the source-branch both scheduled, and at delay 0 the
+    first eval ran to completion before the second schedule's cancel, so both enforced
+    (double). This asserts the single-enforce behaviour the gate restores.
     """
     config = _dynamic_config(delay_seconds=0)
     engine = _engine(hass, config)
