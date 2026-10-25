@@ -14,6 +14,8 @@ from pytest_homeassistant_custom_component.common import (
 
 from custom_components.entity_guard.const import (
     CONF_DEBOUNCE_SECONDS,
+    CONF_DELAY_OFF_SECONDS,
+    CONF_DELAY_ON_SECONDS,
     CONF_DELAY_SECONDS,
     CONF_ENTRY_TYPE,
     CONF_MAX_ENFORCEMENTS_PER_MINUTE,
@@ -23,20 +25,26 @@ from custom_components.entity_guard.const import (
     DOMAIN,
     ENTRY_TYPE_HUB,
     ENTRY_TYPE_RULE,
+    MODE_DYNAMIC_STATE,
+    MODE_FIXED_STATE,
 )
 from custom_components.entity_guard.number import (
     EntityGuardDebounceSecondsNumber,
+    EntityGuardDelayOffSecondsNumber,
+    EntityGuardDelayOnSecondsNumber,
     EntityGuardDelaySecondsNumber,
     EntityGuardMaxEnforcementsNumber,
+    async_setup_entry,
 )
 
 
-def _make_engine(delay=5, debounce=60, rate=10):
+def _make_engine(delay=5, debounce=60, rate=10, mode=MODE_FIXED_STATE):
     engine = MagicMock()
     engine.config.unique_id = "test-uid"
     engine.config.delay_seconds = delay
     engine.config.debounce_seconds = debounce
     engine.config.max_enforcements_per_minute = rate
+    engine.config.mode = mode
     return engine
 
 
@@ -352,3 +360,135 @@ async def test_number_async_added_subscribes(hass: HomeAssistant):
     async_dispatcher_send(hass, f"entity_guard_rule_update_{engine.config.unique_id}")
     await hass.async_block_till_done()
     num.async_write_ha_state.assert_called()
+
+
+# ---------------------------------------------------------------------------
+# Per-direction delay sliders (dynamic_state). Regression for the dead/mislabelled
+# single "Delay" slider: dynamic_state now exposes delay_on / delay_off sliders that
+# write the directional override keys (which effective_delay actually reads), and the
+# single shared slider is gated OUT for dynamic_state.
+# ---------------------------------------------------------------------------
+
+
+async def test_setup_entry_dynamic_state_uses_directional_sliders(hass: HomeAssistant):
+    """dynamic_state → two directional delay sliders, NO single delay_seconds slider."""
+    entry = _make_rule_entry()
+    engine = _make_engine(mode=MODE_DYNAMIC_STATE)
+    hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
+    added = []
+    await async_setup_entry(hass, entry, added.extend)
+    types = {type(s).__name__ for s in added}
+    assert "EntityGuardDelayOnSecondsNumber" in types
+    assert "EntityGuardDelayOffSecondsNumber" in types
+    assert "EntityGuardDelaySecondsNumber" not in types  # gated out
+    # Debounce + rate-limit sliders unchanged.
+    assert "EntityGuardDebounceSecondsNumber" in types
+    assert "EntityGuardMaxEnforcementsNumber" in types
+
+
+async def test_setup_entry_fixed_mode_keeps_single_delay_slider(hass: HomeAssistant):
+    """Non-dynamic_state → the single shared delay slider, no directional ones."""
+    entry = _make_rule_entry()
+    engine = _make_engine(mode=MODE_FIXED_STATE)
+    hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
+    added = []
+    await async_setup_entry(hass, entry, added.extend)
+    types = {type(s).__name__ for s in added}
+    assert "EntityGuardDelaySecondsNumber" in types
+    assert "EntityGuardDelayOnSecondsNumber" not in types
+    assert "EntityGuardDelayOffSecondsNumber" not in types
+
+
+def test_directional_native_value_from_override():
+    """Slider shows the directional override when set."""
+    entry = _make_rule_entry()
+    engine = _make_engine(mode=MODE_DYNAMIC_STATE)
+    engine.config.delay_on_seconds = 12
+    engine.config.delay_off_seconds = 88
+    on = EntityGuardDelayOnSecondsNumber(entry, engine)
+    off = EntityGuardDelayOffSecondsNumber(entry, engine)
+    assert on.native_value == 12.0
+    assert off.native_value == 88.0
+
+
+def test_directional_native_value_falls_back_to_shared_when_unset():
+    """Override None (pre-feature rule) → slider shows the shared delay_seconds, not None."""
+    entry = _make_rule_entry()
+    engine = _make_engine(delay=25, mode=MODE_DYNAMIC_STATE)
+    engine.config.delay_on_seconds = None
+    engine.config.delay_off_seconds = None
+    on = EntityGuardDelayOnSecondsNumber(entry, engine)
+    off = EntityGuardDelayOffSecondsNumber(entry, engine)
+    assert on.native_value == 25.0
+    assert off.native_value == 25.0
+
+
+def test_directional_native_value_reads_entry_when_config_missing():
+    """Both config overrides AND config.delay_seconds None → read merged entry dict
+    (the directional key if present, else the entry's delay_seconds)."""
+    entry = _make_rule_entry(**{CONF_DELAY_SECONDS: 33})
+    engine = _make_engine(mode=MODE_DYNAMIC_STATE)
+    engine.config.delay_on_seconds = None
+    engine.config.delay_off_seconds = None
+    engine.config.delay_seconds = None
+    on = EntityGuardDelayOnSecondsNumber(entry, engine)
+    # delay_on absent from entry → falls to entry's delay_seconds (33).
+    assert on.native_value == 33.0
+    # If the directional key IS in the entry, it wins.
+    entry2 = _make_rule_entry(**{CONF_DELAY_OFF_SECONDS: 70, CONF_DELAY_SECONDS: 33})
+    off = EntityGuardDelayOffSecondsNumber(entry2, engine)
+    assert off.native_value == 70.0
+
+
+async def test_directional_slider_write_is_read_by_effective_delay(hass: HomeAssistant):
+    """THE regression lock: moving the delay-on slider changes the ACTUAL on-delay.
+
+    Uses a real RuleConfig so effective_delay runs. Before the fix the single slider
+    wrote delay_seconds, which effective_delay ignores for dynamic_state → dead control.
+    The directional slider writes delay_on_seconds, which effective_delay reads.
+    """
+    from custom_components.entity_guard.models import RuleConfig
+
+    config = RuleConfig(
+        unique_id="u",
+        name="Follow",
+        target_entities=["light.a"],
+        mode=MODE_DYNAMIC_STATE,
+        trigger_states=[],
+        target_state=None,
+        delay_seconds=5,
+        attribute=None,
+        operator=None,
+        threshold=None,
+        target_value=None,
+        flags=[],
+        debounce_enabled=False,
+        debounce_seconds=60,
+        max_enforcements_per_minute=10,
+        safety_acknowledged=False,
+        delay_on_seconds=5,
+        delay_off_seconds=5,
+    )
+    engine = MagicMock()
+    engine.config = config
+    entry = _make_rule_entry()
+    entry.add_to_hass(hass)
+    num = EntityGuardDelayOnSecondsNumber(entry, engine)
+    num.hass = hass
+    num._attr_available = True
+    num.async_write_ha_state = MagicMock()
+
+    # Pre-write: on-delay is 5.
+    assert config.effective_delay(True) == 5
+
+    await num.async_set_native_value(40.0)
+
+    # Live: the override is updated, and effective_delay(True) now reflects it.
+    assert config.delay_on_seconds == 40
+    assert config.effective_delay(True) == 40
+    # off-delay untouched.
+    assert config.effective_delay(False) == 5
+    # Persisted to the directional key (not delay_seconds) so it survives reload.
+    await _flush_debounce(hass)
+    assert entry.options[CONF_DELAY_ON_SECONDS] == 40
+    assert CONF_DELAY_SECONDS not in entry.options

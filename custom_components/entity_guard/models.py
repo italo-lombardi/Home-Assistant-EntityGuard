@@ -15,6 +15,8 @@ from .const import (
     CONF_ATTRIBUTE,
     CONF_DEBOUNCE_ENABLED,
     CONF_DEBOUNCE_SECONDS,
+    CONF_DELAY_OFF_SECONDS,
+    CONF_DELAY_ON_SECONDS,
     CONF_DELAY_SECONDS,
     CONF_FLAG_ENTITY,
     CONF_FLAG_MATCH_STATE,
@@ -47,6 +49,7 @@ from .const import (
     MIN_COLOR_TEMP_KELVIN,
     MIN_DEBOUNCE_SECONDS,
     MIN_DELAY_SECONDS,
+    MODE_DYNAMIC_STATE,
     MODE_FIXED_STATE,
     SOURCE_VALUE_FROM_STATE,
 )
@@ -103,6 +106,37 @@ class RuleConfig:
     follow_invert: bool = False
     source_value_from: str = "state"
     source_attribute: str | None = None
+    # dynamic_state only: per-direction delay overrides. None = fall back to
+    # delay_seconds; an explicit 0 means "immediate" for that direction (distinct
+    # from unset). Non-dynamic-state modes ignore these. See effective_delay.
+    delay_on_seconds: int | None = None
+    delay_off_seconds: int | None = None
+
+    def effective_delay(self, desired_on: bool | None) -> int:
+        """Delay (seconds) to use for driving a target toward `desired_on`.
+
+        dynamic_state may override the shared delay_seconds per direction:
+        desired on → delay_on_seconds, desired off → delay_off_seconds. An unset
+        override (None) falls back to delay_seconds; an explicit 0 is honoured as
+        immediate.
+
+        Gated on mode AND a non-None direction: any non-dynamic_state mode (and
+        any case where the desired direction is unknown — e.g. source offline)
+        returns delay_seconds, identical to pre-feature behaviour. The mode gate
+        matters because the private _follow_desired_on() the engine passes DOES
+        compute a value for dynamic_attribute (it has a source_entity) — only the
+        mode check keeps the overrides dynamic_state-exclusive.
+
+        Note the desired_on=None branch is reachable via unit tests (and any future
+        caller) but NOT from the engine's live enforce path: the dynamic trigger
+        decision returns not-triggered whenever _follow_desired_on() is None, so the
+        engine never schedules a dynamic_state enforcement with a None direction. The
+        None→delay_seconds fallback is therefore dead-but-safe in production today.
+        """
+        if self.mode != MODE_DYNAMIC_STATE or desired_on is None:
+            return self.delay_seconds
+        override = self.delay_on_seconds if desired_on else self.delay_off_seconds
+        return override if override is not None else self.delay_seconds
 
 
 @dataclass
@@ -164,6 +198,23 @@ def parse_rule_config(entry: ConfigEntry) -> RuleConfig:
             ),
         ),
     )
+
+    def _bounded_delay_or_none(key: str) -> int | None:
+        """Parse an optional per-direction delay: None when the key is absent,
+        else a bounded int (0 is a valid 'immediate' value, kept distinct from
+        unset). Used for the dynamic_state delay_on/off overrides."""
+        if raw.get(key) is None:
+            return None
+        return max(
+            MIN_DELAY_SECONDS,
+            min(
+                MAX_DELAY_SECONDS,
+                _to_int_or_default(raw.get(key), DEFAULT_DELAY_SECONDS),
+            ),
+        )
+
+    _delay_on = _bounded_delay_or_none(CONF_DELAY_ON_SECONDS)
+    _delay_off = _bounded_delay_or_none(CONF_DELAY_OFF_SECONDS)
     _debounce = max(
         MIN_DEBOUNCE_SECONDS,
         min(
@@ -213,6 +264,8 @@ def parse_rule_config(entry: ConfigEntry) -> RuleConfig:
         follow_invert=bool(raw.get(CONF_FOLLOW_INVERT, False)),
         source_value_from=raw.get(CONF_SOURCE_VALUE_FROM, SOURCE_VALUE_FROM_STATE),
         source_attribute=raw.get(CONF_SOURCE_ATTRIBUTE) or None,
+        delay_on_seconds=_delay_on,
+        delay_off_seconds=_delay_off,
     )
 
 

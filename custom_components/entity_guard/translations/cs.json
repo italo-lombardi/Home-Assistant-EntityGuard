@@ -116,13 +116,15 @@
           "source_entity": "Zdrojová entita",
           "follow_invert": "Invertovat stav",
           "source_value_from": "Číst hodnotu z",
-          "delay_seconds": "Prodleva (sekundy)"
+          "delay_on_seconds": "Prodleva při zapínání (sekundy)",
+          "delay_off_seconds": "Prodleva při vypínání (sekundy)"
         },
         "data_description": {
           "source_entity": "Entita, kterou cíle sledují. Nesmí být jednou z cílových entit.",
           "follow_invert": "Vypnuto = zrcadlit (zdroj zapnuto → cíl zapnuto). Zapnuto = invertovat (zdroj zapnuto → cíl vypnuto).",
           "source_value_from": "Zda číst stav zdroje, nebo jeden z jeho atributů.",
-          "delay_seconds": "Počkat takto dlouho po spuštění před vynucením. 0 = okamžitě. Maximum 86400 (24 h)."
+          "delay_on_seconds": "Počkat takto dlouho před zapnutím cíle. 0 = okamžitě. Maximum 86400 (24 h).",
+          "delay_off_seconds": "Počkat takto dlouho před vypnutím cíle. 0 = okamžitě. Maximum 86400 (24 h)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Zdrojová entita",
           "follow_invert": "Invertovat stav",
           "source_value_from": "Číst hodnotu z",
-          "delay_seconds": "Prodleva (sekundy)"
+          "delay_on_seconds": "Prodleva při zapínání (sekundy)",
+          "delay_off_seconds": "Prodleva při vypínání (sekundy)"
         },
         "data_description": {
           "source_entity": "Entita, kterou cíle sledují. Nesmí být jednou z cílových entit.",
           "follow_invert": "Vypnuto = zrcadlit (zdroj zapnuto → cíl zapnuto). Zapnuto = invertovat (zdroj zapnuto → cíl vypnuto).",
           "source_value_from": "Zda číst stav zdroje, nebo jeden z jeho atributů.",
-          "delay_seconds": "Počkat takto dlouho po spuštění před vynucením. 0 = okamžitě. Maximum 86400 (24 h)."
+          "delay_on_seconds": "Počkat takto dlouho před zapnutím cíle. 0 = okamžitě. Maximum 86400 (24 h).",
+          "delay_off_seconds": "Počkat takto dlouho před vypnutím cíle. 0 = okamžitě. Maximum 86400 (24 h)."
         }
       },
       "edit_dynamic_attribute_params": {
@@ -492,6 +496,12 @@
     "number": {
       "delay_seconds": {
         "name": "Prodleva (sekundy)"
+      },
+      "delay_on_seconds": {
+        "name": "Prodleva při zapínání (sekundy)"
+      },
+      "delay_off_seconds": {
+        "name": "Prodleva při vypínání (sekundy)"
       },
       "debounce_seconds": {
         "name": "Potlačení zákmitů (sekundy)"

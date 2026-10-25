@@ -116,13 +116,15 @@
           "source_entity": "Šaltinio esybė",
           "follow_invert": "Apversti būseną",
           "source_value_from": "Reikšmę nuskaityti iš",
-          "delay_seconds": "Delsimas (sekundės)"
+          "delay_on_seconds": "Delsimas įjungiant (sekundės)",
+          "delay_off_seconds": "Delsimas išjungiant (sekundės)"
         },
         "data_description": {
           "source_entity": "Esybė, kurią seka tikslai. Negali būti viena iš tikslinių esybių.",
           "follow_invert": "Išjungta = atkartoti (šaltinis įjungtas → tikslas įjungtas). Įjungta = apversti (šaltinis įjungtas → tikslas išjungtas).",
           "source_value_from": "Ar nuskaityti šaltinio būseną, ar vieną iš jo atributų.",
-          "delay_seconds": "Palaukite tiek laiko po aktyvinimo prieš taikydami. 0 = iškart. Daugiausia 86400 (24 val.)."
+          "delay_on_seconds": "Palaukite tiek laiko prieš įjungdami tikslą. 0 = iškart. Daugiausia 86400 (24 val.).",
+          "delay_off_seconds": "Palaukite tiek laiko prieš išjungdami tikslą. 0 = iškart. Daugiausia 86400 (24 val.)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Šaltinio esybė",
           "follow_invert": "Apversti būseną",
           "source_value_from": "Reikšmę nuskaityti iš",
-          "delay_seconds": "Delsimas (sekundės)"
+          "delay_on_seconds": "Delsimas įjungiant (sekundės)",
+          "delay_off_seconds": "Delsimas išjungiant (sekundės)"
         },
         "data_description": {
           "source_entity": "Esybė, kurią seka tikslai. Negali būti viena iš tikslinių esybių.",
           "follow_invert": "Išjungta = atkartoti (šaltinis įjungtas → tikslas įjungtas). Įjungta = apversti (šaltinis įjungtas → tikslas išjungtas).",
           "source_value_from": "Ar nuskaityti šaltinio būseną, ar vieną iš jo atributų.",
-          "delay_seconds": "Palaukite tiek laiko po aktyvinimo prieš taikydami. 0 = iškart. Daugiausia 86400 (24 val.)."
+          "delay_on_seconds": "Palaukite tiek laiko prieš įjungdami tikslą. 0 = iškart. Daugiausia 86400 (24 val.).",
+          "delay_off_seconds": "Palaukite tiek laiko prieš išjungdami tikslą. 0 = iškart. Daugiausia 86400 (24 val.)."
         }
       },
       "edit_dynamic_attribute_params": {
@@ -492,6 +496,12 @@
     "number": {
       "delay_seconds": {
         "name": "Delsimas (sekundės)"
+      },
+      "delay_on_seconds": {
+        "name": "Delsimas įjungiant (sekundės)"
+      },
+      "delay_off_seconds": {
+        "name": "Delsimas išjungiant (sekundės)"
       },
       "debounce_seconds": {
         "name": "Nutildymas (sekundės)"

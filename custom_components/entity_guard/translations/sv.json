@@ -116,13 +116,15 @@
           "source_entity": "Källentitet",
           "follow_invert": "Invertera tillstånd",
           "source_value_from": "Läs värde från",
-          "delay_seconds": "Fördröjning (sekunder)"
+          "delay_on_seconds": "Fördröjning vid påslagning (sekunder)",
+          "delay_off_seconds": "Fördröjning vid avstängning (sekunder)"
         },
         "data_description": {
           "source_entity": "Entiteten som målen följer. Får inte vara en av målentiteterna.",
           "follow_invert": "Av = spegla (källa på → mål på). På = invertera (källa på → mål av).",
           "source_value_from": "Om källans tillstånd eller ett av dess attribut ska läsas.",
-          "delay_seconds": "Vänta så här länge efter en utlösare innan tillämpning. 0 = omedelbart. Max 86400 (24h)."
+          "delay_on_seconds": "Vänta så här länge innan ett mål slås på. 0 = omedelbart. Max 86400 (24h).",
+          "delay_off_seconds": "Vänta så här länge innan ett mål stängs av. 0 = omedelbart. Max 86400 (24h)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Källentitet",
           "follow_invert": "Invertera tillstånd",
           "source_value_from": "Läs värde från",
-          "delay_seconds": "Fördröjning (sekunder)"
+          "delay_on_seconds": "Fördröjning vid påslagning (sekunder)",
+          "delay_off_seconds": "Fördröjning vid avstängning (sekunder)"
         },
         "data_description": {
           "source_entity": "Entiteten som målen följer. Får inte vara en av målentiteterna.",
           "follow_invert": "Av = spegla (källa på → mål på). På = invertera (källa på → mål av).",
           "source_value_from": "Om källans tillstånd eller ett av dess attribut ska läsas.",
-          "delay_seconds": "Vänta så här länge efter en utlösare innan tillämpning. 0 = omedelbart. Max 86400 (24h)."
+          "delay_on_seconds": "Vänta så här länge innan ett mål slås på. 0 = omedelbart. Max 86400 (24h).",
+          "delay_off_seconds": "Vänta så här länge innan ett mål stängs av. 0 = omedelbart. Max 86400 (24h)."
         }
       },
       "edit_dynamic_attribute_params": {
@@ -492,6 +496,12 @@
     "number": {
       "delay_seconds": {
         "name": "Fördröjning (sekunder)"
+      },
+      "delay_on_seconds": {
+        "name": "Fördröjning vid påslagning (sekunder)"
+      },
+      "delay_off_seconds": {
+        "name": "Fördröjning vid avstängning (sekunder)"
       },
       "debounce_seconds": {
         "name": "Avstudsning (sekunder)"

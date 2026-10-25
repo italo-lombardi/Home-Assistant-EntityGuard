@@ -116,13 +116,15 @@
           "source_entity": "Kaynak varlık",
           "follow_invert": "Durumu tersine çevir",
           "source_value_from": "Değeri şuradan oku",
-          "delay_seconds": "Gecikme (saniye)"
+          "delay_on_seconds": "Açarken gecikme (saniye)",
+          "delay_off_seconds": "Kapatırken gecikme (saniye)"
         },
         "data_description": {
           "source_entity": "Hedeflerin izlediği varlık. Hedef varlıklardan biri olmamalıdır.",
           "follow_invert": "Kapalı = yansıt (kaynak açık → hedef açık). Açık = tersine çevir (kaynak açık → hedef kapalı).",
           "source_value_from": "Kaynağın durumunun mu yoksa özniteliklerinden birinin mi okunacağı.",
-          "delay_seconds": "Uygulamadan önce bir tetiklemenin ardından bu kadar bekleyin. 0 = anında. En fazla 86400 (24s)."
+          "delay_on_seconds": "Bir hedefi açmadan önce bu kadar bekleyin. 0 = anında. En fazla 86400 (24s).",
+          "delay_off_seconds": "Bir hedefi kapatmadan önce bu kadar bekleyin. 0 = anında. En fazla 86400 (24s)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Kaynak varlık",
           "follow_invert": "Durumu tersine çevir",
           "source_value_from": "Değeri şuradan oku",
-          "delay_seconds": "Gecikme (saniye)"
+          "delay_on_seconds": "Açarken gecikme (saniye)",
+          "delay_off_seconds": "Kapatırken gecikme (saniye)"
         },
         "data_description": {
           "source_entity": "Hedeflerin izlediği varlık. Hedef varlıklardan biri olmamalıdır.",
           "follow_invert": "Kapalı = yansıt (kaynak açık → hedef açık). Açık = tersine çevir (kaynak açık → hedef kapalı).",
           "source_value_from": "Kaynağın durumunun mu yoksa özniteliklerinden birinin mi okunacağı.",
-          "delay_seconds": "Uygulamadan önce bir tetiklemenin ardından bu kadar bekleyin. 0 = anında. En fazla 86400 (24s)."
+          "delay_on_seconds": "Bir hedefi açmadan önce bu kadar bekleyin. 0 = anında. En fazla 86400 (24s).",
+          "delay_off_seconds": "Bir hedefi kapatmadan önce bu kadar bekleyin. 0 = anında. En fazla 86400 (24s)."
         }
       },
       "edit_dynamic_attribute_params": {
@@ -492,6 +496,12 @@
     "number": {
       "delay_seconds": {
         "name": "Gecikme (saniye)"
+      },
+      "delay_on_seconds": {
+        "name": "Açarken gecikme (saniye)"
+      },
+      "delay_off_seconds": {
+        "name": "Kapatırken gecikme (saniye)"
       },
       "debounce_seconds": {
         "name": "Debounce (saniye)"

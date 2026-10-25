@@ -29,6 +29,8 @@ from .const import (
     CONF_CUSTOM_RATE_LIMIT,
     CONF_DEBOUNCE_ENABLED,
     CONF_DEBOUNCE_SECONDS,
+    CONF_DELAY_OFF_SECONDS,
+    CONF_DELAY_ON_SECONDS,
     CONF_DELAY_SECONDS,
     CONF_ENTRY_TYPE,
     CONF_FLAG_ENTITY,
@@ -176,8 +178,22 @@ def _build_summary(data: dict[str, Any], hass: Any = None) -> str:
                 f"→ clamp to `{data.get(CONF_TARGET_VALUE)}`"
             )
 
-    delay = data.get(CONF_DELAY_SECONDS, 0)
-    lines.append(f"**Delay:** {delay}s" + (" (immediate)" if delay == 0 else ""))
+    if mode == MODE_DYNAMIC_STATE:
+        # Per-direction delays. Fall back to the shared delay when a direction is
+        # unset (mirrors RuleConfig.effective_delay).
+        shared = data.get(CONF_DELAY_SECONDS, 0)
+        delay_on = data.get(CONF_DELAY_ON_SECONDS, shared)
+        delay_off = data.get(CONF_DELAY_OFF_SECONDS, shared)
+        lines.append(
+            f"**Delay (on):** {delay_on}s" + (" (immediate)" if delay_on == 0 else "")
+        )
+        lines.append(
+            f"**Delay (off):** {delay_off}s"
+            + (" (immediate)" if delay_off == 0 else "")
+        )
+    else:
+        delay = data.get(CONF_DELAY_SECONDS, 0)
+        lines.append(f"**Delay:** {delay}s" + (" (immediate)" if delay == 0 else ""))
 
     flags = data.get(CONF_FLAGS, [])
     if flags:
@@ -557,9 +573,11 @@ def _dynamic_state_schema(
     exclude_targets: list[str] | None = None,
     source_default: str | None = None,
     invert_default: bool = False,
-    delay_default: int = DEFAULT_DELAY_SECONDS,
+    delay_on_default: int = DEFAULT_DELAY_SECONDS,
+    delay_off_default: int = DEFAULT_DELAY_SECONDS,
 ) -> vol.Schema:
-    """dynamic_state first-step schema: source + invert + value-from + delay.
+    """dynamic_state first-step schema: source + invert + value-from + per-direction
+    delays. One delay for driving the target ON, one for OFF (dynamic_state only).
     When value-from is attribute, the flow advances to the attribute pick step."""
     return vol.Schema(
         {
@@ -571,7 +589,12 @@ def _dynamic_state_schema(
                 CONF_FOLLOW_INVERT, default=invert_default
             ): selector.BooleanSelector(),
             **_source_value_from_field(),
-            vol.Required(CONF_DELAY_SECONDS, default=delay_default): _delay_selector(),
+            vol.Required(
+                CONF_DELAY_ON_SECONDS, default=delay_on_default
+            ): _delay_selector(),
+            vol.Required(
+                CONF_DELAY_OFF_SECONDS, default=delay_off_default
+            ): _delay_selector(),
         }
     )
 
@@ -944,16 +967,21 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             source = user_input.get(CONF_SOURCE_ENTITY)
-            delay = _coerce_delay(user_input.get(CONF_DELAY_SECONDS))
+            delay_on = _coerce_delay(user_input.get(CONF_DELAY_ON_SECONDS))
+            delay_off = _coerce_delay(user_input.get(CONF_DELAY_OFF_SECONDS))
             errors = _validate_dynamic_state(source, targets)
-            if delay is None:
-                errors[CONF_DELAY_SECONDS] = "invalid_delay"
+            if delay_on is None:
+                errors[CONF_DELAY_ON_SECONDS] = "invalid_delay"
+            if delay_off is None:
+                errors[CONF_DELAY_OFF_SECONDS] = "invalid_delay"
             if not errors:
                 self._rule_data[CONF_SOURCE_ENTITY] = source
                 self._rule_data[CONF_FOLLOW_INVERT] = bool(
                     user_input.get(CONF_FOLLOW_INVERT, False)
                 )
-                self._rule_data[CONF_DELAY_SECONDS] = delay
+                self._rule_data[CONF_DELAY_ON_SECONDS] = delay_on
+                self._rule_data[CONF_DELAY_OFF_SECONDS] = delay_off
+                self._rule_data[CONF_DELAY_SECONDS] = delay_on
                 value_from = user_input.get(
                     CONF_SOURCE_VALUE_FROM, SOURCE_VALUE_FROM_STATE
                 )
@@ -969,8 +997,13 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
                 exclude_targets=targets,
                 source_default=self._rule_data.get(CONF_SOURCE_ENTITY),
                 invert_default=bool(self._rule_data.get(CONF_FOLLOW_INVERT, False)),
-                delay_default=self._rule_data.get(
-                    CONF_DELAY_SECONDS, DEFAULT_DELAY_SECONDS
+                delay_on_default=self._rule_data.get(
+                    CONF_DELAY_ON_SECONDS,
+                    self._rule_data.get(CONF_DELAY_SECONDS, DEFAULT_DELAY_SECONDS),
+                ),
+                delay_off_default=self._rule_data.get(
+                    CONF_DELAY_OFF_SECONDS,
+                    self._rule_data.get(CONF_DELAY_SECONDS, DEFAULT_DELAY_SECONDS),
                 ),
             ),
             errors=errors,
@@ -1556,16 +1589,21 @@ class EntityGuardOptionsFlow(OptionsFlow):
 
         if user_input is not None:
             source = user_input.get(CONF_SOURCE_ENTITY)
-            delay = _coerce_delay(user_input.get(CONF_DELAY_SECONDS))
+            delay_on = _coerce_delay(user_input.get(CONF_DELAY_ON_SECONDS))
+            delay_off = _coerce_delay(user_input.get(CONF_DELAY_OFF_SECONDS))
             errors = _validate_dynamic_state(source, targets)
-            if delay is None:
-                errors[CONF_DELAY_SECONDS] = "invalid_delay"
+            if delay_on is None:
+                errors[CONF_DELAY_ON_SECONDS] = "invalid_delay"
+            if delay_off is None:
+                errors[CONF_DELAY_OFF_SECONDS] = "invalid_delay"
             if not errors:
                 self._working[CONF_SOURCE_ENTITY] = source
                 self._working[CONF_FOLLOW_INVERT] = bool(
                     user_input.get(CONF_FOLLOW_INVERT, False)
                 )
-                self._working[CONF_DELAY_SECONDS] = delay
+                self._working[CONF_DELAY_ON_SECONDS] = delay_on
+                self._working[CONF_DELAY_OFF_SECONDS] = delay_off
+                self._working[CONF_DELAY_SECONDS] = delay_on
                 value_from = user_input.get(
                     CONF_SOURCE_VALUE_FROM, SOURCE_VALUE_FROM_STATE
                 )
@@ -1581,8 +1619,13 @@ class EntityGuardOptionsFlow(OptionsFlow):
                 exclude_targets=targets,
                 source_default=self._working.get(CONF_SOURCE_ENTITY),
                 invert_default=bool(self._working.get(CONF_FOLLOW_INVERT, False)),
-                delay_default=self._working.get(
-                    CONF_DELAY_SECONDS, DEFAULT_DELAY_SECONDS
+                delay_on_default=self._working.get(
+                    CONF_DELAY_ON_SECONDS,
+                    self._working.get(CONF_DELAY_SECONDS, DEFAULT_DELAY_SECONDS),
+                ),
+                delay_off_default=self._working.get(
+                    CONF_DELAY_OFF_SECONDS,
+                    self._working.get(CONF_DELAY_SECONDS, DEFAULT_DELAY_SECONDS),
                 ),
             ),
             errors=errors,

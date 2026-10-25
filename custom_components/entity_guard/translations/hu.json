@@ -116,13 +116,15 @@
           "source_entity": "Forrás entitás",
           "follow_invert": "Állapot invertálása",
           "source_value_from": "Érték olvasása innen",
-          "delay_seconds": "Késleltetés (másodperc)"
+          "delay_on_seconds": "Késleltetés bekapcsoláskor (másodperc)",
+          "delay_off_seconds": "Késleltetés kikapcsoláskor (másodperc)"
         },
         "data_description": {
           "source_entity": "Az az entitás, amelyet a célok követnek. Nem lehet a cél entitások egyike.",
           "follow_invert": "Ki = tükrözés (forrás be → cél be). Be = invertálás (forrás be → cél ki).",
           "source_value_from": "A forrás állapotát vagy valamelyik attribútumát olvassa-e be.",
-          "delay_seconds": "Várjon ennyit egy trigger után a kényszerítés előtt. 0 = azonnali. Maximum 86400 (24 óra)."
+          "delay_on_seconds": "Várjon ennyit, mielőtt egy célt bekapcsol. 0 = azonnali. Maximum 86400 (24 óra).",
+          "delay_off_seconds": "Várjon ennyit, mielőtt egy célt kikapcsol. 0 = azonnali. Maximum 86400 (24 óra)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Forrás entitás",
           "follow_invert": "Állapot invertálása",
           "source_value_from": "Érték olvasása innen",
-          "delay_seconds": "Késleltetés (másodperc)"
+          "delay_on_seconds": "Késleltetés bekapcsoláskor (másodperc)",
+          "delay_off_seconds": "Késleltetés kikapcsoláskor (másodperc)"
         },
         "data_description": {
           "source_entity": "Az az entitás, amelyet a célok követnek. Nem lehet a cél entitások egyike.",
           "follow_invert": "Ki = tükrözés (forrás be → cél be). Be = invertálás (forrás be → cél ki).",
           "source_value_from": "A forrás állapotát vagy valamelyik attribútumát olvassa-e be.",
-          "delay_seconds": "Várjon ennyit egy trigger után a kényszerítés előtt. 0 = azonnali. Maximum 86400 (24 óra)."
+          "delay_on_seconds": "Várjon ennyit, mielőtt egy célt bekapcsol. 0 = azonnali. Maximum 86400 (24 óra).",
+          "delay_off_seconds": "Várjon ennyit, mielőtt egy célt kikapcsol. 0 = azonnali. Maximum 86400 (24 óra)."
         }
       },
       "edit_dynamic_attribute_params": {
@@ -492,6 +496,12 @@
     "number": {
       "delay_seconds": {
         "name": "Késleltetés (másodperc)"
+      },
+      "delay_on_seconds": {
+        "name": "Késleltetés bekapcsoláskor (másodperc)"
+      },
+      "delay_off_seconds": {
+        "name": "Késleltetés kikapcsoláskor (másodperc)"
       },
       "debounce_seconds": {
         "name": "Debounce (másodperc)"

@@ -116,13 +116,15 @@
           "source_entity": "源实体",
           "follow_invert": "反转状态",
           "source_value_from": "读取值来源",
-          "delay_seconds": "延迟（秒）"
+          "delay_on_seconds": "开启时的延迟（秒）",
+          "delay_off_seconds": "关闭时的延迟（秒）"
         },
         "data_description": {
           "source_entity": "目标实体所跟随的实体。不能是其中任一目标实体。",
           "follow_invert": "关 = 镜像（源为开 → 目标为开）。开 = 反转（源为开 → 目标为关）。",
           "source_value_from": "读取源的状态还是其某个属性。",
-          "delay_seconds": "触发后等待此时长再执行强制。0 = 立即执行。最大 86400（24 小时）。"
+          "delay_on_seconds": "将目标驱动为开之前等待此时长。0 = 立即执行。最大 86400（24 小时）。",
+          "delay_off_seconds": "将目标驱动为关之前等待此时长。0 = 立即执行。最大 86400（24 小时）。"
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "源实体",
           "follow_invert": "反转状态",
           "source_value_from": "读取值来源",
-          "delay_seconds": "延迟（秒）"
+          "delay_on_seconds": "开启时的延迟（秒）",
+          "delay_off_seconds": "关闭时的延迟（秒）"
         },
         "data_description": {
           "source_entity": "目标实体所跟随的实体。不能是其中任一目标实体。",
           "follow_invert": "关 = 镜像（源为开 → 目标为开）。开 = 反转（源为开 → 目标为关）。",
           "source_value_from": "读取源的状态还是其某个属性。",
-          "delay_seconds": "触发后等待此时长再执行强制。0 = 立即执行。最大 86400（24 小时）。"
+          "delay_on_seconds": "将目标驱动为开之前等待此时长。0 = 立即执行。最大 86400（24 小时）。",
+          "delay_off_seconds": "将目标驱动为关之前等待此时长。0 = 立即执行。最大 86400（24 小时）。"
         }
       },
       "edit_dynamic_attribute_params": {
@@ -492,6 +496,12 @@
     "number": {
       "delay_seconds": {
         "name": "延迟（秒）"
+      },
+      "delay_on_seconds": {
+        "name": "开启时的延迟（秒）"
+      },
+      "delay_off_seconds": {
+        "name": "关闭时的延迟（秒）"
       },
       "debounce_seconds": {
         "name": "防抖（秒）"

@@ -116,13 +116,15 @@
           "source_entity": "Entità sorgente",
           "follow_invert": "Inverti stato",
           "source_value_from": "Leggi il valore da",
-          "delay_seconds": "Ritardo (secondi)"
+          "delay_on_seconds": "Ritardo all'attivazione (secondi)",
+          "delay_off_seconds": "Ritardo alla disattivazione (secondi)"
         },
         "data_description": {
           "source_entity": "L'entità che le destinazioni seguono. Non deve essere una delle entità di destinazione.",
           "follow_invert": "Disattivato = rispecchia (sorgente on → destinazione on). Attivato = inverti (sorgente on → destinazione off).",
           "source_value_from": "Se leggere lo stato della sorgente o uno dei suoi attributi.",
-          "delay_seconds": "Attendi questo tempo dopo un'attivazione prima di applicare la regola. 0 = immediato. Massimo 86400 (24h)."
+          "delay_on_seconds": "Attendi questo tempo prima di portare una destinazione su on. 0 = immediato. Massimo 86400 (24h).",
+          "delay_off_seconds": "Attendi questo tempo prima di portare una destinazione su off. 0 = immediato. Massimo 86400 (24h)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Entità sorgente",
           "follow_invert": "Inverti stato",
           "source_value_from": "Leggi il valore da",
-          "delay_seconds": "Ritardo (secondi)"
+          "delay_on_seconds": "Ritardo all'attivazione (secondi)",
+          "delay_off_seconds": "Ritardo alla disattivazione (secondi)"
         },
         "data_description": {
           "source_entity": "L'entità che le destinazioni seguono. Non deve essere una delle entità di destinazione.",
           "follow_invert": "Disattivato = rispecchia (sorgente on → destinazione on). Attivato = inverti (sorgente on → destinazione off).",
           "source_value_from": "Se leggere lo stato della sorgente o uno dei suoi attributi.",
-          "delay_seconds": "Attendi questo tempo dopo un'attivazione prima di applicare la regola. 0 = immediato. Massimo 86400 (24h)."
+          "delay_on_seconds": "Attendi questo tempo prima di portare una destinazione su on. 0 = immediato. Massimo 86400 (24h).",
+          "delay_off_seconds": "Attendi questo tempo prima di portare una destinazione su off. 0 = immediato. Massimo 86400 (24h)."
         }
       },
       "edit_dynamic_attribute_params": {
@@ -492,6 +496,12 @@
     "number": {
       "delay_seconds": {
         "name": "Ritardo (secondi)"
+      },
+      "delay_on_seconds": {
+        "name": "Ritardo all'attivazione (secondi)"
+      },
+      "delay_off_seconds": {
+        "name": "Ritardo alla disattivazione (secondi)"
       },
       "debounce_seconds": {
         "name": "Debounce (secondi)"

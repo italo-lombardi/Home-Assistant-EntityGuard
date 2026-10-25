@@ -116,13 +116,15 @@
           "source_entity": "Kildeenhet",
           "follow_invert": "Inverter tilstand",
           "source_value_from": "Les verdi fra",
-          "delay_seconds": "Forsinkelse (sekunder)"
+          "delay_on_seconds": "Forsinkelse ved påslåing (sekunder)",
+          "delay_off_seconds": "Forsinkelse ved avslåing (sekunder)"
         },
         "data_description": {
           "source_entity": "Enheten målene følger. Må ikke være en av målenhetene.",
           "follow_invert": "Av = speil (kilde på → mål på). På = inverter (kilde på → mål av).",
           "source_value_from": "Om kildens tilstand eller ett av dens attributter skal leses.",
-          "delay_seconds": "Vent så lenge etter en utløser før håndheving. 0 = umiddelbart. Maks 86400 (24t)."
+          "delay_on_seconds": "Vent så lenge før målet slås på. 0 = umiddelbart. Maks 86400 (24t).",
+          "delay_off_seconds": "Vent så lenge før målet slås av. 0 = umiddelbart. Maks 86400 (24t)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Kildeenhet",
           "follow_invert": "Inverter tilstand",
           "source_value_from": "Les verdi fra",
-          "delay_seconds": "Forsinkelse (sekunder)"
+          "delay_on_seconds": "Forsinkelse ved påslåing (sekunder)",
+          "delay_off_seconds": "Forsinkelse ved avslåing (sekunder)"
         },
         "data_description": {
           "source_entity": "Enheten målene følger. Må ikke være en av målenhetene.",
           "follow_invert": "Av = speil (kilde på → mål på). På = inverter (kilde på → mål av).",
           "source_value_from": "Om kildens tilstand eller ett av dens attributter skal leses.",
-          "delay_seconds": "Vent så lenge etter en utløser før håndheving. 0 = umiddelbart. Maks 86400 (24t)."
+          "delay_on_seconds": "Vent så lenge før målet slås på. 0 = umiddelbart. Maks 86400 (24t).",
+          "delay_off_seconds": "Vent så lenge før målet slås av. 0 = umiddelbart. Maks 86400 (24t)."
         }
       },
       "edit_dynamic_attribute_params": {
@@ -492,6 +496,12 @@
     "number": {
       "delay_seconds": {
         "name": "Forsinkelse (sekunder)"
+      },
+      "delay_on_seconds": {
+        "name": "Forsinkelse ved påslåing (sekunder)"
+      },
+      "delay_off_seconds": {
+        "name": "Forsinkelse ved avslåing (sekunder)"
       },
       "debounce_seconds": {
         "name": "Debounce (sekunder)"

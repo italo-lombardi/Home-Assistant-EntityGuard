@@ -116,13 +116,15 @@
           "source_entity": "Izvorni entitet",
           "follow_invert": "Invertiraj stanje",
           "source_value_from": "Čitaj vrijednost iz",
-          "delay_seconds": "Odgoda (sekunde)"
+          "delay_on_seconds": "Odgoda pri uključivanju (sekunde)",
+          "delay_off_seconds": "Odgoda pri isključivanju (sekunde)"
         },
         "data_description": {
           "source_entity": "Entitet koji ciljevi prate. Ne smije biti jedan od ciljnih entiteta.",
           "follow_invert": "Isključeno = zrcaljenje (izvor uključen → cilj uključen). Uključeno = inverzija (izvor uključen → cilj isključen).",
           "source_value_from": "Hoće li se čitati stanje izvora ili jedan od njegovih atributa.",
-          "delay_seconds": "Pričekajte ovoliko dugo nakon okidača prije provedbe. 0 = odmah. Maksimalno 86400 (24 h)."
+          "delay_on_seconds": "Pričekajte ovoliko dugo prije uključivanja cilja. 0 = odmah. Maksimalno 86400 (24 h).",
+          "delay_off_seconds": "Pričekajte ovoliko dugo prije isključivanja cilja. 0 = odmah. Maksimalno 86400 (24 h)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Izvorni entitet",
           "follow_invert": "Invertiraj stanje",
           "source_value_from": "Čitaj vrijednost iz",
-          "delay_seconds": "Odgoda (sekunde)"
+          "delay_on_seconds": "Odgoda pri uključivanju (sekunde)",
+          "delay_off_seconds": "Odgoda pri isključivanju (sekunde)"
         },
         "data_description": {
           "source_entity": "Entitet koji ciljevi prate. Ne smije biti jedan od ciljnih entiteta.",
           "follow_invert": "Isključeno = zrcaljenje (izvor uključen → cilj uključen). Uključeno = inverzija (izvor uključen → cilj isključen).",
           "source_value_from": "Hoće li se čitati stanje izvora ili jedan od njegovih atributa.",
-          "delay_seconds": "Pričekajte ovoliko dugo nakon okidača prije provedbe. 0 = odmah. Maksimalno 86400 (24 h)."
+          "delay_on_seconds": "Pričekajte ovoliko dugo prije uključivanja cilja. 0 = odmah. Maksimalno 86400 (24 h).",
+          "delay_off_seconds": "Pričekajte ovoliko dugo prije isključivanja cilja. 0 = odmah. Maksimalno 86400 (24 h)."
         }
       },
       "edit_dynamic_attribute_params": {
@@ -492,6 +496,12 @@
     "number": {
       "delay_seconds": {
         "name": "Odgoda (sekunde)"
+      },
+      "delay_on_seconds": {
+        "name": "Odgoda pri uključivanju (sekunde)"
+      },
+      "delay_off_seconds": {
+        "name": "Odgoda pri isključivanju (sekunde)"
       },
       "debounce_seconds": {
         "name": "Odgoda ponavljanja (sekunde)"

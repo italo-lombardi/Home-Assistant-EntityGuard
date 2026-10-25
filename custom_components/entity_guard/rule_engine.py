@@ -361,14 +361,26 @@ class RuleEngine:
             # all-targets re-arm sweep will NOT fire. This event only re-evaluates
             # `entity_id` (fall-through below); sweep the SIBLING targets now so a
             # still-non-compliant target that emits no event of its own is not left
-            # unguarded. Guard mirrors the expiry callback; the triggering entity is
-            # handled by the fall-through, so skip it here (and _schedule_eval_task
-            # dedupes per entity anyway).
+            # unguarded.
+            #
+            # BUT only for a PLAIN-TARGET trigger. A flag or dynamic-source trigger
+            # has a dedicated branch below that already sweeps ALL targets — running
+            # the lazy sibling sweep too would double-schedule them. The per-entity
+            # cancel in _schedule_eval_task does NOT save us at delay 0: the first
+            # eval task runs to completion (synchronous enforce) before the second
+            # schedule, so the cancel is a no-op and both enforce. Skip the lazy
+            # sweep for flag/source triggers; their own branch owns the sweep.
             self._clear_suppression_state()
+            is_flag_trigger = entity_id in self._flag_entity_ids
+            is_source_trigger = (
+                self._is_dynamic and entity_id == self._config.source_entity
+            )
             if (
                 self._state.enabled
                 and self._startup_complete
                 and self._master_enabled_getter()
+                and not is_flag_trigger
+                and not is_source_trigger
             ):
                 for target in self._config.target_entities:
                     if target == entity_id:
@@ -447,10 +459,24 @@ class RuleEngine:
             self._set_status(STATUS_COOLDOWN)
             return
 
-        if self._config.delay_seconds > 0:
+        # Per-direction delay (dynamic_state): the wait before enforcing may differ
+        # for driving the target ON vs OFF. effective_delay() resolves this once —
+        # dynamic_state picks delay_on/off by the desired direction, every other
+        # mode (and source-offline, desired_on=None) returns delay_seconds. Resolve
+        # once and reuse for BOTH the gate below and the scheduled duration, so a
+        # direction with delay 0 goes immediate while the other still waits.
+        #
+        # The resolved delay is PINNED to the arming direction for the life of the
+        # countdown — it is not re-resolved if the source flips mid-wait. That is
+        # safe: _fire re-runs _trigger_decision against live state, so a flip that
+        # makes the target compliant cancels cleanly, and a genuinely new direction
+        # re-enters async_evaluate (fresh effective_delay). See the pin test in
+        # tests/test_split_delay_engine.py.
+        delay = self._config.effective_delay(self._follow_desired_on())
+        if delay > 0:
             # Order is load-bearing: schedule first (adds to _pending_enforcement_due),
             # then broadcast so the sensor receives the updated dict.
-            self._schedule_delayed_enforcement(entity_id, trigger_context_id)
+            self._schedule_delayed_enforcement(entity_id, delay, trigger_context_id)
             self._set_or_force_broadcast(STATUS_PENDING)
             return
 
@@ -721,9 +747,15 @@ class RuleEngine:
     def _schedule_delayed_enforcement(
         self,
         entity_id: str,
+        delay_seconds: int | None = None,
         trigger_context_id: str | None = None,
     ) -> None:
-        """Arm a delayed enforcement; cancels any prior pending one for this entity."""
+        """Arm a delayed enforcement after `delay_seconds`; cancels any prior
+        pending one for this entity. The caller resolves the direction-specific
+        delay (effective_delay) and passes it in. When omitted, falls back to the
+        rule's shared delay_seconds (the pre-split default)."""
+        if delay_seconds is None:
+            delay_seconds = self._config.delay_seconds
         self._cancel_pending(entity_id)
 
         async def _fire(_now: datetime) -> None:
@@ -784,11 +816,11 @@ class RuleEngine:
             # async_call_later expects a sync callback; bridge to the coroutine.
             self._hass.async_create_task(_fire(now))
 
-        cancel = async_call_later(self._hass, self._config.delay_seconds, _fire_cb)
+        cancel = async_call_later(self._hass, delay_seconds, _fire_cb)
         my_cancel = cancel
         self._pending_enforcements[entity_id] = cancel
         self._pending_enforcement_due[entity_id] = dt_util.now() + timedelta(
-            seconds=self._config.delay_seconds
+            seconds=delay_seconds
         )
 
     def _cancel_pending(self, entity_id: str) -> None:

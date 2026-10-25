@@ -157,6 +157,10 @@ class EntityGuardStatusSensor(EntityGuardSensor):
             "last_error": self._engine.state.last_error,
             "flags": flags,
             "delay_seconds": self._engine.config.delay_seconds,
+            # dynamic_state per-direction delay overrides (None when unset); the
+            # card shows separate on/off rows for dynamic_state, single Delay else.
+            "delay_on_seconds": self._engine.config.delay_on_seconds,
+            "delay_off_seconds": self._engine.config.delay_off_seconds,
             "debounce_enabled": self._engine.config.debounce_enabled,
             "debounce_seconds": self._engine.config.debounce_seconds,
             "rate_limit_enabled": self._engine.config.max_enforcements_per_minute != 0,

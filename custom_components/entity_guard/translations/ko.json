@@ -116,13 +116,15 @@
           "source_entity": "소스 엔터티",
           "follow_invert": "상태 반전",
           "source_value_from": "값을 읽을 위치",
-          "delay_seconds": "지연 (초)"
+          "delay_on_seconds": "켜질 때 지연 (초)",
+          "delay_off_seconds": "꺼질 때 지연 (초)"
         },
         "data_description": {
           "source_entity": "대상이 따라갈 엔터티입니다. 대상 엔터티 중 하나일 수 없습니다.",
           "follow_invert": "꺼짐 = 미러링 (소스 켜짐 → 대상 켜짐). 켜짐 = 반전 (소스 켜짐 → 대상 꺼짐).",
           "source_value_from": "소스의 상태를 읽을지 아니면 소스 속성 중 하나를 읽을지 선택합니다.",
-          "delay_seconds": "트리거 후 적용까지 대기 시간입니다. 0 = 즉시. 최대 86400 (24시간)."
+          "delay_on_seconds": "대상을 켜기 전까지 이만큼 대기합니다. 0 = 즉시. 최대 86400 (24시간).",
+          "delay_off_seconds": "대상을 끄기 전까지 이만큼 대기합니다. 0 = 즉시. 최대 86400 (24시간)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "소스 엔터티",
           "follow_invert": "상태 반전",
           "source_value_from": "값을 읽을 위치",
-          "delay_seconds": "지연 (초)"
+          "delay_on_seconds": "켜질 때 지연 (초)",
+          "delay_off_seconds": "꺼질 때 지연 (초)"
         },
         "data_description": {
           "source_entity": "대상이 따라갈 엔터티입니다. 대상 엔터티 중 하나일 수 없습니다.",
           "follow_invert": "꺼짐 = 미러링 (소스 켜짐 → 대상 켜짐). 켜짐 = 반전 (소스 켜짐 → 대상 꺼짐).",
           "source_value_from": "소스의 상태를 읽을지 아니면 소스 속성 중 하나를 읽을지 선택합니다.",
-          "delay_seconds": "트리거 후 적용까지 대기 시간입니다. 0 = 즉시. 최대 86400 (24시간)."
+          "delay_on_seconds": "대상을 켜기 전까지 이만큼 대기합니다. 0 = 즉시. 최대 86400 (24시간).",
+          "delay_off_seconds": "대상을 끄기 전까지 이만큼 대기합니다. 0 = 즉시. 최대 86400 (24시간)."
         }
       },
       "edit_dynamic_attribute_params": {
@@ -492,6 +496,12 @@
     "number": {
       "delay_seconds": {
         "name": "지연 (초)"
+      },
+      "delay_on_seconds": {
+        "name": "켜질 때 지연 (초)"
+      },
+      "delay_off_seconds": {
+        "name": "꺼질 때 지연 (초)"
       },
       "debounce_seconds": {
         "name": "디바운스 (초)"

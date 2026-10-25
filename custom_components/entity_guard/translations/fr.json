@@ -116,13 +116,15 @@
           "source_entity": "Entité source",
           "follow_invert": "Inverser l'état",
           "source_value_from": "Lire la valeur depuis",
-          "delay_seconds": "Délai (secondes)"
+          "delay_on_seconds": "Délai à l'activation (secondes)",
+          "delay_off_seconds": "Délai à la désactivation (secondes)"
         },
         "data_description": {
           "source_entity": "L'entité que les cibles suivent. Ne doit pas faire partie des entités cibles.",
           "follow_invert": "Désactivé = recopier (source on → cible on). Activé = inverser (source on → cible off).",
           "source_value_from": "Indique s'il faut lire l'état de la source ou l'un de ses attributs.",
-          "delay_seconds": "Attendre cette durée après un déclenchement avant d'appliquer. 0 = immédiat. Maximum 86400 (24 h)."
+          "delay_on_seconds": "Attendre cette durée avant de mettre une cible sur on. 0 = immédiat. Maximum 86400 (24 h).",
+          "delay_off_seconds": "Attendre cette durée avant de mettre une cible sur off. 0 = immédiat. Maximum 86400 (24 h)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Entité source",
           "follow_invert": "Inverser l'état",
           "source_value_from": "Lire la valeur depuis",
-          "delay_seconds": "Délai (secondes)"
+          "delay_on_seconds": "Délai à l'activation (secondes)",
+          "delay_off_seconds": "Délai à la désactivation (secondes)"
         },
         "data_description": {
           "source_entity": "L'entité que les cibles suivent. Ne doit pas faire partie des entités cibles.",
           "follow_invert": "Désactivé = recopier (source on → cible on). Activé = inverser (source on → cible off).",
           "source_value_from": "Indique s'il faut lire l'état de la source ou l'un de ses attributs.",
-          "delay_seconds": "Attendre cette durée après un déclenchement avant d'appliquer. 0 = immédiat. Maximum 86400 (24 h)."
+          "delay_on_seconds": "Attendre cette durée avant de mettre une cible sur on. 0 = immédiat. Maximum 86400 (24 h).",
+          "delay_off_seconds": "Attendre cette durée avant de mettre une cible sur off. 0 = immédiat. Maximum 86400 (24 h)."
         }
       },
       "edit_dynamic_attribute_params": {
@@ -492,6 +496,12 @@
     "number": {
       "delay_seconds": {
         "name": "Délai (secondes)"
+      },
+      "delay_on_seconds": {
+        "name": "Délai à l'activation (secondes)"
+      },
+      "delay_off_seconds": {
+        "name": "Délai à la désactivation (secondes)"
       },
       "debounce_seconds": {
         "name": "Anti-rebond (secondes)"

@@ -116,13 +116,15 @@
           "source_entity": "Source entity",
           "follow_invert": "Invert state",
           "source_value_from": "Read value from",
-          "delay_seconds": "Delay (seconds)"
+          "delay_on_seconds": "Delay when turning on (seconds)",
+          "delay_off_seconds": "Delay when turning off (seconds)"
         },
         "data_description": {
           "source_entity": "The entity the targets follow. Must not be one of the target entities.",
           "follow_invert": "Off = mirror (source on → target on). On = invert (source on → target off).",
           "source_value_from": "Whether to read the source's state or one of its attributes.",
-          "delay_seconds": "Wait this long after a trigger before enforcing. 0 = immediate. Max 86400 (24h)."
+          "delay_on_seconds": "Wait this long before driving a target on. 0 = immediate. Max 86400 (24h).",
+          "delay_off_seconds": "Wait this long before driving a target off. 0 = immediate. Max 86400 (24h)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Source entity",
           "follow_invert": "Invert state",
           "source_value_from": "Read value from",
-          "delay_seconds": "Delay (seconds)"
+          "delay_on_seconds": "Delay when turning on (seconds)",
+          "delay_off_seconds": "Delay when turning off (seconds)"
         },
         "data_description": {
           "source_entity": "The entity the targets follow. Must not be one of the target entities.",
           "follow_invert": "Off = mirror (source on → target on). On = invert (source on → target off).",
           "source_value_from": "Whether to read the source's state or one of its attributes.",
-          "delay_seconds": "Wait this long after a trigger before enforcing. 0 = immediate. Max 86400 (24h)."
+          "delay_on_seconds": "Wait this long before driving a target on. 0 = immediate. Max 86400 (24h).",
+          "delay_off_seconds": "Wait this long before driving a target off. 0 = immediate. Max 86400 (24h)."
         }
       },
       "edit_dynamic_attribute_params": {
@@ -492,6 +496,12 @@
     "number": {
       "delay_seconds": {
         "name": "Delay (seconds)"
+      },
+      "delay_on_seconds": {
+        "name": "Delay when turning on (seconds)"
+      },
+      "delay_off_seconds": {
+        "name": "Delay when turning off (seconds)"
       },
       "debounce_seconds": {
         "name": "Debounce (seconds)"

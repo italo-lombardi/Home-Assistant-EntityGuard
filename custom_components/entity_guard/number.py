@@ -19,6 +19,8 @@ from homeassistant.helpers.event import async_call_later
 
 from .const import (
     CONF_DEBOUNCE_SECONDS,
+    CONF_DELAY_OFF_SECONDS,
+    CONF_DELAY_ON_SECONDS,
     CONF_DELAY_SECONDS,
     CONF_ENTRY_TYPE,
     CONF_MAX_ENFORCEMENTS_PER_MINUTE,
@@ -32,6 +34,7 @@ from .const import (
     MAX_RATE_LIMIT,
     MIN_DEBOUNCE_SECONDS,
     MIN_DELAY_SECONDS,
+    MODE_DYNAMIC_STATE,
     signal_rule_update,
 )
 
@@ -73,9 +76,21 @@ async def async_setup_entry(
 
     engine: RuleEngine = hass.data[DOMAIN]["engines"][entry.entry_id]
 
+    # dynamic_state exposes TWO per-direction delay sliders (on / off) and NOT the
+    # single shared one — effective_delay reads the directional overrides for this
+    # mode, so a single delay_seconds slider would be a dead, mislabelled control.
+    # Every other mode keeps the single shared delay slider unchanged.
+    if engine.config.mode == MODE_DYNAMIC_STATE:
+        delay_entities = [
+            EntityGuardDelayOnSecondsNumber(entry, engine),
+            EntityGuardDelayOffSecondsNumber(entry, engine),
+        ]
+    else:
+        delay_entities = [EntityGuardDelaySecondsNumber(entry, engine)]
+
     async_add_entities(
         [
-            EntityGuardDelaySecondsNumber(entry, engine),
+            *delay_entities,
             EntityGuardDebounceSecondsNumber(entry, engine),
             EntityGuardMaxEnforcementsNumber(entry, engine),
         ]
@@ -252,6 +267,77 @@ class EntityGuardDelaySecondsNumber(EntityGuardNumberBase):
             translation_key="delay_seconds",
             suffix="delay_seconds",
             config_key=CONF_DELAY_SECONDS,
+            default=DEFAULT_DELAY_SECONDS,
+            min_value=MIN_DELAY_SECONDS,
+            max_value=MAX_DELAY_SECONDS,
+            unit="s",
+        )
+
+
+class _EntityGuardDirectionalDelayNumber(EntityGuardNumberBase):
+    """Base for the dynamic_state per-direction delay sliders (on / off).
+
+    The override key (delay_on_seconds / delay_off_seconds) may be None on a
+    pre-feature rule; native_value then falls back to the shared delay_seconds,
+    mirroring RuleConfig.effective_delay so the slider shows the ACTUAL effective
+    delay and float(None) can never happen. Writes target the directional key, which
+    parse_rule_config repopulates via _bounded_delay_or_none — so effective_delay
+    (which reads the overrides first) picks the new value up on the next resolve.
+
+    A directional write intentionally does NOT also mirror to the shared
+    delay_seconds (config_flow's save path anchors delay_seconds := delay_on; the
+    slider path does not). For dynamic_state, delay_seconds is a dead anchor: the
+    engine only ever resolves the delay via effective_delay(desired), which reads
+    the directional override first, and effective_delay(None) — the sole shared
+    fallback — is unreachable mid-enforce (the dynamic trigger decision returns
+    not-triggered when the direction is None, so the engine never schedules with a
+    None direction). Do not "fix" this drift into a sync write; it would be dead code.
+    """
+
+    @property
+    def native_value(self) -> float:
+        """Current directional delay, falling back to the shared delay when unset."""
+        config = getattr(self._engine, "config", None)
+        value = getattr(config, self._config_key, None)
+        if value is None:
+            value = getattr(config, "delay_seconds", None)
+        if value is None:
+            merged = {**self._entry.data, **(self._entry.options or {})}
+            value = merged.get(
+                self._config_key, merged.get(CONF_DELAY_SECONDS, self._default)
+            )
+        return float(value)
+
+
+class EntityGuardDelayOnSecondsNumber(_EntityGuardDirectionalDelayNumber):
+    """Configurable delay (seconds) when driving a dynamic_state target ON."""
+
+    def __init__(self, entry: ConfigEntry, engine: RuleEngine) -> None:
+        """Initialize the delay-on seconds number."""
+        super().__init__(
+            entry,
+            engine,
+            translation_key="delay_on_seconds",
+            suffix="delay_on_seconds",
+            config_key=CONF_DELAY_ON_SECONDS,
+            default=DEFAULT_DELAY_SECONDS,
+            min_value=MIN_DELAY_SECONDS,
+            max_value=MAX_DELAY_SECONDS,
+            unit="s",
+        )
+
+
+class EntityGuardDelayOffSecondsNumber(_EntityGuardDirectionalDelayNumber):
+    """Configurable delay (seconds) when driving a dynamic_state target OFF."""
+
+    def __init__(self, entry: ConfigEntry, engine: RuleEngine) -> None:
+        """Initialize the delay-off seconds number."""
+        super().__init__(
+            entry,
+            engine,
+            translation_key="delay_off_seconds",
+            suffix="delay_off_seconds",
+            config_key=CONF_DELAY_OFF_SECONDS,
             default=DEFAULT_DELAY_SECONDS,
             min_value=MIN_DELAY_SECONDS,
             max_value=MAX_DELAY_SECONDS,

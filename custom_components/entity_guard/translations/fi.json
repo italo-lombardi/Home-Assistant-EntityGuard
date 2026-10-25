@@ -116,13 +116,15 @@
           "source_entity": "Lähde-entiteetti",
           "follow_invert": "Käännä tila",
           "source_value_from": "Lue arvo kohteesta",
-          "delay_seconds": "Viive (sekuntia)"
+          "delay_on_seconds": "Viive päälle kytkettäessä (sekuntia)",
+          "delay_off_seconds": "Viive pois kytkettäessä (sekuntia)"
         },
         "data_description": {
           "source_entity": "Entiteetti, jota kohteet seuraavat. Ei saa olla yksi kohde-entiteeteistä.",
           "follow_invert": "Pois = peilaa (lähde päällä → kohde päällä). Päällä = käännä (lähde päällä → kohde pois).",
           "source_value_from": "Luetaanko lähteen tila vai jokin sen attribuuteista.",
-          "delay_seconds": "Odota tämän verran laukaisun jälkeen ennen valvonnan käynnistymistä. 0 = välitön. Enintään 86400 (24 h)."
+          "delay_on_seconds": "Odota tämän verran ennen kohteen ajamista päälle. 0 = välitön. Enintään 86400 (24 h).",
+          "delay_off_seconds": "Odota tämän verran ennen kohteen ajamista pois. 0 = välitön. Enintään 86400 (24 h)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Lähde-entiteetti",
           "follow_invert": "Käännä tila",
           "source_value_from": "Lue arvo kohteesta",
-          "delay_seconds": "Viive (sekuntia)"
+          "delay_on_seconds": "Viive päälle kytkettäessä (sekuntia)",
+          "delay_off_seconds": "Viive pois kytkettäessä (sekuntia)"
         },
         "data_description": {
           "source_entity": "Entiteetti, jota kohteet seuraavat. Ei saa olla yksi kohde-entiteeteistä.",
           "follow_invert": "Pois = peilaa (lähde päällä → kohde päällä). Päällä = käännä (lähde päällä → kohde pois).",
           "source_value_from": "Luetaanko lähteen tila vai jokin sen attribuuteista.",
-          "delay_seconds": "Odota tämän verran laukaisun jälkeen ennen valvonnan käynnistymistä. 0 = välitön. Enintään 86400 (24 h)."
+          "delay_on_seconds": "Odota tämän verran ennen kohteen ajamista päälle. 0 = välitön. Enintään 86400 (24 h).",
+          "delay_off_seconds": "Odota tämän verran ennen kohteen ajamista pois. 0 = välitön. Enintään 86400 (24 h)."
         }
       },
       "edit_dynamic_attribute_params": {
@@ -492,6 +496,12 @@
     "number": {
       "delay_seconds": {
         "name": "Viive (sekuntia)"
+      },
+      "delay_on_seconds": {
+        "name": "Viive päälle kytkettäessä (sekuntia)"
+      },
+      "delay_off_seconds": {
+        "name": "Viive pois kytkettäessä (sekuntia)"
       },
       "debounce_seconds": {
         "name": "Viivevakautus (sekuntia)"
