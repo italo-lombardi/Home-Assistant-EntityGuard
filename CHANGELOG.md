@@ -23,6 +23,10 @@
   Existing rules migrate automatically on upgrade (config-entry schema v1 → v2): `state` → `fixed_state`, `attribute` → `fixed_attribute`. Rule behaviour is unchanged by the rename; no user action required.
 - Card version bumped to `v0.4.0`; the integration version bump cache-busts the auto-registered Lovelace resource.
 
+### Fixed
+
+- **Suppressing a rule now cancels a pending enforcement.** Pressing **Suppress** while a rule was counting down to enforce (the `delay_seconds` window) no longer lets that enforcement fire — the scheduled action is cancelled and the card countdown clears immediately. Manual suppression and loop-protection auto-suppression both cancel any in-flight pending enforcement, and the enforcement path re-checks suppression before acting (covering the case where suppression lands in the same instant the timer fires). When suppression ends — whether the window expires or you clear it manually — the rule re-evaluates its targets, so a target still non-compliant from the cancelled enforcement is enforced again rather than left unguarded.
+
 ## [0.3.1] — 2026-10-19
 
 ### Fixed
