@@ -116,13 +116,15 @@
           "source_entity": "Quellentität",
           "follow_invert": "Status invertieren",
           "source_value_from": "Wert lesen aus",
-          "delay_seconds": "Verzögerung (Sekunden)"
+          "delay_on_seconds": "Verzögerung beim Einschalten (Sekunden)",
+          "delay_off_seconds": "Verzögerung beim Ausschalten (Sekunden)"
         },
         "data_description": {
           "source_entity": "Die Entität, der die Ziele folgen. Darf keine der Zielentitäten sein.",
           "follow_invert": "Aus = spiegeln (Quelle an → Ziel an). An = invertieren (Quelle an → Ziel aus).",
           "source_value_from": "Ob der Status der Quelle oder eines ihrer Attribute gelesen wird.",
-          "delay_seconds": "Wartezeit nach einem Auslöser, bevor durchgesetzt wird. 0 = sofort. Max. 86400 (24 Std.)."
+          "delay_on_seconds": "Wartezeit, bevor ein Ziel eingeschaltet wird. 0 = sofort. Max. 86400 (24 Std.).",
+          "delay_off_seconds": "Wartezeit, bevor ein Ziel ausgeschaltet wird. 0 = sofort. Max. 86400 (24 Std.)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Quellentität",
           "follow_invert": "Status invertieren",
           "source_value_from": "Wert lesen aus",
-          "delay_seconds": "Verzögerung (Sekunden)"
+          "delay_on_seconds": "Verzögerung beim Einschalten (Sekunden)",
+          "delay_off_seconds": "Verzögerung beim Ausschalten (Sekunden)"
         },
         "data_description": {
           "source_entity": "Die Entität, der die Ziele folgen. Darf keine der Zielentitäten sein.",
           "follow_invert": "Aus = spiegeln (Quelle an → Ziel an). An = invertieren (Quelle an → Ziel aus).",
           "source_value_from": "Ob der Status der Quelle oder eines ihrer Attribute gelesen wird.",
-          "delay_seconds": "Wartezeit nach einem Auslöser, bevor durchgesetzt wird. 0 = sofort. Max. 86400 (24 Std.)."
+          "delay_on_seconds": "Wartezeit, bevor ein Ziel eingeschaltet wird. 0 = sofort. Max. 86400 (24 Std.).",
+          "delay_off_seconds": "Wartezeit, bevor ein Ziel ausgeschaltet wird. 0 = sofort. Max. 86400 (24 Std.)."
         }
       },
       "edit_dynamic_attribute_params": {

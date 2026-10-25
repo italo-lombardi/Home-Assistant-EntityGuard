@@ -116,13 +116,15 @@
           "source_entity": "來源實體",
           "follow_invert": "反向狀態",
           "source_value_from": "讀取值來源",
-          "delay_seconds": "延遲（秒）"
+          "delay_on_seconds": "開啟時的延遲（秒）",
+          "delay_off_seconds": "關閉時的延遲（秒）"
         },
         "data_description": {
           "source_entity": "目標所跟隨的實體。不能是其中任一目標實體。",
           "follow_invert": "關 = 鏡像（來源開 → 目標開）。開 = 反向（來源開 → 目標關）。",
           "source_value_from": "要讀取來源的狀態或其中一個屬性。",
-          "delay_seconds": "觸發後等待此時間才強制執行。0 = 立即執行。最大 86400（24 小時）。"
+          "delay_on_seconds": "強制目標開啟前先等待此時間。0 = 立即執行。最大 86400（24 小時）。",
+          "delay_off_seconds": "強制目標關閉前先等待此時間。0 = 立即執行。最大 86400（24 小時）。"
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "來源實體",
           "follow_invert": "反向狀態",
           "source_value_from": "讀取值來源",
-          "delay_seconds": "延遲（秒）"
+          "delay_on_seconds": "開啟時的延遲（秒）",
+          "delay_off_seconds": "關閉時的延遲（秒）"
         },
         "data_description": {
           "source_entity": "目標所跟隨的實體。不能是其中任一目標實體。",
           "follow_invert": "關 = 鏡像（來源開 → 目標開）。開 = 反向（來源開 → 目標關）。",
           "source_value_from": "要讀取來源的狀態或其中一個屬性。",
-          "delay_seconds": "觸發後等待此時間才強制執行。0 = 立即執行。最大 86400（24 小時）。"
+          "delay_on_seconds": "強制目標開啟前先等待此時間。0 = 立即執行。最大 86400（24 小時）。",
+          "delay_off_seconds": "強制目標關閉前先等待此時間。0 = 立即執行。最大 86400（24 小時）。"
         }
       },
       "edit_dynamic_attribute_params": {

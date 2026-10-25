@@ -116,13 +116,15 @@
           "source_entity": "Avota entītija",
           "follow_invert": "Apgriezt stāvokli pretēji",
           "source_value_from": "Nolasīt vērtību no",
-          "delay_seconds": "Aizkave (sekundes)"
+          "delay_on_seconds": "Aizkave ieslēdzot (sekundes)",
+          "delay_off_seconds": "Aizkave izslēdzot (sekundes)"
         },
         "data_description": {
           "source_entity": "Entītija, kurai seko mērķi. Nedrīkst būt viena no mērķa entītijām.",
           "follow_invert": "Izslēgts = atspoguļot (avots ieslēgts → mērķis ieslēgts). Ieslēgts = apgriezt pretēji (avots ieslēgts → mērķis izslēgts).",
           "source_value_from": "Vai nolasīt avota stāvokli, vai vienu no tā atribūtiem.",
-          "delay_seconds": "Uzgaidiet tik ilgi pēc aktivizēšanas pirms piemērošanas. 0 = tūlītēji. Maks. 86400 (24 h)."
+          "delay_on_seconds": "Uzgaidiet tik ilgi pirms mērķa ieslēgšanas. 0 = tūlītēji. Maks. 86400 (24 h).",
+          "delay_off_seconds": "Uzgaidiet tik ilgi pirms mērķa izslēgšanas. 0 = tūlītēji. Maks. 86400 (24 h)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Avota entītija",
           "follow_invert": "Apgriezt stāvokli pretēji",
           "source_value_from": "Nolasīt vērtību no",
-          "delay_seconds": "Aizkave (sekundes)"
+          "delay_on_seconds": "Aizkave ieslēdzot (sekundes)",
+          "delay_off_seconds": "Aizkave izslēdzot (sekundes)"
         },
         "data_description": {
           "source_entity": "Entītija, kurai seko mērķi. Nedrīkst būt viena no mērķa entītijām.",
           "follow_invert": "Izslēgts = atspoguļot (avots ieslēgts → mērķis ieslēgts). Ieslēgts = apgriezt pretēji (avots ieslēgts → mērķis izslēgts).",
           "source_value_from": "Vai nolasīt avota stāvokli, vai vienu no tā atribūtiem.",
-          "delay_seconds": "Uzgaidiet tik ilgi pēc aktivizēšanas pirms piemērošanas. 0 = tūlītēji. Maks. 86400 (24 h)."
+          "delay_on_seconds": "Uzgaidiet tik ilgi pirms mērķa ieslēgšanas. 0 = tūlītēji. Maks. 86400 (24 h).",
+          "delay_off_seconds": "Uzgaidiet tik ilgi pirms mērķa izslēgšanas. 0 = tūlītēji. Maks. 86400 (24 h)."
         }
       },
       "edit_dynamic_attribute_params": {

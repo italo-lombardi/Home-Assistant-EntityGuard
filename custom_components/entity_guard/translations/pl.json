@@ -116,13 +116,15 @@
           "source_entity": "Encja źródłowa",
           "follow_invert": "Odwróć stan",
           "source_value_from": "Odczytaj wartość z",
-          "delay_seconds": "Opóźnienie (sekundy)"
+          "delay_on_seconds": "Opóźnienie przy włączaniu (sekundy)",
+          "delay_off_seconds": "Opóźnienie przy wyłączaniu (sekundy)"
         },
         "data_description": {
           "source_entity": "Encja, za którą podążają encje docelowe. Nie może być jedną z encji docelowych.",
           "follow_invert": "Wyłączone = odzwierciedlanie (źródło włączone → cel włączony). Włączone = odwracanie (źródło włączone → cel wyłączony).",
           "source_value_from": "Czy odczytywać stan źródła, czy jeden z jego atrybutów.",
-          "delay_seconds": "Czas oczekiwania po wyzwoleniu przed wymuszeniem. 0 = natychmiast. Maks. 86400 (24h)."
+          "delay_on_seconds": "Czas oczekiwania przed włączeniem celu. 0 = natychmiast. Maks. 86400 (24h).",
+          "delay_off_seconds": "Czas oczekiwania przed wyłączeniem celu. 0 = natychmiast. Maks. 86400 (24h)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Encja źródłowa",
           "follow_invert": "Odwróć stan",
           "source_value_from": "Odczytaj wartość z",
-          "delay_seconds": "Opóźnienie (sekundy)"
+          "delay_on_seconds": "Opóźnienie przy włączaniu (sekundy)",
+          "delay_off_seconds": "Opóźnienie przy wyłączaniu (sekundy)"
         },
         "data_description": {
           "source_entity": "Encja, za którą podążają encje docelowe. Nie może być jedną z encji docelowych.",
           "follow_invert": "Wyłączone = odzwierciedlanie (źródło włączone → cel włączony). Włączone = odwracanie (źródło włączone → cel wyłączony).",
           "source_value_from": "Czy odczytywać stan źródła, czy jeden z jego atrybutów.",
-          "delay_seconds": "Czas oczekiwania po wyzwoleniu przed wymuszeniem. 0 = natychmiast. Maks. 86400 (24h)."
+          "delay_on_seconds": "Czas oczekiwania przed włączeniem celu. 0 = natychmiast. Maks. 86400 (24h).",
+          "delay_off_seconds": "Czas oczekiwania przed wyłączeniem celu. 0 = natychmiast. Maks. 86400 (24h)."
         }
       },
       "edit_dynamic_attribute_params": {

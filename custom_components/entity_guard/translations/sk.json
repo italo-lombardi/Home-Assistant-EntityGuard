@@ -116,13 +116,15 @@
           "source_entity": "Zdrojová entita",
           "follow_invert": "Invertovať stav",
           "source_value_from": "Čítať hodnotu z",
-          "delay_seconds": "Oneskorenie (sekundy)"
+          "delay_on_seconds": "Oneskorenie pri zapínaní (sekundy)",
+          "delay_off_seconds": "Oneskorenie pri vypínaní (sekundy)"
         },
         "data_description": {
           "source_entity": "Entita, ktorú cieľové entity sledujú. Nesmie byť jednou z cieľových entít.",
           "follow_invert": "Vypnuté = zrkadlenie (zdroj zapnutý → cieľ zapnutý). Zapnuté = inverzia (zdroj zapnutý → cieľ vypnutý).",
           "source_value_from": "Či sa má čítať stav zdroja alebo jeden z jeho atribútov.",
-          "delay_seconds": "Po spustení počkajte takto dlho pred vynútením. 0 = okamžite. Max 86400 (24 h)."
+          "delay_on_seconds": "Takto dlho počkajte pred zapnutím cieľa. 0 = okamžite. Max 86400 (24 h).",
+          "delay_off_seconds": "Takto dlho počkajte pred vypnutím cieľa. 0 = okamžite. Max 86400 (24 h)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Zdrojová entita",
           "follow_invert": "Invertovať stav",
           "source_value_from": "Čítať hodnotu z",
-          "delay_seconds": "Oneskorenie (sekundy)"
+          "delay_on_seconds": "Oneskorenie pri zapínaní (sekundy)",
+          "delay_off_seconds": "Oneskorenie pri vypínaní (sekundy)"
         },
         "data_description": {
           "source_entity": "Entita, ktorú cieľové entity sledujú. Nesmie byť jednou z cieľových entít.",
           "follow_invert": "Vypnuté = zrkadlenie (zdroj zapnutý → cieľ zapnutý). Zapnuté = inverzia (zdroj zapnutý → cieľ vypnutý).",
           "source_value_from": "Či sa má čítať stav zdroja alebo jeden z jeho atribútov.",
-          "delay_seconds": "Po spustení počkajte takto dlho pred vynútením. 0 = okamžite. Max 86400 (24 h)."
+          "delay_on_seconds": "Takto dlho počkajte pred zapnutím cieľa. 0 = okamžite. Max 86400 (24 h).",
+          "delay_off_seconds": "Takto dlho počkajte pred vypnutím cieľa. 0 = okamžite. Max 86400 (24 h)."
         }
       },
       "edit_dynamic_attribute_params": {

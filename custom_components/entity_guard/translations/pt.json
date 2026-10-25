@@ -116,13 +116,15 @@
           "source_entity": "Entidade de origem",
           "follow_invert": "Inverter estado",
           "source_value_from": "Ler valor de",
-          "delay_seconds": "Atraso (segundos)"
+          "delay_on_seconds": "Atraso ao ligar (segundos)",
+          "delay_off_seconds": "Atraso ao desligar (segundos)"
         },
         "data_description": {
           "source_entity": "A entidade que os alvos seguem. Não pode ser uma das entidades alvo.",
           "follow_invert": "Desligado = espelhar (origem ligada → alvo ligado). Ligado = inverter (origem ligada → alvo desligado).",
           "source_value_from": "Se deve ler o estado da origem ou um dos seus atributos.",
-          "delay_seconds": "Aguarda este tempo após um gatilho antes de aplicar. 0 = imediato. Máximo 86400 (24h)."
+          "delay_on_seconds": "Aguarda este tempo antes de ligar um alvo. 0 = imediato. Máximo 86400 (24h).",
+          "delay_off_seconds": "Aguarda este tempo antes de desligar um alvo. 0 = imediato. Máximo 86400 (24h)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Entidade de origem",
           "follow_invert": "Inverter estado",
           "source_value_from": "Ler valor de",
-          "delay_seconds": "Atraso (segundos)"
+          "delay_on_seconds": "Atraso ao ligar (segundos)",
+          "delay_off_seconds": "Atraso ao desligar (segundos)"
         },
         "data_description": {
           "source_entity": "A entidade que os alvos seguem. Não pode ser uma das entidades alvo.",
           "follow_invert": "Desligado = espelhar (origem ligada → alvo ligado). Ligado = inverter (origem ligada → alvo desligado).",
           "source_value_from": "Se deve ler o estado da origem ou um dos seus atributos.",
-          "delay_seconds": "Aguarda este tempo após um gatilho antes de aplicar. 0 = imediato. Máximo 86400 (24h)."
+          "delay_on_seconds": "Aguarda este tempo antes de ligar um alvo. 0 = imediato. Máximo 86400 (24h).",
+          "delay_off_seconds": "Aguarda este tempo antes de desligar um alvo. 0 = imediato. Máximo 86400 (24h)."
         }
       },
       "edit_dynamic_attribute_params": {

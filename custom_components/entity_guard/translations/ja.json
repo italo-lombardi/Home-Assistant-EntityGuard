@@ -116,13 +116,15 @@
           "source_entity": "ソースエンティティ",
           "follow_invert": "状態を反転",
           "source_value_from": "値の読み取り元",
-          "delay_seconds": "遅延（秒）"
+          "delay_on_seconds": "オンにするときの遅延（秒）",
+          "delay_off_seconds": "オフにするときの遅延（秒）"
         },
         "data_description": {
           "source_entity": "対象が追従するエンティティ。対象エンティティのいずれかであってはなりません。",
           "follow_invert": "オフ = ミラー（ソースがオン → 対象がオン）。オン = 反転（ソースがオン → 対象がオフ）。",
           "source_value_from": "ソースの状態を読み取るか、その属性のいずれかを読み取るか。",
-          "delay_seconds": "トリガー後、強制するまでこの時間だけ待機します。0 = 即時。最大 86400（24 時間）。"
+          "delay_on_seconds": "対象をオンにする前にこの時間だけ待機します。0 = 即時。最大 86400（24 時間）。",
+          "delay_off_seconds": "対象をオフにする前にこの時間だけ待機します。0 = 即時。最大 86400（24 時間）。"
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "ソースエンティティ",
           "follow_invert": "状態を反転",
           "source_value_from": "値の読み取り元",
-          "delay_seconds": "遅延（秒）"
+          "delay_on_seconds": "オンにするときの遅延（秒）",
+          "delay_off_seconds": "オフにするときの遅延（秒）"
         },
         "data_description": {
           "source_entity": "対象が追従するエンティティ。対象エンティティのいずれかであってはなりません。",
           "follow_invert": "オフ = ミラー（ソースがオン → 対象がオン）。オン = 反転（ソースがオン → 対象がオフ）。",
           "source_value_from": "ソースの状態を読み取るか、その属性のいずれかを読み取るか。",
-          "delay_seconds": "トリガー後、強制するまでこの時間だけ待機します。0 = 即時。最大 86400（24 時間）。"
+          "delay_on_seconds": "対象をオンにする前にこの時間だけ待機します。0 = 即時。最大 86400（24 時間）。",
+          "delay_off_seconds": "対象をオフにする前にこの時間だけ待機します。0 = 即時。最大 86400（24 時間）。"
         }
       },
       "edit_dynamic_attribute_params": {

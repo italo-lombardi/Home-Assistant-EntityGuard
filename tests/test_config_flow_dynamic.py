@@ -23,6 +23,8 @@ from custom_components.entity_guard.config_flow import (
 )
 from custom_components.entity_guard.const import (
     CONF_ATTRIBUTE,
+    CONF_DELAY_OFF_SECONDS,
+    CONF_DELAY_ON_SECONDS,
     CONF_DELAY_SECONDS,
     CONF_ENTRY_TYPE,
     CONF_FOLLOW_INVERT,
@@ -362,7 +364,8 @@ async def test_create_dynamic_state_from_state(hass: HomeAssistant):
             CONF_SOURCE_ENTITY: "binary_sensor.motion",
             CONF_FOLLOW_INVERT: True,
             CONF_SOURCE_VALUE_FROM: SOURCE_VALUE_FROM_STATE,
-            CONF_DELAY_SECONDS: 30,
+            CONF_DELAY_ON_SECONDS: 30,
+            CONF_DELAY_OFF_SECONDS: 45,
         },
     )
     res = await _finish(hass, res["flow_id"])
@@ -370,6 +373,9 @@ async def test_create_dynamic_state_from_state(hass: HomeAssistant):
     assert res["data"][CONF_SOURCE_ENTITY] == "binary_sensor.motion"
     assert res["data"][CONF_FOLLOW_INVERT] is True
     assert res["data"][CONF_SOURCE_ATTRIBUTE] is None
+    assert res["data"][CONF_DELAY_ON_SECONDS] == 30
+    assert res["data"][CONF_DELAY_OFF_SECONDS] == 45
+    # delay_seconds mirrors delay_on as the shared fallback anchor.
     assert res["data"][CONF_DELAY_SECONDS] == 30
     assert CONF_ATTRIBUTE not in res["data"]
 
@@ -389,11 +395,35 @@ async def test_create_dynamic_state_invalid_delay(hass: HomeAssistant):
             CONF_SOURCE_ENTITY: "binary_sensor.motion",
             CONF_FOLLOW_INVERT: False,
             CONF_SOURCE_VALUE_FROM: SOURCE_VALUE_FROM_STATE,
-            CONF_DELAY_SECONDS: -5,
+            CONF_DELAY_ON_SECONDS: -5,
+            CONF_DELAY_OFF_SECONDS: 10,
         }
     )
     assert res["step_id"] == "dynamic_state_params"
-    assert res["errors"][CONF_DELAY_SECONDS] == "invalid_delay"
+    assert res["errors"][CONF_DELAY_ON_SECONDS] == "invalid_delay"
+
+
+async def test_create_dynamic_state_invalid_delay_off(hass: HomeAssistant):
+    # delay_off invalid (delay_on valid) → the off-field error fires independently.
+    from custom_components.entity_guard.config_flow import EntityGuardConfigFlow
+
+    flow = EntityGuardConfigFlow()
+    flow.hass = hass
+    flow._rule_data = {
+        CONF_TARGET_ENTITIES: ["light.bedroom"],
+        CONF_MODE: MODE_DYNAMIC_STATE,
+    }
+    res = await flow.async_step_dynamic_state_params(
+        {
+            CONF_SOURCE_ENTITY: "binary_sensor.motion",
+            CONF_FOLLOW_INVERT: False,
+            CONF_SOURCE_VALUE_FROM: SOURCE_VALUE_FROM_STATE,
+            CONF_DELAY_ON_SECONDS: 10,
+            CONF_DELAY_OFF_SECONDS: -5,
+        }
+    )
+    assert res["step_id"] == "dynamic_state_params"
+    assert res["errors"][CONF_DELAY_OFF_SECONDS] == "invalid_delay"
 
 
 async def test_create_dynamic_attribute_invalid_delay(hass: HomeAssistant):
@@ -563,11 +593,16 @@ async def test_options_edit_dynamic_state(hass: HomeAssistant):
             CONF_SOURCE_ENTITY: "binary_sensor.other",
             CONF_FOLLOW_INVERT: True,
             CONF_SOURCE_VALUE_FROM: SOURCE_VALUE_FROM_STATE,
+            CONF_DELAY_ON_SECONDS: 15,
+            CONF_DELAY_OFF_SECONDS: 20,
         },
     )
     assert res["type"] == FlowResultType.CREATE_ENTRY
     assert e.options[CONF_SOURCE_ENTITY] == "binary_sensor.other"
     assert e.options[CONF_SOURCE_ATTRIBUTE] is None
+    assert e.options[CONF_DELAY_ON_SECONDS] == 15
+    assert e.options[CONF_DELAY_OFF_SECONDS] == 20
+    assert e.options[CONF_DELAY_SECONDS] == 15
 
 
 async def test_options_edit_dynamic_attribute_two_step(hass: HomeAssistant):
@@ -623,6 +658,8 @@ async def test_options_edit_dynamic_state_offline_source_preserves_attr(
             CONF_SOURCE_ENTITY: "sensor.offline",  # no state set → no live attrs
             CONF_FOLLOW_INVERT: False,
             CONF_SOURCE_VALUE_FROM: SOURCE_VALUE_FROM_ATTRIBUTE,
+            CONF_DELAY_ON_SECONDS: 5,
+            CONF_DELAY_OFF_SECONDS: 5,
         },
     )
     # Pick step opens with no error; the stored battery_level is injected as a
@@ -683,6 +720,8 @@ async def test_options_edit_pick_no_attributes(hass: HomeAssistant):
             CONF_SOURCE_ENTITY: "sensor.offline",
             CONF_FOLLOW_INVERT: False,
             CONF_SOURCE_VALUE_FROM: SOURCE_VALUE_FROM_ATTRIBUTE,
+            CONF_DELAY_ON_SECONDS: 5,
+            CONF_DELAY_OFF_SECONDS: 5,
         },
     )
     assert res["step_id"] == "edit_source_attribute_pick"
@@ -753,6 +792,8 @@ async def test_edit_dynamic_state_handler_rejects_source_in_targets(
             CONF_SOURCE_ENTITY: "light.bedroom",
             CONF_FOLLOW_INVERT: False,
             CONF_SOURCE_VALUE_FROM: SOURCE_VALUE_FROM_STATE,
+            CONF_DELAY_ON_SECONDS: 5,
+            CONF_DELAY_OFF_SECONDS: 5,
         }
     )
     assert res["step_id"] == "edit_dynamic_state_params"
@@ -786,11 +827,30 @@ async def test_edit_dynamic_state_invalid_delay(hass: HomeAssistant):
             CONF_SOURCE_ENTITY: "binary_sensor.motion",
             CONF_FOLLOW_INVERT: False,
             CONF_SOURCE_VALUE_FROM: SOURCE_VALUE_FROM_STATE,
-            CONF_DELAY_SECONDS: -5,
+            CONF_DELAY_ON_SECONDS: -5,
+            CONF_DELAY_OFF_SECONDS: 10,
         }
     )
     assert res["step_id"] == "edit_dynamic_state_params"
-    assert res["errors"][CONF_DELAY_SECONDS] == "invalid_delay"
+    assert res["errors"][CONF_DELAY_ON_SECONDS] == "invalid_delay"
+
+
+async def test_edit_dynamic_state_invalid_delay_off(hass: HomeAssistant):
+    # delay_off invalid (delay_on valid) → the off-field error fires independently.
+    flow = _opts_flow(
+        hass, {CONF_TARGET_ENTITIES: ["light.bedroom"], CONF_MODE: MODE_DYNAMIC_STATE}
+    )
+    res = await flow.async_step_edit_dynamic_state_params(
+        {
+            CONF_SOURCE_ENTITY: "binary_sensor.motion",
+            CONF_FOLLOW_INVERT: False,
+            CONF_SOURCE_VALUE_FROM: SOURCE_VALUE_FROM_STATE,
+            CONF_DELAY_ON_SECONDS: 10,
+            CONF_DELAY_OFF_SECONDS: -5,
+        }
+    )
+    assert res["step_id"] == "edit_dynamic_state_params"
+    assert res["errors"][CONF_DELAY_OFF_SECONDS] == "invalid_delay"
 
 
 async def test_edit_dynamic_attribute_invalid_delay(hass: HomeAssistant):

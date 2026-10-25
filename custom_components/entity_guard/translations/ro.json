@@ -116,13 +116,15 @@
           "source_entity": "Entitate sursă",
           "follow_invert": "Inversează starea",
           "source_value_from": "Citește valoarea din",
-          "delay_seconds": "Întârziere (secunde)"
+          "delay_on_seconds": "Întârziere la pornire (secunde)",
+          "delay_off_seconds": "Întârziere la oprire (secunde)"
         },
         "data_description": {
           "source_entity": "Entitatea pe care o urmăresc țintele. Nu trebuie să fie una dintre entitățile țintă.",
           "follow_invert": "Dezactivat = oglindire (sursă pornit → țintă pornit). Activat = inversare (sursă pornit → țintă oprit).",
           "source_value_from": "Dacă se citește starea sursei sau unul dintre atributele sale.",
-          "delay_seconds": "Așteaptă acest interval după o declanșare înainte de a impune. 0 = imediat. Maxim 86400 (24h)."
+          "delay_on_seconds": "Așteaptă acest interval înainte de a porni o țintă. 0 = imediat. Maxim 86400 (24h).",
+          "delay_off_seconds": "Așteaptă acest interval înainte de a opri o țintă. 0 = imediat. Maxim 86400 (24h)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Entitate sursă",
           "follow_invert": "Inversează starea",
           "source_value_from": "Citește valoarea din",
-          "delay_seconds": "Întârziere (secunde)"
+          "delay_on_seconds": "Întârziere la pornire (secunde)",
+          "delay_off_seconds": "Întârziere la oprire (secunde)"
         },
         "data_description": {
           "source_entity": "Entitatea pe care o urmăresc țintele. Nu trebuie să fie una dintre entitățile țintă.",
           "follow_invert": "Dezactivat = oglindire (sursă pornit → țintă pornit). Activat = inversare (sursă pornit → țintă oprit).",
           "source_value_from": "Dacă se citește starea sursei sau unul dintre atributele sale.",
-          "delay_seconds": "Așteaptă acest interval după o declanșare înainte de a impune. 0 = imediat. Maxim 86400 (24h)."
+          "delay_on_seconds": "Așteaptă acest interval înainte de a porni o țintă. 0 = imediat. Maxim 86400 (24h).",
+          "delay_off_seconds": "Așteaptă acest interval înainte de a opri o țintă. 0 = imediat. Maxim 86400 (24h)."
         }
       },
       "edit_dynamic_attribute_params": {

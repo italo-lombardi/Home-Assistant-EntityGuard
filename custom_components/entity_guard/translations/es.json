@@ -116,13 +116,15 @@
           "source_entity": "Entidad de origen",
           "follow_invert": "Invertir estado",
           "source_value_from": "Leer valor desde",
-          "delay_seconds": "Retardo (segundos)"
+          "delay_on_seconds": "Retardo al encender (segundos)",
+          "delay_off_seconds": "Retardo al apagar (segundos)"
         },
         "data_description": {
           "source_entity": "La entidad a la que siguen los objetivos. No puede ser una de las entidades objetivo.",
           "follow_invert": "Desactivado = replicar (origen on → objetivo on). Activado = invertir (origen on → objetivo off).",
           "source_value_from": "Si se debe leer el estado del origen o uno de sus atributos.",
-          "delay_seconds": "Esperar este tiempo tras un disparador antes de actuar. 0 = inmediato. Máx. 86400 (24h)."
+          "delay_on_seconds": "Esperar este tiempo antes de encender un objetivo. 0 = inmediato. Máx. 86400 (24h).",
+          "delay_off_seconds": "Esperar este tiempo antes de apagar un objetivo. 0 = inmediato. Máx. 86400 (24h)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Entidad de origen",
           "follow_invert": "Invertir estado",
           "source_value_from": "Leer valor desde",
-          "delay_seconds": "Retardo (segundos)"
+          "delay_on_seconds": "Retardo al encender (segundos)",
+          "delay_off_seconds": "Retardo al apagar (segundos)"
         },
         "data_description": {
           "source_entity": "La entidad a la que siguen los objetivos. No puede ser una de las entidades objetivo.",
           "follow_invert": "Desactivado = replicar (origen on → objetivo on). Activado = invertir (origen on → objetivo off).",
           "source_value_from": "Si se debe leer el estado del origen o uno de sus atributos.",
-          "delay_seconds": "Esperar este tiempo tras un disparador antes de actuar. 0 = inmediato. Máx. 86400 (24h)."
+          "delay_on_seconds": "Esperar este tiempo antes de encender un objetivo. 0 = inmediato. Máx. 86400 (24h).",
+          "delay_off_seconds": "Esperar este tiempo antes de apagar un objetivo. 0 = inmediato. Máx. 86400 (24h)."
         }
       },
       "edit_dynamic_attribute_params": {

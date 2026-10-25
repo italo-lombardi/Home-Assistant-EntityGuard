@@ -116,13 +116,15 @@
           "source_entity": "Entitat d'origen",
           "follow_invert": "Inverteix l'estat",
           "source_value_from": "Llegeix el valor de",
-          "delay_seconds": "Retard (segons)"
+          "delay_on_seconds": "Retard en encendre (segons)",
+          "delay_off_seconds": "Retard en apagar (segons)"
         },
         "data_description": {
           "source_entity": "L'entitat que segueixen els objectius. No pot ser cap de les entitats objectiu.",
           "follow_invert": "Desactivat = reflecteix (origen encès → objectiu encès). Activat = inverteix (origen encès → objectiu apagat).",
           "source_value_from": "Si s'ha de llegir l'estat de l'origen o un dels seus atributs.",
-          "delay_seconds": "Espereu aquest temps després d'una activació abans d'aplicar. 0 = immediat. Màxim 86400 (24 h)."
+          "delay_on_seconds": "Espereu aquest temps abans d'encendre un objectiu. 0 = immediat. Màxim 86400 (24 h).",
+          "delay_off_seconds": "Espereu aquest temps abans d'apagar un objectiu. 0 = immediat. Màxim 86400 (24 h)."
         }
       },
       "dynamic_attribute_params": {
@@ -267,13 +269,15 @@
           "source_entity": "Entitat d'origen",
           "follow_invert": "Inverteix l'estat",
           "source_value_from": "Llegeix el valor de",
-          "delay_seconds": "Retard (segons)"
+          "delay_on_seconds": "Retard en encendre (segons)",
+          "delay_off_seconds": "Retard en apagar (segons)"
         },
         "data_description": {
           "source_entity": "L'entitat que segueixen els objectius. No pot ser cap de les entitats objectiu.",
           "follow_invert": "Desactivat = reflecteix (origen encès → objectiu encès). Activat = inverteix (origen encès → objectiu apagat).",
           "source_value_from": "Si s'ha de llegir l'estat de l'origen o un dels seus atributs.",
-          "delay_seconds": "Espereu aquest temps després d'una activació abans d'aplicar. 0 = immediat. Màxim 86400 (24 h)."
+          "delay_on_seconds": "Espereu aquest temps abans d'encendre un objectiu. 0 = immediat. Màxim 86400 (24 h).",
+          "delay_off_seconds": "Espereu aquest temps abans d'apagar un objectiu. 0 = immediat. Màxim 86400 (24 h)."
         }
       },
       "edit_dynamic_attribute_params": {
