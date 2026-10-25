@@ -447,10 +447,17 @@ class RuleEngine:
             self._set_status(STATUS_COOLDOWN)
             return
 
-        if self._config.delay_seconds > 0:
+        # Per-direction delay (dynamic_state): the wait before enforcing may differ
+        # for driving the target ON vs OFF. effective_delay() resolves this once —
+        # dynamic_state picks delay_on/off by the desired direction, every other
+        # mode (and source-offline, desired_on=None) returns delay_seconds. Resolve
+        # once and reuse for BOTH the gate below and the scheduled duration, so a
+        # direction with delay 0 goes immediate while the other still waits.
+        delay = self._config.effective_delay(self._follow_desired_on())
+        if delay > 0:
             # Order is load-bearing: schedule first (adds to _pending_enforcement_due),
             # then broadcast so the sensor receives the updated dict.
-            self._schedule_delayed_enforcement(entity_id, trigger_context_id)
+            self._schedule_delayed_enforcement(entity_id, delay, trigger_context_id)
             self._set_or_force_broadcast(STATUS_PENDING)
             return
 
@@ -721,9 +728,15 @@ class RuleEngine:
     def _schedule_delayed_enforcement(
         self,
         entity_id: str,
+        delay_seconds: int | None = None,
         trigger_context_id: str | None = None,
     ) -> None:
-        """Arm a delayed enforcement; cancels any prior pending one for this entity."""
+        """Arm a delayed enforcement after `delay_seconds`; cancels any prior
+        pending one for this entity. The caller resolves the direction-specific
+        delay (effective_delay) and passes it in. When omitted, falls back to the
+        rule's shared delay_seconds (the pre-split default)."""
+        if delay_seconds is None:
+            delay_seconds = self._config.delay_seconds
         self._cancel_pending(entity_id)
 
         async def _fire(_now: datetime) -> None:
@@ -784,11 +797,11 @@ class RuleEngine:
             # async_call_later expects a sync callback; bridge to the coroutine.
             self._hass.async_create_task(_fire(now))
 
-        cancel = async_call_later(self._hass, self._config.delay_seconds, _fire_cb)
+        cancel = async_call_later(self._hass, delay_seconds, _fire_cb)
         my_cancel = cancel
         self._pending_enforcements[entity_id] = cancel
         self._pending_enforcement_due[entity_id] = dt_util.now() + timedelta(
-            seconds=self._config.delay_seconds
+            seconds=delay_seconds
         )
 
     def _cancel_pending(self, entity_id: str) -> None:
