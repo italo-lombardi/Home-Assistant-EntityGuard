@@ -123,8 +123,8 @@
           "source_entity": "Den entitet målene følger. Må ikke være en af målentiteterne.",
           "follow_invert": "Fra = spejl (kilde til → mål til). Til = inverter (kilde til → mål fra).",
           "source_value_from": "Om kildens tilstand eller en af dens attributter skal læses.",
-          "delay_on_seconds": "Vent så lang tid før et mål drives til. 0 = øjeblikkeligt. Maks. 86400 (24t).",
-          "delay_off_seconds": "Vent så lang tid før et mål drives fra. 0 = øjeblikkeligt. Maks. 86400 (24t)."
+          "delay_on_seconds": "Vent så lang tid, før et mål tændes. 0 = øjeblikkeligt. Maks. 86400 (24t).",
+          "delay_off_seconds": "Vent så lang tid, før et mål slukkes. 0 = øjeblikkeligt. Maks. 86400 (24t)."
         }
       },
       "dynamic_attribute_params": {
@@ -276,8 +276,8 @@
           "source_entity": "Den entitet målene følger. Må ikke være en af målentiteterne.",
           "follow_invert": "Fra = spejl (kilde til → mål til). Til = inverter (kilde til → mål fra).",
           "source_value_from": "Om kildens tilstand eller en af dens attributter skal læses.",
-          "delay_on_seconds": "Vent så lang tid før et mål drives til. 0 = øjeblikkeligt. Maks. 86400 (24t).",
-          "delay_off_seconds": "Vent så lang tid før et mål drives fra. 0 = øjeblikkeligt. Maks. 86400 (24t)."
+          "delay_on_seconds": "Vent så lang tid, før et mål tændes. 0 = øjeblikkeligt. Maks. 86400 (24t).",
+          "delay_off_seconds": "Vent så lang tid, før et mål slukkes. 0 = øjeblikkeligt. Maks. 86400 (24t)."
         }
       },
       "edit_dynamic_attribute_params": {

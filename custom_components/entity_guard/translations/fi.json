@@ -123,8 +123,8 @@
           "source_entity": "Entiteetti, jota kohteet seuraavat. Ei saa olla yksi kohde-entiteeteistä.",
           "follow_invert": "Pois = peilaa (lähde päällä → kohde päällä). Päällä = käännä (lähde päällä → kohde pois).",
           "source_value_from": "Luetaanko lähteen tila vai jokin sen attribuuteista.",
-          "delay_on_seconds": "Odota tämän verran ennen kohteen ajamista päälle. 0 = välitön. Enintään 86400 (24 h).",
-          "delay_off_seconds": "Odota tämän verran ennen kohteen ajamista pois. 0 = välitön. Enintään 86400 (24 h)."
+          "delay_on_seconds": "Odota tämän verran ennen kohteen kytkemistä päälle. 0 = välitön. Enintään 86400 (24 h).",
+          "delay_off_seconds": "Odota tämän verran ennen kohteen kytkemistä pois. 0 = välitön. Enintään 86400 (24 h)."
         }
       },
       "dynamic_attribute_params": {
@@ -276,8 +276,8 @@
           "source_entity": "Entiteetti, jota kohteet seuraavat. Ei saa olla yksi kohde-entiteeteistä.",
           "follow_invert": "Pois = peilaa (lähde päällä → kohde päällä). Päällä = käännä (lähde päällä → kohde pois).",
           "source_value_from": "Luetaanko lähteen tila vai jokin sen attribuuteista.",
-          "delay_on_seconds": "Odota tämän verran ennen kohteen ajamista päälle. 0 = välitön. Enintään 86400 (24 h).",
-          "delay_off_seconds": "Odota tämän verran ennen kohteen ajamista pois. 0 = välitön. Enintään 86400 (24 h)."
+          "delay_on_seconds": "Odota tämän verran ennen kohteen kytkemistä päälle. 0 = välitön. Enintään 86400 (24 h).",
+          "delay_off_seconds": "Odota tämän verran ennen kohteen kytkemistä pois. 0 = välitön. Enintään 86400 (24 h)."
         }
       },
       "edit_dynamic_attribute_params": {

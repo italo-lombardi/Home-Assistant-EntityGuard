@@ -123,8 +123,8 @@
           "source_entity": "Hedeflerin izlediği varlık. Hedef varlıklardan biri olmamalıdır.",
           "follow_invert": "Kapalı = yansıt (kaynak açık → hedef açık). Açık = tersine çevir (kaynak açık → hedef kapalı).",
           "source_value_from": "Kaynağın durumunun mu yoksa özniteliklerinden birinin mi okunacağı.",
-          "delay_on_seconds": "Bir hedefi açmadan önce bu kadar bekleyin. 0 = anında. En fazla 86400 (24s).",
-          "delay_off_seconds": "Bir hedefi kapatmadan önce bu kadar bekleyin. 0 = anında. En fazla 86400 (24s)."
+          "delay_on_seconds": "Bir hedefi açmadan önce bu kadar bekleyin. 0 = anında. En fazla 86400 (24 sa.).",
+          "delay_off_seconds": "Bir hedefi kapatmadan önce bu kadar bekleyin. 0 = anında. En fazla 86400 (24 sa.)."
         }
       },
       "dynamic_attribute_params": {
@@ -276,8 +276,8 @@
           "source_entity": "Hedeflerin izlediği varlık. Hedef varlıklardan biri olmamalıdır.",
           "follow_invert": "Kapalı = yansıt (kaynak açık → hedef açık). Açık = tersine çevir (kaynak açık → hedef kapalı).",
           "source_value_from": "Kaynağın durumunun mu yoksa özniteliklerinden birinin mi okunacağı.",
-          "delay_on_seconds": "Bir hedefi açmadan önce bu kadar bekleyin. 0 = anında. En fazla 86400 (24s).",
-          "delay_off_seconds": "Bir hedefi kapatmadan önce bu kadar bekleyin. 0 = anında. En fazla 86400 (24s)."
+          "delay_on_seconds": "Bir hedefi açmadan önce bu kadar bekleyin. 0 = anında. En fazla 86400 (24 sa.).",
+          "delay_off_seconds": "Bir hedefi kapatmadan önce bu kadar bekleyin. 0 = anında. En fazla 86400 (24 sa.)."
         }
       },
       "edit_dynamic_attribute_params": {

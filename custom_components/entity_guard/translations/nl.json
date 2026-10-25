@@ -123,8 +123,8 @@
           "source_entity": "De entiteit die de doelen volgen. Mag niet een van de doelentiteiten zijn.",
           "follow_invert": "Uit = spiegelen (bron aan → doel aan). Aan = omkeren (bron aan → doel uit).",
           "source_value_from": "Of de status van de bron moet worden gelezen of een van de attributen ervan.",
-          "delay_on_seconds": "Wacht zo lang voordat een doel wordt aangezet. 0 = direct. Max 86400 (24u).",
-          "delay_off_seconds": "Wacht zo lang voordat een doel wordt uitgezet. 0 = direct. Max 86400 (24u)."
+          "delay_on_seconds": "Wacht zo lang voordat een doel wordt ingeschakeld. 0 = direct. Max 86400 (24u).",
+          "delay_off_seconds": "Wacht zo lang voordat een doel wordt uitgeschakeld. 0 = direct. Max 86400 (24u)."
         }
       },
       "dynamic_attribute_params": {
@@ -276,8 +276,8 @@
           "source_entity": "De entiteit die de doelen volgen. Mag niet een van de doelentiteiten zijn.",
           "follow_invert": "Uit = spiegelen (bron aan → doel aan). Aan = omkeren (bron aan → doel uit).",
           "source_value_from": "Of de status van de bron moet worden gelezen of een van de attributen ervan.",
-          "delay_on_seconds": "Wacht zo lang voordat een doel wordt aangezet. 0 = direct. Max 86400 (24u).",
-          "delay_off_seconds": "Wacht zo lang voordat een doel wordt uitgezet. 0 = direct. Max 86400 (24u)."
+          "delay_on_seconds": "Wacht zo lang voordat een doel wordt ingeschakeld. 0 = direct. Max 86400 (24u).",
+          "delay_off_seconds": "Wacht zo lang voordat een doel wordt uitgeschakeld. 0 = direct. Max 86400 (24u)."
         }
       },
       "edit_dynamic_attribute_params": {
