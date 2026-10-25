@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Vertraging (seconden)"
       },
+      "delay_on_seconds": {
+        "name": "Vertraging bij inschakelen (seconden)"
+      },
+      "delay_off_seconds": {
+        "name": "Vertraging bij uitschakelen (seconden)"
+      },
       "debounce_seconds": {
         "name": "Debounce (seconden)"
       },

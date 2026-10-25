@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Delay (seconds)"
       },
+      "delay_on_seconds": {
+        "name": "Delay when turning on (seconds)"
+      },
+      "delay_off_seconds": {
+        "name": "Delay when turning off (seconds)"
+      },
       "debounce_seconds": {
         "name": "Debounce (seconds)"
       },

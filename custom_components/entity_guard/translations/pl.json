@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Opóźnienie (sekundy)"
       },
+      "delay_on_seconds": {
+        "name": "Opóźnienie przy włączaniu (sekundy)"
+      },
+      "delay_off_seconds": {
+        "name": "Opóźnienie przy wyłączaniu (sekundy)"
+      },
       "debounce_seconds": {
         "name": "Debouncing (sekundy)"
       },

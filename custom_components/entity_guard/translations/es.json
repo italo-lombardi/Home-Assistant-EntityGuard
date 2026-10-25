@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Retardo (segundos)"
       },
+      "delay_on_seconds": {
+        "name": "Retardo al encender (segundos)"
+      },
+      "delay_off_seconds": {
+        "name": "Retardo al apagar (segundos)"
+      },
       "debounce_seconds": {
         "name": "Antirrebote (segundos)"
       },

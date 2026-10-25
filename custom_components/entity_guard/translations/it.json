@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Ritardo (secondi)"
       },
+      "delay_on_seconds": {
+        "name": "Ritardo all'attivazione (secondi)"
+      },
+      "delay_off_seconds": {
+        "name": "Ritardo alla disattivazione (secondi)"
+      },
       "debounce_seconds": {
         "name": "Debounce (secondi)"
       },

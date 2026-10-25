@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Întârziere (secunde)"
       },
+      "delay_on_seconds": {
+        "name": "Întârziere la pornire (secunde)"
+      },
+      "delay_off_seconds": {
+        "name": "Întârziere la oprire (secunde)"
+      },
       "debounce_seconds": {
         "name": "Debounce (secunde)"
       },

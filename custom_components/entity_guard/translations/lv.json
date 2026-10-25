@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Aizkave (sekundes)"
       },
+      "delay_on_seconds": {
+        "name": "Aizkave ieslēdzot (sekundes)"
+      },
+      "delay_off_seconds": {
+        "name": "Aizkave izslēdzot (sekundes)"
+      },
       "debounce_seconds": {
         "name": "Atsitiena novēršana (sekundes)"
       },

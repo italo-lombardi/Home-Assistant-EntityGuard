@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Забавяне (секунди)"
       },
+      "delay_on_seconds": {
+        "name": "Забавяне при включване (секунди)"
+      },
+      "delay_off_seconds": {
+        "name": "Забавяне при изключване (секунди)"
+      },
       "debounce_seconds": {
         "name": "Дебаунс (секунди)"
       },

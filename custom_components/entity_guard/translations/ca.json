@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Retard (segons)"
       },
+      "delay_on_seconds": {
+        "name": "Retard en encendre (segons)"
+      },
+      "delay_off_seconds": {
+        "name": "Retard en apagar (segons)"
+      },
       "debounce_seconds": {
         "name": "Antirebot (segons)"
       },

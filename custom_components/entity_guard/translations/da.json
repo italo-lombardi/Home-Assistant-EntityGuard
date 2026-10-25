@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Forsinkelse (sekunder)"
       },
+      "delay_on_seconds": {
+        "name": "Forsinkelse ved tænding (sekunder)"
+      },
+      "delay_off_seconds": {
+        "name": "Forsinkelse ved slukning (sekunder)"
+      },
       "debounce_seconds": {
         "name": "Debounce (sekunder)"
       },

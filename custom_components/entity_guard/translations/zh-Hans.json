@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "延迟（秒）"
       },
+      "delay_on_seconds": {
+        "name": "开启时的延迟（秒）"
+      },
+      "delay_off_seconds": {
+        "name": "关闭时的延迟（秒）"
+      },
       "debounce_seconds": {
         "name": "防抖（秒）"
       },

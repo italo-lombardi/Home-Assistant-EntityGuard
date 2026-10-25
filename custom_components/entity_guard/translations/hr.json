@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Odgoda (sekunde)"
       },
+      "delay_on_seconds": {
+        "name": "Odgoda pri uključivanju (sekunde)"
+      },
+      "delay_off_seconds": {
+        "name": "Odgoda pri isključivanju (sekunde)"
+      },
       "debounce_seconds": {
         "name": "Odgoda ponavljanja (sekunde)"
       },

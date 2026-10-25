@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Verzögerung (Sekunden)"
       },
+      "delay_on_seconds": {
+        "name": "Verzögerung beim Einschalten (Sekunden)"
+      },
+      "delay_off_seconds": {
+        "name": "Verzögerung beim Ausschalten (Sekunden)"
+      },
       "debounce_seconds": {
         "name": "Entprellung (Sekunden)"
       },

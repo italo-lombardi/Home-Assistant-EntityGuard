@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Késleltetés (másodperc)"
       },
+      "delay_on_seconds": {
+        "name": "Késleltetés bekapcsoláskor (másodperc)"
+      },
+      "delay_off_seconds": {
+        "name": "Késleltetés kikapcsoláskor (másodperc)"
+      },
       "debounce_seconds": {
         "name": "Debounce (másodperc)"
       },

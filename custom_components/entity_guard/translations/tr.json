@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Gecikme (saniye)"
       },
+      "delay_on_seconds": {
+        "name": "Açarken gecikme (saniye)"
+      },
+      "delay_off_seconds": {
+        "name": "Kapatırken gecikme (saniye)"
+      },
       "debounce_seconds": {
         "name": "Debounce (saniye)"
       },

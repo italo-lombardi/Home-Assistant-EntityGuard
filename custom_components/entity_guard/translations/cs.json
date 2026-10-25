@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Prodleva (sekundy)"
       },
+      "delay_on_seconds": {
+        "name": "Prodleva při zapínání (sekundy)"
+      },
+      "delay_off_seconds": {
+        "name": "Prodleva při vypínání (sekundy)"
+      },
       "debounce_seconds": {
         "name": "Potlačení zákmitů (sekundy)"
       },

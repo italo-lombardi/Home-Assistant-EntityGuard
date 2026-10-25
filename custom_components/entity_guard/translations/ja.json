@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "遅延（秒）"
       },
+      "delay_on_seconds": {
+        "name": "オンにするときの遅延（秒）"
+      },
+      "delay_off_seconds": {
+        "name": "オフにするときの遅延（秒）"
+      },
       "debounce_seconds": {
         "name": "デバウンス（秒）"
       },

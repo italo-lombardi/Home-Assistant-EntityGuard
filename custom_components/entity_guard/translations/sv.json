@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Fördröjning (sekunder)"
       },
+      "delay_on_seconds": {
+        "name": "Fördröjning vid påslagning (sekunder)"
+      },
+      "delay_off_seconds": {
+        "name": "Fördröjning vid avstängning (sekunder)"
+      },
       "debounce_seconds": {
         "name": "Avstudsning (sekunder)"
       },

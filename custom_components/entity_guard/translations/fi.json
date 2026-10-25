@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Viive (sekuntia)"
       },
+      "delay_on_seconds": {
+        "name": "Viive päälle kytkettäessä (sekuntia)"
+      },
+      "delay_off_seconds": {
+        "name": "Viive pois kytkettäessä (sekuntia)"
+      },
       "debounce_seconds": {
         "name": "Viivevakautus (sekuntia)"
       },

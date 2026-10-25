@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "Oneskorenie (sekundy)"
       },
+      "delay_on_seconds": {
+        "name": "Oneskorenie pri zapínaní (sekundy)"
+      },
+      "delay_off_seconds": {
+        "name": "Oneskorenie pri vypínaní (sekundy)"
+      },
       "debounce_seconds": {
         "name": "Potlačenie zákmitov (sekundy)"
       },

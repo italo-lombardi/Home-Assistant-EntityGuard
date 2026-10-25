@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "지연 (초)"
       },
+      "delay_on_seconds": {
+        "name": "켜질 때 지연 (초)"
+      },
+      "delay_off_seconds": {
+        "name": "꺼질 때 지연 (초)"
+      },
       "debounce_seconds": {
         "name": "디바운스 (초)"
       },

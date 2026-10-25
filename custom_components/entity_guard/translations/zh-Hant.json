@@ -497,6 +497,12 @@
       "delay_seconds": {
         "name": "延遲（秒）"
       },
+      "delay_on_seconds": {
+        "name": "開啟時的延遲（秒）"
+      },
+      "delay_off_seconds": {
+        "name": "關閉時的延遲（秒）"
+      },
       "debounce_seconds": {
         "name": "去抖動（秒）"
       },
