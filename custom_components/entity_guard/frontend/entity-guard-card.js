@@ -909,7 +909,32 @@ class EntityGuardCard extends LitElement {
         </div>`,
       });
     }
-    if (a.delay_seconds != null) {
+    // Delay. dynamic_state can split the delay by target direction (on/off) —
+    // show two rows there; every other mode keeps the single Delay row. Mirror
+    // the engine's effective_delay fallback: a null directional override means
+    // "use delay_seconds".
+    if (a.mode === "dynamic_state") {
+      const delayOn = a.delay_on_seconds != null ? a.delay_on_seconds : a.delay_seconds;
+      const delayOff = a.delay_off_seconds != null ? a.delay_off_seconds : a.delay_seconds;
+      if (delayOn != null) {
+        rows.push({
+          label: "Delay (on)",
+          tpl: html`<div class="row">
+            <span class="label">Delay (on)</span>
+            <span class="value">${this._formatSeconds(delayOn)}</span>
+          </div>`,
+        });
+      }
+      if (delayOff != null) {
+        rows.push({
+          label: "Delay (off)",
+          tpl: html`<div class="row">
+            <span class="label">Delay (off)</span>
+            <span class="value">${this._formatSeconds(delayOff)}</span>
+          </div>`,
+        });
+      }
+    } else if (a.delay_seconds != null) {
       rows.push({
         label: "Delay",
         tpl: html`<div class="row">
