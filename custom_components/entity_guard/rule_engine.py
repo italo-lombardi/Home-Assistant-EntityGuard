@@ -465,6 +465,13 @@ class RuleEngine:
         # mode (and source-offline, desired_on=None) returns delay_seconds. Resolve
         # once and reuse for BOTH the gate below and the scheduled duration, so a
         # direction with delay 0 goes immediate while the other still waits.
+        #
+        # The resolved delay is PINNED to the arming direction for the life of the
+        # countdown — it is not re-resolved if the source flips mid-wait. That is
+        # safe: _fire re-runs _trigger_decision against live state, so a flip that
+        # makes the target compliant cancels cleanly, and a genuinely new direction
+        # re-enters async_evaluate (fresh effective_delay). See the pin test in
+        # tests/test_split_delay_engine.py.
         delay = self._config.effective_delay(self._follow_desired_on())
         if delay > 0:
             # Order is load-bearing: schedule first (adds to _pending_enforcement_due),

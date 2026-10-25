@@ -126,6 +126,12 @@ class RuleConfig:
         matters because the private _follow_desired_on() the engine passes DOES
         compute a value for dynamic_attribute (it has a source_entity) — only the
         mode check keeps the overrides dynamic_state-exclusive.
+
+        Note the desired_on=None branch is reachable via unit tests (and any future
+        caller) but NOT from the engine's live enforce path: the dynamic trigger
+        decision returns not-triggered whenever _follow_desired_on() is None, so the
+        engine never schedules a dynamic_state enforcement with a None direction. The
+        None→delay_seconds fallback is therefore dead-but-safe in production today.
         """
         if self.mode != MODE_DYNAMIC_STATE or desired_on is None:
             return self.delay_seconds

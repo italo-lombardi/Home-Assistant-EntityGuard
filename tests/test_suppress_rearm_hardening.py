@@ -24,7 +24,7 @@ from custom_components.entity_guard.const import (
     SOURCE_VALUE_FROM_STATE,
     STATUS_PENDING,
 )
-from custom_components.entity_guard.models import RuleConfig
+from custom_components.entity_guard.models import Flag, RuleConfig
 from custom_components.entity_guard.rule_engine import RuleEngine
 from custom_components.entity_guard.storage import EntityGuardStore
 
@@ -181,4 +181,84 @@ async def test_dynamic_source_lazy_expiry_enforces_each_target_once(
     for c in engine._enforce.await_args_list:
         counts[c.args[0]] = counts.get(c.args[0], 0) + 1
     assert counts == {"light.a": 1, "light.b": 1}  # each once, neither dropped
+    await engine.async_unload()
+
+
+async def test_flag_trigger_lazy_expiry_enforces_each_target_once(
+    hass: HomeAssistant,
+):
+    """GAP-4, FLAG half: a FLAG event that lazily expires suppression re-arms each
+    target exactly once.
+
+    The gate skips the lazy sibling sweep for BOTH source and flag triggers. The
+    source half is covered above; this locks the flag half. A flag entity change
+    that satisfies the flags has its own all-targets sweep (the flag branch); before
+    the gate the lazy sibling sweep ran too, and at delay 0 the first eval completed
+    before the second schedule's cancel, so both enforced (double). Assert single.
+    """
+    config = _fixed_config(
+        delay_seconds=0,
+        flags=[Flag(entity="input_boolean.guard", match_state="on")],
+    )
+    engine = _engine(hass, config)
+    engine._enforce = AsyncMock()
+    # Flags satisfied; both targets ON → non-compliant for target_state "off".
+    hass.states.async_set("input_boolean.guard", "on")
+    hass.states.async_set("light.a", "on")
+    hass.states.async_set("light.b", "on")
+
+    engine._state.suppressed_until = dt_util.now() - timedelta(seconds=1)
+    engine._state.suppression_reason = "manual"
+
+    # A flag state event drives async_evaluate on the flag entity (not a target).
+    await engine.async_evaluate(
+        "input_boolean.guard", hass.states.get("input_boolean.guard")
+    )
+    await hass.async_block_till_done()
+
+    assert engine._state.suppressed_until is None
+    counts = {}
+    for c in engine._enforce.await_args_list:
+        counts[c.args[0]] = counts.get(c.args[0], 0) + 1
+    assert counts == {"light.a": 1, "light.b": 1}  # each once, neither dropped
+    await engine.async_unload()
+
+
+async def test_flag_is_also_target_lazy_expiry_enforces_each_target_once(
+    hass: HomeAssistant,
+):
+    """GAP-4, FLAG∈TARGET intersection: the config flow permits a flag entity that
+    is ALSO a target (no flag∉targets validation). On that entity's event with a
+    lazy suppression expiry, the gate skips the lazy sibling sweep (is_flag_trigger),
+    the flag branch sweeps the SIBLINGS (skipping the entity itself via
+    `target == entity_id: continue`), then falls through to evaluate the entity ONCE
+    as a target. Assert the flag-target entity and the sibling each enforce exactly
+    once — no double on the shared entity.
+    """
+    config = _fixed_config(
+        target_entities=["input_boolean.guard", "light.b"],
+        delay_seconds=0,
+        flags=[Flag(entity="input_boolean.guard", match_state="on")],
+    )
+    engine = _engine(hass, config)
+    engine._enforce = AsyncMock()
+    # Flag entity satisfies the flag (state "on") AND is a non-compliant target
+    # (target_state "off"); sibling light.b also non-compliant.
+    hass.states.async_set("input_boolean.guard", "on")
+    hass.states.async_set("light.b", "on")
+
+    engine._state.suppressed_until = dt_util.now() - timedelta(seconds=1)
+    engine._state.suppression_reason = "manual"
+
+    await engine.async_evaluate(
+        "input_boolean.guard", hass.states.get("input_boolean.guard")
+    )
+    await hass.async_block_till_done()
+
+    assert engine._state.suppressed_until is None
+    counts = {}
+    for c in engine._enforce.await_args_list:
+        counts[c.args[0]] = counts.get(c.args[0], 0) + 1
+    # Shared flag-target enforced once (not double), sibling once.
+    assert counts == {"input_boolean.guard": 1, "light.b": 1}
     await engine.async_unload()

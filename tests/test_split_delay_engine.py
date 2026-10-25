@@ -8,6 +8,7 @@ that direction's delay — not merely that *a* delay happened.
 
 from __future__ import annotations
 
+from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 from homeassistant.core import HomeAssistant
@@ -204,3 +205,48 @@ async def test_attribute_source_resolves_direction_and_delay(hass: HomeAssistant
     await engine2.async_evaluate("light.target", hass.states.get("light.target"))
     assert _scheduled_delay(engine2, "light.target") == 75
     await engine2.async_unload()
+
+
+async def test_delay_is_pinned_to_arming_direction_until_fire(hass: HomeAssistant):
+    """The countdown length is resolved ONCE at arm time (async_evaluate line ~468)
+    and is NOT re-resolved mid-countdown.
+
+    Semantics this pins (raised in review): effective_delay runs at schedule time
+    for the direction that armed the timer. A later SOURCE flip does not re-resolve
+    the already-scheduled duration. When the real _fire callback runs it re-checks
+    _trigger_decision against the CURRENT states — so a flip that makes the target
+    compliant cancels cleanly (no enforce), and a flip that leaves it non-compliant
+    toward the *same* direction still fires on the originally-armed delay. There is
+    no path where _fire enforces a direction with that direction's delay unobserved,
+    because re-arming on a genuinely new direction goes through async_evaluate again
+    (fresh effective_delay). This test locks the arm-time pin + the compliant-flip
+    cancel so a refactor can't silently start re-resolving mid-countdown.
+    """
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    config = _make_config(delay_on_seconds=10, delay_off_seconds=90)
+    engine = _make_engine(hass, config)
+    engine._enforce = AsyncMock()
+
+    # Arm ON: source on (desired on), target off → drive ON, delay_on=10 scheduled.
+    hass.states.async_set("binary_sensor.motion", "on")
+    hass.states.async_set("light.target", "off")
+    await engine.async_evaluate("light.target", hass.states.get("light.target"))
+    assert engine.current_status() == STATUS_PENDING
+    assert _scheduled_delay(engine, "light.target") == 10  # armed on delay_on
+
+    # Mid-countdown the SOURCE flips off → desired now off. The target is still OFF,
+    # so it is now COMPLIANT with the new desired. The scheduled timer still carries
+    # the arm-time delay_on (10), NOT delay_off (90) — not re-resolved.
+    hass.states.async_set("binary_sensor.motion", "off")
+    # Advance past the ORIGINAL 10s delay; if the duration had been re-resolved to
+    # delay_off=90 the timer would not fire here at all.
+    async_fire_time_changed(hass, dt_util.utcnow() + timedelta(seconds=11))
+    await hass.async_block_till_done()
+
+    # _fire re-ran _trigger_decision: target off vs desired off → compliant → bailed,
+    # no enforce, pending cleared. Proves the fire used the 10s arm-time schedule
+    # (it fired) and the direction is decided fresh at fire (it did not enforce OFF).
+    engine._enforce.assert_not_awaited()
+    assert engine.pending_enforcement_due() == {}
+    await engine.async_unload()

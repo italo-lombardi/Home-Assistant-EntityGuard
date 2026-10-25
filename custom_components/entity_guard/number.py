@@ -283,6 +283,15 @@ class _EntityGuardDirectionalDelayNumber(EntityGuardNumberBase):
     delay and float(None) can never happen. Writes target the directional key, which
     parse_rule_config repopulates via _bounded_delay_or_none — so effective_delay
     (which reads the overrides first) picks the new value up on the next resolve.
+
+    A directional write intentionally does NOT also mirror to the shared
+    delay_seconds (config_flow's save path anchors delay_seconds := delay_on; the
+    slider path does not). For dynamic_state, delay_seconds is a dead anchor: the
+    engine only ever resolves the delay via effective_delay(desired), which reads
+    the directional override first, and effective_delay(None) — the sole shared
+    fallback — is unreachable mid-enforce (the dynamic trigger decision returns
+    not-triggered when the direction is None, so the engine never schedules with a
+    None direction). Do not "fix" this drift into a sync write; it would be dead code.
     """
 
     @property
