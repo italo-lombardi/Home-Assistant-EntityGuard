@@ -12,8 +12,9 @@
 // — and must not be, since exporting would mean editing the shipped file).
 //
 // The html stub joins the template's `${}` interpolations with String.raw so a
-// rendered fragment's text is assertable. css/nothing are no-op stand-ins the
-// card reads at module-load.
+// rendered fragment's text is assertable (this is the capability a future
+// render test needs). The card reads `.css` and `.nothing` too, but with its
+// own fallbacks (`css || …`, `nothing ?? ""`), so those need no stub here.
 
 // Flatten a tagged-template call to its rendered text. Nested html`` fragments
 // (produced by the same stub) carry a __html string; splice those in.
@@ -27,10 +28,9 @@ function htmlTag(strings, ...values) {
 // The card does `LitElement = Object.getPrototypeOf(customElements.get(...))`,
 // so get() must return a subclass whose prototype (the superclass) carries the
 // Lit members. class Sub extends Base ⇒ Object.getPrototypeOf(Sub) === Base.
+// Only `.html` is read without a card-side fallback, so only it is stubbed.
 class LitBase {}
 LitBase.prototype.html = htmlTag;
-LitBase.prototype.css = () => ({});
-LitBase.prototype.nothing = "";
 class HaMainStub extends LitBase {}
 
 const defined = {};

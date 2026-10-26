@@ -75,8 +75,11 @@ test("parity: _followLooksOn set == FOLLOW_ON_STATES in const.py", () => {
 
   // Recover the JS set from the card's own literal array rather than probing a
   // hand-picked candidate list — a cherry-picked probe can miss a new JS-only
-  // state. The card builds _followLooksOn as `return [ ... ].includes(state)`.
-  const jsBlock = cardJs.match(/_followLooksOn\(state\)\s*\{[^[]*\[([^\]]*)\]/s);
+  // state. The card builds it as `_followLooksOn(state) { return [ ... ]`;
+  // anchor on `return [` so a stray `[` earlier in the method can't be grabbed.
+  const jsBlock = cardJs.match(
+    /_followLooksOn\(state\)\s*\{\s*return\s*\[([^\]]*)\]/s,
+  );
   assert.ok(jsBlock, "_followLooksOn array literal not found in card JS");
   const jsStates = [...jsBlock[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]).sort();
 
