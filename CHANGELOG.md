@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.4.0] — 2026-10-24
+## [0.4.0] — 2026-10-26
 
 ### Added
 
@@ -9,6 +9,7 @@
   - **Dynamic attribute (Follow mode):** the target's attribute (brightness, volume, temperature, percentage, color) tracks a live value read from the source — either the source entity's **state** or one of its **attributes** (you choose). Raw value copy (v1, no range scaling — you ensure the value type/range matches the target attribute). Behaves like Fixed attribute otherwise: acts while the target is on, color matching within tolerance.
   - When the source is unavailable/unknown or a chosen source attribute is missing, the rule holds — no enforcement, no error — matching the fixed modes' offline behaviour.
   - Enforcement is idempotent: a target changes only when its current value differs from the live source value, so a steady source produces no repeated service calls.
+- **Per-direction delay for Dynamic state (Follow mode).** A follow rule can now wait a *different* amount of time before driving its target **on** vs **off** — set **Delay (on)** and **Delay (off)** independently (each `0` = immediate). An unset direction falls back to the shared delay, so existing rules are unchanged. Only Dynamic state is affected; the other modes keep their single delay. The status sensor exposes `delay_on_seconds` / `delay_off_seconds` and the Lovelace card shows the two rows for dynamic_state rules.
 - The status sensor (`sensor.<rule>_status`) exposes `mode`, `source_entity`, `follow_invert`, `follow_desired_on`, and `attribute`. The `mode` and `attribute` keys are present for all rules.
 - **Lovelace card renders dynamic rules** with a follow summary and per-target compliance driven by the engine's authoritative value.
 
@@ -22,6 +23,7 @@
   | *(new)* | `Dynamic attribute (Follow mode)` |
   Existing rules migrate automatically on upgrade (config-entry schema v1 → v2): `state` → `fixed_state`, `attribute` → `fixed_attribute`. Rule behaviour is unchanged by the rename; no user action required.
 - Card version bumped to `v0.4.0`; the integration version bump cache-busts the auto-registered Lovelace resource.
+- **Translation polish.** The Dynamic state delay help text was reworded in several locales to idiomatic native phrasing (removing a literal "drive a target on/off" calque), and the Turkish hours abbreviation was disambiguated (`24s` → `24 sa.`, since `s` reads as seconds).
 
 ### Fixed
 
