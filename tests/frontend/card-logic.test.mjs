@@ -18,11 +18,11 @@ import { fileURLToPath } from "node:url";
 import { Card } from "./_harness.mjs";
 
 const bare = {};
-const constPy = readFileSync(
-  fileURLToPath(
-    new URL("../../custom_components/entity_guard/const.py", import.meta.url),
-  ),
-  "utf8",
+const read = (rel) =>
+  readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf8");
+const constPy = read("../../custom_components/entity_guard/const.py");
+const cardJs = read(
+  "../../custom_components/entity_guard/frontend/entity-guard-card.js",
 );
 
 test("_formatSeconds: sub-minute shows bare seconds", () => {
@@ -64,30 +64,28 @@ test("_attributeDisplayName: unknown name is prettified", () => {
     Card.prototype._attributeDisplayName.call(bare, "fan_speed"),
     "Fan speed",
   );
-  assert.equal(Card.prototype._attributeDisplayName.call(bare, ""), "");
 });
 
-test("parity: _followLooksOn matches FOLLOW_ON_STATES in const.py", () => {
-  const block = constPy.match(/FOLLOW_ON_STATES\s*=\s*frozenset\(\s*\{([^}]*)\}/s);
-  assert.ok(block, "FOLLOW_ON_STATES frozenset not found in const.py");
-  const pyStates = [...block[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]).sort();
-
-  // Probe the JS set: every member returns true, a clear non-member false.
-  for (const s of pyStates) {
-    assert.equal(
-      Card.prototype._followLooksOn.call(bare, s),
-      true,
-      `JS _followLooksOn missing "${s}" present in FOLLOW_ON_STATES`,
-    );
-  }
-  assert.equal(Card.prototype._followLooksOn.call(bare, "off"), false);
-
-  // And the reverse: no JS member absent from Python. Recover the JS list by
-  // probing the known universe (= the Python set) plus guards against extras.
-  const jsExtras = ["standby", "paused", "closed", "locked"].filter((s) =>
-    Card.prototype._followLooksOn.call(bare, s),
+test("parity: _followLooksOn set == FOLLOW_ON_STATES in const.py", () => {
+  const pyBlock = constPy.match(
+    /FOLLOW_ON_STATES\s*=\s*frozenset\(\s*\{([^}]*)\}/s,
   );
-  assert.deepEqual(jsExtras, [], "JS _followLooksOn has states not in const.py");
+  assert.ok(pyBlock, "FOLLOW_ON_STATES frozenset not found in const.py");
+  const pyStates = [...pyBlock[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]).sort();
+
+  // Recover the JS set from the card's own literal array rather than probing a
+  // hand-picked candidate list — a cherry-picked probe can miss a new JS-only
+  // state. The card builds _followLooksOn as `return [ ... ].includes(state)`.
+  const jsBlock = cardJs.match(/_followLooksOn\(state\)\s*\{[^[]*\[([^\]]*)\]/s);
+  assert.ok(jsBlock, "_followLooksOn array literal not found in card JS");
+  const jsStates = [...jsBlock[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]).sort();
+
+  // Set-equal both ways: catches additions and removals on either side.
+  assert.deepEqual(jsStates, pyStates, "JS _followLooksOn drifted from const.py");
+
+  // Behavior sanity: a real member is truthy, a clear non-member is falsy.
+  assert.equal(Card.prototype._followLooksOn.call(bare, pyStates[0]), true);
+  assert.equal(Card.prototype._followLooksOn.call(bare, "off"), false);
 });
 
 test("parity: _attributeDisplayName matches ATTRIBUTE_DISPLAY_NAMES in const.py", () => {

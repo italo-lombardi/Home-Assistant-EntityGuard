@@ -66,4 +66,9 @@ jobs:
         with:
           node-version: "24"
       - name: Run card tests
-        run: node --test 'tests/frontend/*.test.mjs'
+        # Fail loud if the glob matches nothing — `node --test` on a zero-match
+        # glob exits 0, which would turn a renamed/moved test dir into a silent
+        # green CI run.
+        run: |
+          ls tests/frontend/*.test.mjs >/dev/null
+          node --test 'tests/frontend/*.test.mjs'

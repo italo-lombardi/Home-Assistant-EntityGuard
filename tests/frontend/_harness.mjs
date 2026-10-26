@@ -12,10 +12,8 @@
 // — and must not be, since exporting would mean editing the shipped file).
 //
 // The html stub joins the template's `${}` interpolations with String.raw so a
-// rendered fragment's text is assertable. css is a no-op; nothing is a unique
-// sentinel so tests can assert "render was hidden".
-
-export const NOTHING = "__NOTHING__";
+// rendered fragment's text is assertable. css/nothing are no-op stand-ins the
+// card reads at module-load.
 
 // Flatten a tagged-template call to its rendered text. Nested html`` fragments
 // (produced by the same stub) carry a __html string; splice those in.
@@ -32,7 +30,7 @@ function htmlTag(strings, ...values) {
 class LitBase {}
 LitBase.prototype.html = htmlTag;
 LitBase.prototype.css = () => ({});
-LitBase.prototype.nothing = NOTHING;
+LitBase.prototype.nothing = "";
 class HaMainStub extends LitBase {}
 
 const defined = {};
