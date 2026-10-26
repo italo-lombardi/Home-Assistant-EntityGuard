@@ -55,3 +55,20 @@ jobs:
           pip install pytest pytest-cov pytest-homeassistant-custom-component
       - name: Run tests
         run: pytest tests/ --tb=short -q --cov=custom_components/entity_guard --cov-report=term-missing --cov-fail-under=100
+
+  card-tests:
+    name: Card JS Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Run card tests
+        # Fail loud if the glob matches nothing — `node --test` on a zero-match
+        # glob exits 0, which would turn a renamed/moved test dir into a silent
+        # green CI run.
+        run: |
+          ls tests/frontend/*.test.mjs >/dev/null
+          node --test 'tests/frontend/*.test.mjs'
