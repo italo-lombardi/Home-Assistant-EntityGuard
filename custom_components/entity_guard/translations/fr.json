@@ -123,8 +123,8 @@
           "source_entity": "L'entité que les cibles suivent. Ne doit pas faire partie des entités cibles.",
           "follow_invert": "Désactivé = recopier (source on → cible on). Activé = inverser (source on → cible off).",
           "source_value_from": "Indique s'il faut lire l'état de la source ou l'un de ses attributs.",
-          "delay_on_seconds": "Attendre cette durée avant de mettre une cible sur on. 0 = immédiat. Maximum 86400 (24 h).",
-          "delay_off_seconds": "Attendre cette durée avant de mettre une cible sur off. 0 = immédiat. Maximum 86400 (24 h)."
+          "delay_on_seconds": "Attendre cette durée avant d'activer la cible. 0 = immédiat. Maximum 86400 (24 h).",
+          "delay_off_seconds": "Attendre cette durée avant de désactiver la cible. 0 = immédiat. Maximum 86400 (24 h)."
         }
       },
       "dynamic_attribute_params": {
@@ -276,8 +276,8 @@
           "source_entity": "L'entité que les cibles suivent. Ne doit pas faire partie des entités cibles.",
           "follow_invert": "Désactivé = recopier (source on → cible on). Activé = inverser (source on → cible off).",
           "source_value_from": "Indique s'il faut lire l'état de la source ou l'un de ses attributs.",
-          "delay_on_seconds": "Attendre cette durée avant de mettre une cible sur on. 0 = immédiat. Maximum 86400 (24 h).",
-          "delay_off_seconds": "Attendre cette durée avant de mettre une cible sur off. 0 = immédiat. Maximum 86400 (24 h)."
+          "delay_on_seconds": "Attendre cette durée avant d'activer la cible. 0 = immédiat. Maximum 86400 (24 h).",
+          "delay_off_seconds": "Attendre cette durée avant de désactiver la cible. 0 = immédiat. Maximum 86400 (24 h)."
         }
       },
       "edit_dynamic_attribute_params": {

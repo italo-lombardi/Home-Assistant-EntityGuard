@@ -123,8 +123,8 @@
           "source_entity": "L'entità che le destinazioni seguono. Non deve essere una delle entità di destinazione.",
           "follow_invert": "Disattivato = rispecchia (sorgente on → destinazione on). Attivato = inverti (sorgente on → destinazione off).",
           "source_value_from": "Se leggere lo stato della sorgente o uno dei suoi attributi.",
-          "delay_on_seconds": "Attendi questo tempo prima di portare una destinazione su on. 0 = immediato. Massimo 86400 (24h).",
-          "delay_off_seconds": "Attendi questo tempo prima di portare una destinazione su off. 0 = immediato. Massimo 86400 (24h)."
+          "delay_on_seconds": "Attendi questo tempo prima di attivare una destinazione. 0 = immediato. Massimo 86400 (24h).",
+          "delay_off_seconds": "Attendi questo tempo prima di disattivare una destinazione. 0 = immediato. Massimo 86400 (24h)."
         }
       },
       "dynamic_attribute_params": {
@@ -276,8 +276,8 @@
           "source_entity": "L'entità che le destinazioni seguono. Non deve essere una delle entità di destinazione.",
           "follow_invert": "Disattivato = rispecchia (sorgente on → destinazione on). Attivato = inverti (sorgente on → destinazione off).",
           "source_value_from": "Se leggere lo stato della sorgente o uno dei suoi attributi.",
-          "delay_on_seconds": "Attendi questo tempo prima di portare una destinazione su on. 0 = immediato. Massimo 86400 (24h).",
-          "delay_off_seconds": "Attendi questo tempo prima di portare una destinazione su off. 0 = immediato. Massimo 86400 (24h)."
+          "delay_on_seconds": "Attendi questo tempo prima di attivare una destinazione. 0 = immediato. Massimo 86400 (24h).",
+          "delay_off_seconds": "Attendi questo tempo prima di disattivare una destinazione. 0 = immediato. Massimo 86400 (24h)."
         }
       },
       "edit_dynamic_attribute_params": {
