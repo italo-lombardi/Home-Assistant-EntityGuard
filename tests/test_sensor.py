@@ -440,3 +440,38 @@ def test_status_sensor_last_triggered_by_none_for_automation():
     attrs = sensor.extra_state_attributes
     assert attrs["last_triggered_by"] is None
     assert attrs["last_triggered_entity"] == "switch.fan"
+
+
+def test_status_sensor_target_outcomes_attr_serialized():
+    """target_outcomes is exposed with `at` ISO-serialized, and both volatile
+    attrs are excluded from the recorder."""
+    entry = _make_rule_entry()
+    engine = _make_engine()
+    at = datetime(2026, 10, 27, 12, 0, 0)
+    engine.state.target_outcomes = {
+        "light.bedroom": {
+            "outcome": "failed",
+            "reason": "service_call_failed",
+            "error": "device offline",
+            "at": at,
+        }
+    }
+    sensor = EntityGuardStatusSensor(entry, engine)
+    attrs = sensor.extra_state_attributes
+    out = attrs["target_outcomes"]["light.bedroom"]
+    assert out["outcome"] == "failed"
+    assert out["reason"] == "service_call_failed"
+    assert out["error"] == "device offline"
+    assert out["at"] == at.isoformat()
+    # Volatile-per-enforce attrs stay out of state history.
+    assert "target_outcomes" in EntityGuardStatusSensor._unrecorded_attributes
+    assert "pending_enforcement_due" in EntityGuardStatusSensor._unrecorded_attributes
+
+
+def test_status_sensor_target_outcomes_empty_by_default():
+    """No outcomes → attribute is an empty dict, not an error."""
+    entry = _make_rule_entry()
+    engine = _make_engine()
+    engine.state.target_outcomes = {}
+    sensor = EntityGuardStatusSensor(entry, engine)
+    assert sensor.extra_state_attributes["target_outcomes"] == {}

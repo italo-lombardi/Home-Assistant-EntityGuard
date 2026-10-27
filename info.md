@@ -16,13 +16,13 @@ Declarative state-enforcement rules. Bind one or more entities to a rule that de
 ## Features
 
 - **Multi-entity rules** — one rule binds 1+ target entities, each evaluated independently
-- **Two modes** — `state` (force entity to a target state) and `attribute` (clamp brightness, volume, temperature, or percentage against a threshold)
+- **Four modes** — Fixed state (force an entity to a target state, including non-on/off targets like climate HVAC modes, vacuum, media transport, input_select options, water_heater modes), Fixed attribute (clamp brightness/volume/temperature/percentage or match a color), and the Dynamic (Follow mode) counterparts that read the target value live from a source entity
 - **Flag conditions** — optional `(entity, match_state)` AND-list; rule arms only when all flags match
 - **Cooldown / debounce** — per-entity cooldown after enforcement to avoid loop fights
 - **Rate limiting** — per-rule cap on enforcements per minute; exceeding it auto-suppresses the rule
 - **Suppression** — temporary pause via service call or card button; permanent disable via the `enabled` switch
 - **Logbook integration** — every enforcement is logged
-- **Custom Lovelace card** — color-coded status badge, enforcement counters, bound entity compliance, and quick-action buttons
+- **Custom Lovelace card** — color-coded status badge, an idle-reason line, a per-target "needs attention" panel, enforcement counters, bound entity compliance, and quick-action buttons
 
 ## Card
 

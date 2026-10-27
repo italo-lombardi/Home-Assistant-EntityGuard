@@ -107,8 +107,10 @@ OPERATOR_GE = "gte"
 
 SUPPORTED_OPERATORS = [OPERATOR_LT, OPERATOR_LE, OPERATOR_GT, OPERATOR_GE]
 
-# Domains requiring safety acknowledgment
-SAFETY_DOMAINS = ("cover", "lock", "climate")
+# Domains requiring safety acknowledgment. valve joins cover/lock/climate:
+# unattended water actuation (irrigation, mains, radiator) carries the same
+# physical-consequence risk the ack step exists to gate.
+SAFETY_DOMAINS = ("cover", "lock", "climate", "valve")
 
 # Defaults
 DEFAULT_DELAY_SECONDS = 0
@@ -170,55 +172,88 @@ ERROR_THRESHOLD = 3
 # Number of consecutive successful enforcements required to auto-recover from STATUS_ERROR.
 ERROR_RECOVERY_SUCCESS_THRESHOLD = 3
 
-# Domain service map for state mode enforcement
+# Skip reason emitted when the enforcement service call itself raised (vs a
+# genuine skip). _fire_skipped routes this through the same path as real skips,
+# but the per-target outcome classifies it as "failed" not "skipped" — kept as a
+# shared const so the producer (except block) and that classifier can't drift.
+REASON_SERVICE_CALL_FAILED = "service_call_failed"
+
+# Domain service map for state mode enforcement.
+# Shape: {domain: {target_state: "service.name"}}. Each entry is a parameterless
+# service — the call carries only {entity_id}. States that need a DATA PAYLOAD
+# (hvac_mode=, operation_mode=, option=) live in DOMAIN_MODE_SERVICE_MAP instead,
+# because their payload value is the runtime target_state, not a static string.
 DOMAIN_SERVICE_MAP: dict[str, dict[str, str]] = {
     "light": {"on": "light.turn_on", "off": "light.turn_off"},
     "switch": {"on": "switch.turn_on", "off": "switch.turn_off"},
     "lock": {"locked": "lock.lock", "unlocked": "lock.unlock"},
-    "cover": {"open": "cover.open_cover", "closed": "cover.close_cover"},
-    "media_player": {"on": "media_player.turn_on", "off": "media_player.turn_off"},
+    "cover": {
+        "open": "cover.open_cover",
+        "closed": "cover.close_cover",
+        "stopped": "cover.stop_cover",
+    },
+    "media_player": {
+        "on": "media_player.turn_on",
+        "off": "media_player.turn_off",
+        "playing": "media_player.media_play",
+        "paused": "media_player.media_pause",
+        "idle": "media_player.media_stop",
+    },
     "climate": {"off": "climate.turn_off"},
     "fan": {"on": "fan.turn_on", "off": "fan.turn_off"},
     "input_boolean": {"on": "input_boolean.turn_on", "off": "input_boolean.turn_off"},
+    "vacuum": {
+        "cleaning": "vacuum.start",
+        "docked": "vacuum.return_to_base",
+        "returning": "vacuum.return_to_base",
+        "paused": "vacuum.pause",
+    },
+    "valve": {"open": "valve.open_valve", "closed": "valve.close_valve"},
+    "lawn_mower": {"mowing": "lawn_mower.start_mowing", "docked": "lawn_mower.dock"},
 }
 
-# Per-domain typical state values for trigger/target dropdowns.
-# custom_value=True remains on the selectors so users can still type unlisted states.
-# 'unavailable'/'unknown' are intentionally excluded — enforcement requires a reachable entity.
+# Mode-style domains: ONE service for the whole domain, the target_state is passed
+# as a DATA KWARG value (e.g. climate heat/cool/auto → climate.set_hvac_mode
+# hvac_mode=<state>). Shape: {domain: (service, kwarg)}. Resolved AFTER
+# DOMAIN_SERVICE_MAP, so a domain can keep a parameterless entry there (climate
+# "off" → climate.turn_off) and fall through to its mode service for every other
+# state. The kwarg value is always the runtime target_state, which is why these
+# can't be baked into the static-payload DOMAIN_SERVICE_MAP.
+DOMAIN_MODE_SERVICE_MAP: dict[str, tuple[str, str]] = {
+    "climate": ("climate.set_hvac_mode", "hvac_mode"),
+    "water_heater": ("water_heater.set_operation_mode", "operation_mode"),
+    "input_select": ("input_select.select_option", "option"),
+}
+
+# Per-domain ACTIONABLE target state values for trigger/target dropdowns. Only
+# states this integration can actually DRIVE are listed — a state here resolves to
+# a real service via DOMAIN_SERVICE_MAP, DOMAIN_MODE_SERVICE_MAP, or the on/off
+# fallback. Transitional states (locking/opening/arming…), read-only domains
+# (binary_sensor/person/device_tracker/timer have no setter service), and the
+# deferred alarm_control_panel domain are deliberately omitted so the UI never
+# advertises a target it would silently skip (no_service_mapping).
+# custom_value=True remains on the selectors so an expert can still type an
+# unlisted state. 'unavailable'/'unknown' are excluded — enforcement requires a
+# reachable entity.
 DOMAIN_STATE_OPTIONS: dict[str, list[str]] = {
     "light": ["on", "off"],
     "switch": ["on", "off"],
     "input_boolean": ["on", "off"],
-    "binary_sensor": ["on", "off"],
     "fan": ["on", "off"],
-    "lock": ["locked", "unlocked", "locking", "unlocking", "jammed"],
-    "cover": ["open", "closed", "opening", "closing", "stopped"],
-    "media_player": ["playing", "paused", "idle", "off", "on", "standby"],
+    "lock": ["locked", "unlocked"],
+    "cover": ["open", "closed", "stopped"],
+    "media_player": ["playing", "paused", "idle", "off", "on"],
     "climate": ["off", "heat", "cool", "auto", "heat_cool", "fan_only", "dry"],
-    "alarm_control_panel": [
-        "disarmed",
-        "armed_home",
-        "armed_away",
-        "armed_night",
-        "armed_vacation",
-        "pending",
-        "triggered",
-        "arming",
-        "disarming",
-    ],
-    "person": ["home", "not_home"],
-    "device_tracker": ["home", "not_home"],
     "input_select": [],  # state is user-defined option list
-    "vacuum": ["cleaning", "docked", "paused", "idle", "returning", "error"],
+    "vacuum": ["cleaning", "docked", "returning", "paused"],
     "humidifier": ["on", "off"],
     "water_heater": ["off", "eco", "electric", "gas", "heat_pump", "high_demand"],
-    "timer": ["idle", "active", "paused"],
     "script": ["on", "off"],
     "automation": ["on", "off"],
     "remote": ["on", "off"],
     "siren": ["on", "off"],
-    "valve": ["open", "closed", "opening", "closing"],
-    "lawn_mower": ["mowing", "docked", "paused", "error"],
+    "valve": ["open", "closed"],
+    "lawn_mower": ["mowing", "docked"],
 }
 
 # Fallback when no recognized domain in target list.

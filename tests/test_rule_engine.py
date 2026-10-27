@@ -19,6 +19,7 @@ from custom_components.entity_guard.const import (
     ERROR_THRESHOLD,
     EVENT_ENFORCED,
     EVENT_SKIPPED,
+    MODE_DYNAMIC_STATE,
     MODE_FIXED_ATTRIBUTE,
     MODE_FIXED_STATE,
     OPERATOR_GE,
@@ -1882,10 +1883,173 @@ def test_resolve_service_homeassistant_fallback_on(hass: HomeAssistant):
 
 
 def test_resolve_service_no_mapping_returns_none(hass: HomeAssistant):
-    config = _make_config(target_state="cleaning", target_entities=["vacuum.robo"])
+    # 'cooking' is not a vacuum service state, and vacuum has no mode-service map
+    # entry, so it falls through every branch to None (silent no_service_mapping).
+    config = _make_config(target_state="cooking", target_entities=["vacuum.robo"])
     engine = _make_engine(hass, config)
     result = engine._resolve_service("vacuum.robo")
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# Feature C: deliverable non-on/off states (DOMAIN_SERVICE_MAP + mode map)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "entity_id,target_state,exp_domain,exp_service",
+    [
+        # Parameterless per-state services (DOMAIN_SERVICE_MAP).
+        ("cover.garage", "stopped", "cover", "stop_cover"),
+        ("media_player.tv", "playing", "media_player", "media_play"),
+        ("media_player.tv", "paused", "media_player", "media_pause"),
+        ("media_player.tv", "idle", "media_player", "media_stop"),
+        ("vacuum.robo", "cleaning", "vacuum", "start"),
+        ("vacuum.robo", "docked", "vacuum", "return_to_base"),
+        ("vacuum.robo", "returning", "vacuum", "return_to_base"),
+        ("vacuum.robo", "paused", "vacuum", "pause"),
+        ("valve.water", "open", "valve", "open_valve"),
+        ("valve.water", "closed", "valve", "close_valve"),
+        ("lawn_mower.yard", "mowing", "lawn_mower", "start_mowing"),
+        ("lawn_mower.yard", "docked", "lawn_mower", "dock"),
+    ],
+)
+def test_resolve_state_service_parameterless(
+    hass: HomeAssistant, entity_id, target_state, exp_domain, exp_service
+):
+    config = _make_config(target_state=target_state, target_entities=[entity_id])
+    engine = _make_engine(hass, config)
+    result = engine._resolve_service(entity_id)
+    assert result is not None
+    domain, service, data = result
+    assert (domain, service) == (exp_domain, exp_service)
+    # Parameterless services carry only the entity_id — no data kwarg.
+    assert data == {"entity_id": entity_id}
+
+
+@pytest.mark.parametrize(
+    "entity_id,target_state,exp_service,exp_kwarg",
+    [
+        ("climate.living", "heat", "set_hvac_mode", "hvac_mode"),
+        ("climate.living", "cool", "set_hvac_mode", "hvac_mode"),
+        ("climate.living", "auto", "set_hvac_mode", "hvac_mode"),
+        ("climate.living", "heat_cool", "set_hvac_mode", "hvac_mode"),
+        ("climate.living", "fan_only", "set_hvac_mode", "hvac_mode"),
+        ("climate.living", "dry", "set_hvac_mode", "hvac_mode"),
+        ("water_heater.tank", "eco", "set_operation_mode", "operation_mode"),
+        ("water_heater.tank", "heat_pump", "set_operation_mode", "operation_mode"),
+        ("input_select.scene", "Movie Night", "select_option", "option"),
+    ],
+)
+def test_resolve_state_service_mode_payload(
+    hass: HomeAssistant, entity_id, target_state, exp_service, exp_kwarg
+):
+    """Mode-style domains pass the target_state through as a data kwarg."""
+    config = _make_config(target_state=target_state, target_entities=[entity_id])
+    engine = _make_engine(hass, config)
+    result = engine._resolve_service(entity_id)
+    assert result is not None
+    domain, service, data = result
+    assert (domain, service) == (entity_id.split(".", 1)[0], exp_service)
+    assert data == {"entity_id": entity_id, exp_kwarg: target_state}
+
+
+def test_resolve_state_service_climate_off_stays_parameterless(hass: HomeAssistant):
+    """climate 'off' keeps the parameterless climate.turn_off, not set_hvac_mode."""
+    config = _make_config(target_state="off", target_entities=["climate.living"])
+    engine = _make_engine(hass, config)
+    result = engine._resolve_service("climate.living")
+    assert result == ("climate", "turn_off", {"entity_id": "climate.living"})
+
+
+def test_resolve_state_service_bare_on_off_bypasses_mode_map(hass: HomeAssistant):
+    """A bare 'on'/'off' on a mode-style domain must NOT become an invalid mode
+    payload (climate.set_hvac_mode hvac_mode='on' is rejected by HA). Follow mode
+    (dynamic_state) always feeds exactly 'on'/'off', so this is the regression
+    guard: 'on' → homeassistant.turn_on, 'off' → the domain's parameterless
+    turn_off where one exists, else homeassistant.turn_off — never set_hvac_mode /
+    set_operation_mode with 'on'/'off'."""
+    config = _make_config(
+        mode=MODE_DYNAMIC_STATE,
+        source_entity="input_boolean.src",
+        target_entities=["climate.living"],
+    )
+    engine = _make_engine(hass, config)
+    # climate 'on' has no parameterless entry → must fall to homeassistant.turn_on,
+    # NOT climate.set_hvac_mode(hvac_mode='on').
+    on = engine._resolve_service("climate.living", state_override="on")
+    assert on == ("homeassistant", "turn_on", {"entity_id": "climate.living"})
+    # climate 'off' is matched by the parameterless map before either fallback.
+    off = engine._resolve_service("climate.living", state_override="off")
+    assert off == ("climate", "turn_off", {"entity_id": "climate.living"})
+    # water_heater has NO parameterless entry → both on/off use the homeassistant
+    # fallback, never set_operation_mode(operation_mode='on'/'off').
+    wh_on = engine._resolve_service("water_heater.tank", state_override="on")
+    assert wh_on == ("homeassistant", "turn_on", {"entity_id": "water_heater.tank"})
+    wh_off = engine._resolve_service("water_heater.tank", state_override="off")
+    assert wh_off == ("homeassistant", "turn_off", {"entity_id": "water_heater.tank"})
+
+
+def test_resolve_state_service_input_select_on_off_is_an_option(hass: HomeAssistant):
+    """input_select options are arbitrary strings, so a literal 'on'/'off' option
+    must route through select_option — NOT the homeassistant on/off fallback
+    (input_select has no turn_on/off service). This is the one mode domain where
+    'on'/'off' is a genuine mode-map target."""
+    config = _make_config(target_state="on", target_entities=["input_select.mode"])
+    engine = _make_engine(hass, config)
+    result = engine._resolve_service("input_select.mode")
+    assert result == (
+        "input_select",
+        "select_option",
+        {"entity_id": "input_select.mode", "option": "on"},
+    )
+    # "off" as an option likewise goes through select_option, not turn_off.
+    config_off = _make_config(target_state="off", target_entities=["input_select.mode"])
+    engine_off = _make_engine(hass, config_off)
+    assert engine_off._resolve_service("input_select.mode") == (
+        "input_select",
+        "select_option",
+        {"entity_id": "input_select.mode", "option": "off"},
+    )
+
+
+async def test_enforce_delivers_climate_mode_payload(hass: HomeAssistant):
+    """End-to-end: a climate heat rule actually calls set_hvac_mode hvac_mode=heat."""
+    config = _make_config(
+        target_state="heat",
+        trigger_states=["off"],
+        target_entities=["climate.living"],
+        safety_acknowledged=True,
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    calls: list = []
+    hass.services.async_register("climate", "set_hvac_mode", lambda c: calls.append(c))
+    hass.states.async_set("climate.living", "off")
+    await engine.async_evaluate("climate.living", hass.states.get("climate.living"))
+    assert calls
+    assert calls[0].data == {"entity_id": "climate.living", "hvac_mode": "heat"}
+
+
+async def test_enforce_delivers_input_select_option(hass: HomeAssistant):
+    """End-to-end: input_select rule calls select_option with the option value."""
+    config = _make_config(
+        target_state="Away",
+        trigger_states=["Home"],
+        target_entities=["input_select.mode"],
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    calls: list = []
+    hass.services.async_register(
+        "input_select", "select_option", lambda c: calls.append(c)
+    )
+    hass.states.async_set("input_select.mode", "Home")
+    await engine.async_evaluate(
+        "input_select.mode", hass.states.get("input_select.mode")
+    )
+    assert calls
+    assert calls[0].data == {"entity_id": "input_select.mode", "option": "Away"}
 
 
 # ---------------------------------------------------------------------------
