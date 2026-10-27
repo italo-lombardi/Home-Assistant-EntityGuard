@@ -248,3 +248,60 @@ test("parity: _attributeDisplayName matches ATTRIBUTE_DISPLAY_NAMES in const.py"
     );
   }
 });
+
+// Feature A: per-target outcome panel. Minimal render — only non-ok targets.
+test("_renderTargetOutcomes renders only non-ok targets", () => {
+  const ctx = {
+    _handleEntityClick() {},
+    hass: {
+      states: {
+        "light.bedroom": { state: "off", attributes: { friendly_name: "Bedroom" } },
+        "light.kitchen": { state: "on", attributes: { friendly_name: "Kitchen" } },
+      },
+    },
+  };
+  const refs = {
+    targetOutcomes: {
+      "light.kitchen": { outcome: "ok", reason: null, error: null, at: "t" },
+      "light.bedroom": {
+        outcome: "failed",
+        reason: "service_call_failed",
+        error: "device offline",
+        at: "t",
+      },
+    },
+  };
+  const out = Card.prototype._renderTargetOutcomes.call(ctx, refs);
+  // The failed target renders; the ok target does not.
+  assert.match(out.__html, /Bedroom/);
+  assert.match(out.__html, /device offline/);
+  assert.doesNotMatch(out.__html, /Kitchen/);
+});
+
+test("_renderTargetOutcomes renders nothing when all targets ok or empty", () => {
+  const ctx = { hass: { states: {} } };
+  const allOk = Card.prototype._renderTargetOutcomes.call(ctx, {
+    targetOutcomes: { "light.a": { outcome: "ok" } },
+  });
+  // `nothing` stub is `?? ""` → flattens to empty, no section rendered.
+  assert.equal(allOk.__html ?? allOk, "");
+  const empty = Card.prototype._renderTargetOutcomes.call(ctx, { targetOutcomes: {} });
+  assert.equal(empty.__html ?? empty, "");
+});
+
+test("_renderTargetOutcomes skips a malformed outcome entry without throwing", () => {
+  const ctx = {
+    _handleEntityClick() {},
+    hass: { states: { "light.bedroom": { state: "off", attributes: {} } } },
+  };
+  const refs = {
+    targetOutcomes: {
+      "light.null": null,
+      "light.str": "oops",
+      "light.bedroom": { outcome: "skipped", reason: "light_off", error: null, at: "t" },
+    },
+  };
+  const out = Card.prototype._renderTargetOutcomes.call(ctx, refs);
+  // Does not throw; the valid non-ok row renders, bad entries are dropped.
+  assert.match(out.__html, /light\.bedroom|skipped/);
+});

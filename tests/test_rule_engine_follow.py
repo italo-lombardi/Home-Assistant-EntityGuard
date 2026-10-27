@@ -1028,3 +1028,91 @@ async def test_dynamic_attribute_color_skips_when_light_off(hass: HomeAssistant)
 
     service.assert_not_awaited()
     assert any(e.data["reason"] == "light_off" for e in skipped)
+
+
+# ===========================================================================
+# Feature A: per-target outcomes (RuleRuntimeState.target_outcomes)
+# ===========================================================================
+
+
+async def test_target_outcomes_ok_on_successful_enforce(hass: HomeAssistant):
+    """A successful enforce records outcome='ok' keyed by the TARGET entity."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    _collect_turn_on_off(hass)
+    hass.states.async_set("light.hallway", "off")
+    hass.states.async_set("binary_sensor.motion", "on")
+    await engine.async_evaluate(
+        "binary_sensor.motion", hass.states.get("binary_sensor.motion")
+    )
+    await hass.async_block_till_done()
+    o = engine.state.target_outcomes["light.hallway"]
+    assert o["outcome"] == "ok"
+    assert o["reason"] is None
+    assert o["error"] is None
+    assert o["at"] is not None
+
+
+async def test_target_outcomes_skipped_records_reason(hass: HomeAssistant):
+    """A skip (source offline) records outcome='skipped' + the reason string."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    # Force the enforce path far enough to hit a skip: desired known, but make the
+    # source value resolve to None at enforce time → "source_offline" skip.
+    hass.states.async_set("light.hallway", "off")
+    hass.states.async_set("binary_sensor.motion", "on")
+    # Drive one successful enforce first so there IS a target key, then flip the
+    # source offline and re-enforce the SAME target directly.
+    await engine._enforce("light.hallway", trigger_context_id=None)
+    await hass.async_block_till_done()
+    hass.states.async_set("binary_sensor.motion", "unavailable")
+    await engine._enforce("light.hallway", trigger_context_id=None)
+    await hass.async_block_till_done()
+    o = engine.state.target_outcomes["light.hallway"]
+    assert o["outcome"] == "skipped"
+    assert o["reason"] == "source_offline"
+
+
+async def test_target_outcomes_failed_on_service_error(hass: HomeAssistant):
+    """A raising service call records outcome='failed' + the error string."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+
+    async def _boom(call):
+        raise RuntimeError("device offline")
+
+    for domain in ("homeassistant", "light"):
+        hass.services.async_register(domain, "turn_on", _boom)
+        hass.services.async_register(domain, "turn_off", _boom)
+    hass.states.async_set("light.hallway", "off")
+    hass.states.async_set("binary_sensor.motion", "on")
+    await engine.async_evaluate(
+        "binary_sensor.motion", hass.states.get("binary_sensor.motion")
+    )
+    await hass.async_block_till_done()
+    o = engine.state.target_outcomes["light.hallway"]
+    assert o["outcome"] == "failed"
+    assert o["reason"] == "service_call_failed"
+    assert "device offline" in o["error"]
+
+
+async def test_target_outcomes_recovery_overwrites_to_ok(hass: HomeAssistant):
+    """A target that failed then enforces cleanly has its entry overwritten to ok."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    # Seed a failed outcome directly, then a clean enforce must overwrite it.
+    engine.state.target_outcomes["light.hallway"] = {
+        "outcome": "failed",
+        "reason": "service_call_failed",
+        "error": "boom",
+        "at": dt_util.now(),
+    }
+    _collect_turn_on_off(hass)
+    hass.states.async_set("light.hallway", "off")
+    hass.states.async_set("binary_sensor.motion", "on")
+    await engine.async_evaluate(
+        "binary_sensor.motion", hass.states.get("binary_sensor.motion")
+    )
+    await hass.async_block_till_done()
+    assert engine.state.target_outcomes["light.hallway"]["outcome"] == "ok"
+    assert engine.state.target_outcomes["light.hallway"]["error"] is None
