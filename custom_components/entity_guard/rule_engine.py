@@ -336,8 +336,22 @@ class RuleEngine:
         now = dt_util.now()
         self._prune_expired_cooldowns(now)
 
+        # A dynamic-mode source change reaches the SUPPRESSED (L362) and
+        # CONDITIONAL (L408) dedupe guards and moves the card-visible
+        # follow_desired_on / attribute_desired_value sensor attrs while the
+        # status may not change. Hoisted once here, reused by both guards and the
+        # suppression-expiry lazy-sweep skip below.
+        is_source = self._is_dynamic and entity_id == self._config.source_entity
+
         if not self._state.enabled or not self._master_enabled_getter():
-            self._apply_idle_status()
+            # Rule inactive, but this event came from a watched entity (the
+            # listener only subscribes watched ones). The card reads live flag
+            # values from the status sensor's extra_state_attributes, which only
+            # refresh on a state write. _set_status dedupes when the status stays
+            # DISABLED/MASTER_DISABLED, so force a broadcast on that dedupe to
+            # keep the card reactive. Same stale-attr guard as the CONDITIONAL
+            # (L398) and ARMED (L415) flag-change paths.
+            self._apply_idle_status(broadcast_on_dedupe=True)
             return
 
         if not self._startup_complete and entity_id in self._config.target_entities:
@@ -350,10 +364,23 @@ class RuleEngine:
             and entity_id == self._config.source_entity
         ):
             # During grace, ignore source changes too (sweep happens post-grace).
+            # ponytail: the card's follow_desired_on can read stale here, but it
+            # self-heals at the grace-end sweep (a brief startup-only window), so
+            # no forced broadcast — not worth a signal per source tick during grace.
             return
 
         if self._state.suppressed_until and self._state.suppressed_until > now:
+            prev_status = self._current_status
             self._set_status(STATUS_SUPPRESSED)
+            # Same stale-attr guard as the CONDITIONAL and ARMED paths: a watched
+            # flag entity — OR a dynamic-mode source — can change while the rule
+            # stays SUPPRESSED, leaving the card's flags[].current or
+            # follow_desired_on / attribute_desired_value frozen. Force a refresh
+            # when the status didn't move and the trigger was a flag or the source.
+            if (entity_id in self._flag_entity_ids or is_source) and (
+                prev_status == self._current_status
+            ):
+                self._broadcast_status()
             return
         if self._state.suppressed_until and self._state.suppressed_until <= now:
             # Lazy suppression expiry (the timer may not have drained yet). Clearing
@@ -372,15 +399,12 @@ class RuleEngine:
             # sweep for flag/source triggers; their own branch owns the sweep.
             self._clear_suppression_state()
             is_flag_trigger = entity_id in self._flag_entity_ids
-            is_source_trigger = (
-                self._is_dynamic and entity_id == self._config.source_entity
-            )
             if (
                 self._state.enabled
                 and self._startup_complete
                 and self._master_enabled_getter()
                 and not is_flag_trigger
-                and not is_source_trigger
+                and not is_source
             ):
                 for target in self._config.target_entities:
                     if target == entity_id:
@@ -391,13 +415,13 @@ class RuleEngine:
         if not self._flags_match():
             prev_status = self._current_status
             self._set_status(STATUS_CONDITIONAL)
-            # Flag entity changed but overall status unchanged: _set_status dedupes
-            # the broadcast, so the status sensor's extra_state_attributes (which
-            # the card reads for flag current values) never reaches the UI. Force
-            # a refresh so the frontend sees fresh flag values.
-            if (
-                entity_id in self._flag_entity_ids
-                and prev_status == self._current_status
+            # A flag entity OR a dynamic-mode source changed but overall status
+            # stayed CONDITIONAL: _set_status dedupes the broadcast, so the status
+            # sensor's extra_state_attributes (flags[].current, follow_desired_on,
+            # attribute_desired_value — all card-visible) never reach the UI. Force
+            # a refresh so the frontend sees the fresh values.
+            if (entity_id in self._flag_entity_ids or is_source) and (
+                prev_status == self._current_status
             ):
                 self._broadcast_status()
             self._cancel_pending_for_entities(self._config.target_entities)
@@ -1530,8 +1554,16 @@ class RuleEngine:
             return STATUS_CONDITIONAL
         return self._derive_armed_or_cooldown(now)
 
-    def _apply_idle_status(self, now: datetime | None = None) -> None:
-        """Compute and broadcast the idle status, cancelling pending if disabled."""
+    def _apply_idle_status(
+        self, now: datetime | None = None, *, broadcast_on_dedupe: bool = False
+    ) -> None:
+        """Compute and broadcast the idle status, cancelling pending if disabled.
+
+        broadcast_on_dedupe: when the computed status equals the current one
+        (so _set_status would swallow the broadcast), force a broadcast anyway.
+        Used by the disabled-rule path in async_evaluate so a watched-entity
+        change still refreshes the status sensor's live attributes on the card.
+        """
         status = self._derive_idle_status(now)
         if status in (STATUS_DISABLED, STATUS_MASTER_DISABLED):
             self._cancel_pending_for_entities(self._config.target_entities)
@@ -1543,7 +1575,10 @@ class RuleEngine:
                 except Exception:
                     pass
             self._cooldown_broadcast_unsubs.clear()
+        prev = self._current_status
         self._set_status(status)
+        if broadcast_on_dedupe and status == prev:
+            self._broadcast_status()
 
     def _broadcast_status(self) -> None:
         """Tell platforms to refresh."""
