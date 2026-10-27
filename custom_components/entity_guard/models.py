@@ -168,6 +168,12 @@ class RuleRuntimeState:
     # async_clear_history zeros enforcement_count_total. None only until the first
     # backfill runs (e.g. entry without created_at on old HA cores).
     counter_total_since: datetime | None = None
+    # Per-target last outcome, keyed by target entity_id. Diagnostic only — does NOT
+    # drive rule STATUS_ERROR. Transient: not persisted (rebuilds within one enforce
+    # cycle, like consecutive_success_count / last_triggered_* above). Each value is
+    # {"outcome": "ok"|"skipped"|"failed", "reason": str|None, "error": str|None,
+    # "at": datetime}.
+    target_outcomes: dict[str, dict] = field(default_factory=dict)
     reentrance_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
 

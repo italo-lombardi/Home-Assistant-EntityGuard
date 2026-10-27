@@ -556,6 +556,7 @@ class EntityGuardCard extends LitElement {
     out.followAttribute = statusEntity?.attributes?.attribute ?? null;
     out.attributeDesiredValue =
       statusEntity?.attributes?.attribute_desired_value ?? null;
+    out.targetOutcomes = statusEntity?.attributes?.target_outcomes ?? {};
 
     return out;
   }
@@ -722,6 +723,7 @@ class EntityGuardCard extends LitElement {
           ? this._renderBound(refs)
           : nothing}
         ${this._config.show_conditions ? this._renderConditions(refs) : nothing}
+        ${this._renderTargetOutcomes(refs)}
         ${this._config.show_actions ? this._renderActions(refs) : nothing}
       </ha-card>
     `;
@@ -1162,6 +1164,58 @@ class EntityGuardCard extends LitElement {
     if (!name) return name;
     const s = name.replace(/_/g, " ");
     return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  // Per-target outcome panel (Feature A). Minimal: render ONLY targets that are
+  // NOT ok (skipped / failed). All-healthy or no-data → render nothing, so an empty
+  // panel means "no problem". A target absent from the map = healthy-and-quiet since
+  // restart (no enforce yet) → correctly omitted. Diagnostic; does not drive status.
+  _renderTargetOutcomes(refs) {
+    const outcomes = refs.targetOutcomes;
+    if (!outcomes || typeof outcomes !== "object") return nothing;
+    const bad = Object.entries(outcomes).filter(([, o]) => {
+      // target_outcomes is an HA-controlled status-sensor attribute; guard a
+      // malformed entry (null / non-object) so one bad element can't throw.
+      if (!o || typeof o !== "object") return false;
+      return o.outcome !== "ok";
+    });
+    if (bad.length === 0) return nothing;
+    return html`
+      <div class="entities">
+        <div class="section-title">Targets needing attention (${bad.length})</div>
+        ${bad.map(([entityId, o]) => {
+          const st = this.hass.states[entityId];
+          const name = st?.attributes?.friendly_name || entityId;
+          const failed = o.outcome === "failed";
+          const detail = o.error || o.reason || o.outcome;
+          return html`
+            <div
+              class="entity-row"
+              role="button"
+              tabindex="0"
+              @click=${(e) => this._handleEntityClick(e, entityId)}
+              @keydown=${(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  this._handleEntityClick(e, entityId);
+                }
+              }}
+            >
+              <span class="entity-name" title="${entityId}">${name}</span>
+              <span class="entity-state" title="${detail}">
+                ${o.outcome}
+                <span
+                  style="color:${failed
+                    ? "var(--error-color,#db4437)"
+                    : "var(--warning-color,#ff9800)"}"
+                  >${failed ? "⚠" : "⃠"}</span
+                >
+              </span>
+            </div>
+          `;
+        })}
+      </div>
+    `;
   }
 
   _renderConditions(refs) {

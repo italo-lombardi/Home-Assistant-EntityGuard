@@ -1028,6 +1028,14 @@ class RuleEngine:
 
             self._arm_recently_enforced()
             self._persist()
+            # Per-target success — overwrites any prior skipped/failed entry so the
+            # card row for this target clears once it enforces cleanly again.
+            self._state.target_outcomes[entity_id] = {
+                "outcome": "ok",
+                "reason": None,
+                "error": None,
+                "at": now,
+            }
 
         # Pick the post-enforce status once and emit a single _set_status so the
         # dispatcher fires exactly one update — avoids ENFORCING→ARMED→ERROR
@@ -1263,6 +1271,15 @@ class RuleEngine:
         if error is not None:
             data["error"] = error
         self._hass.bus.async_fire(EVENT_SKIPPED, data)
+        # Record the per-target outcome. "service_call_failed" is routed through
+        # _fire_skipped but is semantically a FAIL, not a skip — derive from the
+        # reason so this one write correctly labels every non-ok call site.
+        self._state.target_outcomes[entity_id] = {
+            "outcome": "failed" if reason == "service_call_failed" else "skipped",
+            "reason": reason,
+            "error": error,
+            "at": dt_util.now(),
+        }
 
     async def async_test_enforce(self, user_id: str | None = None) -> None:
         """Force an enforcement run against every target entity.
