@@ -30,13 +30,13 @@ Enforce desired entity state in Home Assistant via declarative rules. Replaces N
 - **Conditional flags** -- list of `(entity, match_state)` conditions AND'd; rule only fires when all match
 - **Per-entity cooldown / debounce** -- avoid loop fights with the original cause
 - **Per-rule rate limiter** -- cap enforcements/min; auto-suppress on overshoot to break loops
-- **Domain-aware service mapping** -- light, switch, lock, cover, media_player, climate, fan, input_boolean
-- **Safety acknowledgment** -- explicit confirmation required for cover/lock/climate rules
+- **Domain-aware service mapping** -- light, switch, lock, cover, media_player, climate, fan, input_boolean, vacuum, valve, lawn_mower, water_heater, input_select — including non-on/off targets (climate HVAC modes, vacuum start/dock, media play/pause/stop, cover stop, input_select option, water_heater operation mode)
+- **Safety acknowledgment** -- explicit confirmation required for cover/lock/climate/valve rules
 - **Suppress / unsuppress services** -- temporary pause without disabling the rule
 - **Panic stop service** -- emergency disable of every rule + 60 min suppression
 - **Master switch (Hub)** -- single global kill-switch across all rules
 - **Logbook integration** -- every enforcement, skip, loop detection, and suppression logged
-- **Custom Lovelace card** -- per-rule status, counters, controls
+- **Custom Lovelace card** -- per-rule status, counters, controls, a one-line reason when a rule is idle, and a per-target "needs attention" panel
 - **Self-managed storage** -- no recorder dependency; cooldowns and counters survive restarts
 - **No pip dependencies**
 - **29 languages** -- UI translated into bg, ca, cs, da, de, el, en, es, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, ro, ru, sk, sv, tr, uk, zh-Hans, zh-Hant
@@ -202,9 +202,9 @@ If a flag entity is later deleted from Home Assistant, Entity Guard surfaces a *
 
 ![Step 4: Advanced](assets/05_advanced.png)
 
-### Step 5: Safety Acknowledgment (cover / lock / climate only)
+### Step 5: Safety Acknowledgment (cover / lock / climate / valve only)
 
-If any target entity is in the `cover`, `lock`, or `climate` domain, you must check the safety acknowledgment box before the rule can be saved. This is a deliberate seatbelt against rules that physically move things.
+If any target entity is in the `cover`, `lock`, `climate`, or `valve` domain, you must check the safety acknowledgment box before the rule can be saved. This is a deliberate seatbelt against rules that physically move things.
 
 ![Step 5: Safety Acknowledgment](assets/06_safety_ack.png)
 
@@ -231,7 +231,7 @@ Review the assembled rule before saving. Confirm to create the config entry. The
 | `binary_sensor.<rule>_active` | Service call currently in flight |
 | `binary_sensor.<rule>_in_cooldown` | Cooldown active for at least one bound entity |
 | `binary_sensor.<rule>_recently_enforced` | ON for 30 s after any enforcement; pulses off→on on repeated enforce. Attributes: `rule_name`, `target_entities`, `target_entity_names`, `target`, `delay_seconds` |
-| `sensor.<rule>_status` | Enum: `error` > `disabled` > `suppressed` > `enforcing` > `cooldown` > `armed` > `conditional` > `starting` > `pending` |
+| `sensor.<rule>_status` | Enum: `error` > `master_disabled` > `disabled` > `suppressed` > `enforcing` > `cooldown` > `pending` > `armed` > `conditional` > `starting` |
 | `sensor.<rule>_last_enforced` | Timestamp of the last successful enforcement |
 | `sensor.<rule>_enforcement_count_today` | Resets at local midnight |
 | `button.<rule>_reset` | Clear all cooldowns for this rule |
@@ -383,6 +383,19 @@ When humidity is OK the fan is off; when not OK (`input_boolean.humidity_ok` off
 | Debounce | enabled, 30s |
 | Safety acknowledged | yes |
 
+### Keep the thermostat on heat in winter
+
+| Setting | Value |
+|---------|-------|
+| Target entities | `climate.living_room` |
+| Mode | Fixed state |
+| Trigger states | `off`, `cool`, `auto` |
+| Target state | `heat` |
+| Flags | `input_boolean.winter_mode == on` |
+| Safety acknowledged | yes |
+
+Non-on/off target states now resolve to the right domain service: `heat` calls `climate.set_hvac_mode` with `hvac_mode: heat` (climate `off` still uses `climate.turn_off`). The same mechanism drives `vacuum`, `valve`, `media_player`, `input_select`, `water_heater`, `lawn_mower`, and `cover` stop. Climate rules require the safety acknowledgment (see Step 5).
+
 ### Kids' TV off after curfew
 
 | Setting | Value |
@@ -456,10 +469,12 @@ show_actions: false          # default: false
 
 The card shows:
 - Rule name and color-coded status badge (armed / enforcing / suppressed / cooldown / conditional / error / master_disabled)
+- A one-line **reason** under the badge when the rule is idle for a known cause: `conditional` → "Waiting on: &lt;entity&gt; = &lt;required&gt;" (first unmet flag); `cooldown` → "Cooldown 42 s"; `suppressed` → "Suppressed until 15:30 — &lt;reason&gt;"; `master_disabled` → "Master switch off". (`error` keeps its existing red banner.)
 - Enforcement counters (today / total) — togglable via `show_stats`
 - Last enforced timestamp and cooldown indicator — togglable via `show_last_enforced`
 - Bound entities with compliance state (✓ compliant / ⚠ violation); state values show translated labels where HA's device_class provides one — `Clear (off)`, `Detected (on)` — or label-only when the label is just a capitalised raw value (`Off`); non-compliant rows translate both sides: `Detected (on) → Clear (off) ⚠`. **Clicking any entity row opens the HA more-info dialog for that entity.** When status is `pending`, a live countdown row appears under each entity that is awaiting enforcement — e.g. `⏱ Enforcing in 14 s` — ticking every second and disappearing once the rule fires or conditions clear.
-- Optional **Conditions** section (`show_conditions: true`) — lists each flag with current vs required state translated the same way; useful when status is `conditional`. **Each condition row is also clickable** (opens more-info for the flag entity).
+- Optional **Conditions** section (`show_conditions: true`) — lists each flag with current vs required state translated the same way; useful when status is `conditional`. **Each condition row is also clickable** (opens more-info for the flag entity). The Conditions section also **auto-shows whenever status is `conditional`** (even with `show_conditions: false`), so a blocked rule always explains itself; `show_conditions: true` still forces it on for every state.
+- A **"Targets needing attention"** panel appears automatically when a bound target's last enforcement **failed** (service error) or hit a **misconfiguration** (`no_service_mapping` — a target whose state can't be driven). Each row shows the target, the outcome, and the reason/error on hover. Benign/transient waits (target off, source offline) are not listed, and the panel self-hides once every target is healthy.
 - Optional **Configuration** section (`show_config: true`) — shows Delay, Debounce ("Disabled" when off), and Loop protection ("auto-suppress for 15 min above N/min" when on) for the rule.
 - Optional action buttons (Test Enforce, Reset Cooldowns when active, Clear History, Suppress 1h)
 
