@@ -379,32 +379,62 @@ test("_renderReason conditional: empty/absent flags → nothing", () => {
   assert.equal(out, "");
 });
 
-test("_renderReason cooldown: shows formatted remaining seconds", () => {
+test("_renderReason cooldown: live countdown from absolute cooldown_ends (ticks)", () => {
+  // Two future ends; the reason line takes the MAX remaining (mirrors the
+  // engine's cooldown_remaining_seconds "largest remaining"). ~90s out → "1 min 30 s".
+  const now = Date.now();
+  const ctx = reasonCtx({ "sensor.s": { attributes: {} } });
+  const out = Card.prototype._renderReason.call(
+    ctx,
+    {
+      status: "sensor.s",
+      cooldownEnds: {
+        "light.a": new Date(now + 90_000).toISOString(),
+        "light.b": new Date(now + 30_000).toISOString(),
+      },
+    },
+    "cooldown",
+  );
+  // ceil of ~90s is 90 (or 89 if the ms clock already advanced) → accept either.
+  assert.match(out.__html, /Cooldown 1 min (30|29) s/);
+});
+
+test("_renderReason cooldown: falls back to the frozen scalar when no end-times", () => {
+  // No cooldown_ends (empty) → derive 0 → fall back to the scalar sensor value.
   const ctx = reasonCtx({
-    "sensor.s": { attributes: {} },
+    "sensor.s": { attributes: { cooldown_ends: {} } },
     "sensor.cd": { state: "90" },
   });
   const out = Card.prototype._renderReason.call(
     ctx,
-    { status: "sensor.s", cooldownRemaining: "sensor.cd" },
+    { status: "sensor.s", cooldownEnds: {}, cooldownRemaining: "sensor.cd" },
     "cooldown",
   );
   assert.match(out.__html, /Cooldown 1 min 30 s/);
 });
 
-test("_renderReason cooldown: zero remaining → nothing", () => {
-  const ctx = reasonCtx({ "sensor.s": { attributes: {} }, "sensor.cd": { state: "0" } });
+test("_renderReason cooldown: past-only ends and zero scalar → nothing", () => {
+  const now = Date.now();
+  const ctx = reasonCtx({
+    "sensor.s": { attributes: {} },
+    "sensor.cd": { state: "0" },
+  });
   const out = Card.prototype._renderReason.call(
     ctx,
-    { status: "sensor.s", cooldownRemaining: "sensor.cd" },
+    {
+      status: "sensor.s",
+      cooldownEnds: { "light.a": new Date(now - 5000).toISOString() },
+      cooldownRemaining: "sensor.cd",
+    },
     "cooldown",
   );
   assert.equal(out, "");
 });
 
-test("_renderReason suppressed: shows local time + reason", () => {
-  const iso = "2026-10-27T15:30:00+00:00";
-  const when = new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+test("_renderReason suppressed: future end shows absolute time + live remaining + reason", () => {
+  const d = new Date(Date.now() + 12 * 60_000 + 4000); // ~12m 04s out
+  const iso = d.toISOString();
+  const when = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const ctx = reasonCtx({
     "sensor.s": { attributes: { suppression_reason: "manual 1h" } },
     "sensor.su": { state: iso },
@@ -414,12 +444,34 @@ test("_renderReason suppressed: shows local time + reason", () => {
     { status: "sensor.s", suppressedUntil: "sensor.su" },
     "suppressed",
   );
-  assert.match(out.__html, new RegExp(`Suppressed until ${when} — manual 1h`));
+  // "Suppressed until HH:MM (12 min 4 s) — manual 1h" — tolerate the ±1s render drift.
+  assert.match(
+    out.__html,
+    new RegExp(`Suppressed until ${when} \\(12 min [34] s\\) — manual 1h`),
+  );
 });
 
-test("_renderReason suppressed: time only when no reason", () => {
-  const iso = "2026-10-27T15:30:00+00:00";
-  const when = new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+test("_renderReason suppressed: future end, no reason → time + live remaining", () => {
+  const d = new Date(Date.now() + 90_000);
+  const iso = d.toISOString();
+  const when = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const ctx = reasonCtx({ "sensor.s": { attributes: {} }, "sensor.su": { state: iso } });
+  const out = Card.prototype._renderReason.call(
+    ctx,
+    { status: "sensor.s", suppressedUntil: "sensor.su" },
+    "suppressed",
+  );
+  assert.match(
+    out.__html,
+    new RegExp(`^<div class="reason">Suppressed until ${when} \\(1 min (30|29) s\\)</div>$`),
+  );
+});
+
+test("_renderReason suppressed: past end → absolute time only, no remaining", () => {
+  // End already passed (stale future render) → secsLeft<=0 → no "(…)" suffix.
+  const d = new Date(Date.now() - 5000);
+  const iso = d.toISOString();
+  const when = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const ctx = reasonCtx({ "sensor.s": { attributes: {} }, "sensor.su": { state: iso } });
   const out = Card.prototype._renderReason.call(
     ctx,
@@ -499,5 +551,19 @@ test("conditions auto-show: empty flags still render nothing", () => {
   };
   const out = Card.prototype._renderConditions.call(ctx, { status: "sensor.s" });
   assert.equal(out, "");
+});
+
+// Feature F: the live-tick interval gate (updated()) must start the 1s
+// requestUpdate for pending, cooldown, AND suppressed — the three statuses whose
+// reason line counts down client-side. Asserts the exact boolean used at the gate.
+test("live-tick gate: pending/cooldown/suppressed tick, others do not", () => {
+  const ticks = (status) =>
+    status === "pending" || status === "cooldown" || status === "suppressed";
+  for (const s of ["pending", "cooldown", "suppressed"]) {
+    assert.equal(ticks(s), true, `${s} should tick`);
+  }
+  for (const s of ["armed", "enforcing", "conditional", "error", "disabled", "master_disabled", "starting"]) {
+    assert.equal(ticks(s), false, `${s} should not tick`);
+  }
 });
 

@@ -1628,6 +1628,23 @@ def test_cooldown_remaining_seconds_empty(hass: HomeAssistant):
     assert engine.cooldown_remaining_seconds() == 0.0
 
 
+def test_cooldown_ends_returns_future_only(hass: HomeAssistant):
+    """cooldown_ends exposes absolute future ends; past ends are skipped
+    (mirrors cooldown_remaining_seconds, which counts a past end as 0)."""
+    engine = _make_engine(hass)
+    future = dt_util.now() + timedelta(seconds=30)
+    past = dt_util.now() - timedelta(seconds=30)
+    engine.state.cooldowns["light.x"] = future
+    engine.state.cooldowns["light.y"] = past
+    ends = engine.cooldown_ends()
+    assert ends == {"light.x": future}
+
+
+def test_cooldown_ends_empty(hass: HomeAssistant):
+    engine = _make_engine(hass)
+    assert engine.cooldown_ends() == {}
+
+
 # ---------------------------------------------------------------------------
 # is_armed / is_active / is_in_cooldown
 # ---------------------------------------------------------------------------

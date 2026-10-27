@@ -569,6 +569,7 @@ class EntityGuardCard extends LitElement {
     out.attributeDesiredValue =
       statusEntity?.attributes?.attribute_desired_value ?? null;
     out.targetOutcomes = statusEntity?.attributes?.target_outcomes ?? {};
+    out.cooldownEnds = statusEntity?.attributes?.cooldown_ends ?? {};
 
     return out;
   }
@@ -643,9 +644,16 @@ class EntityGuardCard extends LitElement {
     super.updated(...args);
     const refs = this._findRuleEntities();
     const status = refs ? this._stateValue(refs.status, "conditional") : null;
-    if (status === "pending" && !this._countdownInterval) {
+    // Live 1s tick for every status whose reason line counts down client-side:
+    // pending (per-entity "Enforcing in Ns"), cooldown + suppressed (reason line
+    // derives remaining from an absolute end-time each render).
+    const ticks =
+      status === "pending" ||
+      status === "cooldown" ||
+      status === "suppressed";
+    if (ticks && !this._countdownInterval) {
       this._countdownInterval = setInterval(() => this.requestUpdate(), 1000);
-    } else if (status !== "pending" && this._countdownInterval) {
+    } else if (!ticks && this._countdownInterval) {
       clearInterval(this._countdownInterval);
       this._countdownInterval = null;
     }
@@ -1263,18 +1271,42 @@ class EntityGuardCard extends LitElement {
         text = `Waiting on: ${name} = ${required}`;
       }
     } else if (status === "cooldown") {
-      const secs = parseInt(this._stateValue(refs.cooldownRemaining, "0"), 10);
-      if (secs > 0) text = `Cooldown ${this._formatSeconds(secs)}`;
+      // Live tick: derive remaining client-side from the absolute per-entity
+      // cooldown_ends (max, matching the engine's cooldown_remaining_seconds
+      // "largest remaining"), so the number counts down each 1s requestUpdate.
+      // The scalar cooldownRemaining sensor is frozen between dispatcher pushes,
+      // so it is only a fallback when the end-time attr is absent (e.g. a status
+      // sensor from before this attr existed).
+      const now = Date.now();
+      const ends = refs.cooldownEnds || {};
+      let secsLeft = 0;
+      for (const iso of Object.values(ends)) {
+        const t = new Date(iso).getTime();
+        if (!isNaN(t)) {
+          secsLeft = Math.max(secsLeft, Math.ceil((t - now) / 1000));
+        }
+      }
+      if (secsLeft <= 0) {
+        secsLeft = parseInt(this._stateValue(refs.cooldownRemaining, "0"), 10);
+      }
+      if (secsLeft > 0) text = `Cooldown ${this._formatSeconds(secsLeft)}`;
     } else if (status === "suppressed") {
       const until = this._stateValue(refs.suppressedUntil, null);
       const d = until ? new Date(until) : null;
-      const when =
-        d && !isNaN(d.getTime())
-          ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-          : null;
+      const valid = d && !isNaN(d.getTime());
+      const when = valid
+        ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : null;
+      // Live remaining alongside the absolute resume time; ticks via the 1s
+      // interval. Omitted once the end passes (secsLeft<=0) so a stale future
+      // render doesn't show a negative.
+      const secsLeft = valid
+        ? Math.max(0, Math.ceil((d.getTime() - Date.now()) / 1000))
+        : 0;
+      const left = secsLeft > 0 ? ` (${this._formatSeconds(secsLeft)})` : "";
       const reason = a.suppression_reason;
-      if (when && reason) text = `Suppressed until ${when} — ${reason}`;
-      else if (when) text = `Suppressed until ${when}`;
+      if (when && reason) text = `Suppressed until ${when}${left} — ${reason}`;
+      else if (when) text = `Suppressed until ${when}${left}`;
       else if (reason) text = `Suppressed — ${reason}`;
     } else if (status === "master_disabled") {
       text = "Master switch off";
