@@ -36,6 +36,7 @@ from .const import (
     COLOR_TEMP_KELVIN_TOLERANCE,
     DEFAULT_LOOP_SUPPRESS_MINUTES,
     DOMAIN,
+    DOMAIN_MODE_SERVICE_MAP,
     DOMAIN_SERVICE_MAP,
     ERROR_RECOVERY_SUCCESS_THRESHOLD,
     ERROR_THRESHOLD,
@@ -1187,6 +1188,16 @@ class RuleEngine:
             full = domain_map[target_state]
             svc_domain, svc_name = full.split(".", 1)
             return svc_domain, svc_name, {"entity_id": entity_id}
+
+        # Mode-style domain (climate/water_heater/input_select): one service for the
+        # whole domain, target_state passed as a data kwarg. Checked after the
+        # parameterless map so e.g. climate "off" keeps climate.turn_off while every
+        # other mode routes to climate.set_hvac_mode hvac_mode=<state>.
+        mode_service = DOMAIN_MODE_SERVICE_MAP.get(domain)
+        if mode_service is not None:
+            full, kwarg = mode_service
+            svc_domain, svc_name = full.split(".", 1)
+            return svc_domain, svc_name, {"entity_id": entity_id, kwarg: target_state}
 
         # Fallback: homeassistant.turn_on / turn_off when target maps to on/off.
         if target_state in ("on", "off"):

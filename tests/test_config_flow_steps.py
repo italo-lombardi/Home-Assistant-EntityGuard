@@ -551,6 +551,38 @@ async def test_safety_required_for_lock(hass: HomeAssistant):
     assert res["step_id"] == "preview"
 
 
+async def test_safety_required_for_valve(hass: HomeAssistant):
+    """valve joined SAFETY_DOMAINS (Feature C) — a valve target forces the ack step."""
+    res = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"],
+        {
+            CONF_RULE_NAME: "Valve",
+            CONF_TARGET_ENTITIES: ["valve.main"],
+            CONF_MODE: MODE_FIXED_STATE,
+        },
+    )
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"],
+        {
+            CONF_TRIGGER_STATES: ["open"],
+            CONF_TARGET_STATE: "closed",
+            CONF_DELAY_SECONDS: 0,
+        },
+    )
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"],
+        {"add_flags": False, "custom_rate_limit": False, "add_debounce": False},
+    )
+    assert res["step_id"] == "safety"
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"], {CONF_SAFETY_ACKNOWLEDGED: True}
+    )
+    assert res["step_id"] == "preview"
+
+
 # ---------------------------------------------------------------------------
 # Options flow
 # ---------------------------------------------------------------------------
