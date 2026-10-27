@@ -53,6 +53,7 @@ from .const import (
     OPERATOR_GT,
     OPERATOR_LE,
     OPERATOR_LT,
+    REASON_SERVICE_CALL_FAILED,
     RECENTLY_ENFORCED_WINDOW_SECONDS,
     SOURCE_VALUE_FROM_ATTRIBUTE,
     STARTUP_GRACE_PERIOD_SECONDS,
@@ -955,7 +956,9 @@ class RuleEngine:
                 )
             except Exception as err:
                 # Spec: target unavailable / service errors → skip silently + debug log.
-                self._fire_skipped(entity_id, "service_call_failed", error=str(err))
+                self._fire_skipped(
+                    entity_id, REASON_SERVICE_CALL_FAILED, error=str(err)
+                )
                 _LOGGER.warning(
                     "Enforcement failed for %s on rule '%s': %s",
                     entity_id,
@@ -1189,23 +1192,33 @@ class RuleEngine:
             svc_domain, svc_name = full.split(".", 1)
             return svc_domain, svc_name, {"entity_id": entity_id}
 
+        # Bare on/off → homeassistant.turn_on/off, BEFORE the mode map. Follow mode
+        # (dynamic_state) always feeds exactly "on"/"off" here, and a generic on/off
+        # must never become an invalid mode payload (e.g. climate.set_hvac_mode
+        # hvac_mode="on" — "on" is not a valid HVAC mode and the call fails). Only a
+        # NON-on/off state (heat, eco, an input_select option…) should reach the mode
+        # map. A mode domain keeps its parameterless entry above (climate "off" →
+        # climate.turn_off) because that is matched before this branch.
+        #
+        # EXCEPT input_select: its options are arbitrary user strings, so a literal
+        # "on"/"off" option is a real select_option target, and input_select has no
+        # turn_on/off service — it must always route through the mode map below.
+        if target_state in ("on", "off") and domain != "input_select":
+            return (
+                "homeassistant",
+                f"turn_{target_state}",
+                {"entity_id": entity_id},
+            )
+
         # Mode-style domain (climate/water_heater/input_select): one service for the
-        # whole domain, target_state passed as a data kwarg. Checked after the
-        # parameterless map so e.g. climate "off" keeps climate.turn_off while every
-        # other mode routes to climate.set_hvac_mode hvac_mode=<state>.
+        # whole domain, the non-on/off target_state passed as a data kwarg
+        # (climate heat/cool/… → climate.set_hvac_mode hvac_mode=<state>).
         mode_service = DOMAIN_MODE_SERVICE_MAP.get(domain)
         if mode_service is not None:
             full, kwarg = mode_service
             svc_domain, svc_name = full.split(".", 1)
             return svc_domain, svc_name, {"entity_id": entity_id, kwarg: target_state}
 
-        # Fallback: homeassistant.turn_on / turn_off when target maps to on/off.
-        if target_state in ("on", "off"):
-            return (
-                "homeassistant",
-                f"turn_{target_state}",
-                {"entity_id": entity_id},
-            )
         return None
 
     def _event_target(
@@ -1282,11 +1295,11 @@ class RuleEngine:
         if error is not None:
             data["error"] = error
         self._hass.bus.async_fire(EVENT_SKIPPED, data)
-        # Record the per-target outcome. "service_call_failed" is routed through
+        # Record the per-target outcome. REASON_SERVICE_CALL_FAILED is routed through
         # _fire_skipped but is semantically a FAIL, not a skip — derive from the
         # reason so this one write correctly labels every non-ok call site.
         self._state.target_outcomes[entity_id] = {
-            "outcome": "failed" if reason == "service_call_failed" else "skipped",
+            "outcome": "failed" if reason == REASON_SERVICE_CALL_FAILED else "skipped",
             "reason": reason,
             "error": error,
             "at": dt_util.now(),

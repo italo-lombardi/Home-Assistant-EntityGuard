@@ -1192,7 +1192,14 @@ class EntityGuardCard extends LitElement {
       // target_outcomes is an HA-controlled status-sensor attribute; guard a
       // malformed entry (null / non-object) so one bad element can't throw.
       if (!o || typeof o !== "object") return false;
-      return o.outcome !== "ok";
+      // Only surface ACTIONABLE outcomes: a true service failure, or a
+      // misconfiguration the user must fix (target state can't be driven —
+      // no_service_mapping). Benign/transient skips (light_off, source_offline,
+      // source_value_unavailable, source_is_target, light_unavailable,
+      // attribute_unavailable) mean the rule is simply waiting and self-heal on
+      // the next clean enforce — showing them here reads as a fault. The engine
+      // still records the raw reason on the attribute for diagnostics.
+      return o.outcome === "failed" || o.reason === "no_service_mapping";
     });
     if (bad.length === 0) return nothing;
     return html`
@@ -1223,7 +1230,7 @@ class EntityGuardCard extends LitElement {
                   style="color:${failed
                     ? "var(--error-color,#db4437)"
                     : "var(--warning-color,#ff9800)"}"
-                  >${failed ? "⚠" : "⃠"}</span
+                  >${failed ? "⚠" : "⊘"}</span
                 >
               </span>
             </div>

@@ -250,32 +250,45 @@ test("parity: _attributeDisplayName matches ATTRIBUTE_DISPLAY_NAMES in const.py"
 });
 
 // Feature A: per-target outcome panel. Minimal render — only non-ok targets.
-test("_renderTargetOutcomes renders only non-ok targets", () => {
+test("_renderTargetOutcomes shows failed + no_service_mapping, hides benign skips", () => {
   const ctx = {
     _handleEntityClick() {},
     hass: {
       states: {
         "light.bedroom": { state: "off", attributes: { friendly_name: "Bedroom" } },
         "light.kitchen": { state: "on", attributes: { friendly_name: "Kitchen" } },
+        "light.hall": { state: "off", attributes: { friendly_name: "Hall" } },
+        "climate.den": { state: "off", attributes: { friendly_name: "Den" } },
       },
     },
   };
   const refs = {
     targetOutcomes: {
       "light.kitchen": { outcome: "ok", reason: null, error: null, at: "t" },
+      // benign wait — must be HIDDEN
+      "light.hall": { outcome: "skipped", reason: "light_off", error: null, at: "t" },
+      // real failure — shown
       "light.bedroom": {
         outcome: "failed",
         reason: "service_call_failed",
         error: "device offline",
         at: "t",
       },
+      // misconfig skip — shown
+      "climate.den": {
+        outcome: "skipped",
+        reason: "no_service_mapping",
+        error: null,
+        at: "t",
+      },
     },
   };
   const out = Card.prototype._renderTargetOutcomes.call(ctx, refs);
-  // The failed target renders; the ok target does not.
-  assert.match(out.__html, /Bedroom/);
+  assert.match(out.__html, /Bedroom/); // failed → shown
   assert.match(out.__html, /device offline/);
-  assert.doesNotMatch(out.__html, /Kitchen/);
+  assert.match(out.__html, /Den/); // no_service_mapping → shown
+  assert.doesNotMatch(out.__html, /Kitchen/); // ok → hidden
+  assert.doesNotMatch(out.__html, /Hall/); // benign light_off skip → hidden
 });
 
 test("_renderTargetOutcomes renders nothing when all targets ok or empty", () => {
@@ -298,12 +311,17 @@ test("_renderTargetOutcomes skips a malformed outcome entry without throwing", (
     targetOutcomes: {
       "light.null": null,
       "light.str": "oops",
-      "light.bedroom": { outcome: "skipped", reason: "light_off", error: null, at: "t" },
+      "light.bedroom": {
+        outcome: "failed",
+        reason: "service_call_failed",
+        error: null,
+        at: "t",
+      },
     },
   };
   const out = Card.prototype._renderTargetOutcomes.call(ctx, refs);
-  // Does not throw; the valid non-ok row renders, bad entries are dropped.
-  assert.match(out.__html, /light\.bedroom|skipped/);
+  // Does not throw; the valid actionable row renders, bad entries are dropped.
+  assert.match(out.__html, /light\.bedroom|failed/);
 });
 // --- Feature B: status reason line (_renderReason) ---
 //

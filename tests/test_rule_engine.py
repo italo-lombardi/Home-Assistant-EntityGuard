@@ -19,6 +19,7 @@ from custom_components.entity_guard.const import (
     ERROR_THRESHOLD,
     EVENT_ENFORCED,
     EVENT_SKIPPED,
+    MODE_DYNAMIC_STATE,
     MODE_FIXED_ATTRIBUTE,
     MODE_FIXED_STATE,
     OPERATOR_GE,
@@ -1959,6 +1960,57 @@ def test_resolve_state_service_climate_off_stays_parameterless(hass: HomeAssista
     engine = _make_engine(hass, config)
     result = engine._resolve_service("climate.living")
     assert result == ("climate", "turn_off", {"entity_id": "climate.living"})
+
+
+def test_resolve_state_service_bare_on_off_bypasses_mode_map(hass: HomeAssistant):
+    """A bare 'on'/'off' on a mode-style domain must NOT become an invalid mode
+    payload (climate.set_hvac_mode hvac_mode='on' is rejected by HA). Follow mode
+    (dynamic_state) always feeds exactly 'on'/'off', so this is the regression
+    guard: 'on' → homeassistant.turn_on, 'off' → the domain's parameterless
+    turn_off where one exists, else homeassistant.turn_off — never set_hvac_mode /
+    set_operation_mode with 'on'/'off'."""
+    config = _make_config(
+        mode=MODE_DYNAMIC_STATE,
+        source_entity="input_boolean.src",
+        target_entities=["climate.living"],
+    )
+    engine = _make_engine(hass, config)
+    # climate 'on' has no parameterless entry → must fall to homeassistant.turn_on,
+    # NOT climate.set_hvac_mode(hvac_mode='on').
+    on = engine._resolve_service("climate.living", state_override="on")
+    assert on == ("homeassistant", "turn_on", {"entity_id": "climate.living"})
+    # climate 'off' is matched by the parameterless map before either fallback.
+    off = engine._resolve_service("climate.living", state_override="off")
+    assert off == ("climate", "turn_off", {"entity_id": "climate.living"})
+    # water_heater has NO parameterless entry → both on/off use the homeassistant
+    # fallback, never set_operation_mode(operation_mode='on'/'off').
+    wh_on = engine._resolve_service("water_heater.tank", state_override="on")
+    assert wh_on == ("homeassistant", "turn_on", {"entity_id": "water_heater.tank"})
+    wh_off = engine._resolve_service("water_heater.tank", state_override="off")
+    assert wh_off == ("homeassistant", "turn_off", {"entity_id": "water_heater.tank"})
+
+
+def test_resolve_state_service_input_select_on_off_is_an_option(hass: HomeAssistant):
+    """input_select options are arbitrary strings, so a literal 'on'/'off' option
+    must route through select_option — NOT the homeassistant on/off fallback
+    (input_select has no turn_on/off service). This is the one mode domain where
+    'on'/'off' is a genuine mode-map target."""
+    config = _make_config(target_state="on", target_entities=["input_select.mode"])
+    engine = _make_engine(hass, config)
+    result = engine._resolve_service("input_select.mode")
+    assert result == (
+        "input_select",
+        "select_option",
+        {"entity_id": "input_select.mode", "option": "on"},
+    )
+    # "off" as an option likewise goes through select_option, not turn_off.
+    config_off = _make_config(target_state="off", target_entities=["input_select.mode"])
+    engine_off = _make_engine(hass, config_off)
+    assert engine_off._resolve_service("input_select.mode") == (
+        "input_select",
+        "select_option",
+        {"entity_id": "input_select.mode", "option": "off"},
+    )
 
 
 async def test_enforce_delivers_climate_mode_payload(hass: HomeAssistant):

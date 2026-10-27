@@ -172,6 +172,12 @@ ERROR_THRESHOLD = 3
 # Number of consecutive successful enforcements required to auto-recover from STATUS_ERROR.
 ERROR_RECOVERY_SUCCESS_THRESHOLD = 3
 
+# Skip reason emitted when the enforcement service call itself raised (vs a
+# genuine skip). _fire_skipped routes this through the same path as real skips,
+# but the per-target outcome classifies it as "failed" not "skipped" — kept as a
+# shared const so the producer (except block) and that classifier can't drift.
+REASON_SERVICE_CALL_FAILED = "service_call_failed"
+
 # Domain service map for state mode enforcement.
 # Shape: {domain: {target_state: "service.name"}}. Each entry is a parameterless
 # service — the call carries only {entity_id}. States that need a DATA PAYLOAD
