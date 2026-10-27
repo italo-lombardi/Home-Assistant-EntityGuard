@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "Migrert regel «{rule}» mangler en kildeenhet",
       "description": "Regelen «{rule}» ble migrert fra en forhåndsversjon av Følgemodus til Dynamisk tilstand, men den har ingen kildeenhet og vil ikke håndheves. Slett den og opprett den på nytt, og velg en kildeenhet."
+    },
+    "target_entity_missing": {
+      "title": "Målenhet mangler i regelen «{rule_name}»",
+      "description": "Følgende målenhet(er) finnes ikke lenger, men blir referert til i regelen: {missing_entities}. Regelen kan ikke lenger håndheve tilstand på dem (når et mål får nytt navn eller fjernes, fortsetter regelen å overvåke en enhet som ikke lenger finnes). Oppdater eller fjern regelen for å løse dette problemet."
     }
   }
 }

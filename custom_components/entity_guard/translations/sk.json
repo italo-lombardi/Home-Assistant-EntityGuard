@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "Migrované pravidlo „{rule}“ potrebuje zdrojovú entitu",
       "description": "Pravidlo „{rule}“ bolo migrované z predbežného režimu sledovania na dynamický stav, no nemá žiadnu zdrojovú entitu a nebude vynucovať. Odstráňte ho a vytvorte znova s vybranou zdrojovou entitou."
+    },
+    "target_entity_missing": {
+      "title": "Chýbajúca cieľová entita v pravidle „{rule_name}“",
+      "description": "Nasledujúce cieľové entity už neexistujú, no pravidlo sa na ne stále odkazuje: {missing_entities}. Pravidlo na nich už nemôže vynucovať stav (premenovaním alebo odstránením cieľa pravidlo sleduje neexistujúcu entitu). Problém vyriešite aktualizáciou alebo odstránením pravidla."
     }
   }
 }

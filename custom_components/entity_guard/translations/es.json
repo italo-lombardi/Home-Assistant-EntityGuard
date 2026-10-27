@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "La regla migrada \"{rule}\" necesita una entidad de origen",
       "description": "La regla \"{rule}\" se migró de un Modo Seguir preliminar a Estado dinámico, pero no tiene ninguna entidad de origen y no se aplicará. Elimínala y vuelve a crearla eligiendo una entidad de origen."
+    },
+    "target_entity_missing": {
+      "title": "Falta la entidad de destino en la regla \"{rule_name}\"",
+      "description": "La siguiente entidad o entidades de destino ya no existen, pero la regla aún hace referencia a ellas: {missing_entities}. La regla ya no puede aplicar el estado a ellas (una entidad de destino renombrada o eliminada hace que la regla vigile una entidad inexistente). Actualiza o elimina la regla para resolver este problema."
     }
   }
 }

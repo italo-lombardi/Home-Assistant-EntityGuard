@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "Migriranom pravilu „{rule}” potreban je izvorni entitet",
       "description": "Pravilo „{rule}” migrirano je iz načina praćenja iz predizdanja u Dinamičko stanje, ali nema izvorni entitet pa se neće provoditi. Izbrišite ga i stvorite ponovno te odaberite izvorni entitet."
+    },
+    "target_entity_missing": {
+      "title": "Ciljni entitet nedostaje u pravilu „{rule_name}”",
+      "description": "Sljedeći ciljni entiteti navedeni u pravilu više ne postoje: {missing_entities}. Pravilo više ne može održavati njihovo stanje (preimenovani ili uklonjeni ciljni entitet ostavlja pravilo da nadzire nepostojeći entitet). Ažurirajte ili uklonite pravilo za rješavanje ovog problema."
     }
   }
 }

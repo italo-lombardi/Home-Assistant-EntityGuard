@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "Gemigreerde regel \"{rule}\" heeft een bronentiteit nodig",
       "description": "De regel \"{rule}\" is gemigreerd van een pre-release Volgmodus naar Dynamische status, maar heeft geen bronentiteit en wordt niet afgedwongen. Verwijder de regel en maak deze opnieuw aan, waarbij je een bronentiteit kiest."
+    },
+    "target_entity_missing": {
+      "title": "Doelentiteit ontbreekt in regel \"{rule_name}\"",
+      "description": "De volgende doelentiteit(en) bestaan niet meer, maar worden nog gebruikt in de regel: {missing_entities}. De regel kan er geen toestand meer op afdwingen (een hernoemde of verwijderde doelentiteit laat de regel een niet-bestaande entiteit bewaken). Werk de regel bij of verwijder deze om dit probleem op te lossen."
     }
   }
 }

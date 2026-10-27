@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "A migrált „{rule}” szabályhoz forrás entitás szükséges",
       "description": "A(z) „{rule}” szabály egy kiadás előtti Követési módról lett Dinamikus állapotra migrálva, de nincs forrás entitása, ezért nem fog kényszeríteni. Törölje, majd hozza létre újra egy forrás entitás kiválasztásával."
+    },
+    "target_entity_missing": {
+      "title": "A(z) „{rule_name}” szabály célentitása hiányzik",
+      "description": "A következő célentitás(ok) már nem léteznek, de a szabály még hivatkozik rájuk: {missing_entities}. A szabály többé nem tudja rajtuk érvényesíteni az állapotot (egy átnevezett vagy eltávolított cél miatt a szabály egy nem létező entitást figyel). A probléma megoldásához frissítse vagy törölje a szabályt."
     }
   }
 }

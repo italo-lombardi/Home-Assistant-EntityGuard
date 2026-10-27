@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "Taşınan \"{rule}\" kuralı için bir kaynak varlık gerekiyor",
       "description": "\"{rule}\" kuralı, yayın öncesi bir Takip modundan Dinamik duruma taşındı ancak bir kaynak varlığı yok ve uygulama yapmayacak. Kuralı silip bir kaynak varlık seçerek yeniden oluşturun."
+    },
+    "target_entity_missing": {
+      "title": "\"{rule_name}\" kuralındaki hedef varlık eksik",
+      "description": "Aşağıdaki hedef varlıklar artık mevcut değil ancak kuralda başvuruluyor: {missing_entities}. Kural artık bu varlıklarda durumu zorunlu tutamıyor (yeniden adlandırılan veya kaldırılan bir hedef, kuralın geçersiz bir varlığı izlemesine yol açar). Bu sorunu gidermek için kuralı güncelleyin veya kaldırın."
     }
   }
 }
