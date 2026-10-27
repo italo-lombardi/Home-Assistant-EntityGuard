@@ -17,11 +17,16 @@
 // own fallbacks (`css || …`, `nothing ?? ""`), so those need no stub here.
 
 // Flatten a tagged-template call to its rendered text. Nested html`` fragments
-// (produced by the same stub) carry a __html string; splice those in.
+// (produced by the same stub) carry a __html string; splice those in. A value
+// may also be an ARRAY of fragments (e.g. `${items.map(i => html`…`)}`) — splice
+// each element's __html so mapped rows render instead of "[object Object]".
 function htmlTag(strings, ...values) {
-  const flat = values.map((v) =>
-    v != null && typeof v === "object" && "__html" in v ? v.__html : v,
-  );
+  const render = (v) => {
+    if (Array.isArray(v)) return v.map(render).join("");
+    if (v != null && typeof v === "object" && "__html" in v) return v.__html;
+    return v;
+  };
+  const flat = values.map(render);
   return { __html: String.raw({ raw: strings }, ...flat) };
 }
 

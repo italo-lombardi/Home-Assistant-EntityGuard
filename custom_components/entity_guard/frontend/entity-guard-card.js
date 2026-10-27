@@ -1169,7 +1169,10 @@ class EntityGuardCard extends LitElement {
         ${flags.map((f) => {
           const st = this.hass.states[f.entity];
           const name = st?.attributes?.friendly_name || f.entity;
-          const displayCurrent = this._formatStateDisplay(st, f.current ?? "unknown");
+          // Format the snapshot value (f.current), not the live state — formatEntityState
+          // labels stateObj.state, so passing live `st` mislabels a stale snapshot value
+          // (e.g. snapshot "off" rendered with the live "on" label → "Connected (off)").
+          const displayCurrent = this._formatHypotheticalState(f.entity, f.current ?? "unknown");
           const displayRequired = this._formatHypotheticalState(f.entity, f.required ?? null);
           return html`
             <div
