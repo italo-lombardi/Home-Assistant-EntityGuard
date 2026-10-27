@@ -50,8 +50,16 @@ async def async_check_missing_flag_entities(hass: HomeAssistant, entry_id: str) 
         return
 
     ent_reg = er.async_get(hass)
+    # An entity is "present" if it is in the registry OR the state machine. Rules
+    # enforce via hass.states, and legitimate state-only entities (YAML group.*,
+    # template/MQTT/command_line without a unique_id) never appear in the registry
+    # — checking the registry alone would flag a working target/flag as missing
+    # forever. Only flag an entity absent from BOTH.
     missing_flags: list[str] = [
-        flag.entity for flag in config.flags if ent_reg.async_get(flag.entity) is None
+        flag.entity
+        for flag in config.flags
+        if ent_reg.async_get(flag.entity) is None
+        and hass.states.get(flag.entity) is None
     ]
 
     if missing_flags:
@@ -107,8 +115,13 @@ async def async_check_missing_target_entities(
         return
 
     ent_reg = er.async_get(hass)
+    # Present if in the registry OR the state machine (see the flag check above):
+    # a state-only target (group.*, template/MQTT without unique_id) enforces fine
+    # and must not be flagged missing just because it has no registry entry.
     missing_targets: list[str] = [
-        target for target in config.target_entities if ent_reg.async_get(target) is None
+        target
+        for target in config.target_entities
+        if ent_reg.async_get(target) is None and hass.states.get(target) is None
     ]
 
     if missing_targets:

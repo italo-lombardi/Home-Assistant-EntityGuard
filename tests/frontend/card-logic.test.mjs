@@ -553,17 +553,53 @@ test("conditions auto-show: empty flags still render nothing", () => {
   assert.equal(out, "");
 });
 
-// Feature F: the live-tick interval gate (updated()) must start the 1s
-// requestUpdate for pending, cooldown, AND suppressed — the three statuses whose
-// reason line counts down client-side. Asserts the exact boolean used at the gate.
-test("live-tick gate: pending/cooldown/suppressed tick, others do not", () => {
-  const ticks = (status) =>
-    status === "pending" || status === "cooldown" || status === "suppressed";
+// Feature F: the live-tick interval gate lives in the REAL updated() — drive it,
+// not a copy of its predicate. updated() reads status via _findRuleEntities()/
+// _stateValue() and must start a 1s interval for pending/cooldown/suppressed and
+// CLEAR it on transition to any other status. Stubbing setInterval/clearInterval +
+// the status source lets us assert the shipped behavior (so dropping "suppressed"
+// from the gate, inverting the start/clear branch, or failing to clear all fail).
+function runUpdated(statusSeq) {
+  let intervalId = 0;
+  const cleared = [];
+  const origSI = globalThis.setInterval;
+  const origCI = globalThis.clearInterval;
+  globalThis.setInterval = () => ++intervalId;
+  globalThis.clearInterval = (id) => cleared.push(id);
+  const ctx = Object.create(Card.prototype);
+  ctx._status = null;
+  ctx.requestUpdate = () => {};
+  ctx._findRuleEntities = () => ({ status: "sensor.r_status" });
+  ctx._stateValue = () => ctx._status;
+  const states = [];
+  try {
+    for (const st of statusSeq) {
+      ctx._status = st;
+      ctx.updated(new Map());
+      states.push(ctx._countdownInterval != null);
+    }
+  } finally {
+    globalThis.setInterval = origSI;
+    globalThis.clearInterval = origCI;
+  }
+  return { states, cleared };
+}
+
+test("updated() starts the tick for pending/cooldown/suppressed, clears otherwise", () => {
+  // Each ticking status, entered from idle, sets the interval.
   for (const s of ["pending", "cooldown", "suppressed"]) {
-    assert.equal(ticks(s), true, `${s} should tick`);
+    const { states } = runUpdated([s]);
+    assert.equal(states[0], true, `${s} must start the countdown interval`);
   }
+  // Non-ticking statuses do not set it.
   for (const s of ["armed", "enforcing", "conditional", "error", "disabled", "master_disabled", "starting"]) {
-    assert.equal(ticks(s), false, `${s} should not tick`);
+    const { states } = runUpdated([s]);
+    assert.equal(states[0], false, `${s} must not start the interval`);
   }
+  // Transition cooldown -> armed clears the interval (no leak).
+  const { states, cleared } = runUpdated(["cooldown", "armed"]);
+  assert.equal(states[0], true, "cooldown starts it");
+  assert.equal(states[1], false, "armed clears it");
+  assert.ok(cleared.length >= 1, "clearInterval called on transition out");
 });
 

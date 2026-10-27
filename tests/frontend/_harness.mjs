@@ -36,6 +36,9 @@ function htmlTag(strings, ...values) {
 // Only `.html` is read without a card-side fallback, so only it is stubbed.
 class LitBase {}
 LitBase.prototype.html = htmlTag;
+// The card's updated() calls super.updated(...); give the Lit base a no-op so a
+// test can drive the real updated() lifecycle method off a Card-prototype receiver.
+LitBase.prototype.updated = function () {};
 class HaMainStub extends LitBase {}
 
 const defined = {};

@@ -4254,3 +4254,31 @@ def test_get_rule_entity_id_no_status_sensor_returns_none(
         result = engine._get_rule_entity_id()
 
     assert result is None
+
+
+async def test_enforce_cancelled_error_propagates_not_swallowed(hass: HomeAssistant):
+    """A genuine asyncio.CancelledError (e.g. HA shutting down mid-call) must
+    propagate out of _enforce, NOT be caught by `except Exception` and misreported
+    as a service failure. CancelledError is a BaseException (not Exception) and is
+    distinct from TimeoutError, so neither except branch should catch it. This
+    locks the subtle invariant against a future refactor adding `except
+    BaseException` or reordering the branches."""
+
+    async def _cancel(call):
+        raise asyncio.CancelledError
+
+    hass.services.async_register("light", "turn_off", _cancel)
+    config = _make_config(target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+    st = hass.states.get("light.bedroom")
+
+    with pytest.raises(asyncio.CancelledError):
+        await engine.async_evaluate("light.bedroom", st)
+
+    # It must NOT have been recorded as a service failure.
+    assert engine.state.consecutive_errors == 0
+    assert engine.state.last_error is None
+    # Lock released despite the propagating cancellation (async with unwinds).
+    assert not engine.state.reentrance_lock.locked()

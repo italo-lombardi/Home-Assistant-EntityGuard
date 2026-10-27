@@ -462,3 +462,84 @@ async def test_noop_update_does_not_trigger_check(hass: HomeAssistant) -> None:
         await hass.async_block_till_done()
     mock_target.assert_not_called()
     mock_flag.assert_not_called()
+
+
+async def test_state_only_target_not_flagged_missing(hass: HomeAssistant) -> None:
+    """A target that exists only in the state machine (no registry entry) — e.g.
+    a YAML group.* / template entity without a unique_id — enforces fine and must
+    NOT be flagged missing. Registry-only checking would false-positive forever."""
+    entry = _rule_entry(target_entities=["group.all_lights"])
+    entry.add_to_hass(hass)
+    # NOT registered; present only in states.
+    hass.states.async_set("group.all_lights", "on")
+
+    with (
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_create_issue"
+        ) as mock_create,
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_delete_issue"
+        ) as mock_delete,
+    ):
+        await async_check_missing_target_entities(hass, entry.entry_id)
+
+    mock_create.assert_not_called()
+    mock_delete.assert_called_once_with(
+        hass, DOMAIN, f"{entry.entry_id}_missing_targets"
+    )
+
+
+async def test_state_only_flag_not_flagged_missing(hass: HomeAssistant) -> None:
+    """Same for a flag entity present only in the state machine."""
+    entry = _rule_entry(flags=[{"entity": "group.presence", "match_state": "on"}])
+    entry.add_to_hass(hass)
+    hass.states.async_set("group.presence", "on")
+
+    with (
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_create_issue"
+        ) as mock_create,
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_delete_issue"
+        ) as mock_delete,
+    ):
+        await async_check_missing_flag_entities(hass, entry.entry_id)
+
+    mock_create.assert_not_called()
+    mock_delete.assert_called_once_with(hass, DOMAIN, f"{entry.entry_id}_missing_flags")
+
+
+async def test_target_rename_detected_by_real_check(hass: HomeAssistant) -> None:
+    """End-to-end middle link: after a REAL rename, the config still references the
+    OLD id (HA does not rewrite config data on rename), and the REAL check (not
+    mocked) detects that old id as missing and raises the repair issue with the
+    old id in missing_entities. The listener-fires-on-rename plumbing is covered
+    separately (test_target_rename_triggers_check); this proves the detection the
+    feature actually promises."""
+    reg = er.async_get(hass)
+    ent = reg.async_get_or_create(
+        "light", "test", "bedroom", suggested_object_id="bedroom"
+    )
+    old_id = ent.entity_id  # light.bedroom
+    hass.states.async_set(old_id, "off")
+
+    entry = _rule_entry(target_entities=[old_id])
+    entry.add_to_hass(hass)
+
+    # Real rename: registry id changes, config still points at old_id.
+    reg.async_update_entity(old_id, new_entity_id="light.bedroom_renamed")
+    hass.states.async_remove(old_id)
+    await hass.async_block_till_done()
+
+    with patch(
+        "custom_components.entity_guard.issue_helpers.async_create_issue"
+    ) as mock_create:
+        await async_check_missing_target_entities(hass, entry.entry_id)
+
+    mock_create.assert_called_once()
+    args, kwargs = mock_create.call_args
+    issue_id = kwargs.get("issue_id") or args[2]
+    assert issue_id == f"{entry.entry_id}_missing_targets"
+    assert old_id in kwargs.get("translation_placeholders", {}).get(
+        "missing_entities", ""
+    ), "the OLD (dead) id must be reported as missing"
