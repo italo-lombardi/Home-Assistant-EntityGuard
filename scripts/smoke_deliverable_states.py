@@ -298,29 +298,61 @@ def resolver_assertions() -> None:
 
     cases = [
         # (entity, state, expected (svc_domain, svc, data))
-        ("climate.x", "heat",
-         ("climate", "set_hvac_mode", {"entity_id": "climate.x", "hvac_mode": "heat"})),
-        ("climate.x", "off",  # parameterless wins over mode map
-         ("climate", "turn_off", {"entity_id": "climate.x"})),
-        ("climate.x", "on",  # on/off fallback, NOT set_hvac_mode(hvac_mode="on")
-         ("homeassistant", "turn_on", {"entity_id": "climate.x"})),
-        ("water_heater.x", "eco",
-         ("water_heater", "set_operation_mode",
-          {"entity_id": "water_heater.x", "operation_mode": "eco"})),
-        ("input_select.x", "Movie",
-         ("input_select", "select_option",
-          {"entity_id": "input_select.x", "option": "Movie"})),
-        ("input_select.x", "on",  # regression fix: literal "on" option -> select_option
-         ("input_select", "select_option",
-          {"entity_id": "input_select.x", "option": "on"})),
+        (
+            "climate.x",
+            "heat",
+            (
+                "climate",
+                "set_hvac_mode",
+                {"entity_id": "climate.x", "hvac_mode": "heat"},
+            ),
+        ),
+        (
+            "climate.x",
+            "off",  # parameterless wins over mode map
+            ("climate", "turn_off", {"entity_id": "climate.x"}),
+        ),
+        (
+            "climate.x",
+            "on",  # on/off fallback, NOT set_hvac_mode(hvac_mode="on")
+            ("homeassistant", "turn_on", {"entity_id": "climate.x"}),
+        ),
+        (
+            "water_heater.x",
+            "eco",
+            (
+                "water_heater",
+                "set_operation_mode",
+                {"entity_id": "water_heater.x", "operation_mode": "eco"},
+            ),
+        ),
+        (
+            "input_select.x",
+            "Movie",
+            (
+                "input_select",
+                "select_option",
+                {"entity_id": "input_select.x", "option": "Movie"},
+            ),
+        ),
+        (
+            "input_select.x",
+            "on",  # regression fix: literal "on" option -> select_option
+            (
+                "input_select",
+                "select_option",
+                {"entity_id": "input_select.x", "option": "on"},
+            ),
+        ),
         ("vacuum.x", "cleaning", ("vacuum", "start", {"entity_id": "vacuum.x"})),
-        ("vacuum.x", "docked",
-         ("vacuum", "return_to_base", {"entity_id": "vacuum.x"})),
+        ("vacuum.x", "docked", ("vacuum", "return_to_base", {"entity_id": "vacuum.x"})),
         ("valve.x", "open", ("valve", "open_valve", {"entity_id": "valve.x"})),
-        ("cover.x", "stopped",
-         ("cover", "stop_cover", {"entity_id": "cover.x"})),
-        ("lawn_mower.x", "mowing",
-         ("lawn_mower", "start_mowing", {"entity_id": "lawn_mower.x"})),
+        ("cover.x", "stopped", ("cover", "stop_cover", {"entity_id": "cover.x"})),
+        (
+            "lawn_mower.x",
+            "mowing",
+            ("lawn_mower", "start_mowing", {"entity_id": "lawn_mower.x"}),
+        ),
         ("sensor.x", "cooking", None),  # genuinely unmapped -> None
     ]
     for entity_id, state, expected in cases:
@@ -337,8 +369,11 @@ def resolver_assertions() -> None:
     check(
         "regression: input_select literal 'off' option routes to select_option",
         resolve("input_select.x", "off")
-        == ("input_select", "select_option",
-            {"entity_id": "input_select.x", "option": "off"}),
+        == (
+            "input_select",
+            "select_option",
+            {"entity_id": "input_select.x", "option": "off"},
+        ),
     )
 
 
@@ -355,8 +390,10 @@ def main() -> int:
         from entity_guard import const as _const
 
         if not hasattr(_const, "DOMAIN_MODE_SERVICE_MAP"):
-            print("  [FAIL] deployed code has no DOMAIN_MODE_SERVICE_MAP — "
-                  "Feature C not deployed. Deploy the integration branch first.")
+            print(
+                "  [FAIL] deployed code has no DOMAIN_MODE_SERVICE_MAP — "
+                "Feature C not deployed. Deploy the integration branch first."
+            )
             return 1
     except Exception as e:
         print(f"  [FAIL] could not import deployed entity_guard.const: {e}")
@@ -426,10 +463,14 @@ def main() -> int:
         check("fixed_state(paused): create+enforce", False, str(e))
 
     # --- Honest skips (printed, not asserted) ---------------------------------
-    print("  [SKIP] climate live-actuate — only climate entity is the user's real "
-          "thermostat; covered by the resolver assertion instead.")
-    print("  [SKIP] RESTRICT picker pruning — config-flow schema, not cleanly "
-          "REST-observable; locked by unit tests (test_states_for_entities_*).")
+    print(
+        "  [SKIP] climate live-actuate — only climate entity is the user's real "
+        "thermostat; covered by the resolver assertion instead."
+    )
+    print(
+        "  [SKIP] RESTRICT picker pruning — config-flow schema, not cleanly "
+        "REST-observable; locked by unit tests (test_states_for_entities_*)."
+    )
 
     print()
     if FAILS:

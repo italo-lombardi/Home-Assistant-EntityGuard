@@ -185,10 +185,10 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except Exception as e:  # noqa: BLE001 — smoke: any error is a failure
+    except Exception as e:
         print(f"ERROR: {e}")
         try:
             sf.cleanup(sf.mint_token())
-        except Exception as ce:  # noqa: BLE001
+        except Exception as ce:
             print(f"  [WARN] cleanup after error failed: {ce}")
         sys.exit(1)
