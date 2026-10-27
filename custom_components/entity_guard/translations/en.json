@@ -533,6 +533,10 @@
       "title": "Flag entity missing in rule \"{rule_name}\"",
       "description": "The following flag entity/entities no longer exist but are referenced in the rule: {missing_entities}. The rule will not enforce when these flags cannot be evaluated. Update or remove the rule to resolve this issue."
     },
+    "target_entity_missing": {
+      "title": "Target entity missing in rule \"{rule_name}\"",
+      "description": "The following target entity/entities no longer exist but are referenced in the rule: {missing_entities}. The rule can no longer enforce on them (a renamed or removed target leaves the rule watching a dead entity). Update or remove the rule to resolve this issue."
+    },
     "migrated_follow_no_source": {
       "title": "Migrated rule \"{rule}\" needs a source entity",
       "description": "The rule \"{rule}\" was migrated from a pre-release Follow mode to Dynamic state, but it has no source entity and will not enforce. Delete it and create it again, choosing a source entity."

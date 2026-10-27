@@ -12,7 +12,9 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.entity_guard.const import DOMAIN, ENTRY_TYPE_RULE
 from custom_components.entity_guard.issue_helpers import (
     ISSUE_FLAG_ENTITY_MISSING,
+    ISSUE_TARGET_ENTITY_MISSING,
     async_check_missing_flag_entities,
+    async_check_missing_target_entities,
 )
 
 
@@ -252,3 +254,211 @@ async def test_listener_unsubscribed_after_entry_unload(hass: HomeAssistant) -> 
         await hass.async_block_till_done()
 
     mock_check.assert_not_called()
+
+
+# ===========================================================================
+# Feature D: target-entity-missing repair issue (mirrors the flag checks)
+# ===========================================================================
+
+
+async def test_target_missing_entry_returns_early(hass: HomeAssistant) -> None:
+    await async_check_missing_target_entities(hass, "nonexistent-entry-id")
+
+
+async def test_no_targets_returns_early(hass: HomeAssistant) -> None:
+    entry = _rule_entry(target_entities=[])
+    entry.add_to_hass(hass)
+
+    with patch(
+        "custom_components.entity_guard.issue_helpers.async_create_issue"
+    ) as mock_create:
+        await async_check_missing_target_entities(hass, entry.entry_id)
+
+    mock_create.assert_not_called()
+
+
+async def test_all_targets_present_deletes_issue(hass: HomeAssistant) -> None:
+    entry = _rule_entry(target_entities=["light.bedroom"])
+    entry.add_to_hass(hass)
+    _register_entity(hass, "light.bedroom")
+
+    with (
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_create_issue"
+        ) as mock_create,
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_delete_issue"
+        ) as mock_delete,
+    ):
+        await async_check_missing_target_entities(hass, entry.entry_id)
+
+    mock_create.assert_not_called()
+    mock_delete.assert_called_once_with(
+        hass, DOMAIN, f"{entry.entry_id}_missing_targets"
+    )
+
+
+async def test_missing_target_creates_issue(hass: HomeAssistant) -> None:
+    entry = _rule_entry(target_entities=["light.bedroom"])
+    entry.add_to_hass(hass)
+    # light.bedroom not registered → missing
+
+    with (
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_create_issue"
+        ) as mock_create,
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_delete_issue"
+        ) as mock_delete,
+    ):
+        await async_check_missing_target_entities(hass, entry.entry_id)
+
+    mock_delete.assert_not_called()
+    mock_create.assert_called_once()
+    args, kwargs = mock_create.call_args
+    issue_id = kwargs.get("issue_id") or args[2]
+    assert issue_id == f"{entry.entry_id}_missing_targets"
+    assert kwargs.get("translation_key") == ISSUE_TARGET_ENTITY_MISSING
+    placeholders = kwargs.get("translation_placeholders", {})
+    assert "light.bedroom" in placeholders["missing_entities"]
+    assert placeholders["rule_name"] == "My Rule"
+
+
+async def test_partial_targets_missing(hass: HomeAssistant) -> None:
+    entry = _rule_entry(target_entities=["light.bedroom", "light.kitchen"])
+    entry.add_to_hass(hass)
+    _register_entity(hass, "light.bedroom")
+    # light.kitchen not registered → missing
+
+    with patch(
+        "custom_components.entity_guard.issue_helpers.async_create_issue"
+    ) as mock_create:
+        await async_check_missing_target_entities(hass, entry.entry_id)
+
+    mock_create.assert_called_once()
+    placeholders = mock_create.call_args.kwargs["translation_placeholders"]
+    assert "light.kitchen" in placeholders["missing_entities"]
+    assert "light.bedroom" not in placeholders["missing_entities"]
+
+
+async def test_target_parse_error_returns_early(hass: HomeAssistant) -> None:
+    entry = _rule_entry()
+    entry.add_to_hass(hass)
+
+    with (
+        patch(
+            "custom_components.entity_guard.issue_helpers.parse_rule_config",
+            side_effect=ValueError("bad config"),
+        ),
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_create_issue"
+        ) as mock_create,
+    ):
+        await async_check_missing_target_entities(hass, entry.entry_id)
+
+    mock_create.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Feature D: listener handles REMOVE and RENAME (old_entity_id), for targets
+# AND flags. The flag listener previously missed rename (new id not in set).
+# ---------------------------------------------------------------------------
+
+
+@asynccontextmanager
+async def _setup_wired_both(
+    hass: HomeAssistant, flags, targets, mock_flag, mock_target
+):
+    """Set up a rule with BOTH entity checks mocked, so listener assertions can
+    distinguish flag vs target firing."""
+    from custom_components.entity_guard import async_setup_entry
+
+    entry = _rule_entry(flags=flags, target_entities=targets)
+    entry.add_to_hass(hass)
+
+    with (
+        patch.object(
+            hass.config_entries, "async_forward_entry_setups", new_callable=AsyncMock
+        ),
+        patch(
+            "custom_components.entity_guard._async_install_card", new_callable=AsyncMock
+        ),
+        patch(
+            "custom_components.entity_guard.RuleEngine.async_setup",
+            new_callable=AsyncMock,
+        ),
+        patch(
+            "custom_components.entity_guard._async_ensure_hub", new_callable=AsyncMock
+        ),
+        patch(
+            "custom_components.entity_guard.async_check_missing_flag_entities",
+            mock_flag,
+        ),
+        patch(
+            "custom_components.entity_guard.async_check_missing_target_entities",
+            mock_target,
+        ),
+    ):
+        await async_setup_entry(hass, entry)
+        mock_flag.reset_mock()
+        mock_target.reset_mock()
+        yield entry
+
+
+async def test_target_remove_triggers_check(hass: HomeAssistant) -> None:
+    """Removing a TARGET entity fires the target check."""
+    _register_entity(hass, "light.bedroom")
+    mock_flag, mock_target = AsyncMock(), AsyncMock()
+    async with _setup_wired_both(
+        hass, [], ["light.bedroom"], mock_flag, mock_target
+    ) as entry:
+        er.async_get(hass).async_remove("light.bedroom")
+        await hass.async_block_till_done()
+    mock_target.assert_awaited_with(hass, entry.entry_id)
+
+
+async def test_target_rename_triggers_check(hass: HomeAssistant) -> None:
+    """Renaming a TARGET (action=update, old_entity_id in set) fires the check —
+    the rename path the flag listener previously missed."""
+    _register_entity(hass, "light.bedroom")
+    mock_flag, mock_target = AsyncMock(), AsyncMock()
+    async with _setup_wired_both(
+        hass, [], ["light.bedroom"], mock_flag, mock_target
+    ) as entry:
+        er.async_get(hass).async_update_entity(
+            "light.bedroom", new_entity_id="light.bedroom_renamed"
+        )
+        await hass.async_block_till_done()
+    mock_target.assert_awaited_with(hass, entry.entry_id)
+
+
+async def test_flag_rename_triggers_check(hass: HomeAssistant) -> None:
+    """Renaming a FLAG entity now fires the check too (was the latent bug: the
+    new id isn't in the watched set, so only old_entity_id matching catches it)."""
+    _register_entity(hass, "input_boolean.night")
+    _register_entity(hass, "light.bedroom")
+    mock_flag, mock_target = AsyncMock(), AsyncMock()
+    async with _setup_wired_both(
+        hass,
+        [{"entity": "input_boolean.night", "match_state": "on"}],
+        ["light.bedroom"],
+        mock_flag,
+        mock_target,
+    ) as entry:
+        er.async_get(hass).async_update_entity(
+            "input_boolean.night", new_entity_id="input_boolean.evening"
+        )
+        await hass.async_block_till_done()
+    mock_flag.assert_awaited_with(hass, entry.entry_id)
+
+
+async def test_noop_update_does_not_trigger_check(hass: HomeAssistant) -> None:
+    """An update that is NOT a rename (no old_entity_id — e.g. icon change) must
+    NOT re-run the checks, so unrelated registry churn is ignored."""
+    _register_entity(hass, "light.bedroom")
+    mock_flag, mock_target = AsyncMock(), AsyncMock()
+    async with _setup_wired_both(hass, [], ["light.bedroom"], mock_flag, mock_target):
+        er.async_get(hass).async_update_entity("light.bedroom", icon="mdi:lightbulb")
+        await hass.async_block_till_done()
+    mock_target.assert_not_called()
+    mock_flag.assert_not_called()
