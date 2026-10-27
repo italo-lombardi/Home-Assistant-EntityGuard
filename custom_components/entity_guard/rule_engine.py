@@ -1592,6 +1592,16 @@ class RuleEngine:
             remaining = max(remaining, delta)
         return remaining
 
+    def cooldown_ends(self) -> dict[str, datetime]:
+        """Return entity_id → absolute cooldown-end, future ends only.
+
+        Mirrors cooldown_remaining_seconds' past-skipping: an end already in the
+        past contributes 0 to the scalar, so it is omitted here too — the card
+        derives its live countdown from these and must not see a stale past end.
+        """
+        now = dt_util.now()
+        return {eid: end for eid, end in self._state.cooldowns.items() if end > now}
+
     def _set_status(self, status: str) -> None:
         """Update current status and broadcast if changed."""
         if status == self._current_status:

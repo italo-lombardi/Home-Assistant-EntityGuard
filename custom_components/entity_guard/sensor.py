@@ -117,9 +117,11 @@ class EntityGuardStatusSensor(EntityGuardSensor):
 
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options: ClassVar[list[str]] = list(STATUS_VALUES)
-    # target_outcomes + pending_enforcement_due change on every enforce; keep them
-    # out of the recorder to avoid bloating state history.
-    _unrecorded_attributes = frozenset({"target_outcomes", "pending_enforcement_due"})
+    # target_outcomes + pending_enforcement_due + cooldown_ends change on every
+    # enforce; keep them out of the recorder to avoid bloating state history.
+    _unrecorded_attributes = frozenset(
+        {"target_outcomes", "pending_enforcement_due", "cooldown_ends"}
+    )
 
     def __init__(self, entry: ConfigEntry, engine: RuleEngine) -> None:
         """Initialize the status sensor."""
@@ -171,6 +173,10 @@ class EntityGuardStatusSensor(EntityGuardSensor):
             "pending_enforcement_due": {
                 eid: due.isoformat()
                 for eid, due in self._engine.pending_enforcement_due().items()
+            },
+            "cooldown_ends": {
+                eid: end.isoformat()
+                for eid, end in self._engine.cooldown_ends().items()
             },
             "last_triggered_by": self._engine.state.last_triggered_user_id,
             "last_triggered_entity": self._engine.state.last_triggered_entity,

@@ -60,6 +60,7 @@ def _make_engine(status=STATUS_ARMED, count_today=2, count_total=10):
     engine.state.suppression_reason = None
     engine.state.counter_total_since = None
     engine.cooldown_remaining_seconds.return_value = 0.0
+    engine.cooldown_ends.return_value = {}
     return engine
 
 
@@ -466,6 +467,7 @@ def test_status_sensor_target_outcomes_attr_serialized():
     # Volatile-per-enforce attrs stay out of state history.
     assert "target_outcomes" in EntityGuardStatusSensor._unrecorded_attributes
     assert "pending_enforcement_due" in EntityGuardStatusSensor._unrecorded_attributes
+    assert "cooldown_ends" in EntityGuardStatusSensor._unrecorded_attributes
 
 
 def test_status_sensor_target_outcomes_empty_by_default():
@@ -475,3 +477,25 @@ def test_status_sensor_target_outcomes_empty_by_default():
     engine.state.target_outcomes = {}
     sensor = EntityGuardStatusSensor(entry, engine)
     assert sensor.extra_state_attributes["target_outcomes"] == {}
+
+
+def test_status_sensor_cooldown_ends_serialized_iso():
+    """cooldown_ends is exposed as {eid: isoformat} (mirrors pending_enforcement_due)."""
+    from homeassistant.util import dt as dt_util
+
+    entry = _make_rule_entry()
+    engine = _make_engine()
+    end = dt_util.now() + timedelta(seconds=42)
+    engine.cooldown_ends.return_value = {"light.bedroom": end}
+    sensor = EntityGuardStatusSensor(entry, engine)
+    attrs = sensor.extra_state_attributes
+    assert attrs["cooldown_ends"] == {"light.bedroom": end.isoformat()}
+
+
+def test_status_sensor_cooldown_ends_empty_by_default():
+    """No active cooldowns → empty dict, not an error."""
+    entry = _make_rule_entry()
+    engine = _make_engine()
+    engine.cooldown_ends.return_value = {}
+    sensor = EntityGuardStatusSensor(entry, engine)
+    assert sensor.extra_state_attributes["cooldown_ends"] == {}
