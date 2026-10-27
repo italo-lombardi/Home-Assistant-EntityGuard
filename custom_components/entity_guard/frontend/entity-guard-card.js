@@ -135,6 +135,12 @@ const cardStyles = css`
     background: var(--eg-divider);
     margin: 0 16px;
   }
+  .reason {
+    font-size: 12px;
+    color: var(--eg-text-secondary);
+    padding: 8px 16px 0;
+    word-break: break-word;
+  }
   .row {
     display: flex;
     align-items: center;
@@ -491,6 +497,8 @@ class EntityGuardCard extends LitElement {
       armed: null,
       active: null,
       inCooldown: null,
+      cooldownRemaining: null,
+      suppressedUntil: null,
       reset: null,
       testEnforce: null,
       clearHistory: null,
@@ -532,6 +540,10 @@ class EntityGuardCard extends LitElement {
         out.active = id;
       } else if (id.startsWith("binary_sensor.") && tk === "in_cooldown") {
         out.inCooldown = id;
+      } else if (id.startsWith("sensor.") && tk === "cooldown_remaining") {
+        out.cooldownRemaining = id;
+      } else if (id.startsWith("sensor.") && tk === "suppressed_until") {
+        out.suppressedUntil = id;
       } else if (id.startsWith("button.") && tk === "reset") {
         out.reset = id;
       } else if (id.startsWith("button.") && tk === "test_enforce") {
@@ -700,6 +712,7 @@ class EntityGuardCard extends LitElement {
           <span class="badge" style="background-color: ${color}">${label}</span>
         </div>
         <div class="divider"></div>
+        ${this._renderReason(refs, status)}
         ${status === "error" && lastError
           ? html`<div class="error-banner">
               <ha-icon icon="mdi:alert-circle"></ha-icon>
@@ -721,7 +734,9 @@ class EntityGuardCard extends LitElement {
         ${this._config.show_entities !== false
           ? this._renderBound(refs)
           : nothing}
-        ${this._config.show_conditions ? this._renderConditions(refs) : nothing}
+        ${this._config.show_conditions || status === "conditional"
+          ? this._renderConditions(refs)
+          : nothing}
         ${this._config.show_actions ? this._renderActions(refs) : nothing}
       </ha-card>
     `;
@@ -1162,6 +1177,49 @@ class EntityGuardCard extends LitElement {
     if (!name) return name;
     const s = name.replace(/_/g, " ");
     return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  // One-line "why idle" reason under the badge. Returns a lit fragment for the
+  // four statuses that have an explainable cause, else `nothing`. error is
+  // intentionally excluded — it has its own .error-banner in render(). Labels
+  // are hardcoded English, matching every other non-enum card chrome string;
+  // the only localized part is the flag's required value (via
+  // _formatHypotheticalState, HA's existing machinery).
+  _renderReason(refs, status) {
+    const statusEntity = refs.status ? this.hass.states[refs.status] : null;
+    const a = statusEntity?.attributes ?? {};
+    let text = null;
+    if (status === "conditional") {
+      const flags = Array.isArray(a.flags) ? a.flags : [];
+      const unmet = flags.find((f) => f && typeof f === "object" && !f.matches);
+      if (unmet) {
+        const st = this.hass.states[unmet.entity];
+        const name = st?.attributes?.friendly_name || unmet.entity;
+        const required = this._formatHypotheticalState(
+          unmet.entity,
+          unmet.required ?? null,
+        );
+        text = `Waiting on: ${name} = ${required}`;
+      }
+    } else if (status === "cooldown") {
+      const secs = parseInt(this._stateValue(refs.cooldownRemaining, "0"), 10);
+      if (secs > 0) text = `Cooldown ${this._formatSeconds(secs)}`;
+    } else if (status === "suppressed") {
+      const until = this._stateValue(refs.suppressedUntil, null);
+      const d = until ? new Date(until) : null;
+      const when =
+        d && !isNaN(d.getTime())
+          ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          : null;
+      const reason = a.suppression_reason;
+      if (when && reason) text = `Suppressed until ${when} — ${reason}`;
+      else if (when) text = `Suppressed until ${when}`;
+      else if (reason) text = `Suppressed — ${reason}`;
+    } else if (status === "master_disabled") {
+      text = "Master switch off";
+    }
+    if (!text) return nothing;
+    return html`<div class="reason">${text}</div>`;
   }
 
   _renderConditions(refs) {

@@ -248,3 +248,182 @@ test("parity: _attributeDisplayName matches ATTRIBUTE_DISPLAY_NAMES in const.py"
     );
   }
 });
+
+// --- Feature B: status reason line (_renderReason) ---
+//
+// Drives _renderReason directly with a synthetic ctx (the _renderConditions
+// pattern): hass.states carries the status sensor + any sibling sensors the
+// branch reads, and we assert on the rendered fragment's __html. A `nothing`
+// return is the harness's `nothing ?? ""` fallback → the empty string.
+
+// Minimal ctx carrying only the helpers _renderReason reaches.
+function reasonCtx(states) {
+  return {
+    _formatHypotheticalState: Card.prototype._formatHypotheticalState,
+    _applyStateFormat: Card.prototype._applyStateFormat,
+    _formatSeconds: Card.prototype._formatSeconds,
+    _stateValue: Card.prototype._stateValue,
+    hass: { states },
+  };
+}
+
+test("_renderReason conditional: shows the first unmet flag", () => {
+  const ctx = reasonCtx({
+    "person.alice": { state: "home", attributes: { friendly_name: "Alice" } },
+    "sensor.s": {
+      attributes: {
+        flags: [
+          // first flag matches (skipped), second is the unmet one shown
+          { entity: "x", required: "on", current: "on", matches: true },
+          {
+            entity: "person.alice",
+            required: "not_home",
+            current: "home",
+            matches: false,
+          },
+        ],
+      },
+    },
+  });
+  const out = Card.prototype._renderReason.call(ctx, { status: "sensor.s" }, "conditional");
+  assert.match(out.__html, /Waiting on: Alice = not_home/);
+});
+
+test("_renderReason conditional: no unmet flag → nothing", () => {
+  const ctx = reasonCtx({
+    "sensor.s": {
+      attributes: { flags: [{ entity: "x", required: "on", current: "on", matches: true }] },
+    },
+  });
+  const out = Card.prototype._renderReason.call(ctx, { status: "sensor.s" }, "conditional");
+  assert.equal(out, "");
+});
+
+test("_renderReason conditional: empty/absent flags → nothing", () => {
+  const ctx = reasonCtx({ "sensor.s": { attributes: {} } });
+  const out = Card.prototype._renderReason.call(ctx, { status: "sensor.s" }, "conditional");
+  assert.equal(out, "");
+});
+
+test("_renderReason cooldown: shows formatted remaining seconds", () => {
+  const ctx = reasonCtx({
+    "sensor.s": { attributes: {} },
+    "sensor.cd": { state: "90" },
+  });
+  const out = Card.prototype._renderReason.call(
+    ctx,
+    { status: "sensor.s", cooldownRemaining: "sensor.cd" },
+    "cooldown",
+  );
+  assert.match(out.__html, /Cooldown 1 min 30 s/);
+});
+
+test("_renderReason cooldown: zero remaining → nothing", () => {
+  const ctx = reasonCtx({ "sensor.s": { attributes: {} }, "sensor.cd": { state: "0" } });
+  const out = Card.prototype._renderReason.call(
+    ctx,
+    { status: "sensor.s", cooldownRemaining: "sensor.cd" },
+    "cooldown",
+  );
+  assert.equal(out, "");
+});
+
+test("_renderReason suppressed: shows local time + reason", () => {
+  const iso = "2026-10-27T15:30:00+00:00";
+  const when = new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const ctx = reasonCtx({
+    "sensor.s": { attributes: { suppression_reason: "manual 1h" } },
+    "sensor.su": { state: iso },
+  });
+  const out = Card.prototype._renderReason.call(
+    ctx,
+    { status: "sensor.s", suppressedUntil: "sensor.su" },
+    "suppressed",
+  );
+  assert.match(out.__html, new RegExp(`Suppressed until ${when} — manual 1h`));
+});
+
+test("_renderReason suppressed: time only when no reason", () => {
+  const iso = "2026-10-27T15:30:00+00:00";
+  const when = new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const ctx = reasonCtx({ "sensor.s": { attributes: {} }, "sensor.su": { state: iso } });
+  const out = Card.prototype._renderReason.call(
+    ctx,
+    { status: "sensor.s", suppressedUntil: "sensor.su" },
+    "suppressed",
+  );
+  assert.match(out.__html, new RegExp(`^<div class="reason">Suppressed until ${when}</div>$`));
+});
+
+test("_renderReason suppressed: reason only when time unavailable", () => {
+  const ctx = reasonCtx({
+    "sensor.s": { attributes: { suppression_reason: "panic" } },
+    // suppressedUntil unavailable → _stateValue returns the null fallback
+    "sensor.su": { state: "unavailable" },
+  });
+  const out = Card.prototype._renderReason.call(
+    ctx,
+    { status: "sensor.s", suppressedUntil: "sensor.su" },
+    "suppressed",
+  );
+  assert.match(out.__html, /^<div class="reason">Suppressed — panic<\/div>$/);
+});
+
+test("_renderReason suppressed: neither time nor reason → nothing", () => {
+  const ctx = reasonCtx({ "sensor.s": { attributes: {} }, "sensor.su": { state: "unknown" } });
+  const out = Card.prototype._renderReason.call(
+    ctx,
+    { status: "sensor.s", suppressedUntil: "sensor.su" },
+    "suppressed",
+  );
+  assert.equal(out, "");
+});
+
+test("_renderReason master_disabled: static line", () => {
+  const ctx = reasonCtx({ "sensor.s": { attributes: {} } });
+  const out = Card.prototype._renderReason.call(ctx, { status: "sensor.s" }, "master_disabled");
+  assert.match(out.__html, /Master switch off/);
+});
+
+test("_renderReason: non-reason statuses return nothing", () => {
+  const ctx = reasonCtx({ "sensor.s": { attributes: {} } });
+  for (const s of ["armed", "enforcing", "pending", "error", "disabled", "starting"]) {
+    const out = Card.prototype._renderReason.call(ctx, { status: "sensor.s" }, s);
+    assert.equal(out, "", `status ${s} should produce no reason line`);
+  }
+});
+
+test("_renderReason: no status entity → nothing", () => {
+  const ctx = reasonCtx({});
+  const out = Card.prototype._renderReason.call(ctx, { status: null }, "conditional");
+  assert.equal(out, "");
+});
+
+// --- Feature B: conditional auto-show gate ---
+// The render() gate is `show_conditions || status === "conditional"`. We can't
+// drive full render() (needs the whole hass shape), so assert the boolean gate
+// logic directly — the exact expression used at the call site.
+test("conditions auto-show: conditional forces on even when show_conditions is false", () => {
+  const gate = (cfg, status) => cfg.show_conditions || status === "conditional";
+  assert.equal(gate({ show_conditions: false }, "conditional"), true);
+  assert.equal(gate({}, "conditional"), true);
+  // other states stay governed by the flag → default off unaffected
+  assert.equal(gate({ show_conditions: false }, "armed"), false);
+  assert.equal(gate({}, "cooldown"), false);
+  assert.equal(gate({ show_conditions: true }, "armed"), true);
+});
+
+// auto-show still yields nothing when flags empty: _renderConditions returns
+// `nothing` on an empty/absent flags array, so even a forced call renders blank.
+test("conditions auto-show: empty flags still render nothing", () => {
+  const ctx = {
+    _applyStateFormat: Card.prototype._applyStateFormat,
+    _formatStateDisplay: Card.prototype._formatStateDisplay,
+    _formatHypotheticalState: Card.prototype._formatHypotheticalState,
+    _handleEntityClick() {},
+    hass: { states: { "sensor.s": { attributes: { flags: [] } } } },
+  };
+  const out = Card.prototype._renderConditions.call(ctx, { status: "sensor.s" });
+  assert.equal(out, "");
+});
+
