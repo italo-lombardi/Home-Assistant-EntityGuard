@@ -194,6 +194,39 @@ def test_states_for_entities_dedup_across_domains():
     assert len(res) == len(set(res))
 
 
+# ---------------------------------------------------------------------------
+# Feature C RESTRICT: the picker only advertises actionable target states.
+# ---------------------------------------------------------------------------
+
+
+def test_states_for_entities_prunes_transitional_states():
+    """Transitional/non-actionable states are no longer offered (but custom_value
+    on the selector still lets an expert type them)."""
+    assert _states_for_entities(["lock.front"]) == ["locked", "unlocked"]
+    assert _states_for_entities(["cover.garage"]) == ["open", "closed", "stopped"]
+    assert _states_for_entities(["valve.main"]) == ["open", "closed"]
+    # vacuum/media_player/lawn_mower drop read-only/no-setter states.
+    assert set(_states_for_entities(["vacuum.robo"])) == {
+        "cleaning",
+        "docked",
+        "returning",
+        "paused",
+    }
+    assert "standby" not in _states_for_entities(["media_player.tv"])
+    assert set(_states_for_entities(["lawn_mower.yard"])) == {"mowing", "docked"}
+
+
+def test_states_for_entities_read_only_domains_fall_back():
+    """Read-only / deferred domains carry no options → each falls back to on/off
+    (FALLBACK_STATE_OPTIONS), never advertising their undeliverable states."""
+    for domain in ("binary_sensor", "person", "device_tracker", "timer"):
+        assert _states_for_entities([f"{domain}.x"]) == list(FALLBACK_STATE_OPTIONS)
+    # alarm_control_panel is deferred (v2) — not in the map, so same fallback.
+    assert _states_for_entities(["alarm_control_panel.home"]) == list(
+        FALLBACK_STATE_OPTIONS
+    )
+
+
 def test_attributes_for_entities_known_domain():
     res = _attributes_for_entities(["light.bedroom"])
     assert "brightness" in res
