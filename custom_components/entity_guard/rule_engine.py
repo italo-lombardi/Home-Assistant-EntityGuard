@@ -38,6 +38,7 @@ from .const import (
     DOMAIN,
     DOMAIN_MODE_SERVICE_MAP,
     DOMAIN_SERVICE_MAP,
+    ENFORCE_TIMEOUT_SECONDS,
     ERROR_RECOVERY_SUCCESS_THRESHOLD,
     ERROR_THRESHOLD,
     EVENT_ENFORCED,
@@ -950,23 +951,15 @@ class RuleEngine:
             self._state.last_triggered_user_id = user_id
             self._state.last_triggered_entity = entity_id
             ctx = Context(user_id=user_id, parent_id=trigger_context_id)
-            try:
-                await self._hass.services.async_call(
-                    domain, service, data, blocking=True, context=ctx
-                )
-            except Exception as err:
-                # Spec: target unavailable / service errors → skip silently + debug log.
-                self._fire_skipped(
-                    entity_id, REASON_SERVICE_CALL_FAILED, error=str(err)
-                )
-                _LOGGER.warning(
-                    "Enforcement failed for %s on rule '%s': %s",
-                    entity_id,
-                    self._config.name,
-                    err,
-                )
+
+            def _record_failure(err_str: str) -> None:
+                # Shared failure handling for both a raised service error and a
+                # timeout — identical except for the message. Routes through the
+                # service_call_failed path so a timeout composes with the per-target
+                # "failed" outcome (target_outcomes) exactly like any other failure.
+                self._fire_skipped(entity_id, REASON_SERVICE_CALL_FAILED, error=err_str)
                 self._state.consecutive_errors += 1
-                self._state.last_error = str(err)
+                self._state.last_error = err_str
                 # Reset recovery counter on any failure (EG-6).
                 self._state.consecutive_success_count = 0
                 self._persist()
@@ -974,6 +967,42 @@ class RuleEngine:
                     self._set_status(STATUS_ERROR)
                 else:
                     self._set_status(self._derive_armed_or_cooldown(now))
+
+            try:
+                # Bound the call: a hung integration would otherwise block here
+                # forever while holding reentrance_lock, freezing the rule without
+                # ever reaching the error path. On timeout, wait_for cancels the
+                # wrapped async_call (delivering CancelledError into it) and releases
+                # the lock — our coroutine frame is cleaned up, though a pathological
+                # integration ignoring cancellation may still finish its side effect
+                # in the background (not a leak this wrapper introduces).
+                await asyncio.wait_for(
+                    self._hass.services.async_call(
+                        domain, service, data, blocking=True, context=ctx
+                    ),
+                    ENFORCE_TIMEOUT_SECONDS,
+                )
+            except TimeoutError:
+                # 3.11+: TimeoutError is an alias of asyncio.TimeoutError. str() of it
+                # is empty, so synthesize a non-empty message for the card/last_error.
+                msg = f"service call timed out after {ENFORCE_TIMEOUT_SECONDS}s"
+                _LOGGER.warning(
+                    "Enforcement timed out for %s on rule '%s' after %ds",
+                    entity_id,
+                    self._config.name,
+                    ENFORCE_TIMEOUT_SECONDS,
+                )
+                _record_failure(msg)
+                return
+            except Exception as err:
+                # Spec: target unavailable / service errors → skip silently + debug log.
+                _LOGGER.warning(
+                    "Enforcement failed for %s on rule '%s': %s",
+                    entity_id,
+                    self._config.name,
+                    err,
+                )
+                _record_failure(str(err))
                 return
 
             self._state.enforcement_count_today += 1
