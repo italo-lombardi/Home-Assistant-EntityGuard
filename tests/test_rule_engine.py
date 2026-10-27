@@ -987,6 +987,89 @@ async def test_flag_change_while_armed_broadcasts(hass: HomeAssistant):
     assert broadcasts, "flag change must broadcast even when status stays ARMED"
 
 
+async def test_flag_change_while_disabled_broadcasts(hass: HomeAssistant):
+    """Flag entity changing while the rule is DISABLED must still broadcast.
+
+    The rule won't enforce, but the card reads live flag `current` values from
+    the status sensor's extra_state_attributes, which only refresh on a state
+    write. _set_status dedupes when status stays DISABLED, so without the
+    forced broadcast the card would show frozen flag values. Mirrors the
+    CONDITIONAL/ARMED stale-attr guards.
+    """
+    config = _make_config(flags=[Flag(entity="input_boolean.night", match_state="on")])
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    engine.state.enabled = False
+    hass.states.async_set("input_boolean.night", "off")
+    hass.states.async_set("light.bedroom", "on")
+
+    # Prime status to DISABLED via a flag event.
+    await engine.async_evaluate(
+        "input_boolean.night", hass.states.get("input_boolean.night")
+    )
+    assert engine.current_status() == STATUS_DISABLED
+
+    broadcasts: list[None] = []
+    unsub = async_dispatcher_connect(
+        hass, signal_for_rule(config.unique_id), lambda *_: broadcasts.append(None)
+    )
+    try:
+        # Watched flag flips while disabled — status stays DISABLED (dedupe),
+        # but the broadcast must still fire so the card re-reads flag values.
+        hass.states.async_set("input_boolean.night", "on")
+        await engine.async_evaluate(
+            "input_boolean.night", hass.states.get("input_boolean.night")
+        )
+        await hass.async_block_till_done()
+    finally:
+        unsub()
+
+    assert engine.current_status() == STATUS_DISABLED
+    assert broadcasts, "flag change must broadcast even when rule is disabled"
+    # Broadcast triggers the status sensor's async_write_ha_state, which pushes
+    # the live flag value (read fresh from hass.states in extra_state_attributes)
+    # to the card. The live value is now "on".
+    assert hass.states.get("input_boolean.night").state == "on"
+
+
+async def test_flag_change_while_suppressed_broadcasts(hass: HomeAssistant):
+    """Flag entity changing while the rule is SUPPRESSED must still broadcast.
+
+    A suppressed rule's status stays SUPPRESSED when a watched flag flips, so
+    _set_status dedupes the broadcast — the card's flags[].current would freeze.
+    Same stale-attr guard as the CONDITIONAL/ARMED paths.
+    """
+    config = _make_config(flags=[Flag(entity="input_boolean.night", match_state="on")])
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("input_boolean.night", "on")
+    hass.states.async_set("light.bedroom", "on")
+
+    # Prime status to SUPPRESSED. Set the field directly (no async_suppress) to
+    # avoid arming an expiry timer that would linger past the test.
+    engine._state.suppressed_until = dt_util.now() + timedelta(minutes=10)
+    engine._set_status(STATUS_SUPPRESSED)
+    assert engine.current_status() == STATUS_SUPPRESSED
+
+    broadcasts: list[None] = []
+    unsub = async_dispatcher_connect(
+        hass, signal_for_rule(config.unique_id), lambda *_: broadcasts.append(None)
+    )
+    try:
+        # Watched flag flips while suppressed — status stays SUPPRESSED (dedupe),
+        # broadcast must still fire so the card re-reads flag values.
+        hass.states.async_set("input_boolean.night", "off")
+        await engine.async_evaluate(
+            "input_boolean.night", hass.states.get("input_boolean.night")
+        )
+        await hass.async_block_till_done()
+    finally:
+        unsub()
+
+    assert engine.current_status() == STATUS_SUPPRESSED
+    assert broadcasts, "flag change must broadcast even when rule is suppressed"
+
+
 # ---------------------------------------------------------------------------
 # async_evaluate: enforcement (mocked service call)
 # ---------------------------------------------------------------------------

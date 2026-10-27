@@ -9,6 +9,7 @@ value is read live from a source entity instead of from config:
 
 from __future__ import annotations
 
+from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -29,6 +30,7 @@ from custom_components.entity_guard.const import (
     SOURCE_VALUE_FROM_STATE,
     STATUS_CONDITIONAL,
     STATUS_PENDING,
+    STATUS_SUPPRESSED,
 )
 from custom_components.entity_guard.models import Flag, RuleConfig
 from custom_components.entity_guard.rule_engine import (
@@ -321,6 +323,78 @@ async def test_source_change_broadcasts_when_status_unchanged(hass: HomeAssistan
     finally:
         unsub()
     assert broadcasts, "source change must broadcast so follow_desired_on refreshes"
+
+
+async def test_source_change_while_suppressed_broadcasts(hass: HomeAssistant):
+    """A dynamic-mode source change while the rule is SUPPRESSED must still
+    broadcast. Status stays SUPPRESSED so _set_status dedupes, but the source
+    moved follow_desired_on (card-visible) — the is_source guard forces a refresh.
+    dynamic_attribute rides the same guard branch (attribute_desired_value), so a
+    separate attribute-mode test would exercise an identical path.
+    """
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    _collect_turn_on_off(hass)
+    hass.states.async_set("light.hallway", "on")
+    hass.states.async_set("binary_sensor.motion", "on")
+    # Prime SUPPRESSED directly (no async_suppress — avoids a lingering timer).
+    engine._state.suppressed_until = dt_util.now() + timedelta(minutes=10)
+    engine._set_status(STATUS_SUPPRESSED)
+    assert engine.current_status() == STATUS_SUPPRESSED
+
+    broadcasts: list[None] = []
+    unsub = async_dispatcher_connect(
+        hass,
+        signal_for_rule(engine.config.unique_id),
+        lambda *_a: broadcasts.append(None),
+    )
+    try:
+        hass.states.async_set("binary_sensor.motion", "off")
+        await engine.async_evaluate(
+            "binary_sensor.motion", hass.states.get("binary_sensor.motion")
+        )
+        await hass.async_block_till_done()
+    finally:
+        unsub()
+    assert engine.current_status() == STATUS_SUPPRESSED
+    assert broadcasts, "source change must broadcast even when rule is suppressed"
+
+
+async def test_source_change_while_conditional_broadcasts(hass: HomeAssistant):
+    """A dynamic-mode source change while the rule is CONDITIONAL (flags unmet)
+    must still broadcast. Status stays CONDITIONAL so _set_status dedupes, but the
+    source moved follow_desired_on — the is_source guard forces a refresh.
+    """
+    config = _make_config(flags=[Flag(entity="input_boolean.guard", match_state="on")])
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    _collect_turn_on_off(hass)
+    hass.states.async_set("input_boolean.guard", "off")  # flag unmet → CONDITIONAL
+    hass.states.async_set("light.hallway", "off")
+    hass.states.async_set("binary_sensor.motion", "on")
+
+    # Prime status to CONDITIONAL via a source event.
+    await engine.async_evaluate(
+        "binary_sensor.motion", hass.states.get("binary_sensor.motion")
+    )
+    assert engine.current_status() == STATUS_CONDITIONAL
+
+    broadcasts: list[None] = []
+    unsub = async_dispatcher_connect(
+        hass,
+        signal_for_rule(engine.config.unique_id),
+        lambda *_a: broadcasts.append(None),
+    )
+    try:
+        hass.states.async_set("binary_sensor.motion", "off")
+        await engine.async_evaluate(
+            "binary_sensor.motion", hass.states.get("binary_sensor.motion")
+        )
+        await hass.async_block_till_done()
+    finally:
+        unsub()
+    assert engine.current_status() == STATUS_CONDITIONAL
+    assert broadcasts, "source change must broadcast even when status stays CONDITIONAL"
 
 
 # ---------------------------------------------------------------------------
