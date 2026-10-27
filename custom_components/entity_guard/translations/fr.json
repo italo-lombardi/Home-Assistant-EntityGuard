@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "Aucune règle Entity Guard ne correspond à « {rule_id} »."
+    },
+    "rule_name_ambiguous": {
+      "message": "Plusieurs règles Entity Guard portent le nom {rule_id} ; utilisez plutôt l'entry_id de la règle."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Entité drapeau manquante dans la règle \"{rule_name}\"",
       "description": "Les entités drapeau suivantes n'existent plus mais sont référencées dans la règle: {missing_entities}. La règle ne s'appliquera pas quand ces drapeaux ne peuvent pas être évalués. Mettez à jour ou supprimez la règle pour résoudre ce problème."
+    },
+    "migrated_follow_no_source": {
+      "title": "La règle migrée \"{rule}\" nécessite une entité source",
+      "description": "La règle \"{rule}\" a été migrée depuis un mode Suivi de pré-version vers l'État dynamique, mais elle n'a aucune entité source et ne s'appliquera pas. Supprimez-la puis recréez-la en choisissant une entité source."
     }
   }
 }

@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "Nije pronađeno nijedno Entity Guard pravilo koje odgovara {rule_id}."
+    },
+    "rule_name_ambiguous": {
+      "message": "Više pravila usluge Entity Guard ima naziv {rule_id}; umjesto toga upotrijebite entry_id pravila."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Entitet zastavice nedostaje u pravilu \"{rule_name}\"",
       "description": "Sljedeći entitet(i) zastavice više ne postoje, ali se referenciraju u pravilu: {missing_entities}. Pravilo se neće provoditi kada te zastavice nije moguće procijeniti. Ažurirajte ili uklonite pravilo da biste riješili ovaj problem."
+    },
+    "migrated_follow_no_source": {
+      "title": "Migriranom pravilu „{rule}” potreban je izvorni entitet",
+      "description": "Pravilo „{rule}” migrirano je iz načina praćenja iz predizdanja u Dinamičko stanje, ali nema izvorni entitet pa se neće provoditi. Izbrišite ga i stvorite ponovno te odaberite izvorni entitet."
     }
   }
 }

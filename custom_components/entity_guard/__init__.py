@@ -14,15 +14,21 @@ from homeassistant.const import EVENT_HOMEASSISTANT_STARTED, Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.issue_registry import async_delete_issue
+from homeassistant.helpers.issue_registry import (
+    IssueSeverity,
+    async_create_issue,
+    async_delete_issue,
+)
 
 from .const import (
     CONF_ATTRIBUTE,
     CONF_ENTRY_TYPE,
     CONF_MODE,
+    CONF_SOURCE_ENTITY,
     DOMAIN,
     ENTRY_TYPE_HUB,
     ENTRY_TYPE_RULE,
+    MODE_DYNAMIC_STATE,
 )
 from .issue_helpers import async_check_missing_flag_entities, missing_flags_issue_id
 from .models import parse_rule_config
@@ -74,6 +80,11 @@ _MODE_V1_TO_V2 = {
 _DROP_ATTRIBUTE_ON_MIGRATE = frozenset({"follow", "follow_entity"})
 
 
+def _migrated_no_source_issue_id(entry_id: str) -> str:
+    """Repair-issue id for a follow rule migrated to dynamic_state with no source."""
+    return f"migrated_follow_no_source_{entry_id}"
+
+
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Migrate a config entry to the current schema version.
 
@@ -108,6 +119,25 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         new_data.get(CONF_MODE),
         new_options.get(CONF_MODE),
     )
+    # A pre-release `follow` rule migrates to dynamic_state, which REQUIRES a
+    # source_entity. v1 follow rules never stored one under this key, so the
+    # migrated rule would be a silent no-op (never enforces, no error). Surface
+    # a repair issue so the user recreates it rather than wondering why it is
+    # dead. Only the follow→dynamic path can land here lacking a source.
+    migrated_mode = new_options.get(CONF_MODE) or new_data.get(CONF_MODE)
+    has_source = bool(
+        new_options.get(CONF_SOURCE_ENTITY) or new_data.get(CONF_SOURCE_ENTITY)
+    )
+    if migrated_mode == MODE_DYNAMIC_STATE and not has_source:
+        async_create_issue(
+            hass,
+            DOMAIN,
+            _migrated_no_source_issue_id(entry.entry_id),
+            is_fixable=False,
+            severity=IssueSeverity.WARNING,
+            translation_key="migrated_follow_no_source",
+            translation_placeholders={"rule": entry.title or entry.entry_id},
+        )
     return True
 
 
@@ -318,6 +348,11 @@ async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> Non
     if skip is not None and entry.entry_id in skip:
         skip.discard(entry.entry_id)
         return
+    # If the user fixed a migrated-without-source rule by adding a source entity,
+    # clear the repair issue raised at migration (it is never otherwise deleted
+    # until the rule is removed).
+    if entry.options.get(CONF_SOURCE_ENTITY) or entry.data.get(CONF_SOURCE_ENTITY):
+        async_delete_issue(hass, DOMAIN, _migrated_no_source_issue_id(entry.entry_id))
     await hass.config_entries.async_reload(entry.entry_id)
 
 
@@ -357,6 +392,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if entry.data.get(CONF_ENTRY_TYPE) != ENTRY_TYPE_HUB:
         _LOGGER.debug("Removed rule entry %s; clearing statistics", entry.entry_id)
         async_delete_issue(hass, DOMAIN, missing_flags_issue_id(entry.entry_id))
+        async_delete_issue(hass, DOMAIN, _migrated_no_source_issue_id(entry.entry_id))
         ent_reg = er.async_get(hass)
         statistic_ids = [
             entity.entity_id
@@ -425,8 +461,14 @@ async def _async_install_card(hass: HomeAssistant) -> None:
         await hass.http.async_register_static_paths(
             [StaticPathConfig(CARD_URL, str(source), True)]
         )
-    except Exception:
-        _LOGGER.debug("Static path %s already registered", CARD_URL)
+    except (RuntimeError, ValueError) as err:
+        # A duplicate registration (card already served, e.g. after reload) is
+        # expected and benign; anything else (bad path, http not ready) would
+        # silently 404 the card, so surface it rather than swallow at DEBUG.
+        if "already" in str(err).lower():
+            _LOGGER.debug("Static path %s already registered", CARD_URL)
+        else:
+            _LOGGER.warning("Failed to register card static path %s: %s", CARD_URL, err)
 
     await _async_register_lovelace_resource(hass, version)
     hass.data[DOMAIN][_CARD_INSTALLED_KEY] = True

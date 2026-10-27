@@ -410,7 +410,10 @@ class RuleEngine:
                     if target == entity_id:
                         continue
                     current = self._hass.states.get(target)
-                    self._schedule_eval_task(target, current, trigger_context_id)
+                    # Sibling sweep: pass context_id=None so a sibling target's
+                    # enforce/logbook event is not mis-attributed to the parent
+                    # context of a DIFFERENT entity's triggering event.
+                    self._schedule_eval_task(target, current, None)
 
         if not self._flags_match():
             prev_status = self._current_status
@@ -514,7 +517,7 @@ class RuleEngine:
             state_obj = self._hass.states.get(flag.entity)
             if state_obj is None:
                 return False
-            if state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN, None):
+            if state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
                 return False
             if state_obj.state != flag.match_state:
                 return False
@@ -895,7 +898,7 @@ class RuleEngine:
 
             current_state = self._hass.states.get(entity_id)
             if (
-                self._config.mode == MODE_FIXED_ATTRIBUTE
+                self._config.mode in (MODE_FIXED_ATTRIBUTE, MODE_DYNAMIC_ATTRIBUTE)
                 and self._config.attribute in COLOR_ATTRIBUTES
                 and current_state is not None
             ):
@@ -972,7 +975,10 @@ class RuleEngine:
             self._state.enforcement_count_today += 1
             self._state.enforcement_count_total += 1
             self._state.last_enforced = now
-            self._state.rate_limit_window.append(now)
+            # insort (not append): `now` was captured before the reentrance lock,
+            # so two enforces can reach here with out-of-order timestamps. The
+            # bisect prune above assumes an ascending window — keep it sorted.
+            bisect.insort(self._state.rate_limit_window, now)
             # Track consecutive successes for STATUS_ERROR auto-recovery (EG-6).
             # While still in ERROR, do NOT zero consecutive_errors / last_error — they
             # remain visible on the status sensor until the recovery threshold is met.

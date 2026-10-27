@@ -78,6 +78,10 @@ class EntityGuardStore:
             self._data = {"version": STORE_VERSION, "rules": {}}
             return
 
+        # A blob missing "version" defaults to 1. Safe while STORE_VERSION == 1
+        # (absent == current, migration skipped). When STORE_VERSION is bumped,
+        # revisit: a legacy versionless blob must NOT silently be treated as the
+        # new version — decide then whether absent means 1 or "unknown → reset".
         raw_version = raw.get("version", 1) if isinstance(raw, dict) else 1
         if raw_version < STORE_VERSION:
             try:

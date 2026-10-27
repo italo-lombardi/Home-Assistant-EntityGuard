@@ -104,7 +104,7 @@ class RuleConfig:
     # named attribute (source_attribute); CONF_ATTRIBUTE holds the TARGET attribute.
     source_entity: str | None = None
     follow_invert: bool = False
-    source_value_from: str = "state"
+    source_value_from: str = SOURCE_VALUE_FROM_STATE
     source_attribute: str | None = None
     # dynamic_state only: per-direction delay overrides. None = fall back to
     # delay_seconds; an explicit 0 means "immediate" for that direction (distinct

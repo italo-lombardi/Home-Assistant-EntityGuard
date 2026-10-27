@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "Nebylo nalezeno žádné pravidlo Entity Guard odpovídající {rule_id}."
+    },
+    "rule_name_ambiguous": {
+      "message": "Více pravidel Entity Guard má název {rule_id}; použijte místo toho entry_id pravidla."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Chybějící entita příznaku v pravidle „{rule_name}“",
       "description": "Následující entita/entity příznaku již neexistují, ale jsou odkazovány v pravidle: {missing_entities}. Pravidlo nebude vynuceno, když tyto příznaky nelze vyhodnotit. Pro vyřešení tohoto problému pravidlo aktualizujte nebo odeberte."
+    },
+    "migrated_follow_no_source": {
+      "title": "Migrované pravidlo „{rule}“ potřebuje zdrojovou entitu",
+      "description": "Pravidlo „{rule}“ bylo migrováno z předběžného režimu sledování (Follow mode) do dynamického stavu (Dynamic state), ale nemá žádnou zdrojovou entitu, takže nebude nic vynucovat. Smažte je a vytvořte znovu, tentokrát se zdrojovou entitou."
     }
   }
 }

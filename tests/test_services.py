@@ -89,6 +89,19 @@ def test_resolve_engine_not_found(hass: HomeAssistant):
         _resolve_engine(hass, "nonexistent")
 
 
+def test_resolve_engine_ambiguous_name_raises(hass: HomeAssistant):
+    """Rule names are not unique; a name matching >1 rule must raise rather than
+    silently returning the first dict-iteration match."""
+    a = _make_engine(unique_id="uid-a", name="Dupe")
+    b = _make_engine(unique_id="uid-b", name="Dupe")
+    hass.data[DOMAIN] = {"engines": {"e-a": a, "e-b": b}}
+    with pytest.raises(ServiceValidationError):
+        _resolve_engine(hass, "Dupe")
+    # A unique entry_id / unique_id still resolves even with the name clash.
+    assert _resolve_engine(hass, "e-a") is a
+    assert _resolve_engine(hass, "uid-b") is b
+
+
 # ---------------------------------------------------------------------------
 # Service registration / unload
 # ---------------------------------------------------------------------------

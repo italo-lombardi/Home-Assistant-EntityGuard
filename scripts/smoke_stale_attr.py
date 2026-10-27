@@ -94,7 +94,7 @@ def main() -> int:
 
     try:
         status_e, switch_e = resolve_rule_entities(token, name_slug)
-        sf.check("rule armed past startup grace", True, status_e)
+        sf.check("rule armed past startup grace", bool(status_e), status_e)
 
         # Baseline: source off, desired off.
         sf.drive_source(token, "off")

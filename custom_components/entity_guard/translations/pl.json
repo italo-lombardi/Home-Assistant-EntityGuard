@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "Nie znaleziono reguły Entity Guard pasującej do „{rule_id}”."
+    },
+    "rule_name_ambiguous": {
+      "message": "Istnieje wiele reguł Entity Guard o nazwie {rule_id}; użyj zamiast tego entry_id reguły."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Brakuje jednostki flagi w regule \"{rule_name}\"",
       "description": "Następujące jednostki flag już nie istnieją, ale są odwołania w regule: {missing_entities}. Reguła nie będzie egzekwowana, gdy te flagi nie mogą być oceniane. Zaktualizuj lub usuń regułę, aby rozwiązać ten problem."
+    },
+    "migrated_follow_no_source": {
+      "title": "Zmigrowana reguła \"{rule}\" wymaga encji źródłowej",
+      "description": "Reguła \"{rule}\" została zmigrowana z przedpremierowego trybu podążania do Dynamicznego stanu, ale nie ma encji źródłowej i nie będzie egzekwowana. Usuń ją i utwórz ponownie, wybierając encję źródłową."
     }
   }
 }

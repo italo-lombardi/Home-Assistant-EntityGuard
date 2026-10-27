@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "找不到符合 {rule_id} 的 Entity Guard 規則。"
+    },
+    "rule_name_ambiguous": {
+      "message": "有多個 Entity Guard 規則都名為 {rule_id}；請改用該規則的 entry_id。"
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "規則「{rule_name}」中的旗標實體遺失",
       "description": "下列旗標實體已不存在，但仍在規則中被參照：{missing_entities}。當這些旗標無法評估時，規則將不會強制執行。請更新或移除規則以解決此問題。"
+    },
+    "migrated_follow_no_source": {
+      "title": "已遷移的規則「{rule}」需要一個來源實體",
+      "description": "規則「{rule}」已從預發行版的跟隨模式遷移至動態狀態，但它沒有來源實體，將不會強制執行。請將其刪除並重新建立，並選擇一個來源實體。"
     }
   }
 }

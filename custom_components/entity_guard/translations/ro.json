@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "Nu a fost găsită nicio regulă Entity Guard care să corespundă cu {rule_id}."
+    },
+    "rule_name_ambiguous": {
+      "message": "Mai multe reguli Entity Guard poartă numele {rule_id}; folosiți în schimb entry_id-ul regulii."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Entitate de condiție lipsă în regula „{rule_name}”",
       "description": "Următoarea entitate/entitățile de condiție nu mai există, dar sunt referite în regulă: {missing_entities}. Regula nu va impune când aceste condiții nu pot fi evaluate. Actualizați sau eliminați regula pentru a rezolva această problemă."
+    },
+    "migrated_follow_no_source": {
+      "title": "Regula migrată „{rule}\" are nevoie de o entitate sursă",
+      "description": "Regula „{rule}\" a fost migrată dintr-un mod Urmărire pre-lansare în Stare dinamică, dar nu are o entitate sursă și nu va fi aplicată. Ștergeți-o și creați-o din nou, alegând o entitate sursă."
     }
   }
 }

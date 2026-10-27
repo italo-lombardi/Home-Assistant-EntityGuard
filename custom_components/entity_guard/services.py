@@ -64,15 +64,33 @@ def _iter_engines(hass: HomeAssistant) -> list[Any]:
 
 
 def _resolve_engine(hass: HomeAssistant, rule_id: str) -> Any:
-    """Resolve an engine by entry_id, unique_id, or rule name."""
+    """Resolve an engine by entry_id, unique_id, or rule name.
+
+    entry_id and unique_id are unique by construction. Rule NAMES are not
+    (config flow enforces uniqueness only on unique_id), so a name that matches
+    more than one rule is ambiguous — raise rather than silently picking the
+    first dict-iteration match.
+    """
     engines = _engines_map(hass)
     # Fast path: card passes HA config-entry ID (entry_id) directly.
     if rule_id in engines:
         return engines[rule_id]
+    # unique_id is also unique — return on first hit.
     for engine in engines.values():
-        config = engine.config
-        if config.unique_id == rule_id or config.name == rule_id:
+        if engine.config.unique_id == rule_id:
             return engine
+    # Name may be shared across rules; collect all and reject an ambiguous one.
+    name_matches = [e for e in engines.values() if e.config.name == rule_id]
+    if len(name_matches) == 1:
+        return name_matches[0]
+    if len(name_matches) > 1:
+        raise ServiceValidationError(
+            f"Multiple Entity Guard rules are named '{rule_id}'; "
+            "use the rule's entry_id instead",
+            translation_domain=DOMAIN,
+            translation_key="rule_name_ambiguous",
+            translation_placeholders={"rule_id": rule_id},
+        )
     raise ServiceValidationError(
         f"No Entity Guard rule found matching '{rule_id}'",
         translation_domain=DOMAIN,

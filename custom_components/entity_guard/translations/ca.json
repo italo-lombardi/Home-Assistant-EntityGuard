@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "No s'ha trobat cap regla d'Entity Guard que coincideixi amb {rule_id}."
+    },
+    "rule_name_ambiguous": {
+      "message": "Hi ha diverses regles d'Entity Guard anomenades {rule_id}; feu servir l'entry_id de la regla."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Falta l'entitat de la bandera a la regla «{rule_name}»",
       "description": "L'entitat o entitats de bandera següents ja no existeixen però es referencien a la regla: {missing_entities}. La regla no s'aplicarà quan aquestes banderes no es puguin avaluar. Actualitzeu o elimineu la regla per resoldre aquest problema."
+    },
+    "migrated_follow_no_source": {
+      "title": "La regla migrada «{rule}» necessita una entitat d'origen",
+      "description": "La regla «{rule}» s'ha migrat del mode Seguiment de preversió a Estat dinàmic, però no té cap entitat d'origen i no s'aplicarà. Elimineu-la i torneu-la a crear tot triant una entitat d'origen."
     }
   }
 }

@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "Nav atrasts neviens Entity Guard noteikums, kas atbilstu {rule_id}."
+    },
+    "rule_name_ambiguous": {
+      "message": "Vairākiem Entity Guard noteikumiem ir nosaukums {rule_id}; tā vietā izmantojiet noteikuma entry_id."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Trūkst karodziņa entītijas noteikumā “{rule_name}”",
       "description": "Šī(-s) karodziņa entītija(-s) vairs nepastāv, bet uz to(-ām) atsaucas noteikums: {missing_entities}. Noteikums netiks piemērots, kad šos karodziņus nevar novērtēt. Atjauniniet vai noņemiet noteikumu, lai atrisinātu šo problēmu."
+    },
+    "migrated_follow_no_source": {
+      "title": "Migrētajam noteikumam „{rule}\" nepieciešama avota entītija",
+      "description": "Noteikums „{rule}\" tika migrēts no pirmslaidiena sekošanas režīma uz dinamisko stāvokli, taču tam nav avota entītijas un tas netiks piemērots. Dzēsiet to un izveidojiet to no jauna, izvēloties avota entītiju."
     }
   }
 }

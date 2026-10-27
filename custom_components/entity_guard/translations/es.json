@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "No se encontró ninguna regla de Entity Guard que coincida con '{rule_id}'."
+    },
+    "rule_name_ambiguous": {
+      "message": "Hay varias reglas de Entity Guard con el nombre {rule_id}; usa el entry_id de la regla en su lugar."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Entidad de indicador faltante en la regla \"{rule_name}\"",
       "description": "Las siguientes entidades de indicador ya no existen pero se hace referencia a ellas en la regla: {missing_entities}. La regla no se aplicará cuando estos indicadores no se puedan evaluar. Actualiza o elimina la regla para resolver este problema."
+    },
+    "migrated_follow_no_source": {
+      "title": "La regla migrada \"{rule}\" necesita una entidad de origen",
+      "description": "La regla \"{rule}\" se migró de un Modo Seguir preliminar a Estado dinámico, pero no tiene ninguna entidad de origen y no se aplicará. Elimínala y vuelve a crearla eligiendo una entidad de origen."
     }
   }
 }
