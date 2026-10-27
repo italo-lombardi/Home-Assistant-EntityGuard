@@ -11,7 +11,6 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.event import async_track_entity_registry_updated_event
 
 from .const import (
     CONF_ENTRY_TYPE,
@@ -158,17 +157,6 @@ class EntityGuardRecentlyEnforcedSensor(EntityGuardBinarySensor):
     def __init__(self, entry: ConfigEntry, engine: RuleEngine) -> None:
         """Initialize the recently enforced sensor."""
         super().__init__(entry, engine, "recently_enforced", "recently_enforced")
-
-    async def async_added_to_hass(self) -> None:
-        """Subscribe to rule updates and target entity state changes."""
-        await super().async_added_to_hass()
-        target_entities = list(self._engine.config.target_entities or [])
-        if target_entities:
-            self.async_on_remove(
-                async_track_entity_registry_updated_event(
-                    self.hass, target_entities, self._handle_update
-                )
-            )
 
     @property
     def is_on(self) -> bool:

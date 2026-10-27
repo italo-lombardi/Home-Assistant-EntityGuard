@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "Nerasta jokios Entity Guard taisyklės, atitinkančios {rule_id}."
+    },
+    "rule_name_ambiguous": {
+      "message": "Kelios Entity Guard taisyklės turi pavadinimą {rule_id}; vietoj to naudokite taisyklės entry_id."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Vėliavos esybė trūksta taisyklėje „{rule_name}“",
       "description": "Šios vėliavos esybės (-ių) nebeegzistuoja, tačiau į jas nurodoma taisyklėje: {missing_entities}. Taisyklė netaikys, kai šių vėliavų nebus galima įvertinti. Atnaujinkite arba pašalinkite taisyklę, kad išspręstumėte šią problemą."
+    },
+    "migrated_follow_no_source": {
+      "title": "Migruotai taisyklei „{rule}“ reikia šaltinio esybės",
+      "description": "Taisyklė „{rule}“ buvo migruota iš parengiamosios versijos Sekimo režimo į Dinaminę būseną, tačiau ji neturi šaltinio esybės ir nebus taikoma. Ištrinkite ją ir sukurkite iš naujo, pasirinkdami šaltinio esybę."
     }
   }
 }

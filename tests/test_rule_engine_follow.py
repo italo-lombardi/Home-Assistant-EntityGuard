@@ -10,7 +10,7 @@ value is read live from a source entity instead of from config:
 from __future__ import annotations
 
 from datetime import timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -997,3 +997,34 @@ async def test_attribute_desired_value_none_for_state_modes(hass: HomeAssistant)
     assert engine.attribute_desired_value() is None
     engine2 = _make_engine(hass, _make_config(mode=MODE_FIXED_STATE))
     assert engine2.attribute_desired_value() is None
+
+
+async def test_dynamic_attribute_color_skips_when_light_off(hass: HomeAssistant):
+    """Enforce-time color guard must cover dynamic_attribute, not just fixed.
+
+    A dynamic_attribute rule driving rgb_color onto an OFF light must SKIP with
+    "light_off" rather than light.turn_on (which would turn the light on). The
+    enforce-time guard previously gated on MODE_FIXED_ATTRIBUTE only, so a
+    dynamic rule slipped through and wrongly powered the target on.
+    """
+    config = _make_attr_config(
+        attribute=ATTR_RGB_COLOR,
+        source_entity="light.source",
+        source_value_from=SOURCE_VALUE_FROM_ATTRIBUTE,
+        source_attribute="rgb_color",
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    skipped = []
+    service = AsyncMock()
+    hass.bus.async_listen(EVENT_SKIPPED, lambda e: skipped.append(e))
+    hass.services.async_register("light", "turn_on", service)
+    # Source supplies the desired color; target light is OFF.
+    hass.states.async_set("light.source", "on", {"rgb_color": [255, 0, 0]})
+    hass.states.async_set("light.bedroom", "off", {"rgb_color": [0, 0, 255]})
+
+    await engine.async_evaluate("light.bedroom", hass.states.get("light.bedroom"))
+    await hass.async_block_till_done()
+
+    service.assert_not_awaited()
+    assert any(e.data["reason"] == "light_off" for e in skipped)

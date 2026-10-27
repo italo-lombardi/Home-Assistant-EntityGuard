@@ -580,8 +580,13 @@ class EntityGuardCard extends LitElement {
         label = this.hass.formatEntityState(stateObj) ?? rawValue;
       } catch (e) {}
     }
-    if (label.toLowerCase() === rawValue.toLowerCase()) return label;
-    return `${label} (${rawValue})`;
+    // formatEntityState can return a non-string (e.g. a numeric device_class),
+    // and rawValue may be non-string from a hypothetical state — coerce so
+    // .toLowerCase() never throws and takes down the whole render.
+    label = String(label ?? rawValue);
+    const raw = String(rawValue ?? "");
+    if (label.toLowerCase() === raw.toLowerCase()) return label;
+    return `${label} (${raw})`;
   }
 
   // Returns display string for a live entity state.
@@ -1167,6 +1172,10 @@ class EntityGuardCard extends LitElement {
       <div class="entities">
         <div class="section-title">Conditions (${flags.length})</div>
         ${flags.map((f) => {
+          // flags comes from an HA-controlled status-sensor attribute; guard
+          // against a malformed entry (null / non-object) so one bad element
+          // can't throw the whole render.
+          if (!f || typeof f !== "object") return nothing;
           const st = this.hass.states[f.entity];
           const name = st?.attributes?.friendly_name || f.entity;
           // Format the snapshot value (f.current), not the live state — formatEntityState
@@ -1319,7 +1328,10 @@ class EntityGuardCardEditor extends LitElement {
         .map((e) => ({ id: e.entry_id, name: e.title || e.entry_id }))
         .sort((a, b) => a.name.localeCompare(b.name));
     } catch (_) {
-      this._entries = [];
+      // Leave _entries null (not []) so a transient WS failure (e.g. HA
+      // restart) retries on the next hass update instead of sticking on
+      // "No rules configured" forever.
+      this._entries = null;
     } finally {
       this._loading = false;
       this.requestUpdate();

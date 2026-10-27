@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "Keine Entity Guard-Regel gefunden, die zu „{rule_id}“ passt."
+    },
+    "rule_name_ambiguous": {
+      "message": "Mehrere Entity-Guard-Regeln tragen den Namen {rule_id}; verwenden Sie stattdessen die entry_id der Regel."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Flag-Entität fehlt in Regel \"{rule_name}\"",
       "description": "Die folgenden Flag-Entitäten existieren nicht mehr, werden aber in der Regel referenziert: {missing_entities}. Die Regel wird nicht durchgesetzt, wenn diese Flags nicht ausgewertet werden können. Aktualisiere oder entferne die Regel, um dieses Problem zu beheben."
+    },
+    "migrated_follow_no_source": {
+      "title": "Migrierte Regel „{rule}\" benötigt eine Quell-Entität",
+      "description": "Die Regel „{rule}\" wurde von einem Vorab-Follow-Modus auf den dynamischen Zustand migriert, besitzt aber keine Quell-Entität und wird nicht erzwungen. Löschen Sie sie und erstellen Sie sie erneut, wobei Sie eine Quell-Entität auswählen."
     }
   }
 }

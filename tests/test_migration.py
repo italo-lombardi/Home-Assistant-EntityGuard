@@ -146,3 +146,81 @@ async def test_migrate_already_v2_is_noop(hass: HomeAssistant) -> None:
     assert await async_migrate_entry(hass, entry) is True
     assert entry.version == 2
     assert entry.data[CONF_MODE] == "fixed_state"
+
+
+async def test_migrate_follow_without_source_creates_repair_issue(
+    hass: HomeAssistant,
+) -> None:
+    """A follow rule migrating to dynamic_state with NO source_entity would be a
+    silent dead no-op; the migration raises a repair issue so the user recreates
+    it. (follow rules never stored a source_entity under this key.)"""
+    from homeassistant.helpers import issue_registry as ir
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=1,
+        data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE, CONF_MODE: "follow", "rule_name": "R"},
+        options={CONF_MODE: "follow"},
+        title="R",
+    )
+    entry.add_to_hass(hass)
+
+    assert await async_migrate_entry(hass, entry) is True
+    issues = ir.async_get(hass).issues
+    assert any(
+        iid[0] == DOMAIN and iid[1].startswith("migrated_follow_no_source")
+        for iid in issues
+    ), f"expected repair issue, got {list(issues)}"
+
+
+async def test_migrate_follow_with_source_no_repair_issue(
+    hass: HomeAssistant,
+) -> None:
+    """A follow rule that DID carry a source_entity migrates cleanly — no issue."""
+    from homeassistant.helpers import issue_registry as ir
+
+    from custom_components.entity_guard.const import CONF_SOURCE_ENTITY
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=1,
+        data={
+            CONF_ENTRY_TYPE: ENTRY_TYPE_RULE,
+            CONF_MODE: "follow",
+            CONF_SOURCE_ENTITY: "binary_sensor.motion",
+            "rule_name": "R",
+        },
+        options={CONF_MODE: "follow"},
+        title="R",
+    )
+    entry.add_to_hass(hass)
+
+    assert await async_migrate_entry(hass, entry) is True
+    issues = ir.async_get(hass).issues
+    assert not any(iid[1].startswith("migrated_follow_no_source") for iid in issues)
+
+
+async def test_remove_entry_clears_migrated_no_source_issue(
+    hass: HomeAssistant,
+) -> None:
+    """Removing a rule deletes its migrated-no-source repair issue (no orphan)."""
+    from homeassistant.helpers import issue_registry as ir
+
+    from custom_components.entity_guard import async_remove_entry
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=1,
+        data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE, CONF_MODE: "follow", "rule_name": "R"},
+        options={CONF_MODE: "follow"},
+        title="R",
+    )
+    entry.add_to_hass(hass)
+    assert await async_migrate_entry(hass, entry) is True
+    iid = f"migrated_follow_no_source_{entry.entry_id}"
+    assert any(k[1] == iid for k in ir.async_get(hass).issues)
+
+    await async_remove_entry(hass, entry)
+    assert not any(k[1] == iid for k in ir.async_get(hass).issues), (
+        "repair issue orphaned after rule removal"
+    )

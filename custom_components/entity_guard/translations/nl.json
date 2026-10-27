@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "Geen Entity Guard-regel gevonden die overeenkomt met '{rule_id}'."
+    },
+    "rule_name_ambiguous": {
+      "message": "Meerdere Entity Guard-regels heten {rule_id}; gebruik in plaats daarvan de entry_id van de regel."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Vlag-entiteit ontbreekt in regel \"{rule_name}\"",
       "description": "De volgende vlag-entiteiten bestaan niet meer, maar worden in de regel verwezen: {missing_entities}. De regel wordt niet afgedwongen wanneer deze vlaggen niet kunnen worden geëvalueerd. Werk de regel bij of verwijder deze om dit probleem op te lossen."
+    },
+    "migrated_follow_no_source": {
+      "title": "Gemigreerde regel \"{rule}\" heeft een bronentiteit nodig",
+      "description": "De regel \"{rule}\" is gemigreerd van een pre-release Volgmodus naar Dynamische status, maar heeft geen bronentiteit en wordt niet afgedwongen. Verwijder de regel en maak deze opnieuw aan, waarbij je een bronentiteit kiest."
     }
   }
 }

@@ -116,7 +116,7 @@ class EntityGuardStatusSensor(EntityGuardSensor):
     """Sensor exposing current rule status."""
 
     _attr_device_class = SensorDeviceClass.ENUM
-    _attr_options = STATUS_VALUES
+    _attr_options: ClassVar[list[str]] = list(STATUS_VALUES)
 
     def __init__(self, entry: ConfigEntry, engine: RuleEngine) -> None:
         """Initialize the status sensor."""

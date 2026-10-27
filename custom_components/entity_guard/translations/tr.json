@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "{rule_id} ile eşleşen Entity Guard kuralı bulunamadı."
+    },
+    "rule_name_ambiguous": {
+      "message": "Birden fazla Entity Guard kuralı {rule_id} adını taşıyor; bunun yerine kuralın entry_id değerini kullanın."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "\"{rule_name}\" kuralında bayrak varlığı eksik",
       "description": "Aşağıdaki bayrak varlığı/varlıkları artık mevcut değil ancak kuralda başvuruluyor: {missing_entities}. Bu bayraklar değerlendirilemediğinde kural uygulanmayacaktır. Bu sorunu çözmek için kuralı güncelleyin veya kaldırın."
+    },
+    "migrated_follow_no_source": {
+      "title": "Taşınan \"{rule}\" kuralı için bir kaynak varlık gerekiyor",
+      "description": "\"{rule}\" kuralı, yayın öncesi bir Takip modundan Dinamik duruma taşındı ancak bir kaynak varlığı yok ve uygulama yapmayacak. Kuralı silip bir kaynak varlık seçerek yeniden oluşturun."
     }
   }
 }

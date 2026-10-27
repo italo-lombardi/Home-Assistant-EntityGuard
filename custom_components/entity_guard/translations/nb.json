@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "Fant ingen Entity Guard-regel som samsvarer med «{rule_id}»."
+    },
+    "rule_name_ambiguous": {
+      "message": "Flere Entity Guard-regler heter {rule_id}; bruk regelens entry_id i stedet."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Flagg-entitet mangler i regel \"{rule_name}\"",
       "description": "Følgende flagg-enheter eksisterer ikke lenger, men blir referert til i regelen: {missing_entities}. Regelen vil ikke håndheves når disse flaggene ikke kan evalueres. Oppdater eller fjern regelen for å løse dette problemet."
+    },
+    "migrated_follow_no_source": {
+      "title": "Migrert regel «{rule}» mangler en kildeenhet",
+      "description": "Regelen «{rule}» ble migrert fra en forhåndsversjon av Følgemodus til Dynamisk tilstand, men den har ingen kildeenhet og vil ikke håndheves. Slett den og opprett den på nytt, og velg en kildeenhet."
     }
   }
 }

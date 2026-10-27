@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "Não foi encontrada nenhuma regra Entity Guard correspondente a '{rule_id}'."
+    },
+    "rule_name_ambiguous": {
+      "message": "Há várias regras do Entity Guard com o nome {rule_id}; use o entry_id da regra em vez disso."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Entidade de sinalizador ausente na regra \"{rule_name}\"",
       "description": "As seguintes entidades de sinalizador não existem mais, mas são referenciadas na regra: {missing_entities}. A regra não será aplicada quando esses sinalizadores não puderem ser avaliados. Atualize ou remova a regra para resolver este problema."
+    },
+    "migrated_follow_no_source": {
+      "title": "A regra migrada \"{rule}\" precisa de uma entidade de origem",
+      "description": "A regra \"{rule}\" foi migrada de um modo Seguir de pré-lançamento para Estado dinâmico, mas não tem nenhuma entidade de origem e não será aplicada. Exclua-a e crie-a novamente, escolhendo uma entidade de origem."
     }
   }
 }

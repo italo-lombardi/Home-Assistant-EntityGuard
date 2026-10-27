@@ -56,3 +56,5 @@ await import(
 
 export const Card = defined["entity-guard-card"];
 if (!Card) throw new Error("card class not captured from customElements.define");
+
+export const CardEditor = defined["entity-guard-card-editor"];

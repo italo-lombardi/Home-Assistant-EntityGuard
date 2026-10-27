@@ -56,7 +56,7 @@
       },
       "flags": {
         "title": "Conditions (optional)",
-        "description": "Extra conditions that must all be true for the rule to act.\n\nExamples:\n  • person.alice = not_home — only when Alice is away\n  • input_boolean.guest_mode = off — only when no guests\n  • sun.sun = below_horizon — only after sunset\n  • binary_sensor.work_hours = on — only during work hours\n\nTo add a condition: pick an entity, type the state it must be in, then click Submit.\n\nIf you don't want any condition right now, leave both fields empty and click Submit to skip.\n\nConditions added so far ({count}): {summary}\n\nTick 'Add another' to chain more — all must match for the rule to fire.",
+        "description": "Extra conditions that must all be true for the rule to act.\n\nExamples:\n  • person.alice = not_home — only when Alice is away\n  • input_boolean.guest_mode = off — only when no guests\n  • sun.sun = below_horizon — only after sunset\n  • binary_sensor.work_hours = on — only during work hours\n\nTo add a condition: pick an entity, type the state it must be in, then click Submit.\n\nIf you don't want any condition right now, leave both fields empty and click Submit to skip.\n\nConditions added so far ({count}): {summary}\n\n{current_state}\n\nTick 'Add another' to chain more — all must match for the rule to fire.",
         "data": {
           "entity": "Condition entity",
           "match_state": "Required state",
@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "No Entity Guard rule found matching {rule_id}."
+    },
+    "rule_name_ambiguous": {
+      "message": "Multiple Entity Guard rules are named {rule_id}; use the rule's entry_id instead."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Flag entity missing in rule \"{rule_name}\"",
       "description": "The following flag entity/entities no longer exist but are referenced in the rule: {missing_entities}. The rule will not enforce when these flags cannot be evaluated. Update or remove the rule to resolve this issue."
+    },
+    "migrated_follow_no_source": {
+      "title": "Migrated rule \"{rule}\" needs a source entity",
+      "description": "The rule \"{rule}\" was migrated from a pre-release Follow mode to Dynamic state, but it has no source entity and will not enforce. Delete it and create it again, choosing a source entity."
     }
   }
 }

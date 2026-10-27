@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "Nessuna regola Entity Guard trovata corrispondente a '{rule_id}'."
+    },
+    "rule_name_ambiguous": {
+      "message": "Esistono più regole Entity Guard denominate {rule_id}; usa invece l'entry_id della regola."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Entità flag mancante nella regola \"{rule_name}\"",
       "description": "Le seguenti entità flag non esistono più ma sono referenziate nella regola: {missing_entities}. La regola non verrà applicata quando questi flag non possono essere valutati. Aggiorna o rimuovi la regola per risolvere questo problema."
+    },
+    "migrated_follow_no_source": {
+      "title": "Regola migrata \\\"{rule}\\\": necessaria un'entità sorgente",
+      "description": "La regola \\\"{rule}\\\" è stata migrata da una Modalità Segui pre-release a Stato dinamico, ma non ha un'entità sorgente e non verrà applicata. Eliminala e creala di nuovo, scegliendo un'entità sorgente."
     }
   }
 }

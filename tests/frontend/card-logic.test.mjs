@@ -15,7 +15,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { Card } from "./_harness.mjs";
+import { Card, CardEditor } from "./_harness.mjs";
 
 const bare = {};
 const read = (rel) =>
@@ -142,6 +142,57 @@ test("_renderConditions renders the snapshot label, not the live-state label", (
   // paired with "(off)" is the bug.
   assert.match(text, /Disconnected \(off\)/);
   assert.doesNotMatch(text, /Connected \(off\)/);
+});
+
+// #48 guard: a malformed flag entry (null / non-object) from the HA status
+// sensor must not throw the whole render — the bad row is skipped.
+test("_renderConditions skips a malformed flag entry without throwing", () => {
+  const good = "binary_sensor.ok";
+  const ctx = {
+    _applyStateFormat: Card.prototype._applyStateFormat,
+    _formatStateDisplay: Card.prototype._formatStateDisplay,
+    _formatHypotheticalState: Card.prototype._formatHypotheticalState,
+    _handleEntityClick() {},
+    hass: {
+      formatEntityState: (st) => st.state,
+      states: {
+        [good]: { state: "on", attributes: {} },
+        "sensor.rule_status": {
+          attributes: {
+            // null + a non-object entry alongside a valid one
+            flags: [null, "oops", { entity: good, required: "on", current: "on", matches: true }],
+          },
+        },
+      },
+    },
+  };
+  // Must not throw, and the valid row still renders.
+  const out = Card.prototype._renderConditions.call(ctx, { status: "sensor.rule_status" });
+  assert.match(out.__html, /binary_sensor\.ok|on/);
+});
+
+// #48 guard: _applyStateFormat must not throw when formatEntityState returns a
+// non-string (e.g. a numeric device_class) — it coerces before toLowerCase.
+test("_applyStateFormat coerces a non-string label without throwing", () => {
+  const ctx = { hass: { formatEntityState: () => 42 } };
+  // rawValue non-numeric so it passes the parseFloat guard and reaches the label path.
+  const out = Card.prototype._applyStateFormat.call(ctx, { state: "x" }, "active");
+  assert.equal(typeof out, "string");
+  assert.match(out, /42/);
+});
+
+// #48 behavior: _loadEntries leaves _entries === null on a WS failure so the
+// editor retries on the next update instead of sticking on "No rules".
+test("_loadEntries leaves _entries null on a websocket failure", async () => {
+  const ctx = {
+    _entries: null,
+    _loading: false,
+    hass: { callWS: async () => { throw new Error("ws down"); } },
+    requestUpdate() {},
+  };
+  await CardEditor.prototype._loadEntries.call(ctx);
+  assert.equal(ctx._entries, null);
+  assert.equal(ctx._loading, false);
 });
 
 test("parity: _followLooksOn set == FOLLOW_ON_STATES in const.py", () => {

@@ -336,6 +336,9 @@
   "exceptions": {
     "rule_not_found": {
       "message": "Nem található {rule_id} azonosítóhoz illeszkedő Entity Guard szabály."
+    },
+    "rule_name_ambiguous": {
+      "message": "Több Entity Guard szabály is a(z) {rule_id} nevet viseli; használja helyette a szabály entry_id azonosítóját."
     }
   },
   "services": {
@@ -529,6 +532,10 @@
     "flag_entity_missing": {
       "title": "Hiányzó flag entitás a(z) \"{rule_name}\" szabályban",
       "description": "A következő flag entitás(ok) már nem léteznek, de a szabály hivatkozik rájuk: {missing_entities}. A szabály nem fog kényszeríteni, amikor ezek a flagek nem értékelhetők ki. Frissítse vagy távolítsa el a szabályt a probléma megoldásához."
+    },
+    "migrated_follow_no_source": {
+      "title": "A migrált „{rule}” szabályhoz forrás entitás szükséges",
+      "description": "A(z) „{rule}” szabály egy kiadás előtti Követési módról lett Dinamikus állapotra migrálva, de nincs forrás entitása, ezért nem fog kényszeríteni. Törölje, majd hozza létre újra egy forrás entitás kiválasztásával."
     }
   }
 }

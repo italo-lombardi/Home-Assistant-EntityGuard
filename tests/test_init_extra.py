@@ -126,6 +126,51 @@ async def test_update_listener_reloads_entry(hass: HomeAssistant, rule_entry):
     mock_reload.assert_awaited_once_with(rule_entry.entry_id)
 
 
+async def test_update_listener_clears_migrated_issue_when_source_added(
+    hass: HomeAssistant,
+):
+    """Adding a source_entity to a migrated-without-source rule clears the repair
+    issue raised at migration (otherwise it lingers until the rule is removed)."""
+    from homeassistant.helpers import issue_registry as ir
+    from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+    from custom_components.entity_guard.const import (
+        CONF_ENTRY_TYPE,
+        CONF_SOURCE_ENTITY,
+        ENTRY_TYPE_RULE,
+    )
+
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_ENTRY_TYPE: ENTRY_TYPE_RULE,
+            "mode": "dynamic_state",
+            CONF_SOURCE_ENTITY: "binary_sensor.motion",  # source now present
+            "rule_name": "R",
+        },
+        title="R",
+    )
+    entry.add_to_hass(hass)
+    iid = f"migrated_follow_no_source_{entry.entry_id}"
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        iid,
+        is_fixable=False,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key="migrated_follow_no_source",
+        translation_placeholders={"rule": "R"},
+    )
+    assert any(k[1] == iid for k in ir.async_get(hass).issues)
+
+    with patch.object(hass.config_entries, "async_reload", new_callable=AsyncMock):
+        await _async_update_listener(hass, entry)
+
+    assert not any(k[1] == iid for k in ir.async_get(hass).issues), (
+        "stale repair issue not cleared after source added"
+    )
+
+
 async def test_update_listener_skips_reload_for_slider_write(
     hass: HomeAssistant, rule_entry
 ):
@@ -290,9 +335,32 @@ async def test_install_card_static_path_already_registered(hass: HomeAssistant):
     assert hass.data[DOMAIN].get("_card_installed") is True
 
 
-# ---------------------------------------------------------------------------
-# _async_register_lovelace_resource
-# ---------------------------------------------------------------------------
+async def test_install_card_static_path_unexpected_error_warns(
+    hass: HomeAssistant, caplog
+):
+    """A non-duplicate static-path failure must log a WARNING (not be swallowed
+    at DEBUG), so a genuinely broken card registration is visible."""
+    import logging
+
+    hass.data.setdefault(DOMAIN, {})
+    fake_http = MagicMock()
+    fake_http.async_register_static_paths = AsyncMock(
+        side_effect=RuntimeError("http not ready")
+    )
+    hass.http = fake_http
+    with (
+        patch(
+            "custom_components.entity_guard._async_register_lovelace_resource",
+            new_callable=AsyncMock,
+        ),
+        caplog.at_level(logging.WARNING),
+    ):
+        await _async_install_card(hass)
+    assert any(
+        "Failed to register card static path" in r.message
+        for r in caplog.records
+        if r.levelno == logging.WARNING
+    )
 
 
 async def test_register_resource_no_lovelace(hass: HomeAssistant):
