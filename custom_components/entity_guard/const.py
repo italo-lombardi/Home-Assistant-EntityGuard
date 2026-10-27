@@ -134,6 +134,15 @@ STARTUP_GRACE_PERIOD_SECONDS = 60
 STORE_VERSION = 1
 STORE_SAVE_DELAY_SECONDS = 10
 RECENTLY_ENFORCED_WINDOW_SECONDS = 30
+# Hard cap on a single enforcement service call. A hung integration (offline-but-
+# not-unavailable cloud device, stuck Zigbee coordinator) can make async_call block
+# forever; without this bound the rule freezes while holding its reentrance lock and
+# never reaches the error path (STATUS_ERROR is exception-only, a hang raises
+# nothing). 30s sits above a slow-but-legit cloud call (5-15s under load) yet bounds
+# a true hang. Tradeoff: too low false-fails a healthy-slow device; too high lets a
+# hang hold the lock longer. Module const, not a schema field — tunable without a
+# migration if a specific install runs a slower integration.
+ENFORCE_TIMEOUT_SECONDS = 30
 
 # Color enforcement tolerances. Small tolerances prevent repeat enforcement loops
 # caused by minor device drift and lossy RGB/color-temperature conversions.

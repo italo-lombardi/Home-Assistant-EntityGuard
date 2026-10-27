@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "Migrētajam noteikumam „{rule}\" nepieciešama avota entītija",
       "description": "Noteikums „{rule}\" tika migrēts no pirmslaidiena sekošanas režīma uz dinamisko stāvokli, taču tam nav avota entītijas un tas netiks piemērots. Dzēsiet to un izveidojiet to no jauna, izvēloties avota entītiju."
+    },
+    "target_entity_missing": {
+      "title": "Trūkst mērķa entītijas kārtulā \"{rule_name}\"",
+      "description": "Šādas mērķa entītijas vairs neeksistē, bet uz tām ir atsauce kārtulā: {missing_entities}. Kārtula vairs nevar tām uzturēt stāvokli (pārdēvēts vai noņemts mērķis liek kārtulai novērot neesošu entītiju). Atjauniniet vai noņemiet kārtulu, lai atrisinātu šo problēmu."
     }
   }
 }

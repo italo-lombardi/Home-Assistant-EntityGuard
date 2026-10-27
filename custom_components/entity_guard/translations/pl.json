@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "Zmigrowana reguła \"{rule}\" wymaga encji źródłowej",
       "description": "Reguła \"{rule}\" została zmigrowana z przedpremierowego trybu podążania do Dynamicznego stanu, ale nie ma encji źródłowej i nie będzie egzekwowana. Usuń ją i utwórz ponownie, wybierając encję źródłową."
+    },
+    "target_entity_missing": {
+      "title": "Brak encji docelowej w regule „{rule_name}”",
+      "description": "Następujące encje docelowe już nie istnieją, ale są używane w regule: {missing_entities}. Reguła nie może już wymuszać na nich stanu (zmiana nazwy lub usunięcie encji docelowej sprawia, że reguła obserwuje nieistniejącą encję). Zaktualizuj lub usuń regułę, aby rozwiązać ten problem."
     }
   }
 }

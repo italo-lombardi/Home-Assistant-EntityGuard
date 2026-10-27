@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "La règle migrée \"{rule}\" nécessite une entité source",
       "description": "La règle \"{rule}\" a été migrée depuis un mode Suivi de pré-version vers l'État dynamique, mais elle n'a aucune entité source et ne s'appliquera pas. Supprimez-la puis recréez-la en choisissant une entité source."
+    },
+    "target_entity_missing": {
+      "title": "Entité cible manquante dans la règle « {rule_name} »",
+      "description": "Les entités cibles suivantes n'existent plus mais sont référencées dans la règle : {missing_entities}. La règle ne peut plus leur appliquer son état (une cible renommée ou supprimée laisse la règle surveiller une entité inexistante). Modifiez ou supprimez la règle pour résoudre ce problème."
     }
   }
 }

@@ -22,7 +22,7 @@ Declarative state-enforcement rules. Bind one or more entities to a rule that de
 - **Rate limiting** — per-rule cap on enforcements per minute; exceeding it auto-suppresses the rule
 - **Suppression** — temporary pause via service call or card button; permanent disable via the `enabled` switch
 - **Logbook integration** — every enforcement is logged
-- **Custom Lovelace card** — color-coded status badge, an idle-reason line, a per-target "needs attention" panel, enforcement counters, bound entity compliance, and quick-action buttons
+- **Custom Lovelace card** — color-coded status badge, a live-ticking idle-reason line (cooldown / suppression countdown), a per-target "needs attention" panel, enforcement counters, bound entity compliance, and quick-action buttons
 
 ## Card
 

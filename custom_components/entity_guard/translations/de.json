@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "Migrierte Regel „{rule}\" benötigt eine Quell-Entität",
       "description": "Die Regel „{rule}\" wurde von einem Vorab-Follow-Modus auf den dynamischen Zustand migriert, besitzt aber keine Quell-Entität und wird nicht erzwungen. Löschen Sie sie und erstellen Sie sie erneut, wobei Sie eine Quell-Entität auswählen."
+    },
+    "target_entity_missing": {
+      "title": "Zielentität fehlt in Regel \"{rule_name}\"",
+      "description": "Die folgende(n) Zielentität(en) existiert/existieren nicht mehr, wird/werden aber in der Regel referenziert: {missing_entities}. Die Regel kann die Zustände dieser Entitäten nicht mehr erzwingen (ein umbenanntes oder entferntes Ziel führt dazu, dass die Regel eine nicht mehr vorhandene Entität überwacht). Aktualisiere oder entferne die Regel, um dieses Problem zu beheben."
     }
   }
 }

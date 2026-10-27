@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "Migreret regel \"{rule}\" mangler en kildeentitet",
       "description": "Reglen \"{rule}\" blev migreret fra en Følg-tilstand fra før udgivelsen til Dynamisk tilstand, men den har ingen kildeentitet og vil ikke gennemtvinges. Slet den, og opret den igen, hvor du vælger en kildeentitet."
+    },
+    "target_entity_missing": {
+      "title": "Målenhed mangler i reglen \"{rule_name}\"",
+      "description": "Følgende målenhed(er) findes ikke længere, men der henvises til dem i reglen: {missing_entities}. Reglen kan ikke længere håndhæve tilstanden på dem (en omdøbt eller fjernet målenhed gør, at reglen overvåger en død enhed). Opdater eller fjern reglen for at løse problemet."
     }
   }
 }

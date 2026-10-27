@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "A regra migrada \"{rule}\" precisa de uma entidade de origem",
       "description": "A regra \"{rule}\" foi migrada de um modo Seguir de pré-lançamento para Estado dinâmico, mas não tem nenhuma entidade de origem e não será aplicada. Exclua-a e crie-a novamente, escolhendo uma entidade de origem."
+    },
+    "target_entity_missing": {
+      "title": "Entidade de destino ausente na regra \"{rule_name}\"",
+      "description": "A(s) seguinte(s) entidade(s) de destino já não existe(m), mas continua(m) a ser referenciada(s) na regra: {missing_entities}. A regra já não consegue aplicar o estado a essa(s) entidade(s) (um destino renomeado ou removido deixa a regra a vigiar uma entidade inexistente). Atualize ou remova a regra para resolver este problema."
     }
   }
 }

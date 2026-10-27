@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "Migruotai taisyklei „{rule}“ reikia šaltinio esybės",
       "description": "Taisyklė „{rule}“ buvo migruota iš parengiamosios versijos Sekimo režimo į Dinaminę būseną, tačiau ji neturi šaltinio esybės ir nebus taikoma. Ištrinkite ją ir sukurkite iš naujo, pasirinkdami šaltinio esybę."
+    },
+    "target_entity_missing": {
+      "title": "Trūksta tikslinės esybės taisyklėje „{rule_name}“",
+      "description": "Šių tikslinių esybių nebėra, tačiau į jas nurodoma taisyklėje: {missing_entities}. Taisyklė nebegali joms taikyti (pervadinta arba pašalinta tikslinė esybė palieka taisyklę stebėti neegzistuojančią esybę). Atnaujinkite arba pašalinkite taisyklę, kad išspręstumėte šią problemą."
     }
   }
 }

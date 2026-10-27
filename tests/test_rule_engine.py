@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -1628,6 +1629,23 @@ def test_cooldown_remaining_seconds_empty(hass: HomeAssistant):
     assert engine.cooldown_remaining_seconds() == 0.0
 
 
+def test_cooldown_ends_returns_future_only(hass: HomeAssistant):
+    """cooldown_ends exposes absolute future ends; past ends are skipped
+    (mirrors cooldown_remaining_seconds, which counts a past end as 0)."""
+    engine = _make_engine(hass)
+    future = dt_util.now() + timedelta(seconds=30)
+    past = dt_util.now() - timedelta(seconds=30)
+    engine.state.cooldowns["light.x"] = future
+    engine.state.cooldowns["light.y"] = past
+    ends = engine.cooldown_ends()
+    assert ends == {"light.x": future}
+
+
+def test_cooldown_ends_empty(hass: HomeAssistant):
+    engine = _make_engine(hass)
+    assert engine.cooldown_ends() == {}
+
+
 # ---------------------------------------------------------------------------
 # is_armed / is_active / is_in_cooldown
 # ---------------------------------------------------------------------------
@@ -2507,6 +2525,128 @@ async def test_threshold_failures_set_error(hass: HomeAssistant):
     assert engine.state.consecutive_errors == ERROR_THRESHOLD
     assert engine.state.last_error == "device offline"
     assert engine.current_status() == STATUS_ERROR
+
+
+# ---------------------------------------------------------------------------
+# Feature E: enforce service-call timeout
+# ---------------------------------------------------------------------------
+
+
+async def _register_hanging_service(hass: HomeAssistant, domain: str, service: str):
+    """Register a service that hangs well past the (tiny, patched) timeout."""
+
+    async def _hang(call):
+        await asyncio.sleep(5)
+
+    hass.services.async_register(domain, service, _hang)
+
+
+async def test_enforce_timeout_routes_to_failure(hass: HomeAssistant):
+    """A hung service call times out and takes the service_call_failed path:
+    consecutive_errors++, a non-empty timeout error string, status not ERROR yet."""
+    config = _make_config(target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    await _register_hanging_service(hass, "light", "turn_off")
+    hass.states.async_set("light.bedroom", "on")
+    st = hass.states.get("light.bedroom")
+
+    # Patch the timeout tiny so wait_for fires fast instead of blocking the test 30s.
+    with patch(
+        "custom_components.entity_guard.rule_engine.ENFORCE_TIMEOUT_SECONDS", 0.05
+    ):
+        await engine.async_evaluate("light.bedroom", st)
+
+    assert engine.state.consecutive_errors == 1
+    # str(TimeoutError()) is empty — the branch must synthesize a useful message.
+    assert engine.state.last_error == "service call timed out after 0.05s"
+    assert engine.current_status() != STATUS_ERROR
+    # The timed-out call is a failure, NOT a successful enforce.
+    assert engine.state.enforcement_count_total == 0
+
+
+async def test_enforce_timeout_writes_failed_outcome(hass: HomeAssistant):
+    """A timeout composes with per-target visibility: target_outcomes[eid] = failed
+    with the timeout error string (Round-1 A feature)."""
+    config = _make_config(target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    await _register_hanging_service(hass, "light", "turn_off")
+    hass.states.async_set("light.bedroom", "on")
+    st = hass.states.get("light.bedroom")
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.ENFORCE_TIMEOUT_SECONDS", 0.05
+    ):
+        await engine.async_evaluate("light.bedroom", st)
+
+    outcome = engine.state.target_outcomes.get("light.bedroom")
+    assert outcome is not None
+    assert outcome["outcome"] == "failed"
+    assert outcome["error"] == "service call timed out after 0.05s"
+
+
+async def test_enforce_timeout_threshold_sets_error(hass: HomeAssistant):
+    """ENFORCE_TIMEOUT_SECONDS worth of consecutive timeouts set STATUS_ERROR, same
+    as raised failures."""
+    config = _make_config(target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    await _register_hanging_service(hass, "light", "turn_off")
+    hass.states.async_set("light.bedroom", "on")
+    st = hass.states.get("light.bedroom")
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.ENFORCE_TIMEOUT_SECONDS", 0.05
+    ):
+        for _ in range(ERROR_THRESHOLD):
+            await engine.async_evaluate("light.bedroom", st)
+
+    assert engine.state.consecutive_errors == ERROR_THRESHOLD
+    assert engine.current_status() == STATUS_ERROR
+
+
+async def test_enforce_timeout_not_counted_in_rate_limit(hass: HomeAssistant):
+    """A timeout returns before the rate_limit_window insort, so it must NOT count
+    toward loop protection (a timeout is a failure, not a successful enforce)."""
+    config = _make_config(target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    await _register_hanging_service(hass, "light", "turn_off")
+    hass.states.async_set("light.bedroom", "on")
+    st = hass.states.get("light.bedroom")
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.ENFORCE_TIMEOUT_SECONDS", 0.05
+    ):
+        await engine.async_evaluate("light.bedroom", st)
+
+    assert engine.state.rate_limit_window == []
+
+
+async def test_enforce_timeout_releases_lock(hass: HomeAssistant):
+    """After a timeout the reentrance_lock must be free — a subsequent enforce
+    (now against a fast service) proceeds instead of deadlocking."""
+    config = _make_config(target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    await _register_hanging_service(hass, "light", "turn_off")
+    hass.states.async_set("light.bedroom", "on")
+    st = hass.states.get("light.bedroom")
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.ENFORCE_TIMEOUT_SECONDS", 0.05
+    ):
+        await engine.async_evaluate("light.bedroom", st)
+
+    # Lock must be released after the timeout unwound.
+    assert not engine.state.reentrance_lock.locked()
+
+    # Replace the hanging service with a fast one; a fresh enforce must proceed.
+    calls: list = []
+    hass.services.async_register("light", "turn_off", lambda c: calls.append(c))
+    await engine._enforce("light.bedroom", bypass_rate_limit=True)
+    assert calls, "second enforce blocked — lock was not released after timeout"
 
 
 async def test_successful_enforcement_clears_error(hass: HomeAssistant):
@@ -4114,3 +4254,31 @@ def test_get_rule_entity_id_no_status_sensor_returns_none(
         result = engine._get_rule_entity_id()
 
     assert result is None
+
+
+async def test_enforce_cancelled_error_propagates_not_swallowed(hass: HomeAssistant):
+    """A genuine asyncio.CancelledError (e.g. HA shutting down mid-call) must
+    propagate out of _enforce, NOT be caught by `except Exception` and misreported
+    as a service failure. CancelledError is a BaseException (not Exception) and is
+    distinct from TimeoutError, so neither except branch should catch it. This
+    locks the subtle invariant against a future refactor adding `except
+    BaseException` or reordering the branches."""
+
+    async def _cancel(call):
+        raise asyncio.CancelledError
+
+    hass.services.async_register("light", "turn_off", _cancel)
+    config = _make_config(target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+    st = hass.states.get("light.bedroom")
+
+    with pytest.raises(asyncio.CancelledError):
+        await engine.async_evaluate("light.bedroom", st)
+
+    # It must NOT have been recorded as a service failure.
+    assert engine.state.consecutive_errors == 0
+    assert engine.state.last_error is None
+    # Lock released despite the propagating cancellation (async with unwinds).
+    assert not engine.state.reentrance_lock.locked()

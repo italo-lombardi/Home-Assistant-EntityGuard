@@ -190,7 +190,7 @@ When editing a rule's flags via **Configure → Edit flag conditions**, you have
 - **Clear** — remove all conditions
 - **Exit without changes** — leave the list as-is
 
-If a flag entity is later deleted from Home Assistant, Entity Guard surfaces a **Repair issue** (Settings → System → Repairs) so you know which rule references the missing entity. The rule will not enforce while flags cannot be evaluated.
+If a flag entity is later deleted from Home Assistant, Entity Guard surfaces a **Repair issue** (Settings → System → Repairs) so you know which rule references the missing entity. The rule will not enforce while flags cannot be evaluated. **Likewise, if a target entity is renamed or removed, a Repair issue flags the rule** — a rule left watching a dead target can no longer enforce on it, so you can update or remove the rule.
 
 ### Step 4: Advanced
 
@@ -264,7 +264,7 @@ Review the assembled rule before saving. Confirm to create the config entry. The
 
 `sensor.<rule>_status` reports one of ten values, by priority (highest wins):
 
-1. `error` -- 3+ consecutive enforcement failures (e.g. target unavailable). Auto-clears on next success or via `clear_history`.
+1. `error` -- 3+ consecutive enforcement failures (e.g. target unavailable, or a service call that hangs past the 30 s timeout). Auto-clears on next success or via `clear_history`.
 2. `master_disabled` -- hub master switch is OFF (overrides every per-rule state below)
 3. `disabled` -- per-rule `enabled=OFF`
 4. `suppressed` -- suppress service active
@@ -312,7 +312,7 @@ All four are described in the Logbook.
 | `reason` | Meaning |
 |----------|---------|
 | `no_service_mapping` | No service known for the target's domain/attribute |
-| `service_call_failed` | The enforcing service call raised (also sets `error`) |
+| `service_call_failed` | The enforcing service call raised, OR did not return within the 30 s enforcement timeout (hung integration). Also sets `error`. |
 | `light_off` | Color rule: target light is off (not turned on to enforce color) |
 | `light_unavailable` | Color rule: target light is `unavailable`/`unknown` |
 | `attribute_unavailable` | Color rule: target's color attribute is missing/unreadable |
@@ -469,7 +469,7 @@ show_actions: false          # default: false
 
 The card shows:
 - Rule name and color-coded status badge (armed / enforcing / suppressed / cooldown / conditional / error / master_disabled)
-- A one-line **reason** under the badge when the rule is idle for a known cause: `conditional` → "Waiting on: &lt;entity&gt; = &lt;required&gt;" (first unmet flag); `cooldown` → "Cooldown 42 s"; `suppressed` → "Suppressed until 15:30 — &lt;reason&gt;"; `master_disabled` → "Master switch off". (`error` keeps its existing red banner.)
+- A one-line **reason** under the badge when the rule is idle for a known cause: `conditional` → "Waiting on: &lt;entity&gt; = &lt;required&gt;" (first unmet flag); `cooldown` → "Cooldown 42 s", **counting down live every second**; `suppressed` → "Suppressed until 15:30 **(12 min 4 s)** — &lt;reason&gt;", with the remaining time **ticking down live**; `master_disabled` → "Master switch off". (`error` keeps its existing red banner.)
 - Enforcement counters (today / total) — togglable via `show_stats`
 - Last enforced timestamp and cooldown indicator — togglable via `show_last_enforced`
 - Bound entities with compliance state (✓ compliant / ⚠ violation); state values show translated labels where HA's device_class provides one — `Clear (off)`, `Detected (on)` — or label-only when the label is just a capitalised raw value (`Off`); non-compliant rows translate both sides: `Detected (on) → Clear (off) ⚠`. **Clicking any entity row opens the HA more-info dialog for that entity.** When status is `pending`, a live countdown row appears under each entity that is awaiting enforcement — e.g. `⏱ Enforcing in 14 s` — ticking every second and disappearing once the rule fires or conditions clear.

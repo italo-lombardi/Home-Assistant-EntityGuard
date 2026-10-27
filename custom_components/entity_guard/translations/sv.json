@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "Migrerad regel \"{rule}\" behöver en källentitet",
       "description": "Regeln \"{rule}\" migrerades från ett Följ-läge i förhandsutgåva till Dynamiskt tillstånd, men den saknar källentitet och kommer inte att tillämpas. Ta bort den och skapa den igen och välj en källentitet."
+    },
+    "target_entity_missing": {
+      "title": "Målentitet saknas i regeln \"{rule_name}\"",
+      "description": "Följande målentitet(er) finns inte längre men refereras i regeln: {missing_entities}. Regeln kan inte längre upprätthålla tillståndet på dem (en omdöpt eller borttagen målentitet gör att regeln övervakar en entitet som inte längre finns). Uppdatera eller ta bort regeln för att åtgärda problemet."
     }
   }
 }

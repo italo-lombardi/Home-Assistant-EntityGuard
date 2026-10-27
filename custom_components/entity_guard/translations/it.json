@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "Regola migrata \\\"{rule}\\\": necessaria un'entità sorgente",
       "description": "La regola \\\"{rule}\\\" è stata migrata da una Modalità Segui pre-release a Stato dinamico, ma non ha un'entità sorgente e non verrà applicata. Eliminala e creala di nuovo, scegliendo un'entità sorgente."
+    },
+    "target_entity_missing": {
+      "title": "Entità di destinazione mancanti nella regola \"{rule_name}\"",
+      "description": "Le seguenti entità di destinazione non esistono più ma sono referenziate nella regola: {missing_entities}. La regola non può più applicare lo stato su di esse (una destinazione rinominata o rimossa lascia la regola in ascolto di un'entità inesistente). Aggiorna o rimuovi la regola per risolvere il problema."
     }
   }
 }

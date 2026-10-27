@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "Migroitu sääntö \"{rule}\" tarvitsee lähde-entiteetin",
       "description": "Sääntö \"{rule}\" migroitiin esijulkaisun Seurantatilasta Dynaamiseen tilaan, mutta sillä ei ole lähde-entiteettiä eikä se valvo. Poista se ja luo se uudelleen valitsemalla lähde-entiteetti."
+    },
+    "target_entity_missing": {
+      "title": "Kohde-entiteetti puuttuu säännöstä \"{rule_name}\"",
+      "description": "Seuraavia kohde-entiteettejä ei ole enää olemassa, mutta niihin viitataan säännössä: {missing_entities}. Sääntö ei voi enää pakottaa niiden tilaa (uudelleennimetty tai poistettu kohde jättää säännön valvomaan olematonta entiteettiä). Ratkaise ongelma päivittämällä tai poistamalla sääntö."
     }
   }
 }

@@ -536,6 +536,10 @@
     "migrated_follow_no_source": {
       "title": "Regula migrată „{rule}\" are nevoie de o entitate sursă",
       "description": "Regula „{rule}\" a fost migrată dintr-un mod Urmărire pre-lansare în Stare dinamică, dar nu are o entitate sursă și nu va fi aplicată. Ștergeți-o și creați-o din nou, alegând o entitate sursă."
+    },
+    "target_entity_missing": {
+      "title": "Entitate țintă lipsă în regula „{rule_name}”",
+      "description": "Următoarea entitate țintă/următoarele entități țintă nu mai există, dar sunt menționate în regulă: {missing_entities}. Regula nu mai poate aplica starea pentru acestea (o țintă redenumită sau eliminată lasă regula să monitorizeze o entitate care nu mai există). Actualizați sau eliminați regula pentru a rezolva această problemă."
     }
   }
 }
