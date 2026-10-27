@@ -30,7 +30,12 @@ from .const import (
     ENTRY_TYPE_RULE,
     MODE_DYNAMIC_STATE,
 )
-from .issue_helpers import async_check_missing_flag_entities, missing_flags_issue_id
+from .issue_helpers import (
+    async_check_missing_flag_entities,
+    async_check_missing_target_entities,
+    missing_flags_issue_id,
+    missing_targets_issue_id,
+)
 from .models import parse_rule_config
 from .rule_engine import RuleEngine, signal_for_rule, signal_master_update
 from .services import async_register_services, async_unload_services
@@ -259,56 +264,75 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS_RULE)
 
-        # Defer flag-entity check until HA is fully started so dependent integrations
-        # have populated their states; otherwise we'd raise false-positive missing-flag
-        # repair issues on every restart.
-        async def _deferred_flag_check(_event=None) -> None:
+        # Defer flag + target entity checks until HA is fully started so dependent
+        # integrations have populated their registry/states; otherwise we'd raise
+        # false-positive missing-entity repair issues on every restart.
+        async def _deferred_entity_check(_event=None) -> None:
             await async_check_missing_flag_entities(hass, entry.entry_id)
+            await async_check_missing_target_entities(hass, entry.entry_id)
 
         if hass.is_running:
-            await _deferred_flag_check()
+            await _deferred_entity_check()
         else:
-            _flag_check_done = False
+            _entity_check_done = False
 
-            async def _deferred_flag_check_once(_event=None) -> None:
-                nonlocal _flag_check_done
-                _flag_check_done = True
+            async def _deferred_entity_check_once(_event=None) -> None:
+                nonlocal _entity_check_done
+                _entity_check_done = True
                 await async_check_missing_flag_entities(hass, entry.entry_id)
+                await async_check_missing_target_entities(hass, entry.entry_id)
 
             unsub = hass.bus.async_listen_once(
-                EVENT_HOMEASSISTANT_STARTED, _deferred_flag_check_once
+                EVENT_HOMEASSISTANT_STARTED, _deferred_entity_check_once
             )
 
             @callback
-            def _cancel_flag_check_listener() -> None:  # pragma: no cover
-                if not _flag_check_done:
+            def _cancel_entity_check_listener() -> None:  # pragma: no cover
+                if not _entity_check_done:
                     try:
                         unsub()
                     except Exception:
                         pass
 
-            entry.async_on_unload(_cancel_flag_check_listener)
+            entry.async_on_unload(_cancel_entity_check_listener)
 
-        # flag_entity_ids is computed once at setup. Options edits that reload the
-        # entry re-invoke async_setup_entry, so the frozenset is rebuilt on reload.
+        # Computed once at setup; rebuilt on reload (options edits re-invoke
+        # async_setup_entry). Both flag and target entities are watched for
+        # registry changes (rename/remove) that would silently break the rule.
         flag_entity_ids = frozenset(f.entity for f in config.flags)
+        target_entity_ids = frozenset(config.target_entities)
+        watched_entity_ids = flag_entity_ids | target_entity_ids
 
         @callback
         def _on_entity_registry_updated(event) -> None:
+            action = event.data.get("action")
             entity_id = event.data.get("entity_id")
-            _LOGGER.debug(
-                "entity_registry_updated: action=%s entity_id=%s flag_ids=%s",
-                event.data.get("action"),
-                entity_id,
-                flag_entity_ids,
+            # On a RENAME, HA fires action="update" with the NEW id in entity_id
+            # and the OLD id in old_entity_id (present ONLY on an id change, not
+            # on icon/area/other updates). On REMOVE, entity_id is the removed id.
+            # Match the id that was in OUR watched set: old_entity_id for a rename,
+            # entity_id otherwise. This catches both remove AND rename — the flag
+            # check previously missed rename because the new id isn't in the set.
+            changed_id = (
+                event.data.get("old_entity_id") if action == "update" else entity_id
             )
-            if entity_id not in flag_entity_ids:
+            _LOGGER.debug(
+                "entity_registry_updated: action=%s entity_id=%s old=%s watched=%s",
+                action,
+                entity_id,
+                event.data.get("old_entity_id"),
+                watched_entity_ids,
+            )
+            if changed_id not in watched_entity_ids:
                 return
             hass.async_create_task(
                 async_check_missing_flag_entities(hass, entry.entry_id)
             )
+            hass.async_create_task(
+                async_check_missing_target_entities(hass, entry.entry_id)
+            )
 
-        if flag_entity_ids:
+        if watched_entity_ids:
             unsub_reg = hass.bus.async_listen(
                 er.EVENT_ENTITY_REGISTRY_UPDATED, _on_entity_registry_updated
             )
@@ -392,6 +416,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if entry.data.get(CONF_ENTRY_TYPE) != ENTRY_TYPE_HUB:
         _LOGGER.debug("Removed rule entry %s; clearing statistics", entry.entry_id)
         async_delete_issue(hass, DOMAIN, missing_flags_issue_id(entry.entry_id))
+        async_delete_issue(hass, DOMAIN, missing_targets_issue_id(entry.entry_id))
         async_delete_issue(hass, DOMAIN, _migrated_no_source_issue_id(entry.entry_id))
         ent_reg = er.async_get(hass)
         statistic_ids = [
