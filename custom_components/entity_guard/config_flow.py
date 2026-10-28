@@ -1145,7 +1145,9 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
             vol.Required(CONF_ADD_DEBOUNCE, default=False): selector.BooleanSelector(),
         }
         if verify_applicable:
-            fields[vol.Required(CONF_VERIFY_ENABLED, default=False)] = (
+            # New state-mode rules default verify ON (opt-out). The options flow and
+            # storage fallback stay False so existing saved rules are untouched.
+            fields[vol.Required(CONF_VERIFY_ENABLED, default=True)] = (
                 selector.BooleanSelector()
             )
         return self.async_show_form(step_id="extras", data_schema=vol.Schema(fields))

@@ -31,6 +31,7 @@ from custom_components.entity_guard.const import (
     CONF_TARGET_VALUE,
     CONF_THRESHOLD,
     CONF_TRIGGER_STATES,
+    CONF_VERIFY_ENABLED,
     DOMAIN,
     ENTRY_TYPE_RULE,
     MODE_FIXED_ATTRIBUTE,
@@ -41,6 +42,15 @@ from custom_components.entity_guard.models import parse_rule_config
 
 def _schema_key_names(result: dict) -> set[str]:
     return {getattr(key, "schema", key) for key in result["data_schema"].schema}
+
+
+def _schema_default(result: dict, name: str):
+    """Resolve the (possibly callable) default of a schema key by its name."""
+    for key in result["data_schema"].schema:
+        if getattr(key, "schema", key) == name:
+            default = key.default
+            return default() if callable(default) else default
+    raise KeyError(name)
 
 
 @pytest.fixture(autouse=True)
@@ -227,6 +237,22 @@ async def test_full_state_flow_creates_entry(hass: HomeAssistant):
     res = await hass.config_entries.flow.async_configure(res["flow_id"], {})
     assert res["type"] == FlowResultType.CREATE_ENTRY
     assert res["title"] == "FullState"
+
+
+async def test_new_state_rule_verify_defaults_on(hass: HomeAssistant):
+    """New state-mode rules default verify ON (opt-out) at the extras step."""
+    res = await _begin_state_flow(hass, "VerifyDefault")
+    res = await hass.config_entries.flow.async_configure(
+        res["flow_id"],
+        {
+            CONF_TRIGGER_STATES: ["on"],
+            CONF_TARGET_STATE: "off",
+            CONF_DELAY_SECONDS: 0,
+        },
+    )
+    assert res["step_id"] == "extras"
+    assert CONF_VERIFY_ENABLED in _schema_key_names(res)
+    assert _schema_default(res, CONF_VERIFY_ENABLED) is True
 
 
 async def test_full_state_flow_with_extras(hass: HomeAssistant):
@@ -735,6 +761,21 @@ async def test_options_edit_advanced_save(hass: HomeAssistant, options_rule_entr
     )
     assert res["type"] == FlowResultType.CREATE_ENTRY
     assert options_rule_entry.options[CONF_DEBOUNCE_SECONDS] == 45
+
+
+async def test_options_edit_advanced_verify_defaults_off_for_stored_rule(
+    hass: HomeAssistant, options_rule_entry
+):
+    """Existing rules are untouched: the options verify toggle defaults to the
+    stored value (False / absent here), not the new-rule opt-out True. No migration.
+    """
+    res = await hass.config_entries.options.async_init(options_rule_entry.entry_id)
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"], {"next_step_id": "edit_advanced"}
+    )
+    assert res["step_id"] == "edit_advanced"
+    assert CONF_VERIFY_ENABLED in _schema_key_names(res)
+    assert _schema_default(res, CONF_VERIFY_ENABLED) is False
 
 
 async def test_options_save_preserves_unedited_slider_options(
