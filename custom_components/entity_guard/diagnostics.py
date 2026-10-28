@@ -72,6 +72,8 @@ def _state_dump(engine: RuleEngine) -> dict[str, Any]:
         "enabled": s.enabled,
         "enforcement_count_today": s.enforcement_count_today,
         "enforcement_count_total": s.enforcement_count_total,
+        "skip_count_today": s.skip_count_today,
+        "skip_count_total": s.skip_count_total,
         "last_enforced": _iso(s.last_enforced),
         "cooldowns": {eid: _iso(end) for eid, end in s.cooldowns.items()},
         "suppressed_until": _iso(s.suppressed_until),
@@ -136,7 +138,15 @@ async def async_get_config_entry_diagnostics(
             TO_REDACT,
         )
 
-    engine: RuleEngine = hass.data[DOMAIN]["engines"][config_entry.entry_id]
+    # A loaded rule entry always has its engine (set in async_setup_entry, and
+    # HA only offers the Download-Diagnostics button for a loaded entry). The
+    # .get guard turns the otherwise-impossible load-failure race into a clean
+    # message instead of a KeyError 500.
+    engine: RuleEngine | None = (
+        hass.data.get(DOMAIN, {}).get("engines", {}).get(config_entry.entry_id)
+    )
+    if engine is None:
+        return {"entry": entry_block, "error": "engine not loaded"}
     return async_redact_data(
         {
             "entry": entry_block,

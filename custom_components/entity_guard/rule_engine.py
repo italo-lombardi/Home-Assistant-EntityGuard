@@ -282,6 +282,13 @@ class RuleEngine:
         if entity_id in self._config.target_entities:
             self._cancel_verify(entity_id)
             self._unreachable.discard(entity_id)
+            # Reset the attempt count too: the target moved, so the superseded
+            # cycle is abandoned. Without this, the NEXT enforce's fresh verify
+            # cycle inherits the stale count and latches unreachable early (only
+            # VERIFY_MAX_ATTEMPTS minus the stale count correctives). Reset here
+            # — the genuine-event site — NOT inside _cancel_verify, which the
+            # escalation path calls mid-cycle right after incrementing.
+            self._verify_attempts.pop(entity_id, None)
         trigger_context_id: str | None = getattr(event.context, "id", None)
         self._schedule_eval_task(entity_id, new_state, trigger_context_id)
 
@@ -841,11 +848,17 @@ class RuleEngine:
             current = self._hass.states.get(entity_id)
             triggered, skip_reason = self._trigger_decision(entity_id, current)
             if skip_reason is not None:
-                if self._pending_enforcements.get(entity_id) is my_cancel:
+                owned = self._pending_enforcements.get(entity_id) is my_cancel
+                if owned:
                     self._pending_enforcements.pop(entity_id, None)
                     self._pending_enforcement_due.pop(entity_id, None)
-                    self._set_or_force_broadcast(self._derive_armed_or_cooldown(_now))
+                # _fire_skipped FIRST so it increments skip_count before the
+                # broadcast reads it — else the skip sensors show the pre-increment
+                # value (and a no-op broadcast on an already-ARMED rule would leave
+                # them stale indefinitely). Matches the direct async_evaluate path.
                 self._fire_skipped(entity_id, skip_reason)
+                if owned:
+                    self._set_or_force_broadcast(self._derive_armed_or_cooldown(_now))
                 return
             if not triggered:
                 # _trigger_decision returns (False, None) when current is None, so
@@ -1152,41 +1165,54 @@ class RuleEngine:
                 _record_failure(str(err))
                 return
 
-            self._state.enforcement_count_today += 1
-            self._state.enforcement_count_total += 1
-            self._state.last_enforced = now
-            # insort (not append): `now` was captured before the reentrance lock,
-            # so two enforces can reach here with out-of-order timestamps. The
-            # bisect prune above assumes an ascending window — keep it sorted.
-            bisect.insort(self._state.rate_limit_window, now)
-            # Track consecutive successes for STATUS_ERROR auto-recovery (EG-6).
-            # While still in ERROR, do NOT zero consecutive_errors / last_error — they
-            # remain visible on the status sensor until the recovery threshold is met.
+            # A CORRECTIVE re-enforce (the verify cycle's own retry) is not a
+            # user-trigger-driven enforcement and its success is PROVISIONAL —
+            # the verify re-read may yet overturn it to failed. So it must not
+            # touch the user-visible/loop-protection bookkeeping: counting it
+            # would (a) inflate the "Enforcements" sensors, (b) silently eat the
+            # rule's loop-protection budget via the rate_limit_window (tripping
+            # suppression sooner than the real trigger rate warrants), and (c)
+            # falsely clear STATUS_ERROR on a success verify might reject. The
+            # verify cycle is bounded by _verify_attempts + the unreachable
+            # latch, so skipping this costs no safety. Still UNgated below:
+            # EVENT_ENFORCED, _arm_recently_enforced, _persist, and the
+            # provisional target_outcomes "ok" (which verify overwrites).
             recovered_from_error = False
-            if was_in_error:
-                self._state.consecutive_success_count += 1
-                if (
-                    self._state.consecutive_success_count
-                    >= ERROR_RECOVERY_SUCCESS_THRESHOLD
-                ):
-                    _LOGGER.info(
-                        "Rule '%s' auto-recovered from STATUS_ERROR after %d successes",
-                        self._config.name,
-                        self._state.consecutive_success_count,
-                    )
+            if not is_corrective:
+                self._state.enforcement_count_today += 1
+                self._state.enforcement_count_total += 1
+                self._state.last_enforced = now
+                # insort (not append): `now` was captured before the reentrance lock,
+                # so two enforces can reach here with out-of-order timestamps. The
+                # bisect prune above assumes an ascending window — keep it sorted.
+                bisect.insort(self._state.rate_limit_window, now)
+                # Track consecutive successes for STATUS_ERROR auto-recovery (EG-6).
+                # While still in ERROR, do NOT zero consecutive_errors / last_error — they
+                # remain visible on the status sensor until the recovery threshold is met.
+                if was_in_error:
+                    self._state.consecutive_success_count += 1
+                    if (
+                        self._state.consecutive_success_count
+                        >= ERROR_RECOVERY_SUCCESS_THRESHOLD
+                    ):
+                        _LOGGER.info(
+                            "Rule '%s' auto-recovered from STATUS_ERROR after %d successes",
+                            self._config.name,
+                            self._state.consecutive_success_count,
+                        )
+                        self._state.consecutive_success_count = 0
+                        self._state.consecutive_errors = 0
+                        self._state.last_error = None
+                        recovered_from_error = True
+                else:
                     self._state.consecutive_success_count = 0
                     self._state.consecutive_errors = 0
                     self._state.last_error = None
-                    recovered_from_error = True
-            else:
-                self._state.consecutive_success_count = 0
-                self._state.consecutive_errors = 0
-                self._state.last_error = None
 
-            if self._config.debounce_enabled and self._config.debounce_seconds > 0:
-                self._state.cooldowns[entity_id] = now + timedelta(
-                    seconds=self._config.debounce_seconds
-                )
+                if self._config.debounce_enabled and self._config.debounce_seconds > 0:
+                    self._state.cooldowns[entity_id] = now + timedelta(
+                        seconds=self._config.debounce_seconds
+                    )
 
             self._hass.bus.async_fire(
                 EVENT_ENFORCED,
@@ -1234,7 +1260,15 @@ class RuleEngine:
         # flicker on each non-final recovery success (EG-6).
         if was_in_error and not recovered_from_error:
             post_status = STATUS_ERROR
-        elif self._config.debounce_enabled and self._config.debounce_seconds > 0:
+        elif (
+            not is_corrective
+            and self._config.debounce_enabled
+            and self._config.debounce_seconds > 0
+        ):
+            # A corrective does NOT set a cooldown (gated above), so it must not
+            # claim STATUS_COOLDOWN either — derive the real status instead,
+            # otherwise the rule would show a cooldown with no expiry (the
+            # broadcast-arm below no-ops on the absent cooldowns entry).
             post_status = STATUS_COOLDOWN
         else:
             post_status = self._derive_armed_or_cooldown(dt_util.now())

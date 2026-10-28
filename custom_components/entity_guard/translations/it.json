@@ -477,10 +477,10 @@
         "name": "Applicazioni totali"
       },
       "skip_count_today": {
-        "name": "Salti oggi"
+        "name": "Saltati oggi"
       },
       "skip_count_total": {
-        "name": "Salti totali"
+        "name": "Saltati totali"
       },
       "cooldown_remaining": {
         "name": "Cooldown rimanente"

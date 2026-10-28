@@ -4479,6 +4479,46 @@ async def test_verify_not_reached_corrective_then_exhausted(hass: HomeAssistant)
     assert outcome["reason"] == REASON_UNREACHABLE_AFTER_RETRIES
 
 
+async def test_corrective_enforce_does_not_touch_bookkeeping(hass: HomeAssistant):
+    """A verify-driven corrective re-enforce must not count toward the user-visible
+    enforcement counters, the loop-protection rate_limit_window, or STATUS_ERROR
+    auto-recovery — its success is provisional (verify may overturn it to failed).
+    Only the original (non-corrective) enforce counts."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")  # never moves → correctives fire
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")  # the ONE real enforce
+        # Snapshot after the original enforce, before any corrective.
+        today = engine.state.enforcement_count_today
+        total = engine.state.enforcement_count_total
+        window_len = len(engine.state.rate_limit_window)
+        assert today == 1 and total == 1 and window_len == 1
+        # Seed a pre-existing error state to prove a corrective cannot clear it.
+        engine.state.consecutive_errors = 2
+        engine.state.last_error = "boom"
+        # Fire the verify cycle: each not-reached issues a corrective re-enforce.
+        for _ in range(VERIFY_MAX_ATTEMPTS + 1):
+            if "light.bedroom" in engine._pending_verifications:
+                await _run_verify_timer(hass, engine, "light.bedroom")
+
+    # Correctives left every piece of bookkeeping exactly as the original enforce.
+    assert engine.state.enforcement_count_today == today
+    assert engine.state.enforcement_count_total == total
+    assert len(engine.state.rate_limit_window) == window_len
+    # Recovery half: a corrective's provisional success did NOT clear the error.
+    assert engine.state.consecutive_errors == 2
+    assert engine.state.last_error == "boom"
+
+
 async def test_verify_real_event_clears_latch_and_cancels(hass: HomeAssistant):
     """A real state_changed for a latched target clears the latch + cancels verify."""
     engine = _make_engine(hass, _verify_config())
@@ -4493,6 +4533,23 @@ async def test_verify_real_event_clears_latch_and_cancels(hass: HomeAssistant):
 
     assert "light.bedroom" not in engine._unreachable
     assert "light.bedroom" not in engine._pending_verifications
+
+
+async def test_verify_real_event_resets_attempt_count(hass: HomeAssistant):
+    """A genuine target state_changed abandons the superseded verify cycle: it
+    must reset _verify_attempts too, else the NEXT cycle inherits a stale count
+    and latches unreachable prematurely (fewer than VERIFY_MAX_ATTEMPTS retries)."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    engine._verify_attempts["light.bedroom"] = 1  # a cycle was mid-flight
+    engine._pending_verifications["light.bedroom"] = MagicMock()
+
+    event = MagicMock()
+    event.data = {"entity_id": "light.bedroom", "new_state": _state("off")}
+    event.context = MagicMock(id="ctx-1")
+    engine._handle_state_event(event)
+
+    assert "light.bedroom" not in engine._verify_attempts
 
 
 async def test_verify_latched_target_not_rearmed(hass: HomeAssistant):

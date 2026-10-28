@@ -53,6 +53,8 @@ def _make_engine() -> MagicMock:
     s.enabled = True
     s.enforcement_count_today = 2
     s.enforcement_count_total = 17
+    s.skip_count_today = 5
+    s.skip_count_total = 41
     s.last_enforced = _DT
     s.cooldowns = {"lock.front_door": _DT}
     s.suppressed_until = None
@@ -102,6 +104,8 @@ async def test_rule_diagnostics_shape(hass: HomeAssistant):
     assert out["config"]["target_entities"] == ["lock.front_door"]
     assert out["state"]["status"] == "armed"
     assert out["state"]["enforcement_count_total"] == 17
+    assert out["state"]["skip_count_today"] == 5
+    assert out["state"]["skip_count_total"] == 41
 
 
 async def test_rule_diagnostics_serializes_datetimes(hass: HomeAssistant):
@@ -175,3 +179,18 @@ async def test_hub_diagnostics_master_enabled_default(hass: HomeAssistant):
     hass.data.setdefault(DOMAIN, {})
     out = await async_get_config_entry_diagnostics(hass, hub)
     assert out["hub"]["master_enabled"] is True
+
+
+async def test_rule_diagnostics_engine_not_loaded(hass: HomeAssistant):
+    """A rule entry with no engine (load-failure race) returns a clean message,
+    not a KeyError 500."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE, "target_entities": ["lock.front_door"]},
+        title="Orphan rule",
+    )
+    entry.add_to_hass(hass)
+    hass.data.setdefault(DOMAIN, {}).setdefault("engines", {})  # engine absent
+    out = await async_get_config_entry_diagnostics(hass, entry)
+    assert out["error"] == "engine not loaded"
+    assert out["entry"]["entry_type"] == ENTRY_TYPE_RULE
