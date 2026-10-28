@@ -465,6 +465,9 @@
       },
       "recently_enforced_verified": {
         "name": "Neseniai pritaikyta (patvirtinta)"
+      },
+      "recently_enforced_unreachable": {
+        "name": "Neseniai pritaikyta (nepasiekiama)"
       }
     },
     "sensor": {

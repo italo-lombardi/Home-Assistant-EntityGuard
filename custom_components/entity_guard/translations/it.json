@@ -465,6 +465,9 @@
       },
       "recently_enforced_verified": {
         "name": "Applicata di recente (verificata)"
+      },
+      "recently_enforced_unreachable": {
+        "name": "Applicata di recente (irraggiungibile)"
       }
     },
     "sensor": {

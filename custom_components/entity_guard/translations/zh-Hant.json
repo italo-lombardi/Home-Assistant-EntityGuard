@@ -465,6 +465,9 @@
       },
       "recently_enforced_verified": {
         "name": "最近已強制執行（已驗證）"
+      },
+      "recently_enforced_unreachable": {
+        "name": "最近已強制執行（無法到達）"
       }
     },
     "sensor": {

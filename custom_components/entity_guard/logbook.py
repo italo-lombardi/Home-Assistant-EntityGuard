@@ -13,6 +13,7 @@ from .const import (
     EVENT_LOOP_DETECTED,
     EVENT_SKIPPED,
     EVENT_SUPPRESSED,
+    EVENT_UNREACHABLE,
     EVENT_VERIFIED,
 )
 
@@ -68,6 +69,20 @@ def async_describe_events(
         }
 
     @callback
+    def _describe_unreachable(event: Event) -> dict[str, Any]:
+        data = event.data
+        target_state = data.get("target") or "target"
+        target_entity_id = data.get("target_entity_id") or data.get("entity_id")
+        rule_entity_id = data.get("entity_id")
+        rule_name = data.get("rule_name") or "Entity Guard"
+        return {
+            "name": rule_name,
+            "message": f"could not reach {target_entity_id} → {target_state}",
+            "entity_id": rule_entity_id,
+            "domain": DOMAIN,
+        }
+
+    @callback
     def _describe_loop_detected(event: Event) -> dict[str, Any]:
         data = event.data
         rule_name = data.get("rule_name") or "Entity Guard"
@@ -96,6 +111,7 @@ def async_describe_events(
 
     async_describe_event(DOMAIN, EVENT_ENFORCED, _describe_enforced)
     async_describe_event(DOMAIN, EVENT_VERIFIED, _describe_verified)
+    async_describe_event(DOMAIN, EVENT_UNREACHABLE, _describe_unreachable)
     async_describe_event(DOMAIN, EVENT_SKIPPED, _describe_skipped)
     async_describe_event(DOMAIN, EVENT_LOOP_DETECTED, _describe_loop_detected)
     async_describe_event(DOMAIN, EVENT_SUPPRESSED, _describe_suppressed)

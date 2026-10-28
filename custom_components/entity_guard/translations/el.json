@@ -465,6 +465,9 @@
       },
       "recently_enforced_verified": {
         "name": "Πρόσφατα επιβλήθηκε (επαληθεύτηκε)"
+      },
+      "recently_enforced_unreachable": {
+        "name": "Πρόσφατα επιβλήθηκε (μη προσβάσιμο)"
       }
     },
     "sensor": {

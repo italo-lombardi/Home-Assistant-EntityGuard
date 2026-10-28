@@ -26,6 +26,7 @@ def _make_engine(
     in_cooldown=False,
     verify_enabled=False,
     recently_enforced_verified=False,
+    recently_enforced_unreachable=False,
 ):
     engine = MagicMock()
     engine.config.unique_id = "test-uid"
@@ -34,6 +35,7 @@ def _make_engine(
     engine.is_active.return_value = active
     engine.is_in_cooldown.return_value = in_cooldown
     engine.is_recently_enforced_verified.return_value = recently_enforced_verified
+    engine.is_recently_enforced_unreachable.return_value = recently_enforced_unreachable
     return engine
 
 
@@ -449,10 +451,10 @@ async def test_setup_entry_adds_verified_sensor_when_verify_on(hass: HomeAssista
     hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
     added = []
     await async_setup_entry(hass, entry, added.extend)
-    assert len(added) == 6
-    assert "EntityGuardRecentlyEnforcedVerifiedSensor" in [
-        type(s).__name__ for s in added
-    ]
+    assert len(added) == 7
+    type_names = [type(s).__name__ for s in added]
+    assert "EntityGuardRecentlyEnforcedVerifiedSensor" in type_names
+    assert "EntityGuardRecentlyEnforcedUnreachableSensor" in type_names
 
 
 async def test_setup_entry_omits_verified_sensor_when_verify_off(hass: HomeAssistant):
@@ -520,5 +522,124 @@ async def test_setup_entry_reenables_verified_row_on_verify_on(hass: HomeAssista
     eid = reg.async_get_entity_id("binary_sensor", DOMAIN, verified_uid)
     assert reg.async_get(eid).disabled_by is None
     assert "EntityGuardRecentlyEnforcedVerifiedSensor" in [
+        type(s).__name__ for s in added
+    ]
+
+
+# ---------------------------------------------------------------------------
+# EntityGuardRecentlyEnforcedUnreachableSensor + verify-on lifecycle
+# ---------------------------------------------------------------------------
+
+
+def test_recently_enforced_unreachable_sensor_is_on():
+    from custom_components.entity_guard.binary_sensor import (
+        EntityGuardRecentlyEnforcedUnreachableSensor,
+    )
+
+    entry = _make_rule_entry()
+    engine = _make_engine(recently_enforced_unreachable=True)
+    sensor = EntityGuardRecentlyEnforcedUnreachableSensor(entry, engine)
+    assert sensor.is_on is True
+
+
+def test_recently_enforced_unreachable_sensor_is_off():
+    from custom_components.entity_guard.binary_sensor import (
+        EntityGuardRecentlyEnforcedUnreachableSensor,
+    )
+
+    entry = _make_rule_entry()
+    engine = _make_engine(recently_enforced_unreachable=False)
+    sensor = EntityGuardRecentlyEnforcedUnreachableSensor(entry, engine)
+    assert sensor.is_on is False
+
+
+async def test_setup_entry_adds_unreachable_sensor_when_verify_on(
+    hass: HomeAssistant,
+):
+    from custom_components.entity_guard.binary_sensor import async_setup_entry
+
+    entry = _make_rule_entry()
+    engine = _make_engine(verify_enabled=True)
+    hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
+    added = []
+    await async_setup_entry(hass, entry, added.extend)
+    assert "EntityGuardRecentlyEnforcedUnreachableSensor" in [
+        type(s).__name__ for s in added
+    ]
+
+
+async def test_setup_entry_omits_unreachable_sensor_when_verify_off(
+    hass: HomeAssistant,
+):
+    from custom_components.entity_guard.binary_sensor import async_setup_entry
+
+    entry = _make_rule_entry()
+    engine = _make_engine(verify_enabled=False)
+    hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
+    added = []
+    await async_setup_entry(hass, entry, added.extend)
+    assert "EntityGuardRecentlyEnforcedUnreachableSensor" not in [
+        type(s).__name__ for s in added
+    ]
+
+
+async def test_setup_entry_disables_unreachable_row_on_verify_off(
+    hass: HomeAssistant,
+):
+    """Verify ON->OFF: an existing unreachable row is disabled (not removed)."""
+    from homeassistant.helpers import entity_registry as er
+    from homeassistant.helpers.entity_registry import async_get as async_get_er
+
+    from custom_components.entity_guard.binary_sensor import async_setup_entry
+
+    entry = _make_rule_entry()
+    entry.add_to_hass(hass)
+    reg = async_get_er(hass)
+    unreachable_uid = f"{entry.entry_id}_recently_enforced_unreachable"
+    reg.async_get_or_create(
+        "binary_sensor", DOMAIN, unreachable_uid, config_entry=entry
+    )
+
+    engine = _make_engine(verify_enabled=False)
+    hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
+    added = []
+    await async_setup_entry(hass, entry, added.extend)
+
+    eid = reg.async_get_entity_id("binary_sensor", DOMAIN, unreachable_uid)
+    assert reg.async_get(eid).disabled_by is er.RegistryEntryDisabler.INTEGRATION
+    assert "EntityGuardRecentlyEnforcedUnreachableSensor" not in [
+        type(s).__name__ for s in added
+    ]
+
+
+async def test_setup_entry_reenables_unreachable_row_on_verify_on(
+    hass: HomeAssistant,
+):
+    """Verify OFF->ON: a disabled unreachable row is re-enabled, then added live."""
+    from homeassistant.helpers import entity_registry as er
+    from homeassistant.helpers.entity_registry import async_get as async_get_er
+
+    from custom_components.entity_guard.binary_sensor import async_setup_entry
+
+    entry = _make_rule_entry()
+    entry.add_to_hass(hass)
+    reg = async_get_er(hass)
+    unreachable_uid = f"{entry.entry_id}_recently_enforced_unreachable"
+    reg.async_get_or_create(
+        "binary_sensor",
+        DOMAIN,
+        unreachable_uid,
+        config_entry=entry,
+        disabled_by=er.RegistryEntryDisabler.INTEGRATION,
+    )
+
+    engine = _make_engine(verify_enabled=True)
+    hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
+    added = []
+    await async_setup_entry(hass, entry, added.extend)
+
+    eid = reg.async_get_entity_id("binary_sensor", DOMAIN, unreachable_uid)
+    assert reg.async_get(eid).disabled_by is None
+    assert "EntityGuardRecentlyEnforcedUnreachableSensor" in [
         type(s).__name__ for s in added
     ]

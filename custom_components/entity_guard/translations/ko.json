@@ -465,6 +465,9 @@
       },
       "recently_enforced_verified": {
         "name": "최근 적용됨(확인됨)"
+      },
+      "recently_enforced_unreachable": {
+        "name": "최근 적용됨(도달 불가)"
       }
     },
     "sensor": {

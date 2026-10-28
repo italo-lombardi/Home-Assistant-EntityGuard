@@ -465,6 +465,9 @@
       },
       "recently_enforced_verified": {
         "name": "Äskettäin valvottu (vahvistettu)"
+      },
+      "recently_enforced_unreachable": {
+        "name": "Äskettäin valvottu (ei tavoitettu)"
       }
     },
     "sensor": {

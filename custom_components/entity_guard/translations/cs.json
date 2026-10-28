@@ -465,6 +465,9 @@
       },
       "recently_enforced_verified": {
         "name": "Nedávno vynuceno (ověřeno)"
+      },
+      "recently_enforced_unreachable": {
+        "name": "Nedávno vynuceno (nedosažitelné)"
       }
     },
     "sensor": {

@@ -22,6 +22,7 @@ from custom_components.entity_guard.const import (
     EVENT_ENFORCED,
     EVENT_LOOP_DETECTED,
     EVENT_SKIPPED,
+    EVENT_UNREACHABLE,
     EVENT_VERIFIED,
     MODE_DYNAMIC_STATE,
     MODE_FIXED_ATTRIBUTE,
@@ -5507,3 +5508,234 @@ async def test_recently_enforced_verified_cleared_by_reset(hass: HomeAssistant):
     await engine.async_reset_cooldowns()
     assert engine.is_recently_enforced_verified() is False
     assert engine._recently_enforced_verified_unsub is None
+
+
+# ---------------------------------------------------------------------------
+# EVENT_UNREACHABLE + recently_enforced_unreachable (failure twin of verified)
+# ---------------------------------------------------------------------------
+
+
+async def test_arm_recently_enforced_unreachable_pulse_when_already_on(
+    hass: HomeAssistant,
+):
+    """Re-arming while already on pulses off→on so rising-edge automations re-fire."""
+    from unittest.mock import patch
+
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._recently_enforced_unreachable = True
+
+    flag_values = []
+
+    def _capture_send(_hass, _signal):
+        flag_values.append(engine._recently_enforced_unreachable)
+
+    with (
+        patch(
+            "custom_components.entity_guard.rule_engine.async_call_later",
+            side_effect=lambda *_a, **_k: MagicMock(),
+        ),
+        patch(
+            "custom_components.entity_guard.rule_engine.async_dispatcher_send",
+            side_effect=_capture_send,
+        ),
+    ):
+        engine._arm_recently_enforced_unreachable()
+
+    assert (
+        len(flag_values) >= 1
+    )  # pulse-off dispatch happened (clean fail, not IndexError)
+    assert flag_values[0] is False  # pulse-off dispatch
+    assert engine._recently_enforced_unreachable is True
+
+
+async def test_arm_recently_enforced_unreachable_timer_clears_flag(
+    hass: HomeAssistant,
+):
+    """Unreachable timer callback sets the flag False and dispatches."""
+    from unittest.mock import patch
+
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+
+    captured_cb = []
+
+    def _capture_later(_hass, _delay, job):
+        captured_cb.append(job)
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=_capture_later,
+    ):
+        engine._arm_recently_enforced_unreachable()
+        assert engine._recently_enforced_unreachable is True
+
+    assert captured_cb
+    captured_cb[0].target(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert engine._recently_enforced_unreachable is False
+
+
+async def test_arm_recently_enforced_unreachable_timer_noop_when_unloaded(
+    hass: HomeAssistant,
+):
+    """Unreachable timer _clear is a no-op when the engine is already unloaded."""
+    from unittest.mock import patch
+
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._recently_enforced_unreachable = False
+
+    captured_cb = []
+
+    def _capture_later(_hass, _delay, job):
+        captured_cb.append(job)
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=_capture_later,
+    ):
+        engine._arm_recently_enforced_unreachable()
+
+    engine._is_unloaded = True
+    engine._recently_enforced_unreachable = True  # set so we see it's NOT cleared
+    captured_cb[0].target(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert engine._recently_enforced_unreachable is True
+
+
+async def test_cancel_recently_enforced_unreachable_timer_swallows_exception(
+    hass: HomeAssistant,
+):
+    """_cancel_recently_enforced_unreachable_timer swallows unsub exceptions."""
+    engine = _make_engine(hass)
+    engine._recently_enforced_unreachable_unsub = MagicMock(
+        side_effect=RuntimeError("boom")
+    )
+    engine._cancel_recently_enforced_unreachable_timer()  # must not raise
+    assert engine._recently_enforced_unreachable_unsub is None
+
+
+async def test_unreachable_event_fires_on_exhaustion(hass: HomeAssistant):
+    """verify-on + target never reaches desired → EVENT_UNREACHABLE fires once and
+    the unreachable flag arms (the failure twin of EVENT_VERIFIED)."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")  # never moves
+
+    events = []
+    hass.bus.async_listen(EVENT_UNREACHABLE, lambda e: events.append(e))
+
+    await _exhaust_once(hass, engine)
+    await hass.async_block_till_done()
+
+    assert len(events) == 1
+    data = events[0].data
+    assert data["target_entity_id"] == "light.bedroom"
+    assert data["domain"] == "light"
+    assert data["target"] == "off"
+    assert data["rule_id"] == engine.config.unique_id
+    assert data["reason"] == REASON_UNREACHABLE_AFTER_RETRIES
+    assert "attempts" not in data
+    assert engine.is_recently_enforced_unreachable() is True
+
+
+async def test_unreachable_event_not_fired_when_verify_off(hass: HomeAssistant):
+    """verify disabled → no verify cycle → EVENT_UNREACHABLE never fires."""
+    engine = _make_engine(hass, _make_config(target_state="off"))
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    events = []
+    hass.bus.async_listen(EVENT_UNREACHABLE, lambda e: events.append(e))
+
+    await engine._enforce("light.bedroom")
+    await hass.async_block_till_done()
+
+    assert events == []
+    assert engine.is_recently_enforced_unreachable() is False
+
+
+async def test_unreachable_event_not_fired_on_clean_success(hass: HomeAssistant):
+    """verify-on + target reaches desired → EVENT_UNREACHABLE never fires (only
+    EVENT_VERIFIED does); the unreachable flag stays off."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    events = []
+    hass.bus.async_listen(EVENT_UNREACHABLE, lambda e: events.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        hass.states.async_set("light.bedroom", "off")  # reached desired
+        await _run_verify_timer(hass, engine, "light.bedroom")
+
+    await hass.async_block_till_done()
+    assert events == []
+    assert engine.is_recently_enforced_unreachable() is False
+
+
+async def test_unreachable_event_fires_only_on_first_exhaustion(
+    hass: HomeAssistant,
+):
+    """EVENT_UNREACHABLE is one-shot per fresh exhaustion streak (count==1), not
+    every verify cycle — mirrors the skipped-event discipline."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    events = []
+    hass.bus.async_listen(EVENT_UNREACHABLE, lambda e: events.append(e))
+
+    await _exhaust_once(hass, engine)
+    await hass.async_block_till_done()
+    # Second exhaustion within the same streak (seed counter so next is count==2).
+    engine._consecutive_exhaustions["light.bedroom"] = 1
+    engine._verify_attempts.pop("light.bedroom", None)
+    await _exhaust_once(hass, engine)
+    await hass.async_block_till_done()
+
+    # The count gate was genuinely exercised: the second streak really reached
+    # count>=2 (guards the one-shot assert against a vacuous pass where the
+    # second _exhaust_once silently produced no exhaustion at all).
+    assert engine._consecutive_exhaustions.get("light.bedroom", 0) >= 2
+    assert len(events) == 1
+
+
+async def test_recently_enforced_unreachable_cleared_by_reset(hass: HomeAssistant):
+    """reset_cooldowns zeroes the unreachable flag and cancels its timer."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    engine._recently_enforced_unreachable = True
+    engine._recently_enforced_unreachable_unsub = MagicMock()
+    await engine.async_reset_cooldowns()
+    assert engine.is_recently_enforced_unreachable() is False
+    assert engine._recently_enforced_unreachable_unsub is None
+
+
+async def test_recently_enforced_unreachable_cleared_by_clear_history(
+    hass: HomeAssistant,
+):
+    """clear_history zeroes the unreachable flag and cancels its timer."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    engine._recently_enforced_unreachable = True
+    engine._recently_enforced_unreachable_unsub = MagicMock()
+    await engine.async_clear_history()
+    assert engine.is_recently_enforced_unreachable() is False
+    assert engine._recently_enforced_unreachable_unsub is None

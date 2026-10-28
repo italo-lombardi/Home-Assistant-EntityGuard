@@ -465,6 +465,9 @@
       },
       "recently_enforced_verified": {
         "name": "Нещодавно застосовано (підтверджено)"
+      },
+      "recently_enforced_unreachable": {
+        "name": "Нещодавно застосовано (недоступно)"
       }
     },
     "sensor": {
