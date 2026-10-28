@@ -4282,3 +4282,65 @@ async def test_enforce_cancelled_error_propagates_not_swallowed(hass: HomeAssist
     assert engine.state.last_error is None
     # Lock released despite the propagating cancellation (async with unwinds).
     assert not engine.state.reentrance_lock.locked()
+
+
+# ---------------------------------------------------------------------------
+# Feature I: skip counters
+# ---------------------------------------------------------------------------
+
+
+def test_fire_skipped_increments_skip_counts(hass: HomeAssistant):
+    """A genuine skip bumps both skip_count_today and skip_count_total."""
+    engine = _make_engine(hass)
+    assert engine.state.skip_count_today == 0
+    assert engine.state.skip_count_total == 0
+    engine._fire_skipped("light.bedroom", "no_service_mapping")
+    assert engine.state.skip_count_today == 1
+    assert engine.state.skip_count_total == 1
+    engine._fire_skipped("light.bedroom", "source_offline")
+    assert engine.state.skip_count_today == 2
+    assert engine.state.skip_count_total == 2
+
+
+def test_fire_skipped_service_call_failed_not_counted(hass: HomeAssistant):
+    """A failed service call routes through _fire_skipped but is NOT a skip — it
+    has its own error path, so the skip counters must stay put."""
+    engine = _make_engine(hass)
+    engine._fire_skipped("light.bedroom", "service_call_failed", error="boom")
+    assert engine.state.skip_count_today == 0
+    assert engine.state.skip_count_total == 0
+    # and the per-target outcome is still "failed" (A's behavior, unchanged)
+    assert engine.state.target_outcomes["light.bedroom"]["outcome"] == "failed"
+
+
+def test_handle_midnight_resets_skip_today_not_total(hass: HomeAssistant):
+    engine = _make_engine(hass)
+    engine.state.skip_count_today = 9
+    engine.state.skip_count_total = 40
+    engine._handle_midnight(MagicMock())
+    assert engine.state.skip_count_today == 0
+    assert engine.state.skip_count_total == 40  # total is monotonic
+
+
+def test_maybe_reset_today_counter_resets_skip_today(hass: HomeAssistant):
+    """The stale-date catch-up reset (missed midnight while HA was down) also
+    zeroes skip_count_today."""
+    from datetime import date
+
+    engine = _make_engine(hass)
+    engine.state.skip_count_today = 6
+    engine.state.skip_count_total = 15
+    engine.state.today_reset_date = date(2000, 1, 1)  # stale → triggers reset
+    engine._maybe_reset_today_counter()
+    assert engine.state.skip_count_today == 0
+    assert engine.state.skip_count_total == 15
+
+
+async def test_clear_history_resets_skip_counts(hass: HomeAssistant):
+    """Clear History zeroes BOTH skip counters (consistency with enforcement)."""
+    engine = _make_engine(hass)
+    engine.state.skip_count_today = 3
+    engine.state.skip_count_total = 22
+    await engine.async_clear_history()
+    assert engine.state.skip_count_today == 0
+    assert engine.state.skip_count_total == 0

@@ -24,6 +24,8 @@ from custom_components.entity_guard.sensor import (
     EntityGuardEnforcementCountTotalSensor,
     EntityGuardLastEnforcedSensor,
     EntityGuardSafetyStatusSensor,
+    EntityGuardSkipCountTodaySensor,
+    EntityGuardSkipCountTotalSensor,
     EntityGuardStatusSensor,
     EntityGuardSuppressedUntilSensor,
 )
@@ -38,7 +40,9 @@ def _make_rule_entry(**overrides):
     return MockConfigEntry(domain=DOMAIN, data=data, title="Test Rule")
 
 
-def _make_engine(status=STATUS_ARMED, count_today=2, count_total=10):
+def _make_engine(
+    status=STATUS_ARMED, count_today=2, count_total=10, skip_today=0, skip_total=0
+):
     engine = MagicMock()
     engine.config.unique_id = "test-uid"
     engine.config.target_state = "off"
@@ -55,6 +59,8 @@ def _make_engine(status=STATUS_ARMED, count_today=2, count_total=10):
     engine.current_status.return_value = status
     engine.state.enforcement_count_today = count_today
     engine.state.enforcement_count_total = count_total
+    engine.state.skip_count_today = skip_today
+    engine.state.skip_count_total = skip_total
     engine.state.last_enforced = None
     engine.state.suppressed_until = None
     engine.state.suppression_reason = None
@@ -499,3 +505,17 @@ def test_status_sensor_cooldown_ends_empty_by_default():
     engine.cooldown_ends.return_value = {}
     sensor = EntityGuardStatusSensor(entry, engine)
     assert sensor.extra_state_attributes["cooldown_ends"] == {}
+
+
+def test_skip_count_today_sensor():
+    entry = _make_rule_entry()
+    engine = _make_engine(skip_today=6)
+    sensor = EntityGuardSkipCountTodaySensor(entry, engine)
+    assert sensor.native_value == 6
+
+
+def test_skip_count_total_sensor():
+    entry = _make_rule_entry()
+    engine = _make_engine(skip_total=37)
+    sensor = EntityGuardSkipCountTotalSensor(entry, engine)
+    assert sensor.native_value == 37

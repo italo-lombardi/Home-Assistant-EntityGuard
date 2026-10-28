@@ -61,6 +61,8 @@ async def async_setup_entry(
         EntityGuardLastEnforcedSensor(entry, engine),
         EntityGuardEnforcementCountTodaySensor(entry, engine),
         EntityGuardEnforcementCountTotalSensor(entry, engine),
+        EntityGuardSkipCountTodaySensor(entry, engine),
+        EntityGuardSkipCountTotalSensor(entry, engine),
         EntityGuardCooldownRemainingSensor(entry, engine),
         EntityGuardSuppressedUntilSensor(entry, engine),
         EntityGuardRuleIdSensor(entry, engine),
@@ -256,6 +258,37 @@ class EntityGuardEnforcementCountTotalSensor(EntityGuardSensor):
             "counter_since": since.isoformat(),
             "counter_days": max(0, (dt_util.now() - since).days),
         }
+
+
+class EntityGuardSkipCountTodaySensor(EntityGuardSensor):
+    """Sensor exposing today's skip count (triggers the rule did not act on)."""
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, entry: ConfigEntry, engine: RuleEngine) -> None:
+        """Initialize the today skip-counter sensor."""
+        super().__init__(entry, engine, "skip_count_today", "skip_count_today")
+
+    @property
+    def native_value(self) -> int:
+        """Return today's skip count."""
+        return int(self._engine.state.skip_count_today or 0)
+
+
+class EntityGuardSkipCountTotalSensor(EntityGuardSensor):
+    """Sensor exposing total skip count (triggers the rule did not act on)."""
+
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, entry: ConfigEntry, engine: RuleEngine) -> None:
+        """Initialize the total skip-counter sensor."""
+        super().__init__(entry, engine, "skip_count_total", "skip_count_total")
+
+    @property
+    def native_value(self) -> int:
+        """Return total skip count."""
+        return int(self._engine.state.skip_count_total or 0)
 
 
 class EntityGuardCooldownRemainingSensor(EntityGuardSensor):

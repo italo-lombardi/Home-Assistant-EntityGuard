@@ -284,6 +284,7 @@ class RuleEngine:
     def _handle_midnight(self, _now: datetime) -> None:
         """Zero today counter at HA-local midnight."""
         self._state.enforcement_count_today = 0
+        self._state.skip_count_today = 0
         self._state.today_reset_date = dt_util.now().date()
         self._persist()
         # _broadcast_status() first so counter sensors refresh unconditionally,
@@ -314,6 +315,7 @@ class RuleEngine:
         today = dt_util.now().date()
         if self._state.today_reset_date != today:
             self._state.enforcement_count_today = 0
+            self._state.skip_count_today = 0
             self._state.today_reset_date = today
 
     def _maybe_backfill_counter_since(self) -> None:
@@ -1324,6 +1326,14 @@ class RuleEngine:
         if error is not None:
             data["error"] = error
         self._hass.bus.async_fire(EVENT_SKIPPED, data)
+        # Skip counters: count only genuine "did-not-act" skips, NOT a failed
+        # service call (REASON_SERVICE_CALL_FAILED has its own error path —
+        # consecutive_errors / STATUS_ERROR — and counting it here would double-
+        # count and muddy the misconfig signal). skip_count_today resets daily;
+        # skip_count_total is persisted and monotonic like enforcement_count_total.
+        if reason != REASON_SERVICE_CALL_FAILED:
+            self._state.skip_count_today += 1
+            self._state.skip_count_total += 1
         # Record the per-target outcome. REASON_SERVICE_CALL_FAILED is routed through
         # _fire_skipped but is semantically a FAIL, not a skip — derive from the
         # reason so this one write correctly labels every non-ok call site.
@@ -1333,6 +1343,11 @@ class RuleEngine:
             "error": error,
             "at": dt_util.now(),
         }
+        # Persist so skip counts survive a restart like the enforcement counters.
+        # A skip-only rule never hits the enforce-success persist, so without this
+        # its skip_count_total would reset to 0 on every restart. _persist ->
+        # set_rule_state is debounced internally, so a per-skip call is cheap.
+        self._persist()
 
     async def async_test_enforce(self, user_id: str | None = None) -> None:
         """Force an enforcement run against every target entity.
@@ -1464,6 +1479,8 @@ class RuleEngine:
         self._schedule_suppression_timer()
         self._state.enforcement_count_today = 0
         self._state.enforcement_count_total = 0
+        self._state.skip_count_today = 0
+        self._state.skip_count_total = 0
         self._state.last_enforced = None
         self._state.rate_limit_window.clear()
         self._state.consecutive_errors = 0

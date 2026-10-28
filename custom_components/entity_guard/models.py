@@ -146,6 +146,13 @@ class RuleRuntimeState:
     cooldowns: dict[str, datetime] = field(default_factory=dict)
     enforcement_count_today: int = 0
     enforcement_count_total: int = 0
+    # Skips = triggers the rule did NOT act on (no_service_mapping, light_off,
+    # source_offline, …). A rising skip count is the earliest misconfig/bad-device
+    # signal — a silently-skipping rule otherwise looks identical to a healthy idle
+    # one. service_call_failed is NOT counted here (it has its own error path).
+    # Persisted like the enforcement counters; today resets at the daily rollover.
+    skip_count_today: int = 0
+    skip_count_total: int = 0
     last_enforced: datetime | None = None
     suppressed_until: datetime | None = None
     today_reset_date: date | None = None
