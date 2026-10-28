@@ -100,7 +100,6 @@ def create_verify_rule(token: str, name: str, verify: bool) -> str:
     return entry_id
 
 
-
 def status_sensor_for(token: str, name_slug: str, timeout: int = 100) -> str:
     """Find THIS run's status sensor entity_id (past startup grace)."""
     deadline = time.time() + timeout
@@ -136,7 +135,9 @@ def main() -> int:
     name = "ea_smoke_verify_on"
     slug = name
     entry = create_verify_rule(token, name, verify=True)
-    sf.check("verify-enabled rule created (extras step accepted verify_enabled)", bool(entry))
+    sf.check(
+        "verify-enabled rule created (extras step accepted verify_enabled)", bool(entry)
+    )
     ok = ok and bool(entry)
     time.sleep(2)
 
