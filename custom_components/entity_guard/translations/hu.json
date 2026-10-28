@@ -462,6 +462,9 @@
       },
       "recently_enforced": {
         "name": "Nemrég kényszerítve"
+      },
+      "recently_enforced_verified": {
+        "name": "Nemrég kényszerítve (ellenőrizve)"
       }
     },
     "sensor": {

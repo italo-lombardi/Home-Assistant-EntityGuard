@@ -462,6 +462,9 @@
       },
       "recently_enforced": {
         "name": "最近已强制执行"
+      },
+      "recently_enforced_verified": {
+        "name": "最近已强制执行（已验证）"
       }
     },
     "sensor": {

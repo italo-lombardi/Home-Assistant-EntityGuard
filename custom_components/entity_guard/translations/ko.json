@@ -462,6 +462,9 @@
       },
       "recently_enforced": {
         "name": "최근 적용됨"
+      },
+      "recently_enforced_verified": {
+        "name": "최근 적용됨(확인됨)"
       }
     },
     "sensor": {

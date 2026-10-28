@@ -348,6 +348,11 @@ EVENT_ENFORCED = "entity_guard_enforced"
 EVENT_SKIPPED = "entity_guard_skipped"
 EVENT_LOOP_DETECTED = "entity_guard_loop_detected"
 EVENT_SUPPRESSED = "entity_guard_suppressed"
+# Fired only when verify is enabled, only on a confirmed success (the verify
+# re-read reached desired). One pulse per enforcement cycle at confirm time —
+# never on verify-off, never on a fail/suppress/kill-switch. A clean automation
+# gate: wait for this instead of EVENT_ENFORCED (which is provisional under verify).
+EVENT_VERIFIED = "entity_guard_enforced_verified"
 
 # Services
 SERVICE_SUPPRESS = "suppress"

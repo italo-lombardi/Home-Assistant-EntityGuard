@@ -462,6 +462,9 @@
       },
       "recently_enforced": {
         "name": "Neseniai pritaikyta"
+      },
+      "recently_enforced_verified": {
+        "name": "Neseniai pritaikyta (patvirtinta)"
       }
     },
     "sensor": {

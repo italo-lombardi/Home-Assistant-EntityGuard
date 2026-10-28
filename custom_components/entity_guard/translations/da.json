@@ -462,6 +462,9 @@
       },
       "recently_enforced": {
         "name": "Nyligt håndhævet"
+      },
+      "recently_enforced_verified": {
+        "name": "Nyligt håndhævet (verificeret)"
       }
     },
     "sensor": {

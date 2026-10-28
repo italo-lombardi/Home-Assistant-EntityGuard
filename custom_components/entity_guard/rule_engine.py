@@ -46,6 +46,7 @@ from .const import (
     EVENT_LOOP_DETECTED,
     EVENT_SKIPPED,
     EVENT_SUPPRESSED,
+    EVENT_VERIFIED,
     FOLLOW_ON_STATES,
     MODE_DYNAMIC_ATTRIBUTE,
     MODE_DYNAMIC_STATE,
@@ -134,6 +135,11 @@ class RuleEngine:
         self._cooldown_broadcast_unsubs: dict[str, Callable[[], None]] = {}
         self._recently_enforced: bool = False
         self._recently_enforced_unsub: Callable[[], None] | None = None
+        # Verify-confirmed twin of recently_enforced. Armed only by _fire_verified
+        # (verify-on, confirmed-success path); backs the recently_enforced_verified
+        # sensor that exists only while verify is enabled.
+        self._recently_enforced_verified: bool = False
+        self._recently_enforced_verified_unsub: Callable[[], None] | None = None
         # One-shot suppression-expiry timer (EG-4). Cancelled and replaced when
         # suppression is set, cleared, or the rule's lifecycle changes.
         self._suppression_timer_unsub: Callable[[], None] | None = None
@@ -269,6 +275,7 @@ class RuleEngine:
 
         self._cancel_suppression_timer()
         self._cancel_recently_enforced_timer()
+        self._cancel_recently_enforced_verified_timer()
 
         self._persist()
         await self._store.async_save_now()
@@ -280,13 +287,27 @@ class RuleEngine:
         new_state = event.data.get("new_state")
         if entity_id is None:
             return
-        # A REAL state_changed for a target supersedes any in-flight verify for it:
-        # cancel the pending verify (dedupe — the reactive path will re-evaluate) and
-        # clear the unreachable latch (the target moved, so it is reachable again and
-        # may be re-verified on its next enforce). Both hang off this one genuine-
-        # event hook. Guarded to target entities so a flag/source event is unaffected.
+        # A REAL state_changed for a target clears the unreachable latch (the target
+        # moved, so it is reachable again and may be re-verified) and resets the
+        # self-heal counters. But whether it SUPERSEDES an in-flight verify depends on
+        # WHERE it moved: a move that reached desired is exactly the success the verify
+        # was armed to confirm — cancelling it here (the target's own post-enforce
+        # off→on event lands before the 5 s re-read) would make EVENT_VERIFIED / the
+        # verified sensor unreachable on the normal happy path. So cancel the pending
+        # verify ONLY when the target is still (or newly) OFF desired — a genuine
+        # away-move makes the in-flight cycle stale; the reactive path re-evaluates.
+        # When it reached desired, leave the verify armed: its re-read confirms and
+        # fires the signal. (Offline/unknown counts as away here so we never confirm
+        # on a vanished target — the timer's own _verify_reached must not be the only
+        # guard.)
         if entity_id in self._config.target_entities:
-            self._cancel_verify(entity_id)
+            reached_desired = (
+                new_state is not None
+                and new_state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN)
+                and not self._trigger_decision(entity_id, new_state)[0]
+            )
+            if not reached_desired:
+                self._cancel_verify(entity_id)
             self._unreachable.discard(entity_id)
             # Reset the attempt count too: the target moved, so the superseded
             # cycle is abandoned. Without this, the NEXT enforce's fresh verify
@@ -1040,7 +1061,15 @@ class RuleEngine:
                 return
             if self._verify_reached(entity_id):
                 # Reached desired — clean, reset the attempt counter.
+                # attempts = corrective re-enforces done + 1 (the original enforce).
+                # First-read success (no corrective yet) → 1; after N correctives → N+1.
+                attempts = self._verify_attempts.get(entity_id, 0) + 1
                 self._verify_attempts.pop(entity_id, None)
+                # Confirmed success — the one clean signal automations gate on. Fired
+                # here and ONLY here: verify-on by construction (this closure is armed
+                # only when verify_enabled), success-only (we reached desired), one
+                # pulse per cycle. Arms the recently_enforced_verified sensor too.
+                self._fire_verified(entity_id, attempts)
                 # Verify window closed and the target is compliant: re-derive so the
                 # card leaves VERIFYING for the real idle status (ARMED/COOLDOWN).
                 self._apply_idle_status()
@@ -1741,6 +1770,11 @@ class RuleEngine:
         self._cancel_recently_enforced_timer()
         had_recently_enforced = self._recently_enforced
         self._recently_enforced = False
+        self._cancel_recently_enforced_verified_timer()
+        had_recently_enforced = (
+            had_recently_enforced or self._recently_enforced_verified
+        )
+        self._recently_enforced_verified = False
         # Re-arm suppression timer so EG-4 expiry callback survives this reset.
         self._schedule_suppression_timer()
         # Resetting also clears the recovery counter so a fresh window starts.
@@ -1821,6 +1855,11 @@ class RuleEngine:
         self._cancel_recently_enforced_timer()
         had_recently_enforced = self._recently_enforced
         self._recently_enforced = False
+        self._cancel_recently_enforced_verified_timer()
+        had_recently_enforced = (
+            had_recently_enforced or self._recently_enforced_verified
+        )
+        self._recently_enforced_verified = False
         # Re-arm suppression timer so EG-4 expiry callback survives this clear.
         self._schedule_suppression_timer()
         self._state.enforcement_count_today = 0
@@ -1945,6 +1984,10 @@ class RuleEngine:
     def is_recently_enforced(self) -> bool:
         """Return True if enforcement fired within the last 30 seconds."""
         return self._recently_enforced
+
+    def is_recently_enforced_verified(self) -> bool:
+        """Return True if a verify-confirmed enforcement fired in the last 30s."""
+        return self._recently_enforced_verified
 
     def cooldown_remaining_seconds(self) -> float:
         """Return the largest remaining cooldown across tracked entities."""
@@ -2096,6 +2139,75 @@ class RuleEngine:
                 _clear, "entity_guard_recently_enforced_reset", cancel_on_shutdown=True
             ),
         )
+
+    def _cancel_recently_enforced_verified_timer(self) -> None:
+        """Cancel any pending recently-enforced-verified reset timer."""
+        if self._recently_enforced_verified_unsub is None:
+            return
+        try:
+            self._recently_enforced_verified_unsub()
+        except Exception:
+            pass
+        self._recently_enforced_verified_unsub = None
+
+    def _arm_recently_enforced_verified(self) -> None:
+        """Set recently_enforced_verified flag and schedule a 30s reset.
+
+        Twin of _arm_recently_enforced for the verify-confirmed signal. Pulses off
+        first so an automation gating on the rising edge re-triggers on a second
+        confirm within the window.
+        """
+        self._cancel_recently_enforced_verified_timer()
+
+        if self._recently_enforced_verified:
+            self._recently_enforced_verified = False
+            async_dispatcher_send(
+                self._hass, signal_rule_update(self._config.unique_id)
+            )
+
+        self._recently_enforced_verified = True
+
+        @callback
+        def _clear(_now: datetime) -> None:
+            self._recently_enforced_verified_unsub = None
+            if self._is_unloaded:
+                return
+            self._recently_enforced_verified = False
+            async_dispatcher_send(
+                self._hass, signal_rule_update(self._config.unique_id)
+            )
+
+        self._recently_enforced_verified_unsub = async_call_later(
+            self._hass,
+            RECENTLY_ENFORCED_WINDOW_SECONDS,
+            HassJob(
+                _clear,
+                "entity_guard_recently_enforced_verified_reset",
+                cancel_on_shutdown=True,
+            ),
+        )
+
+    def _fire_verified(self, target_entity_id: str, attempts: int) -> None:
+        """Emit the confirmed-success event + arm the verified sensor.
+
+        Called only from the verify-confirm branch (verify-on, reached desired).
+        Payload mirrors EVENT_ENFORCED minus the provisional-only fields, plus
+        `attempts` (1 = verified first read; N+1 = after N corrective retries).
+        """
+        self._hass.bus.async_fire(
+            EVENT_VERIFIED,
+            {
+                "rule_id": self._config.unique_id,
+                "rule_name": self._config.name,
+                "entity_id": self._get_rule_entity_id() or target_entity_id,
+                "target_entity_id": target_entity_id,
+                "domain": target_entity_id.split(".", 1)[0],
+                "trigger": self._config.mode,
+                "target": self._event_target(),
+                "attempts": attempts,
+            },
+        )
+        self._arm_recently_enforced_verified()
 
     def _schedule_suppression_timer(self) -> None:
         """Schedule an expiry callback to refresh UI when suppression ends (EG-4).

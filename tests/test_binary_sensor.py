@@ -20,12 +20,20 @@ from custom_components.entity_guard.const import (
 )
 
 
-def _make_engine(armed=False, active=False, in_cooldown=False):
+def _make_engine(
+    armed=False,
+    active=False,
+    in_cooldown=False,
+    verify_enabled=False,
+    recently_enforced_verified=False,
+):
     engine = MagicMock()
     engine.config.unique_id = "test-uid"
+    engine.config.verify_enabled = verify_enabled
     engine.is_armed.return_value = armed
     engine.is_active.return_value = active
     engine.is_in_cooldown.return_value = in_cooldown
+    engine.is_recently_enforced_verified.return_value = recently_enforced_verified
     return engine
 
 
@@ -404,3 +412,113 @@ async def test_recently_enforced_no_target_entities_no_subscription(
     sensor.async_write_ha_state = MagicMock()
     await sensor.async_added_to_hass()  # must not raise
     sensor.async_write_ha_state.assert_called()
+
+
+# ---------------------------------------------------------------------------
+# EntityGuardRecentlyEnforcedVerifiedSensor + verify-on lifecycle
+# ---------------------------------------------------------------------------
+
+
+def test_recently_enforced_verified_sensor_is_on():
+    from custom_components.entity_guard.binary_sensor import (
+        EntityGuardRecentlyEnforcedVerifiedSensor,
+    )
+
+    entry = _make_rule_entry()
+    engine = _make_engine(recently_enforced_verified=True)
+    sensor = EntityGuardRecentlyEnforcedVerifiedSensor(entry, engine)
+    assert sensor.is_on is True
+
+
+def test_recently_enforced_verified_sensor_is_off():
+    from custom_components.entity_guard.binary_sensor import (
+        EntityGuardRecentlyEnforcedVerifiedSensor,
+    )
+
+    entry = _make_rule_entry()
+    engine = _make_engine(recently_enforced_verified=False)
+    sensor = EntityGuardRecentlyEnforcedVerifiedSensor(entry, engine)
+    assert sensor.is_on is False
+
+
+async def test_setup_entry_adds_verified_sensor_when_verify_on(hass: HomeAssistant):
+    from custom_components.entity_guard.binary_sensor import async_setup_entry
+
+    entry = _make_rule_entry()
+    engine = _make_engine(verify_enabled=True)
+    hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
+    added = []
+    await async_setup_entry(hass, entry, added.extend)
+    assert len(added) == 6
+    assert "EntityGuardRecentlyEnforcedVerifiedSensor" in [
+        type(s).__name__ for s in added
+    ]
+
+
+async def test_setup_entry_omits_verified_sensor_when_verify_off(hass: HomeAssistant):
+    from custom_components.entity_guard.binary_sensor import async_setup_entry
+
+    entry = _make_rule_entry()
+    engine = _make_engine(verify_enabled=False)
+    hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
+    added = []
+    await async_setup_entry(hass, entry, added.extend)
+    assert "EntityGuardRecentlyEnforcedVerifiedSensor" not in [
+        type(s).__name__ for s in added
+    ]
+
+
+async def test_setup_entry_disables_verified_row_on_verify_off(hass: HomeAssistant):
+    """Verify ON->OFF: an existing registry row is disabled (not removed), reversibly."""
+    from homeassistant.helpers import entity_registry as er
+    from homeassistant.helpers.entity_registry import async_get as async_get_er
+
+    from custom_components.entity_guard.binary_sensor import async_setup_entry
+
+    entry = _make_rule_entry()
+    entry.add_to_hass(hass)
+    reg = async_get_er(hass)
+    verified_uid = f"{entry.entry_id}_recently_enforced_verified"
+    reg.async_get_or_create("binary_sensor", DOMAIN, verified_uid, config_entry=entry)
+
+    engine = _make_engine(verify_enabled=False)
+    hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
+    added = []
+    await async_setup_entry(hass, entry, added.extend)
+
+    eid = reg.async_get_entity_id("binary_sensor", DOMAIN, verified_uid)
+    assert reg.async_get(eid).disabled_by is er.RegistryEntryDisabler.INTEGRATION
+    assert "EntityGuardRecentlyEnforcedVerifiedSensor" not in [
+        type(s).__name__ for s in added
+    ]
+
+
+async def test_setup_entry_reenables_verified_row_on_verify_on(hass: HomeAssistant):
+    """Verify OFF->ON: a row disabled by a prior verify-off is re-enabled, then added live."""
+    from homeassistant.helpers import entity_registry as er
+    from homeassistant.helpers.entity_registry import async_get as async_get_er
+
+    from custom_components.entity_guard.binary_sensor import async_setup_entry
+
+    entry = _make_rule_entry()
+    entry.add_to_hass(hass)
+    reg = async_get_er(hass)
+    verified_uid = f"{entry.entry_id}_recently_enforced_verified"
+    reg.async_get_or_create(
+        "binary_sensor",
+        DOMAIN,
+        verified_uid,
+        config_entry=entry,
+        disabled_by=er.RegistryEntryDisabler.INTEGRATION,
+    )
+
+    engine = _make_engine(verify_enabled=True)
+    hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
+    added = []
+    await async_setup_entry(hass, entry, added.extend)
+
+    eid = reg.async_get_entity_id("binary_sensor", DOMAIN, verified_uid)
+    assert reg.async_get(eid).disabled_by is None
+    assert "EntityGuardRecentlyEnforcedVerifiedSensor" in [
+        type(s).__name__ for s in added
+    ]
