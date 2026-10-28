@@ -541,5 +541,12 @@
       "title": "Migrated rule \"{rule}\" needs a source entity",
       "description": "The rule \"{rule}\" was migrated from a pre-release Follow mode to Dynamic state, but it has no source entity and will not enforce. Delete it and create it again, choosing a source entity."
     }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "enforced": "Rule enforced a target",
+      "skipped": "Rule skipped enforcement",
+      "loop_detected": "Rule detected an enforcement loop"
+    }
   }
 }
