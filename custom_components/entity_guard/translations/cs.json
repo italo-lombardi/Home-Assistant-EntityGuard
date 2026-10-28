@@ -401,7 +401,8 @@
         "armed": "Připraveno",
         "conditional": "Čeká na podmínky",
         "starting": "Spouští se",
-        "pending": "Chystá se vynutit"
+        "pending": "Chystá se vynutit",
+        "verifying": "Ověřuje se"
       }
     },
     "mode": {

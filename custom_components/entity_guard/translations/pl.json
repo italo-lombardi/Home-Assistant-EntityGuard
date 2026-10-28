@@ -401,7 +401,8 @@
         "armed": "Uzbrojona",
         "conditional": "Oczekuje na warunki",
         "starting": "Uruchamianie",
-        "pending": "Wkrótce wymusi"
+        "pending": "Wkrótce wymusi",
+        "verifying": "Weryfikuje"
       }
     },
     "mode": {

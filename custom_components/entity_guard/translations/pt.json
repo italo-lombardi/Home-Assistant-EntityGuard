@@ -401,7 +401,8 @@
         "armed": "Armada",
         "conditional": "À espera de condições",
         "starting": "A iniciar",
-        "pending": "Prestes a aplicar"
+        "pending": "Prestes a aplicar",
+        "verifying": "A verificar"
       }
     },
     "mode": {

@@ -69,6 +69,7 @@ from .const import (
     STATUS_PENDING,
     STATUS_STARTING,
     STATUS_SUPPRESSED,
+    STATUS_VERIFYING,
     VERIFY_DELAY_SECONDS,
     VERIFY_MAX_ATTEMPTS,
     signal_master,
@@ -824,9 +825,15 @@ class RuleEngine:
         return end is not None and end > now
 
     def _derive_armed_or_cooldown(self, now: datetime) -> str:
-        """Pick between PENDING, ARMED, and COOLDOWN based on current state."""
+        """Pick between PENDING, VERIFYING, COOLDOWN, and ARMED based on state."""
         if self._pending_enforcements:
             return STATUS_PENDING
+        # A verify re-read is armed (post-successful-enforce, within its window):
+        # the enforce call returned OK but we have not yet confirmed the target
+        # actually moved. Surface VERIFYING so the card does not flip to ARMED
+        # (falsely "all good") while the re-check is still outstanding.
+        if self._pending_verifications:
+            return STATUS_VERIFYING
         if any(end > now for end in self._state.cooldowns.values()):
             return STATUS_COOLDOWN
         return STATUS_ARMED
@@ -986,6 +993,13 @@ class RuleEngine:
             if self._pending_verifications.get(entity_id) is my_cancel:
                 self._pending_verifications.pop(entity_id, None)
             if not self._state.enabled or not self._master_enabled_getter():
+                # Rule went inactive during the verify window; our handle was
+                # cleared by the identity-guarded pop above. Re-derive so VERIFYING
+                # resolves to the real idle status (DISABLED / MASTER_DISABLED)
+                # instead of staying stuck on the card, mirroring the suppressed
+                # drop below. (If a stale fire loses the identity guard, a live
+                # handle remains and VERIFYING correctly persists for it.)
+                self._apply_idle_status()
                 return
             # Suppressed → do not correct; drop the cycle (a real event re-arms it).
             if (
@@ -993,10 +1007,16 @@ class RuleEngine:
                 and self._state.suppressed_until > dt_util.now()
             ):
                 self._verify_attempts.pop(entity_id, None)
+                # Our handle was cleared by the identity-guarded pop above; re-derive
+                # so VERIFYING resolves to the real idle status (SUPPRESSED here).
+                self._apply_idle_status()
                 return
             if self._verify_reached(entity_id):
                 # Reached desired — clean, reset the attempt counter.
                 self._verify_attempts.pop(entity_id, None)
+                # Verify window closed and the target is compliant: re-derive so the
+                # card leaves VERIFYING for the real idle status (ARMED/COOLDOWN).
+                self._apply_idle_status()
                 return
             attempts = self._verify_attempts.get(entity_id, 0)
             if attempts >= VERIFY_MAX_ATTEMPTS:
@@ -1030,7 +1050,12 @@ class RuleEngine:
                         "reason": REASON_UNREACHABLE_AFTER_RETRIES,
                     },
                 )
-                self._broadcast_status()
+                # Verify exhausted: our handle was popped at fire time, so no
+                # verify is pending. Re-derive (not a bare broadcast of the stale
+                # _current_status, which is still VERIFYING) so the card leaves
+                # VERIFYING for the real idle status (ARMED/COOLDOWN); the failed
+                # outcome surfaces in the "needing attention" panel separately.
+                self._apply_idle_status()
                 return
             # Not reached, attempts remain: corrective re-enforce (bypass rate limit
             # + debounce/cooldown — it is corrective, not a new trigger), count it,
@@ -1050,6 +1075,12 @@ class RuleEngine:
                 and entity_id not in self._unreachable
             ):
                 self._arm_verify(entity_id, trigger_context_id)
+                # The corrective _enforce above derived its post-status with no
+                # verify pending (our handle was popped at fire time), so it
+                # broadcast ARMED. Re-arming repopulated _pending_verifications;
+                # re-derive now (same tick, no paint between) so the card shows
+                # VERIFYING for the remainder of the retry window, not ARMED.
+                self._apply_idle_status()
 
         @callback
         def _fire_cb(now: datetime) -> None:
@@ -1297,17 +1328,12 @@ class RuleEngine:
         # flicker on each non-final recovery success (EG-6).
         if was_in_error and not recovered_from_error:
             post_status = STATUS_ERROR
-        elif (
-            not is_corrective
-            and self._config.debounce_enabled
-            and self._config.debounce_seconds > 0
-        ):
-            # A corrective does NOT set a cooldown (gated above), so it must not
-            # claim STATUS_COOLDOWN either — derive the real status instead,
-            # otherwise the rule would show a cooldown with no expiry (the
-            # broadcast-arm below no-ops on the absent cooldowns entry).
-            post_status = STATUS_COOLDOWN
         else:
+            # Derive the real post-enforce status. For a normal debounced enforce a
+            # cooldown was set, so this is COOLDOWN — unless a verify re-read was just
+            # armed (verify outranks COOLDOWN → VERIFYING for the re-check window). A
+            # corrective sets no cooldown and must not claim STATUS_COOLDOWN (a
+            # cooldown with no expiry), which deriving also gets right.
             post_status = self._derive_armed_or_cooldown(dt_util.now())
         self._set_status(post_status)
 

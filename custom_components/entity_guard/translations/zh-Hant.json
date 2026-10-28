@@ -401,7 +401,8 @@
         "armed": "已啟動",
         "conditional": "等待條件中",
         "starting": "啟動中",
-        "pending": "即將強制執行"
+        "pending": "即將強制執行",
+        "verifying": "驗證中"
       }
     },
     "mode": {

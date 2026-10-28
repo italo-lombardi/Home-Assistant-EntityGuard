@@ -401,7 +401,8 @@
         "armed": "Armed",
         "conditional": "Waiting on conditions",
         "starting": "Starting",
-        "pending": "About to enforce"
+        "pending": "About to enforce",
+        "verifying": "Verifying"
       }
     },
     "mode": {

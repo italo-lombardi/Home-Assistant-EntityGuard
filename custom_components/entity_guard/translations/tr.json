@@ -401,7 +401,8 @@
         "armed": "Hazır",
         "conditional": "Koşullar bekleniyor",
         "starting": "Başlatılıyor",
-        "pending": "Uygulanmak üzere"
+        "pending": "Uygulanmak üzere",
+        "verifying": "Doğrulanıyor"
       }
     },
     "mode": {

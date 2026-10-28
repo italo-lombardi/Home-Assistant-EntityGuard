@@ -401,7 +401,8 @@
         "armed": "已激活",
         "conditional": "等待条件",
         "starting": "正在启动",
-        "pending": "即将强制执行"
+        "pending": "即将强制执行",
+        "verifying": "正在验证"
       }
     },
     "mode": {

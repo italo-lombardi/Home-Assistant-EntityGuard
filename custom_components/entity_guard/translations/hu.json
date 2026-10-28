@@ -401,7 +401,8 @@
         "armed": "Élesítve",
         "conditional": "Feltételekre várva",
         "starting": "Indítás",
-        "pending": "Kényszerítés előtt"
+        "pending": "Kényszerítés előtt",
+        "verifying": "Ellenőrzés alatt"
       }
     },
     "mode": {

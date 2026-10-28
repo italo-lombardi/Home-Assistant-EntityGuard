@@ -401,7 +401,8 @@
         "armed": "Aktiverad",
         "conditional": "Väntar på villkor",
         "starting": "Startar",
-        "pending": "Strax tillämpning"
+        "pending": "Strax tillämpning",
+        "verifying": "Verifierar"
       }
     },
     "mode": {

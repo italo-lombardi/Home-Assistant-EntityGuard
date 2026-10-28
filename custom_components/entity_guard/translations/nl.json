@@ -401,7 +401,8 @@
         "armed": "Gewapend",
         "conditional": "Wachten op voorwaarden",
         "starting": "Bezig met starten",
-        "pending": "Op het punt af te dwingen"
+        "pending": "Op het punt af te dwingen",
+        "verifying": "Bezig met verifiëren"
       }
     },
     "mode": {

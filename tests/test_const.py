@@ -13,7 +13,7 @@ def test_domain() -> None:
 
 
 def test_status_values_count() -> None:
-    assert len(const.STATUS_VALUES) == 10
+    assert len(const.STATUS_VALUES) == 11
     assert set(const.STATUS_VALUES) == {
         const.STATUS_ERROR,
         const.STATUS_DISABLED,
@@ -25,6 +25,7 @@ def test_status_values_count() -> None:
         const.STATUS_CONDITIONAL,
         const.STATUS_STARTING,
         const.STATUS_PENDING,
+        const.STATUS_VERIFYING,
     }
 
 

@@ -401,7 +401,8 @@
         "armed": "待機中",
         "conditional": "条件待ち",
         "starting": "起動中",
-        "pending": "強制直前"
+        "pending": "強制直前",
+        "verifying": "検証中"
       }
     },
     "mode": {

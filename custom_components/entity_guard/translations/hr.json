@@ -401,7 +401,8 @@
         "armed": "Aktivirano",
         "conditional": "Čeka uvjete",
         "starting": "Pokreće se",
-        "pending": "Uskoro provedba"
+        "pending": "Uskoro provedba",
+        "verifying": "Provjerava se"
       }
     },
     "mode": {

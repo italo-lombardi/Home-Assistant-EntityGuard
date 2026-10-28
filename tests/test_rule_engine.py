@@ -38,6 +38,7 @@ from custom_components.entity_guard.const import (
     STATUS_PENDING,
     STATUS_STARTING,
     STATUS_SUPPRESSED,
+    STATUS_VERIFYING,
     VERIFY_MAX_ATTEMPTS,
 )
 from custom_components.entity_guard.models import Flag, RuleConfig, RuleRuntimeState
@@ -4513,6 +4514,11 @@ async def test_verify_not_reached_corrective_then_exhausted(hass: HomeAssistant)
     outcome = engine.state.target_outcomes["light.bedroom"]
     assert outcome["outcome"] == "failed"
     assert outcome["reason"] == REASON_UNREACHABLE_AFTER_RETRIES
+    # Verify is done (handle popped, nothing pending): the card must leave
+    # VERIFYING for the real idle status, not stay stuck on the transient chip.
+    assert engine._pending_verifications == {}
+    assert engine._current_status != STATUS_VERIFYING
+    assert engine._current_status in (STATUS_ARMED, STATUS_COOLDOWN)
 
 
 async def test_corrective_enforce_does_not_touch_bookkeeping(hass: HomeAssistant):
@@ -4739,3 +4745,104 @@ async def test_unload_swallows_verify_cancel_exception(hass: HomeAssistant):
     engine._pending_verifications["light.bedroom"] = _boom
     await engine.async_unload()  # must not raise
     assert engine._pending_verifications == {}
+
+
+async def test_status_verifying_while_verify_pending(hass: HomeAssistant):
+    """After a verify-enabled success, status is VERIFYING (not ARMED) while the
+    re-read is outstanding — the provisional 'ok' is not yet confirmed."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+
+    assert "light.bedroom" in engine._pending_verifications
+    assert engine._current_status == STATUS_VERIFYING
+
+
+async def test_status_leaves_verifying_when_reached(hass: HomeAssistant):
+    """When the verify fires and the target is compliant, status resolves off
+    VERIFYING back to the real idle status (ARMED here, no cooldown)."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        assert engine._current_status == STATUS_VERIFYING
+        # Target reached desired by verify time → cycle clears, VERIFYING resolves.
+        hass.states.async_set("light.bedroom", "off")
+        await _run_verify_timer(hass, engine, "light.bedroom")
+
+    assert engine._pending_verifications == {}
+    assert engine._current_status == STATUS_ARMED
+
+
+async def test_status_verifying_outranks_cooldown_on_debounced_enforce(
+    hass: HomeAssistant,
+):
+    """A verify-enabled rule with debounce on: a normal successful enforce sets a
+    cooldown AND arms a verify. The post-enforce status must be VERIFYING, not
+    COOLDOWN — the re-read is still outstanding, so the card must not read 'done'.
+    (Regression: the debounce branch previously hardcoded STATUS_COOLDOWN.)"""
+    engine = _make_engine(
+        hass, _verify_config(debounce_enabled=True, debounce_seconds=60)
+    )
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+
+    # Cooldown WAS set (debounce), but verify outranks it on the chip.
+    assert engine._state.cooldowns.get("light.bedroom") is not None
+    assert "light.bedroom" in engine._pending_verifications
+    assert engine._current_status == STATUS_VERIFYING
+
+
+async def test_status_leaves_verifying_when_disabled_mid_window(hass: HomeAssistant):
+    """If the rule is disabled while a verify is pending, the verify fire must
+    re-derive so the chip leaves VERIFYING for DISABLED — not stay stuck on the
+    transient status until some later event (regression: bare early-return)."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        assert engine._current_status == STATUS_VERIFYING
+        # Rule disabled before the verify timer fires.
+        engine._state.enabled = False
+        await _run_verify_timer(hass, engine, "light.bedroom")
+
+    assert engine._pending_verifications == {}
+    assert engine._current_status == STATUS_DISABLED
