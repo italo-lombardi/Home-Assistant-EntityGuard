@@ -230,34 +230,22 @@ class EntityGuardVerifyEnabledSwitch(EntityGuardRuleSwitchBase):
         await self._set_verify(False)
 
     async def _set_verify(self, value: bool) -> None:
-        """Apply verify_enabled live and persist it to entry.options.
+        """Persist verify_enabled to entry.options and let the entry reload.
 
-        Same write pattern as the debounce switch: set the engine config at once
-        (so is_on reflects immediately), mark the entry to skip the reload the
-        options write would otherwise trigger (a toggle must not tear down the
-        rule's platforms mid-enforcement), and signal a re-evaluation. A no-op
-        toggle writes nothing. The SKIP_RELOAD mark is consumed inline by this
-        write's own eager update listener (see number.py / __init__).
+        Unlike the debounce/delay toggles, verify changes which entities exist:
+        binary_sensor.<rule>_recently_enforced_verified is created, disabled, or
+        re-enabled by binary_sensor.async_setup_entry based on verify_enabled.
+        That reconcile runs only on an entry (re)setup, so this toggle must NOT
+        mark SKIP_RELOAD — it writes the option and lets the update listener
+        reload the entry, which re-runs binary_sensor setup and applies the live
+        value through the rebuilt engine. A no-op toggle writes nothing (and so
+        triggers no reload).
         """
-        config = getattr(self._engine, "config", None)
-        if config is not None:  # pragma: no branch
-            try:
-                setattr(config, CONF_VERIFY_ENABLED, value)
-            except Exception:  # pragma: no cover - defensive
-                _LOGGER.debug("Failed to update engine config verify_enabled")
-
         new_options = {**(self._entry.options or {}), CONF_VERIFY_ENABLED: value}
         if new_options != (self._entry.options or {}):
-            self.hass.data.setdefault(DOMAIN, {}).setdefault(
-                SKIP_RELOAD_KEY, set()
-            ).add(self._entry.entry_id)
             self.hass.config_entries.async_update_entry(
                 self._entry, options=new_options
             )
-        async_dispatcher_send(
-            self.hass, signal_rule_update(self._engine.config.unique_id)
-        )
-        self.async_write_ha_state()
 
 
 class EntityGuardMasterEnabledSwitch(SwitchEntity):
