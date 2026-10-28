@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -48,15 +49,39 @@ async def async_setup_entry(
 
     engine: RuleEngine = hass.data[DOMAIN]["engines"][entry.entry_id]
 
-    async_add_entities(
-        [
-            EntityGuardArmedSensor(entry, engine),
-            EntityGuardActiveSensor(entry, engine),
-            EntityGuardInCooldownSensor(entry, engine),
-            EntityGuardPendingSensor(entry, engine),
-            EntityGuardRecentlyEnforcedSensor(entry, engine),
-        ]
-    )
+    entities: list[EntityGuardBinarySensor] = [
+        EntityGuardArmedSensor(entry, engine),
+        EntityGuardActiveSensor(entry, engine),
+        EntityGuardInCooldownSensor(entry, engine),
+        EntityGuardPendingSensor(entry, engine),
+        EntityGuardRecentlyEnforcedSensor(entry, engine),
+    ]
+
+    # The verify-confirmed twin exists only while verify is enabled. On verify
+    # ON->OFF we DISABLE its registry entry (not remove it) so an automation
+    # listening to it sees an orderly "entity disabled" instead of a silently
+    # dead trigger; OFF->ON re-enables. Reconcile here, on every (re)setup —
+    # the options flow edits verify_enabled and reloads the entry, re-running us.
+    verified_uid = f"{entry.entry_id}_recently_enforced_verified"
+    ent_reg = er.async_get(hass)
+    existing = ent_reg.async_get_entity_id("binary_sensor", DOMAIN, verified_uid)
+    if engine.config.verify_enabled:
+        if existing is not None and ent_reg.async_get(existing).disabled_by is (
+            er.RegistryEntryDisabler.INTEGRATION
+        ):
+            # Was disabled by a prior verify-off; re-enable before (re-)adding.
+            ent_reg.async_update_entity(existing, disabled_by=None)
+        entities.append(EntityGuardRecentlyEnforcedVerifiedSensor(entry, engine))
+    elif existing is not None:
+        # Verify is off but the entity was created in a prior verify-on run:
+        # keep the registry row and disable it (reversible), do not add it live.
+        if ent_reg.async_get(existing).disabled_by is None:
+            ent_reg.async_update_entity(
+                existing, disabled_by=er.RegistryEntryDisabler.INTEGRATION
+            )
+    # verify off + never created -> add nothing (sensor is created only on verify-on).
+
+    async_add_entities(entities)
 
 
 class EntityGuardBinarySensor(BinarySensorEntity):
@@ -186,3 +211,26 @@ class EntityGuardRecentlyEnforcedSensor(EntityGuardBinarySensor):
             else cfg.target_value,
             "delay_seconds": cfg.delay_seconds,
         }
+
+
+class EntityGuardRecentlyEnforcedVerifiedSensor(EntityGuardBinarySensor):
+    """ON for 30 seconds after a verify-CONFIRMED enforcement.
+
+    Created only while verify is enabled (see async_setup_entry). The clean
+    automation gate: unlike recently_enforced (which pulses on dispatch, before
+    the verify re-read), this pulses only once the target is confirmed at desired.
+    """
+
+    def __init__(self, entry: ConfigEntry, engine: RuleEngine) -> None:
+        """Initialize the recently-enforced-verified sensor."""
+        super().__init__(
+            entry,
+            engine,
+            "recently_enforced_verified",
+            "recently_enforced_verified",
+        )
+
+    @property
+    def is_on(self) -> bool:
+        """Return True if a verify-confirmed enforcement fired in the last 30s."""
+        return bool(self._engine.is_recently_enforced_verified())

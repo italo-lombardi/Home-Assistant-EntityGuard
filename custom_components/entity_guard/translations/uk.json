@@ -462,6 +462,9 @@
       },
       "recently_enforced": {
         "name": "Нещодавно застосовано"
+      },
+      "recently_enforced_verified": {
+        "name": "Нещодавно застосовано (підтверджено)"
       }
     },
     "sensor": {

@@ -462,6 +462,9 @@
       },
       "recently_enforced": {
         "name": "Nesen piemērots"
+      },
+      "recently_enforced_verified": {
+        "name": "Nesen piemērots (pārbaudīts)"
       }
     },
     "sensor": {

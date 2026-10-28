@@ -462,6 +462,9 @@
       },
       "recently_enforced": {
         "name": "Aplicada recientemente"
+      },
+      "recently_enforced_verified": {
+        "name": "Aplicada recientemente (verificada)"
       }
     },
     "sensor": {

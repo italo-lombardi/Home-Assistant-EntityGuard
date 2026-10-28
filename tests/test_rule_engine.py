@@ -22,6 +22,7 @@ from custom_components.entity_guard.const import (
     EVENT_ENFORCED,
     EVENT_LOOP_DETECTED,
     EVENT_SKIPPED,
+    EVENT_VERIFIED,
     MODE_DYNAMIC_STATE,
     MODE_FIXED_ATTRIBUTE,
     MODE_FIXED_STATE,
@@ -4144,6 +4145,75 @@ async def test_arm_recently_enforced_timer_noop_when_unloaded(hass: HomeAssistan
     assert engine._recently_enforced is True
 
 
+async def test_arm_recently_enforced_verified_timer_clears_flag(hass: HomeAssistant):
+    """Verified timer callback sets recently_enforced_verified=False and dispatches."""
+    from unittest.mock import patch
+
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+
+    captured_cb = []
+
+    def _capture_later(_hass, _delay, job):
+        captured_cb.append(job)
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=_capture_later,
+    ):
+        engine._arm_recently_enforced_verified()
+        assert engine._recently_enforced_verified is True
+
+    assert captured_cb
+    captured_cb[0].target(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert engine._recently_enforced_verified is False
+
+
+async def test_arm_recently_enforced_verified_timer_noop_when_unloaded(
+    hass: HomeAssistant,
+):
+    """Verified timer _clear callback is a no-op when engine is already unloaded."""
+    from unittest.mock import patch
+
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._recently_enforced_verified = False
+
+    captured_cb = []
+
+    def _capture_later(_hass, _delay, job):
+        captured_cb.append(job)
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=_capture_later,
+    ):
+        engine._arm_recently_enforced_verified()
+
+    engine._is_unloaded = True
+    engine._recently_enforced_verified = True  # set so we can verify it's NOT cleared
+    captured_cb[0].target(dt_util.now())
+    await hass.async_block_till_done()
+
+    assert engine._recently_enforced_verified is True
+
+
+async def test_cancel_recently_enforced_verified_timer_swallows_exception(
+    hass: HomeAssistant,
+):
+    """_cancel_recently_enforced_verified_timer swallows exceptions from unsub."""
+    engine = _make_engine(hass)
+    engine._recently_enforced_verified_unsub = MagicMock(
+        side_effect=RuntimeError("boom")
+    )
+    engine._cancel_recently_enforced_verified_timer()  # must not raise
+    assert engine._recently_enforced_verified_unsub is None
+
+
 async def test_clear_history_broadcasts_when_recently_enforced_and_status_unchanged(
     hass: HomeAssistant,
 ):
@@ -4600,6 +4670,46 @@ async def test_verify_real_event_resets_attempt_count(hass: HomeAssistant):
     engine._handle_state_event(event)
 
     assert "light.bedroom" not in engine._verify_attempts
+
+
+async def test_verify_kept_armed_when_target_reaches_desired(hass: HomeAssistant):
+    """The target's own post-enforce move TO the desired state must NOT cancel the
+    in-flight verify — that event lands before the 5 s re-read, and cancelling it
+    would make EVENT_VERIFIED / the verified sensor unreachable on the happy path.
+    The latch clear + counter resets still happen."""
+    engine = _make_engine(hass, _verify_config())  # trigger "on", desired "off"
+    engine._startup_complete = True
+    engine._unreachable.add("light.bedroom")
+    engine._verify_attempts["light.bedroom"] = 1
+    engine._consecutive_exhaustions["light.bedroom"] = 2
+    pending = MagicMock()
+    engine._pending_verifications["light.bedroom"] = pending
+
+    event = MagicMock()
+    event.data = {"entity_id": "light.bedroom", "new_state": _state("off")}  # desired
+    event.context = MagicMock(id="ctx-1")
+    engine._handle_state_event(event)
+
+    # Verify left armed (its re-read confirms), but transient markers cleared.
+    assert engine._pending_verifications.get("light.bedroom") is pending
+    assert "light.bedroom" not in engine._unreachable
+    assert "light.bedroom" not in engine._verify_attempts
+    assert "light.bedroom" not in engine._consecutive_exhaustions
+
+
+async def test_verify_cancelled_when_target_offline(hass: HomeAssistant):
+    """A target that goes offline/unknown counts as 'not reached': cancel the
+    pending verify so we never confirm the signal on a vanished target."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    engine._pending_verifications["light.bedroom"] = MagicMock()
+
+    event = MagicMock()
+    event.data = {"entity_id": "light.bedroom", "new_state": _state("unavailable")}
+    event.context = MagicMock(id="ctx-1")
+    engine._handle_state_event(event)
+
+    assert "light.bedroom" not in engine._pending_verifications
 
 
 async def test_verify_unreachable_marker_blocks_rearm(hass: HomeAssistant):
@@ -5109,3 +5219,162 @@ async def test_fire_success_sibling_still_pending_broadcasts(hass: HomeAssistant
     assert snaps, "no broadcast fired after the fired target was popped"
     assert "light.a" not in snaps[-1]
     assert "light.b" in snaps[-1]
+
+
+async def test_verified_event_fires_once_on_first_read_success(hass: HomeAssistant):
+    """verify-on + target reached desired on the FIRST re-read → EVENT_VERIFIED
+    fires exactly once with attempts=1, and the verified flag arms."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    events = []
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: events.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        hass.states.async_set("light.bedroom", "off")  # reached desired
+        await _run_verify_timer(hass, engine, "light.bedroom")
+
+    await hass.async_block_till_done()
+    assert len(events) == 1
+    data = events[0].data
+    assert data["target_entity_id"] == "light.bedroom"
+    assert data["attempts"] == 1
+    assert data["rule_id"] == engine.config.unique_id
+    assert data["domain"] == "light"
+    assert data["target"] == "off"
+    assert engine.is_recently_enforced_verified() is True
+
+
+async def test_verified_event_attempts_counts_correctives(hass: HomeAssistant):
+    """Target reaches desired only after N correctives → attempts == N+1."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    events = []
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: events.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        # Two not-reached correctives, then compliant on the third re-read.
+        await _run_verify_timer(hass, engine, "light.bedroom")  # corrective 1
+        await _run_verify_timer(hass, engine, "light.bedroom")  # corrective 2
+        hass.states.async_set("light.bedroom", "off")
+        await _run_verify_timer(hass, engine, "light.bedroom")  # confirmed
+
+    await hass.async_block_till_done()
+    assert len(events) == 1
+    assert events[0].data["attempts"] == 3  # 2 correctives + original
+
+
+async def test_verified_event_not_fired_when_verify_off(hass: HomeAssistant):
+    """verify disabled → no verify cycle, so EVENT_VERIFIED never fires and the
+    verified flag stays off even on a clean enforce."""
+    engine = _make_engine(hass, _make_config(target_state="off"))
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    events = []
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: events.append(e))
+
+    await engine._enforce("light.bedroom")
+    await hass.async_block_till_done()
+
+    assert events == []
+    assert engine.is_recently_enforced_verified() is False
+
+
+async def test_verified_event_not_fired_on_exhaustion(hass: HomeAssistant):
+    """Silent-ignore target that never reaches desired → EVENT_VERIFIED never
+    fires (only EVENT_SKIPPED does); verified flag stays off."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")  # never moves
+
+    verified = []
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: verified.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        for _ in range(VERIFY_MAX_ATTEMPTS + 1):
+            if "light.bedroom" in engine._pending_verifications:
+                await _run_verify_timer(hass, engine, "light.bedroom")
+
+    await hass.async_block_till_done()
+    assert verified == []
+    assert engine.is_recently_enforced_verified() is False
+
+
+async def test_recently_enforced_verified_pulses_off_on_re_confirm(
+    hass: HomeAssistant,
+):
+    """A second confirm while the flag is still on pulses it off then on (rising
+    edge) so an automation re-triggers — mirrors recently_enforced behaviour."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    edges = []
+    async_dispatcher_connect(
+        hass,
+        signal_for_rule(engine.config.unique_id),
+        lambda *_: edges.append(engine.is_recently_enforced_verified()),
+    )
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        hass.states.async_set("light.bedroom", "off")
+        await _run_verify_timer(hass, engine, "light.bedroom")
+        assert engine.is_recently_enforced_verified() is True
+        # Second cycle: re-enforce + confirm again while flag still on.
+        hass.states.async_set("light.bedroom", "on")
+        await engine._enforce("light.bedroom")
+        hass.states.async_set("light.bedroom", "off")
+        await _run_verify_timer(hass, engine, "light.bedroom")
+
+    await hass.async_block_till_done()
+    assert engine.is_recently_enforced_verified() is True
+    # The pulse-off edge (False) appeared between the two confirms.
+    assert False in edges
+
+
+async def test_recently_enforced_verified_cleared_by_reset(hass: HomeAssistant):
+    """reset_cooldowns / counter clear zero the verified flag and its timer."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    engine._recently_enforced_verified = True
+    engine._recently_enforced_verified_unsub = MagicMock()
+    await engine.async_reset_cooldowns()
+    assert engine.is_recently_enforced_verified() is False
+    assert engine._recently_enforced_verified_unsub is None

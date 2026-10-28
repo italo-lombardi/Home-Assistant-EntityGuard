@@ -462,6 +462,9 @@
       },
       "recently_enforced": {
         "name": "Niedawno wymuszone"
+      },
+      "recently_enforced_verified": {
+        "name": "Niedawno wymuszone (zweryfikowane)"
       }
     },
     "sensor": {
