@@ -53,7 +53,7 @@
           "add_flags": "Marker for at kræve ekstra betingelser (f.eks. håndhæv kun når ingen er hjemme, kun efter solnedgang). Lad være umarkeret for at håndhæve hver gang udløseren aktiveres.",
           "custom_rate_limit": "Løkkebeskyttelse undertrykker automatisk reglen, hvis den udløses mere end 10 gange i minuttet (standard). Lad være umarkeret for at bruge standardværdien. Marker for at angive dit eget antal eller for helt at slå løkkebeskyttelsen fra på et senere skærmbillede.",
           "add_debounce": "Marker for at ignorere hurtige frem-og-tilbage-ændringer. Reglen handler kun, hvis udløseren forbliver den samme i den tid, du angiver på et senere skærmbillede. Lad være umarkeret for at handle på hver ændring.",
-          "verify_enabled": "Marker for at tjekke målet igen nogle sekunder efter håndhævelse. Hvis enheden accepterede kommandoen, men reelt aldrig ændrede sig, prøver reglen et par gange mere og markerer det derefter som uden for rækkevidde. Lad være umarkeret for at antage, at kommandoen virkede."
+          "verify_enabled": "Marker for at tjekke målet igen nogle sekunder efter håndhævelse. Hvis enheden accepterede kommandoen, men reelt aldrig ændrede sig, bliver reglen ved med at håndhæve, indtil målet når den ønskede tilstand — den giver ikke op af sig selv. Et mål, der aldrig kommer sig, undertrykkes automatisk et stykke tid af løkkebeskyttelsen (og markeres som uden for rækkevidde) og forsøges derefter igen. Lad være umarkeret for at antage, at kommandoen virkede."
         }
       },
       "flags": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Vindue i sekunder. Min. 0, maks. 86400 (24t).",
           "rate_limit_enabled": "Marker for at lade løkkebeskyttelsen være slået til (anbefales). Fjern markering for at deaktivere den for denne regel — løbske løkker vil ikke blive standset automatisk.",
           "max_enforcements_per_minute": "Hvor mange håndhævelser i minuttet der er tilladt, før reglen automatisk undertrykkes i 15 minutter. Min. 1, maks. 600. Ignoreres når løkkebeskyttelsen er fjernet ovenfor.",
-          "verify_enabled": "Marker for at tjekke målet igen nogle sekunder efter håndhævelse og prøve igen, hvis enheden accepterede kommandoen, men reelt aldrig ændrede sig. Vises kun for regler i tilstandsmode."
+          "verify_enabled": "Marker for at tjekke målet igen nogle sekunder efter håndhævelse og blive ved med at håndhæve, indtil det når den ønskede tilstand, hvis enheden accepterede kommandoen, men reelt aldrig ændrede sig. Et mål, der aldrig kommer sig, undertrykkes automatisk af løkkebeskyttelsen og forsøges derefter igen. Vises kun for regler i tilstandsmode."
         }
       },
       "edit_attribute_params": {

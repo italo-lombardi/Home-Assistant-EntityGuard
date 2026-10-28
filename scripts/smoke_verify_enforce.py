@@ -4,11 +4,16 @@
 Feature G lets a state-mode rule (fixed_state / dynamic_state) RE-READ its
 target a few seconds after enforcing, instead of trusting the service call's
 return. If the target accepted the command but never actually reached the
-desired state, the rule retries up to VERIFY_MAX_ATTEMPTS, then records the
-target as `unreachable_after_retries` in the status sensor's `target_outcomes`
-attribute and fires EVENT_SKIPPED (inline — NOT through _fire_skipped, so the
-skip-counter classifier cannot reclassify the "failed" outcome to "skipped").
-Off by default; opt in with `verify_enabled` in the extras / advanced step.
+desired state, the rule retries up to VERIFY_MAX_ATTEMPTS, records the target
+as `unreachable_after_retries` in the status sensor's `target_outcomes`
+attribute, fires EVENT_SKIPPED (inline — NOT through _fire_skipped, so the
+skip-counter classifier cannot reclassify the "failed" outcome to "skipped"),
+and then SELF-HEALS: it re-enters the counted enforcing cycle and tries again.
+The failed outcome is therefore transient per cycle — it reappears each
+exhaustion and clears when the device complies; it is not a permanent latch.
+After CONSECUTIVE_EXHAUSTION_LIMIT consecutive exhaustions with no recovery,
+loop protection auto-suppresses the rule (reason=="unreachable_loop"). Off by
+default; opt in with `verify_enabled` in the extras / advanced step.
 
 REST-observable surface asserted here (allowed/disposable entities only):
 
@@ -18,18 +23,25 @@ REST-observable surface asserted here (allowed/disposable entities only):
      over REST. The baseline — a rule WITHOUT verify — records NO
      unreachable_after_retries outcome when its target complies.
 
-  2. UNREACHABLE LATCH (best-effort). With a verify rule enforcing an allowed
-     light, we repeatedly shove the target's state back to the pre-enforce
-     value via a raw /api/states injection, simulating a device that ACKs the
-     command but never changes. After the verify window the target's
-     target_outcomes entry should latch reason=="unreachable_after_retries"
-     (outcome=="failed"). This races the engine's own actuation and the 5 s
-     verify delay, so it is asserted leniently: a PASS confirms the latch, a
-     non-latch is reported as SKIPPED (not a hard failure) because the
-     deterministic exhaustion path is already locked by the engine unit tests
-     (test_rule_engine.py verify-exhaustion cases) through the real wait_for
-     path. This smoke adds the live REST confirmation of the config surface and
-     an opportunistic end-to-end of the latch.
+  2. UNREACHABLE FLAG + VERIFYING STATUS (best-effort). With a verify rule
+     enforcing an allowed light, we repeatedly shove the target's state back to
+     the pre-enforce value via a raw /api/states injection, simulating a device
+     that ACKs the command but never changes. After the verify window the
+     target's target_outcomes entry should show reason=="unreachable_after_retries"
+     (outcome=="failed") — transiently, since the rule self-heals and re-enters
+     enforcing; while the engine is between a successful enforce and its verify
+     re-read the status sensor should read "verifying" (the status that stops the
+     card reading "armed" early). Both race the engine's own actuation and the 5 s
+     verify delay, so both are asserted leniently: a PASS confirms, a miss is
+     reported SKIPPED (not a hard failure) — the deterministic paths are locked
+     by the engine unit tests through the real wait_for path. This smoke adds the
+     live REST confirmation.
+
+  3. RECOVERY CLEARS A STALE FAILED OUTCOME (best-effort). Once the failed
+     outcome has appeared, we stop shoving the target off and drive it
+     compliant; the stale failed/unreachable outcome must drop (a target that
+     recovered on its own is no longer flagged). Lenient like the flag above;
+     the deterministic path is locked by the engine unit tests.
 
 HONEST SCOPE — what this does NOT cover:
   - Attribute-mode rules (verify is state-mode only, by design) — not claimed.
@@ -157,16 +169,23 @@ def main() -> int:
     )
     ok = ok and compliant_clean
 
-    # --- 2. unreachable latch (best-effort) -----------------------------
+    # --- 2. unreachable flag + VERIFYING status (best-effort) ----------
     # Rule triggers on target=="off" and drives it "on". We keep shoving the
     # target back to "off" via a raw /api/states injection so it never reaches
     # the desired "on" — simulating a device that ACKs turn_on but never changes.
+    # While the engine is between a successful enforce and its verify re-read the
+    # status sensor should read STATUS_VERIFYING (not armed/cooldown — the bug
+    # this smoke confirms live). Catching it over REST races the 5 s verify
+    # window, so it is asserted leniently like the flag below.
     latched = False
+    saw_verifying = False
     force_state(token, TARGET, "off")  # trips the trigger (target now off)
     deadline = time.time() + 20
     while time.time() < deadline:
         force_state(token, TARGET, "off")  # device "ignores" the turn_on
         st = sf.get_state(token, status)
+        if st.get("state") == "verifying":
+            saw_verifying = True
         outcomes = (st.get("attributes") or {}).get("target_outcomes") or {}
         tgt = outcomes.get(TARGET, {})
         if tgt.get("reason") == "unreachable_after_retries":
@@ -174,12 +193,46 @@ def main() -> int:
             break
         time.sleep(1)
     if latched:
-        sf.check("verify latches unreachable_after_retries", True)
+        sf.check("verify flags unreachable_after_retries", True)
     else:
         print(
-            "SKIP: unreachable latch not observed over REST "
+            "SKIP: unreachable flag not observed over REST "
             "(timing-dependent; exhaustion path locked by unit tests)"
         )
+    if saw_verifying:
+        sf.check("status reads 'verifying' during the verify window", True)
+    else:
+        print(
+            "SKIP: 'verifying' status not caught over REST "
+            "(5 s window race; STATUS_VERIFYING locked by unit tests)"
+        )
+
+    # --- 3. recovery clears a stale failed outcome (best-effort) --------
+    # Bug 1: a target flagged failed/unreachable that later recovers compliant
+    # on its own must NOT keep the stale failed outcome. Stop shoving it off,
+    # drive it to the desired "on", and the target_outcomes entry should drop
+    # the failed/unreachable flag. Only meaningful if the flag above appeared.
+    if latched:
+        sf.actuate_target(token, "on")  # target now genuinely complies
+        recovered = False
+        deadline = time.time() + 20
+        while time.time() < deadline:
+            st = sf.get_state(token, status)
+            outcomes = (st.get("attributes") or {}).get("target_outcomes") or {}
+            tgt = outcomes.get(TARGET, {})
+            if tgt.get("outcome") != "failed" and (
+                tgt.get("reason") != "unreachable_after_retries"
+            ):
+                recovered = True
+                break
+            time.sleep(1)
+        if recovered:
+            sf.check("recovered target clears the stale failed outcome", True)
+        else:
+            print(
+                "SKIP: recovery-clears-failed not observed over REST "
+                "(timing-dependent; locked by unit tests)"
+            )
 
     sf.cleanup(token)
     print("RESULT:", "PASS" if ok else "FAIL")

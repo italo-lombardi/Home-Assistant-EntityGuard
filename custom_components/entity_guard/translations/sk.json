@@ -53,7 +53,7 @@
           "add_flags": "Začiarknite, ak chcete vyžadovať ďalšie podmienky (napr. vynucovať iba keď nikto nie je doma, iba po západe slnka). Ak nezačiarknete, pravidlo sa vynúti pri každom spustení.",
           "custom_rate_limit": "Ochrana proti slučkám automaticky potlačí pravidlo, ak sa spustí viac ako 10-krát za minútu (predvolené). Ak nezačiarknete, použije sa predvolená hodnota. Začiarknite pre nastavenie vlastného počtu alebo pre úplné vypnutie ochrany proti slučkám na neskoršej obrazovke.",
           "add_debounce": "Začiarknite pre ignorovanie rýchlych zmien tam a späť. Pravidlo zareaguje iba vtedy, ak spúšťač zostane rovnaký po dobu, ktorú nastavíte na neskoršej obrazovke. Ak nezačiarknete, zareaguje na každú zmenu.",
-          "verify_enabled": "Začiarknite pre opätovnú kontrolu cieľa pár sekúnd po vynútení. Ak zariadenie prijalo príkaz, no v skutočnosti sa nikdy nezmenilo, pravidlo to párkrát zopakuje a potom ho označí ako nedostupné. Ak nezačiarknete, bude sa predpokladať, že príkaz zabral."
+          "verify_enabled": "Začiarknite pre opätovnú kontrolu cieľa pár sekúnd po vynútení. Ak zariadenie prijalo príkaz, no v skutočnosti sa nikdy nezmenilo, pravidlo pokračuje vo vynucovaní, kým cieľ nedosiahne požadovaný stav — samo sa nevzdá. Cieľ, ktorý sa nikdy neobnoví, ochrana proti slučkám dočasne automaticky potlačí (a označí ako nedostupný) a potom to skúsi znova. Ak nezačiarknete, bude sa predpokladať, že príkaz zabral."
         }
       },
       "flags": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Okno v sekundách. Min 0, max 86400 (24 h).",
           "rate_limit_enabled": "Začiarknite pre ponechanie ochrany proti slučkám zapnutej (odporúčané). Zrušte začiarknutie pre jej vypnutie pre toto pravidlo — nekontrolovateľné slučky nebudú automaticky zastavené.",
           "max_enforcements_per_minute": "Koľko vynútení za minútu je povolených predtým, ako sa pravidlo automaticky potlačí na 15 minút. Min 1, max 600. Ignoruje sa, keď je ochrana proti slučkám vyššie nezačiarknutá.",
-          "verify_enabled": "Začiarknite pre opätovnú kontrolu cieľa pár sekúnd po vynútení a zopakovanie, ak zariadenie prijalo príkaz, no v skutočnosti sa nikdy nezmenilo. Zobrazuje sa iba pri pravidlách v stavovom režime."
+          "verify_enabled": "Začiarknite pre opätovnú kontrolu cieľa pár sekúnd po vynútení a pokračovanie vo vynucovaní, kým nedosiahne požadovaný stav, ak zariadenie prijalo príkaz, no v skutočnosti sa nikdy nezmenilo. Cieľ, ktorý sa nikdy neobnoví, ochrana proti slučkám automaticky potlačí a potom to skúsi znova. Zobrazuje sa iba pri pravidlách v stavovom režime."
         }
       },
       "edit_attribute_params": {

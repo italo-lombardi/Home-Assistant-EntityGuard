@@ -35,6 +35,12 @@
       },
       "suppressed_until": {
         "default": "mdi:pause-circle-outline"
+      },
+      "skip_count_today": {
+        "default": "mdi:debug-step-over"
+      },
+      "skip_count_total": {
+        "default": "mdi:debug-step-over"
       }
     },
     "switch": {

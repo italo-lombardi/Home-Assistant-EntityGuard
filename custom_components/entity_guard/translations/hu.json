@@ -53,7 +53,7 @@
           "add_flags": "Jelölje be, ha további feltételeket szeretne megkövetelni (pl. csak akkor kényszerítsen, ha senki sincs otthon, csak naplemente után). Hagyja bejelöletlenül, hogy minden alkalommal kényszerítsen, amikor a trigger aktiválódik.",
           "custom_rate_limit": "A hurokvédelem automatikusan elnyomja a szabályt, ha percenként több mint 10-szer aktiválódik (alapértelmezett). Hagyja bejelöletlenül az alapértelmezett használatához. Jelölje be, hogy saját számot állítson be, vagy hogy a hurokvédelmet teljesen kikapcsolja egy későbbi képernyőn.",
           "add_debounce": "Jelölje be, hogy figyelmen kívül hagyja a gyors oda-vissza változásokat. A szabály csak akkor lép fel, ha a trigger a beállított ideig változatlan marad egy későbbi képernyőn. Hagyja bejelöletlenül, hogy minden változásra fellépjen.",
-          "verify_enabled": "Jelölje be, hogy a kényszerítés után néhány másodperccel újraellenőrizze a célt. Ha az eszköz elfogadta a parancsot, de valójában nem változott meg, a szabály néhányszor újrapróbálkozik, majd elérhetetlennek jelöli. Hagyja bejelöletlenül, ha feltételezi, hogy a parancs sikeres volt."
+          "verify_enabled": "Jelölje be, hogy a kényszerítés után néhány másodperccel újraellenőrizze a célt. Ha az eszköz elfogadta a parancsot, de valójában nem változott meg, a szabály addig ismétli a kényszerítést, amíg a cél el nem éri a kívánt állapotot – magától nem adja fel. Azt a célt, amely egyáltalán nem áll helyre, a hurokvédelem egy időre automatikusan felfüggeszti (és elérhetetlennek jelöli), majd ismét újrapróbálkozik. Hagyja bejelöletlenül, ha feltételezi, hogy a parancs sikeres volt."
         }
       },
       "flags": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Ablak másodpercben. Min. 0, max. 86400 (24 óra).",
           "rate_limit_enabled": "Jelölje be a hurokvédelem bekapcsolva tartásához (ajánlott). Vegye ki a jelölést, hogy letiltsa ehhez a szabályhoz — a megszaladt hurkok nem állnak le automatikusan.",
           "max_enforcements_per_minute": "Hány kényszerítés engedélyezett percenként, mielőtt a szabály automatikusan elnyomja magát 15 percre. Min. 1, max. 600. Figyelmen kívül hagyva, ha a hurokvédelem fentebb ki van kapcsolva.",
-          "verify_enabled": "Jelölje be, hogy a kényszerítés után néhány másodperccel újraellenőrizze a célt, és újrapróbálkozzon, ha az eszköz elfogadta a parancsot, de valójában nem változott meg. Csak állapot módú szabályoknál jelenik meg."
+          "verify_enabled": "Jelölje be, hogy a kényszerítés után néhány másodperccel újraellenőrizze a célt, és addig ismételje a kényszerítést, amíg a cél el nem éri a kívánt állapotot, ha az eszköz elfogadta a parancsot, de valójában nem változott meg. Azt a célt, amely egyáltalán nem áll helyre, a hurokvédelem automatikusan felfüggeszti, majd ismét újrapróbálkozik. Csak állapot módú szabályoknál jelenik meg."
         }
       },
       "edit_attribute_params": {

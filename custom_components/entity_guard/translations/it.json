@@ -53,7 +53,7 @@
           "add_flags": "Seleziona per richiedere condizioni aggiuntive (es. applicare solo quando nessuno è in casa, solo dopo il tramonto). Lascia deselezionato per applicare ogni volta che il trigger si attiva.",
           "custom_rate_limit": "La protezione anti-loop sopprime automaticamente la regola se si attiva più di 10 volte al minuto (predefinito). Lascia deselezionato per usare il valore predefinito. Seleziona per impostare un valore personalizzato o per disattivare completamente la protezione anti-loop in una schermata successiva.",
           "add_debounce": "Seleziona per ignorare i cambiamenti rapidi avanti e indietro. La regola agisce solo se il trigger rimane invariato per il tempo impostato in una schermata successiva. Lascia deselezionato per agire ad ogni cambiamento.",
-          "verify_enabled": "Seleziona per ricontrollare la destinazione alcuni secondi dopo l'applicazione. Se il dispositivo ha accettato il comando ma non è mai cambiato davvero, la regola riprova un paio di volte, poi la segnala come irraggiungibile. Lascia deselezionato per presumere che il comando abbia funzionato."
+          "verify_enabled": "Seleziona per ricontrollare la destinazione alcuni secondi dopo l'applicazione. Se il dispositivo ha accettato il comando ma non è mai cambiato davvero, la regola continua a riapplicarlo finché la destinazione non raggiunge lo stato desiderato: non si arrende da sola. Una destinazione che non si riprende mai viene sospesa automaticamente per un po' dalla protezione anti-loop (e segnalata come irraggiungibile), poi viene riprovata di nuovo. Lascia deselezionato per presumere che il comando abbia funzionato."
         }
       },
       "flags": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Finestra in secondi. Min 0, max 86400 (24h).",
           "rate_limit_enabled": "Seleziona per mantenere attiva la protezione anti-loop (consigliato). Deseleziona per disabilitarla per questa regola — i loop incontrollati non verranno fermati automaticamente.",
           "max_enforcements_per_minute": "Quante applicazioni al minuto sono consentite prima che la regola venga auto-soppressa per 15 minuti. Min 1, max 600. Ignorato quando la protezione anti-loop è deselezionata sopra.",
-          "verify_enabled": "Seleziona per ricontrollare la destinazione alcuni secondi dopo l'applicazione e riprovare se il dispositivo ha accettato il comando ma non è mai cambiato davvero. Mostrato solo per le regole in modalità Stato."
+          "verify_enabled": "Seleziona per ricontrollare la destinazione alcuni secondi dopo l'applicazione e continuare a riapplicarla finché non raggiunge lo stato desiderato, se il dispositivo ha accettato il comando ma non è mai cambiato davvero. Una destinazione che non si riprende mai viene sospesa automaticamente dalla protezione anti-loop, poi viene riprovata. Mostrato solo per le regole in modalità Stato."
         }
       },
       "edit_attribute_params": {
