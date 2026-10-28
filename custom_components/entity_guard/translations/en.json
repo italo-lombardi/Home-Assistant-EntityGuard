@@ -472,6 +472,12 @@
       "enforcement_count_total": {
         "name": "Enforcements total"
       },
+      "skip_count_today": {
+        "name": "Skips today"
+      },
+      "skip_count_total": {
+        "name": "Skips total"
+      },
       "cooldown_remaining": {
         "name": "Cooldown remaining"
       },
