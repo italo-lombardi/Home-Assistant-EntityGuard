@@ -401,7 +401,8 @@
         "armed": "Suaktyvinta",
         "conditional": "Laukiama sąlygų",
         "starting": "Paleidžiama",
-        "pending": "Netrukus taikys"
+        "pending": "Netrukus taikys",
+        "verifying": "Tikrinama"
       }
     },
     "mode": {

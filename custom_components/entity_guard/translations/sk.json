@@ -401,7 +401,8 @@
         "armed": "Aktivované",
         "conditional": "Čaká na podmienky",
         "starting": "Spúšťa sa",
-        "pending": "Čoskoro vynúti"
+        "pending": "Čoskoro vynúti",
+        "verifying": "Overuje sa"
       }
     },
     "mode": {

@@ -401,7 +401,8 @@
         "armed": "Aktivoitu",
         "conditional": "Odottaa ehtoja",
         "starting": "Käynnistyy",
-        "pending": "Valvonta alkamassa"
+        "pending": "Valvonta alkamassa",
+        "verifying": "Varmistetaan"
       }
     },
     "mode": {

@@ -401,7 +401,8 @@
         "armed": "Aktivert",
         "conditional": "Venter på betingelser",
         "starting": "Starter",
-        "pending": "I ferd med å håndheve"
+        "pending": "I ferd med å håndheve",
+        "verifying": "Verifiserer"
       }
     },
     "mode": {

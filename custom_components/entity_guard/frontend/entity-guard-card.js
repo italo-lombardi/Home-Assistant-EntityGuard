@@ -80,6 +80,7 @@ const STATUS_COLORS = {
   conditional: "#bdbdbd",
   starting: "#03a9f4",
   pending: "#ff5722",
+  verifying: "#00bcd4",
 };
 
 const STATUS_LABELS = {
@@ -93,6 +94,7 @@ const STATUS_LABELS = {
   conditional: "Waiting on conditions",
   starting: "Starting",
   pending: "About to enforce",
+  verifying: "Verifying",
 };
 
 const cardStyles = css`

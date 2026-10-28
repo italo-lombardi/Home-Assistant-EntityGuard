@@ -401,7 +401,8 @@
         "armed": "Aktivizēts",
         "conditional": "Gaida nosacījumus",
         "starting": "Sākas",
-        "pending": "Gatavojas piemērot"
+        "pending": "Gatavojas piemērot",
+        "verifying": "Pārbauda"
       }
     },
     "mode": {

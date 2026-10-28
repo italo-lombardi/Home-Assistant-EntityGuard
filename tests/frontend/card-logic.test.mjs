@@ -25,6 +25,27 @@ const cardJs = read(
   "../../custom_components/entity_guard/frontend/entity-guard-card.js",
 );
 
+// Backend-parity guard: every STATUS_* the engine can emit (const.py
+// STATUS_VALUES) must have a label AND a color in the card's two maps, else the
+// card falls back to the raw enum string / conditional color. Fails on drift —
+// the exact failure that let "verifying" ship with no card entry.
+test("STATUS_VALUES parity: card maps cover every engine status", () => {
+  const statuses = [
+    ...constPy.matchAll(/^STATUS_[A-Z_]+ = "([a-z_]+)"$/gm),
+  ].map((m) => m[1]);
+  assert.ok(statuses.length >= 10, "parsed the STATUS_* consts");
+  const mapKeys = (name) => {
+    const body = cardJs.match(new RegExp(`const ${name} = \\{([^}]*)\\}`))[1];
+    return [...body.matchAll(/^\s*([a-z_]+):/gm)].map((m) => m[1]);
+  };
+  const labels = mapKeys("STATUS_LABELS");
+  const colors = mapKeys("STATUS_COLORS");
+  for (const s of statuses) {
+    assert.ok(labels.includes(s), `STATUS_LABELS missing "${s}"`);
+    assert.ok(colors.includes(s), `STATUS_COLORS missing "${s}"`);
+  }
+});
+
 test("_formatSeconds: sub-minute shows bare seconds", () => {
   assert.equal(Card.prototype._formatSeconds.call(bare, 0), "0 s");
   assert.equal(Card.prototype._formatSeconds.call(bare, 59), "59 s");

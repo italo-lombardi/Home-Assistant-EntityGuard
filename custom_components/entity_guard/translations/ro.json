@@ -401,7 +401,8 @@
         "armed": "Armat",
         "conditional": "Așteaptă condiții",
         "starting": "Pornește",
-        "pending": "Pe cale de a impune"
+        "pending": "Pe cale de a impune",
+        "verifying": "Verifică"
       }
     },
     "mode": {

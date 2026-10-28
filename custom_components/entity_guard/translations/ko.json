@@ -401,7 +401,8 @@
         "armed": "준비됨",
         "conditional": "조건 대기 중",
         "starting": "시작 중",
-        "pending": "적용 예정"
+        "pending": "적용 예정",
+        "verifying": "확인 중"
       }
     },
     "mode": {

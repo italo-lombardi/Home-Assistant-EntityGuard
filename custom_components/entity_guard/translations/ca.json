@@ -401,7 +401,8 @@
         "armed": "Armada",
         "conditional": "Esperant condicions",
         "starting": "Iniciant",
-        "pending": "A punt d'aplicar"
+        "pending": "A punt d'aplicar",
+        "verifying": "Verificant"
       }
     },
     "mode": {

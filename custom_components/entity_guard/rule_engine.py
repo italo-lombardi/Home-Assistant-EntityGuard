@@ -69,6 +69,7 @@ from .const import (
     STATUS_PENDING,
     STATUS_STARTING,
     STATUS_SUPPRESSED,
+    STATUS_VERIFYING,
     VERIFY_DELAY_SECONDS,
     VERIFY_MAX_ATTEMPTS,
     signal_master,
@@ -521,6 +522,15 @@ class RuleEngine:
         if not triggered:
             # State no longer matches; cancel any pending delayed enforcement.
             self._cancel_pending(entity_id)
+            # Recovery: a target that is LIVE and no longer triggers the rule is
+            # compliant (it reached the desired state), so clear a stale non-ok
+            # outcome — otherwise a target that failed while offline and then came
+            # back already-correct stays in "Targets needing attention" forever,
+            # because no enforce fires to overwrite the latched failure. Guarded to
+            # a live state (new_state present and not unavailable/unknown) so an
+            # offline target is NOT falsely marked healthy, and only written when
+            # an outcome actually needs clearing (avoid broadcast churn).
+            self._clear_target_outcome_if_live(entity_id, new_state, now)
             self._set_or_force_broadcast(self._derive_armed_or_cooldown(now))
             return
 
@@ -569,6 +579,34 @@ class RuleEngine:
         """Return True if the rule's trigger condition holds for entity_id's state."""
         triggered, _skip_reason = self._trigger_decision(entity_id, new_state)
         return triggered
+
+    def _clear_target_outcome_if_live(
+        self, entity_id: str, new_state: Any, now: datetime
+    ) -> None:
+        """Clear a stale non-ok target outcome once the target is live + compliant.
+
+        Called from the not-triggered branch: a target that no longer triggers the
+        rule and is reachable has reached its desired state on its own (e.g. it
+        recovered from the offline failure that latched target_outcomes[...] =
+        failed). Overwrite that to ok so "Targets needing attention" drops it.
+        Skips offline targets (None / unavailable / unknown) and no-ops when there
+        is nothing non-ok to clear, so it never writes/broadcasts needlessly.
+        """
+        if new_state is None or getattr(new_state, "state", None) in (
+            STATE_UNAVAILABLE,
+            STATE_UNKNOWN,
+        ):
+            return
+        prev = self._state.target_outcomes.get(entity_id)
+        if prev is None or prev.get("outcome") == "ok":
+            return
+        self._state.target_outcomes[entity_id] = {
+            "outcome": "ok",
+            "reason": None,
+            "error": None,
+            "at": now,
+        }
+        self._persist()
 
     def _trigger_decision(
         self, entity_id: str, new_state: Any
@@ -787,9 +825,15 @@ class RuleEngine:
         return end is not None and end > now
 
     def _derive_armed_or_cooldown(self, now: datetime) -> str:
-        """Pick between PENDING, ARMED, and COOLDOWN based on current state."""
+        """Pick between PENDING, VERIFYING, COOLDOWN, and ARMED based on state."""
         if self._pending_enforcements:
             return STATUS_PENDING
+        # A verify re-read is armed (post-successful-enforce, within its window):
+        # the enforce call returned OK but we have not yet confirmed the target
+        # actually moved. Surface VERIFYING so the card does not flip to ARMED
+        # (falsely "all good") while the re-check is still outstanding.
+        if self._pending_verifications:
+            return STATUS_VERIFYING
         if any(end > now for end in self._state.cooldowns.values()):
             return STATUS_COOLDOWN
         return STATUS_ARMED
@@ -949,6 +993,13 @@ class RuleEngine:
             if self._pending_verifications.get(entity_id) is my_cancel:
                 self._pending_verifications.pop(entity_id, None)
             if not self._state.enabled or not self._master_enabled_getter():
+                # Rule went inactive during the verify window; our handle was
+                # cleared by the identity-guarded pop above. Re-derive so VERIFYING
+                # resolves to the real idle status (DISABLED / MASTER_DISABLED)
+                # instead of staying stuck on the card, mirroring the suppressed
+                # drop below. (If a stale fire loses the identity guard, a live
+                # handle remains and VERIFYING correctly persists for it.)
+                self._apply_idle_status()
                 return
             # Suppressed → do not correct; drop the cycle (a real event re-arms it).
             if (
@@ -956,10 +1007,16 @@ class RuleEngine:
                 and self._state.suppressed_until > dt_util.now()
             ):
                 self._verify_attempts.pop(entity_id, None)
+                # Our handle was cleared by the identity-guarded pop above; re-derive
+                # so VERIFYING resolves to the real idle status (SUPPRESSED here).
+                self._apply_idle_status()
                 return
             if self._verify_reached(entity_id):
                 # Reached desired — clean, reset the attempt counter.
                 self._verify_attempts.pop(entity_id, None)
+                # Verify window closed and the target is compliant: re-derive so the
+                # card leaves VERIFYING for the real idle status (ARMED/COOLDOWN).
+                self._apply_idle_status()
                 return
             attempts = self._verify_attempts.get(entity_id, 0)
             if attempts >= VERIFY_MAX_ATTEMPTS:
@@ -993,7 +1050,12 @@ class RuleEngine:
                         "reason": REASON_UNREACHABLE_AFTER_RETRIES,
                     },
                 )
-                self._broadcast_status()
+                # Verify exhausted: our handle was popped at fire time, so no
+                # verify is pending. Re-derive (not a bare broadcast of the stale
+                # _current_status, which is still VERIFYING) so the card leaves
+                # VERIFYING for the real idle status (ARMED/COOLDOWN); the failed
+                # outcome surfaces in the "needing attention" panel separately.
+                self._apply_idle_status()
                 return
             # Not reached, attempts remain: corrective re-enforce (bypass rate limit
             # + debounce/cooldown — it is corrective, not a new trigger), count it,
@@ -1013,6 +1075,12 @@ class RuleEngine:
                 and entity_id not in self._unreachable
             ):
                 self._arm_verify(entity_id, trigger_context_id)
+                # The corrective _enforce above derived its post-status with no
+                # verify pending (our handle was popped at fire time), so it
+                # broadcast ARMED. Re-arming repopulated _pending_verifications;
+                # re-derive now (same tick, no paint between) so the card shows
+                # VERIFYING for the remainder of the retry window, not ARMED.
+                self._apply_idle_status()
 
         @callback
         def _fire_cb(now: datetime) -> None:
@@ -1260,17 +1328,12 @@ class RuleEngine:
         # flicker on each non-final recovery success (EG-6).
         if was_in_error and not recovered_from_error:
             post_status = STATUS_ERROR
-        elif (
-            not is_corrective
-            and self._config.debounce_enabled
-            and self._config.debounce_seconds > 0
-        ):
-            # A corrective does NOT set a cooldown (gated above), so it must not
-            # claim STATUS_COOLDOWN either — derive the real status instead,
-            # otherwise the rule would show a cooldown with no expiry (the
-            # broadcast-arm below no-ops on the absent cooldowns entry).
-            post_status = STATUS_COOLDOWN
         else:
+            # Derive the real post-enforce status. For a normal debounced enforce a
+            # cooldown was set, so this is COOLDOWN — unless a verify re-read was just
+            # armed (verify outranks COOLDOWN → VERIFYING for the re-check window). A
+            # corrective sets no cooldown and must not claim STATUS_COOLDOWN (a
+            # cooldown with no expiry), which deriving also gets right.
             post_status = self._derive_armed_or_cooldown(dt_util.now())
         self._set_status(post_status)
 

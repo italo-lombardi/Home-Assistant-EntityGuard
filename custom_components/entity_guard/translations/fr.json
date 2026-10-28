@@ -401,7 +401,8 @@
         "armed": "Armée",
         "conditional": "En attente de conditions",
         "starting": "Démarrage",
-        "pending": "Sur le point d'être appliquée"
+        "pending": "Sur le point d'être appliquée",
+        "verifying": "Vérification en cours"
       }
     },
     "mode": {

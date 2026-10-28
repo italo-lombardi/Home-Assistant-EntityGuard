@@ -401,7 +401,8 @@
         "armed": "Scharf",
         "conditional": "Warten auf Bedingungen",
         "starting": "Startet",
-        "pending": "Bereit zur Durchsetzung"
+        "pending": "Bereit zur Durchsetzung",
+        "verifying": "Prüft nach"
       }
     },
     "mode": {
