@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Debounce ingeschakeld"
       },
+      "verify_enabled": {
+        "name": "Controleren of afdwinging is gelukt"
+      },
       "master_enabled": {
         "name": "Hoofdschakelaar ingeschakeld"
       }

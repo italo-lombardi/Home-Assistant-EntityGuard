@@ -55,6 +55,7 @@ def _config_dump(engine: RuleEngine) -> dict[str, Any]:
         "flags": [f.to_dict() for f in (c.flags or [])],
         "debounce_enabled": c.debounce_enabled,
         "debounce_seconds": c.debounce_seconds,
+        "verify_enabled": c.verify_enabled,
         "max_enforcements_per_minute": c.max_enforcements_per_minute,
         "safety_acknowledged": c.safety_acknowledged,
         "source_entity": c.source_entity,

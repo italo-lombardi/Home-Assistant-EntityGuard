@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Debounce abilitato"
       },
+      "verify_enabled": {
+        "name": "Verifica che l'applicazione abbia funzionato"
+      },
       "master_enabled": {
         "name": "Interruttore principale abilitato"
       }

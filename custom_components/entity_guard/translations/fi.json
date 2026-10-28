@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Viivevakautus käytössä"
       },
+      "verify_enabled": {
+        "name": "Vahvista, että pakotus onnistui"
+      },
       "master_enabled": {
         "name": "Pääkytkin käytössä"
       }

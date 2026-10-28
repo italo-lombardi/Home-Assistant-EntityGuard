@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Nutildymas įjungtas"
       },
+      "verify_enabled": {
+        "name": "Patikrinti, ar taikymas pavyko"
+      },
       "master_enabled": {
         "name": "Pagrindinis įjungtas"
       }

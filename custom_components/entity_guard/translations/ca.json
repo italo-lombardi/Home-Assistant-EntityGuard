@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Antirebot activat"
       },
+      "verify_enabled": {
+        "name": "Verifica que l'aplicació ha funcionat"
+      },
       "master_enabled": {
         "name": "Mestre activat"
       }

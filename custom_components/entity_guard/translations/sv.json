@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Avstudsning aktiverad"
       },
+      "verify_enabled": {
+        "name": "Verifiera att tillämpningen fungerade"
+      },
       "master_enabled": {
         "name": "Huvudbrytare aktiverad"
       }

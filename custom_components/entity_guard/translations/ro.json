@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Debounce activat"
       },
+      "verify_enabled": {
+        "name": "Verifică dacă impunerea a reușit"
+      },
       "master_enabled": {
         "name": "Principal activat"
       }

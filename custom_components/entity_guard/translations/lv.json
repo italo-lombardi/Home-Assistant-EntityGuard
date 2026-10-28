@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Atsitiena novēršana iespējota"
       },
+      "verify_enabled": {
+        "name": "Pārbaudīt, vai piemērošana nostrādāja"
+      },
       "master_enabled": {
         "name": "Galvenais iespējots"
       }

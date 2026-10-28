@@ -521,11 +521,15 @@ class EntityGuardCard extends LitElement {
       if (!st) continue;
       const entry = entities[id];
       const tk = entry?.translation_key || st.attributes?.translation_key;
-      if (
-        id.startsWith("switch.") &&
-        (tk === "enabled" || /(_|^)enabled$/.test(id))
-      ) {
-        if (!tk || tk === "enabled") out.enabled = id;
+      // The enabled switch: prefer the translation_key, but in the registry-less
+      // fallback (tk undefined) match the id suffix EXCLUDING the other _enabled
+      // switches (verify_enabled / debounce_enabled), which the loose /_enabled$/
+      // would otherwise swallow — binding the Enabled toggle to the wrong switch.
+      const idLooksEnabled =
+        /(_|^)enabled$/.test(id) &&
+        !/_(?:verify|debounce)_enabled$/.test(id);
+      if (id.startsWith("switch.") && (tk === "enabled" || idLooksEnabled)) {
+        if (tk === "enabled" || (!tk && idLooksEnabled)) out.enabled = id;
       } else if (id.startsWith("sensor.") && tk === "status") {
         out.status = id;
       } else if (id.startsWith("sensor.") && tk === "last_enforced") {
@@ -982,6 +986,18 @@ class EntityGuardCard extends LitElement {
         tpl: html`<div class="row">
           <span class="label">Debounce</span>
           <span class="value">${debounceLabel}</span>
+        </div>`,
+      });
+    }
+    if (
+      (a.mode === "fixed_state" || a.mode === "dynamic_state") &&
+      a.verify_enabled != null
+    ) {
+      rows.push({
+        label: "Verify",
+        tpl: html`<div class="row">
+          <span class="label">Verify</span>
+          <span class="value">${a.verify_enabled ? "on" : "off"}</span>
         </div>`,
       });
     }

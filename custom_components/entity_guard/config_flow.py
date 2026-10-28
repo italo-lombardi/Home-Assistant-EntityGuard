@@ -83,6 +83,7 @@ from .const import (
     SOURCE_VALUE_FROM_ATTRIBUTE,
     SOURCE_VALUE_FROM_STATE,
     SUPPORTED_OPERATORS,
+    TARGET_DOMAINS,
     has_safety_target,
 )
 
@@ -426,6 +427,18 @@ def _attribute_choice_schema(
 # Sentinel option for dynamic_attribute's "read the source's state" choice. A valid
 # slug (no leading/trailing underscore — Hassfest requirement).
 SOURCE_VALUE_FROM_OPTIONS = [SOURCE_VALUE_FROM_STATE, SOURCE_VALUE_FROM_ATTRIBUTE]
+
+
+def _target_selector() -> selector.EntitySelector:
+    """Multi-entity target selector, filtered to drivable domains.
+
+    Read-only domains (binary_sensor, sensor, person, device_tracker, …) are not
+    in TARGET_DOMAINS, so the picker never offers — and the selector's own submit
+    validation rejects — an entity the engine could only skip (no_service_mapping).
+    """
+    return selector.EntitySelector(
+        selector.EntitySelectorConfig(multiple=True, domain=TARGET_DOMAINS)
+    )
 
 
 def _source_selector(exclude_targets: list[str] | None) -> selector.EntitySelector:
@@ -793,9 +806,7 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
         schema = vol.Schema(
             {
                 vol.Required(CONF_RULE_NAME): str,
-                vol.Required(CONF_TARGET_ENTITIES): selector.EntitySelector(
-                    selector.EntitySelectorConfig(multiple=True)
-                ),
+                vol.Required(CONF_TARGET_ENTITIES): _target_selector(),
                 vol.Required(
                     CONF_MODE, default=MODE_FIXED_STATE
                 ): selector.SelectSelector(
@@ -1495,9 +1506,7 @@ class EntityGuardOptionsFlow(OptionsFlow):
                 vol.Required(
                     CONF_TARGET_ENTITIES,
                     default=self._working.get(CONF_TARGET_ENTITIES, []),
-                ): selector.EntitySelector(
-                    selector.EntitySelectorConfig(multiple=True)
-                ),
+                ): _target_selector(),
             }
         )
         return self.async_show_form(

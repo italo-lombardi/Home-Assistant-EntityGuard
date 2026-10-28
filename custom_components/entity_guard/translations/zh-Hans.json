@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "已启用防抖"
       },
+      "verify_enabled": {
+        "name": "验证强制执行是否生效"
+      },
       "master_enabled": {
         "name": "主开关已启用"
       }

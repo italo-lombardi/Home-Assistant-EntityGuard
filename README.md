@@ -36,7 +36,7 @@ Enforce desired entity state in Home Assistant via declarative rules. Replaces N
 - **Panic stop service** -- emergency disable of every rule + 60 min suppression
 - **Master switch (Hub)** -- single global kill-switch across all rules
 - **Logbook integration** -- every enforcement, skip, loop detection, and suppression logged
-- **Verify-after-enforce (opt-in)** -- a state-mode rule can re-read its target a few seconds after enforcing and retry if the device accepted the command but never changed, flagging a silently-failing device as `unreachable`
+- **Verify-after-enforce (opt-in)** -- a state-mode rule can re-read its target a few seconds after enforcing and retry if the device accepted the command but never changed, flagging a silently-failing device as `unreachable`; toggle it from the rule's config flow or the `switch.<rule>_verify_enabled` control on the device page
 - **Skip counters** -- `sensor.<rule>_skips_today` / `_skips_total` count how often the rule declined to enforce (already compliant, cooldown, offline source), distinct from enforcement counts
 - **Device-automation triggers** -- each rule device offers *enforced* / *skipped* / *loop detected* triggers in the automation editor, no hand-typed `event` trigger needed
 - **Config-entry diagnostics** -- downloadable per-rule/hub dump of config + live state, with user IDs redacted

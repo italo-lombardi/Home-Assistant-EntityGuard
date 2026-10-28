@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Debounce enabled"
       },
+      "verify_enabled": {
+        "name": "Verify enforcement worked"
+      },
       "master_enabled": {
         "name": "Master enabled"
       }

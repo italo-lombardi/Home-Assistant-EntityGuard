@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Debounce engedélyezve"
       },
+      "verify_enabled": {
+        "name": "Kényszerítés sikerének ellenőrzése"
+      },
       "master_enabled": {
         "name": "Fő engedélyezve"
       }

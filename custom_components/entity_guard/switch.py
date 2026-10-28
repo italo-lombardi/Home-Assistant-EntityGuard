@@ -19,10 +19,13 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import (
     CONF_DEBOUNCE_ENABLED,
     CONF_ENTRY_TYPE,
+    CONF_VERIFY_ENABLED,
     DEFAULT_DEBOUNCE_ENABLED,
     DOMAIN,
     ENTRY_TYPE_HUB,
     ENTRY_TYPE_RULE,
+    MODE_DYNAMIC_STATE,
+    MODE_FIXED_STATE,
     signal_master,
     signal_rule_update,
 )
@@ -75,12 +78,15 @@ async def async_setup_entry(
 
     engine: RuleEngine = hass.data[DOMAIN]["engines"][entry.entry_id]
     _LOGGER.debug("Adding rule switches for engine=%s", engine.config.name)
-    async_add_entities(
-        [
-            EntityGuardEnabledSwitch(entry, engine),
-            EntityGuardDebounceEnabledSwitch(entry, engine),
-        ]
-    )
+    entities: list[SwitchEntity] = [
+        EntityGuardEnabledSwitch(entry, engine),
+        EntityGuardDebounceEnabledSwitch(entry, engine),
+    ]
+    # Verify-after-enforce is state-mode only (matching the config flow's gate),
+    # so the toggle entity exists only where it can do anything.
+    if engine.config.mode in (MODE_FIXED_STATE, MODE_DYNAMIC_STATE):
+        entities.append(EntityGuardVerifyEnabledSwitch(entry, engine))
+    async_add_entities(entities)
 
 
 class EntityGuardRuleSwitchBase(SwitchEntity):
@@ -190,6 +196,58 @@ class EntityGuardDebounceEnabledSwitch(EntityGuardRuleSwitchBase):
         if new_options != (self._entry.options or {}):
             # Mark before the write (no await between) so the eager listener skips the
             # reload; the value is already applied live above.
+            self.hass.data.setdefault(DOMAIN, {}).setdefault(
+                SKIP_RELOAD_KEY, set()
+            ).add(self._entry.entry_id)
+            self.hass.config_entries.async_update_entry(
+                self._entry, options=new_options
+            )
+        async_dispatcher_send(
+            self.hass, signal_rule_update(self._engine.config.unique_id)
+        )
+        self.async_write_ha_state()
+
+
+class EntityGuardVerifyEnabledSwitch(EntityGuardRuleSwitchBase):
+    """Switch toggling verify-after-enforce (state-mode rules only)."""
+
+    def __init__(self, entry: ConfigEntry, engine: RuleEngine) -> None:
+        """Initialize the verify switch."""
+        super().__init__(entry, engine, "verify_enabled", "verify_enabled")
+
+    @property
+    def is_on(self) -> bool:
+        """Return True if verify-after-enforce is enabled."""
+        config = getattr(self._engine, "config", None)
+        return bool(getattr(config, "verify_enabled", False))
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Enable verify-after-enforce."""
+        await self._set_verify(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Disable verify-after-enforce."""
+        await self._set_verify(False)
+
+    async def _set_verify(self, value: bool) -> None:
+        """Apply verify_enabled live and persist it to entry.options.
+
+        Same write pattern as the debounce switch: set the engine config at once
+        (so is_on reflects immediately), mark the entry to skip the reload the
+        options write would otherwise trigger (a toggle must not tear down the
+        rule's platforms mid-enforcement), and signal a re-evaluation. A no-op
+        toggle writes nothing. The SKIP_RELOAD mark is consumed inline by this
+        write's own eager update listener (see number.py / __init__).
+        """
+        config = getattr(self._engine, "config", None)
+        if config is not None:  # pragma: no branch
+            try:
+                setattr(config, CONF_VERIFY_ENABLED, value)
+            except Exception:  # pragma: no cover - defensive
+                _LOGGER.debug("Failed to update engine config verify_enabled")
+
+        new_options = {**(self._entry.options or {}), CONF_VERIFY_ENABLED: value}
+        if new_options != (self._entry.options or {}):
             self.hass.data.setdefault(DOMAIN, {}).setdefault(
                 SKIP_RELOAD_KEY, set()
             ).add(self._entry.entry_id)
