@@ -32,20 +32,23 @@ LIVE = {"armed", "conditional", "enforcing", "pending", "cooldown"}
 
 
 def create_rule(token: str, name: str) -> str:
-    flow = sf.api(
-        token, "POST", "/api/config/config_entries/flow", {"handler": DOMAIN}
-    )
+    flow = sf.api(token, "POST", "/api/config/config_entries/flow", {"handler": DOMAIN})
     fid = flow["flow_id"]
     result = sf.api(
-        token, "POST", f"/api/config/config_entries/flow/{fid}",
+        token,
+        "POST",
+        f"/api/config/config_entries/flow/{fid}",
         {"rule_name": name, "target_entities": [TARGET], "mode": "fixed_state"},
     )
     while result.get("type") == "form":
         sf.guard_form(result)
         step = result.get("step_id")
         if step == "state":
-            payload = {"trigger_states": ["on"], "target_state": "off",
-                       "delay_seconds": 0}
+            payload = {
+                "trigger_states": ["on"],
+                "target_state": "off",
+                "delay_seconds": 0,
+            }
         elif step == "extras":
             payload = {"verify_enabled": False}
         else:
@@ -94,27 +97,43 @@ def main() -> int:
 
         # Suppress -> suppressed + known reason key (bug 2 card input).
         sf.api(
-            token, "POST", f"/api/services/{DOMAIN}/suppress",
+            token,
+            "POST",
+            f"/api/services/{DOMAIN}/suppress",
             {"rule_id": entry_id, "duration_minutes": 10},
         )
         st = wait_state(token, slug, lambda s: s == "suppressed")
-        sf.check("suppress -> status suppressed", st["state"] == "suppressed",
-                 f"state={st['state']}")
+        sf.check(
+            "suppress -> status suppressed",
+            st["state"] == "suppressed",
+            f"state={st['state']}",
+        )
         reason = st["attributes"].get("suppression_reason")
-        sf.check("suppression_reason is a known card key ('manual')",
-                 reason == "manual", f"reason={reason}")
+        sf.check(
+            "suppression_reason is a known card key ('manual')",
+            reason == "manual",
+            f"reason={reason}",
+        )
 
         # Unsuppress (clear) -> leaves suppressed, lands on a live status
         # (Thread B: no stuck-PENDING / stuck-SUPPRESSED after clear).
         sf.api(
-            token, "POST", f"/api/services/{DOMAIN}/unsuppress",
+            token,
+            "POST",
+            f"/api/services/{DOMAIN}/unsuppress",
             {"rule_id": entry_id},
         )
         st = wait_state(token, slug, lambda s: s != "suppressed")
-        sf.check("unsuppress -> leaves suppressed",
-                 st["state"] != "suppressed", f"state={st['state']}")
-        sf.check("unsuppress -> lands on a live status (not stuck)",
-                 st["state"] in LIVE, f"state={st['state']}")
+        sf.check(
+            "unsuppress -> leaves suppressed",
+            st["state"] != "suppressed",
+            f"state={st['state']}",
+        )
+        sf.check(
+            "unsuppress -> lands on a live status (not stuck)",
+            st["state"] in LIVE,
+            f"state={st['state']}",
+        )
     finally:
         sf.cleanup(token)
 

@@ -4892,7 +4892,9 @@ async def test_selfheal_exhaustion_schedules_reentry_no_suppress(hass: HomeAssis
     assert engine._current_status != STATUS_SUPPRESSED
 
 
-async def test_selfheal_skipped_event_fires_only_on_first_exhaustion(hass: HomeAssistant):
+async def test_selfheal_skipped_event_fires_only_on_first_exhaustion(
+    hass: HomeAssistant,
+):
     """EVENT_SKIPPED is one-shot per fresh exhaustion streak (count==1), not every cycle."""
     engine = _make_engine(hass, _verify_config())
     engine._startup_complete = True
@@ -4911,8 +4913,7 @@ async def test_selfheal_skipped_event_fires_only_on_first_exhaustion(hass: HomeA
     await hass.async_block_till_done()
 
     unreachable = [
-        e for e in events
-        if e.data.get("reason") == REASON_UNREACHABLE_AFTER_RETRIES
+        e for e in events if e.data.get("reason") == REASON_UNREACHABLE_AFTER_RETRIES
     ]
     assert len(unreachable) == 1
 
@@ -4929,7 +4930,9 @@ async def test_selfheal_limit_trips_loop_protection(hass: HomeAssistant):
 
     await _exhaust_once(hass, engine)
 
-    assert engine._consecutive_exhaustions["light.bedroom"] == CONSECUTIVE_EXHAUSTION_LIMIT
+    assert (
+        engine._consecutive_exhaustions["light.bedroom"] == CONSECUTIVE_EXHAUSTION_LIMIT
+    )
     assert engine._current_status == STATUS_SUPPRESSED
     assert engine._state.suppression_reason == "unreachable_loop"
     assert engine._state.suppressed_until is not None
@@ -4976,7 +4979,9 @@ async def test_trigger_loop_protection_cause_wording(hass: HomeAssistant):
     await engine2.async_unload()
 
 
-async def test_selfheal_provisional_ok_not_clobbered_mid_exhaustion(hass: HomeAssistant):
+async def test_selfheal_provisional_ok_not_clobbered_mid_exhaustion(
+    hass: HomeAssistant,
+):
     """While mid-exhaustion (counter>0), a re-entering enforce's provisional 'ok' must
     not overwrite the live failed/unreachable outcome (the verify re-read owns truth)."""
     engine = _make_engine(hass, _verify_config())
@@ -5023,7 +5028,8 @@ async def test_suppressed_target_recovery_clears_outcome_keeps_suppression(
 
     broadcasts = []
     async_dispatcher_connect(
-        hass, signal_for_rule(engine._config.unique_id),
+        hass,
+        signal_for_rule(engine._config.unique_id),
         lambda *_: broadcasts.append(1),
     )
     await engine.async_evaluate("light.bedroom", _state("off"))
@@ -5089,7 +5095,8 @@ async def test_fire_success_sibling_still_pending_broadcasts(hass: HomeAssistant
 
     snaps = []
     async_dispatcher_connect(
-        hass, signal_for_rule(config.unique_id),
+        hass,
+        signal_for_rule(config.unique_id),
         lambda *_: snaps.append(set(engine.pending_enforcement_due())),
     )
     # Fire light.a's delayed enforce; light.b stays pending (status remains PENDING).
