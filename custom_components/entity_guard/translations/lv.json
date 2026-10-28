@@ -465,6 +465,9 @@
       },
       "recently_enforced_verified": {
         "name": "Nesen piemērots (pārbaudīts)"
+      },
+      "recently_enforced_unreachable": {
+        "name": "Nesen piemērots (nav sasniedzams)"
       }
     },
     "sensor": {

@@ -46,6 +46,7 @@ from .const import (
     EVENT_LOOP_DETECTED,
     EVENT_SKIPPED,
     EVENT_SUPPRESSED,
+    EVENT_UNREACHABLE,
     EVENT_VERIFIED,
     FOLLOW_ON_STATES,
     MODE_DYNAMIC_ATTRIBUTE,
@@ -140,6 +141,11 @@ class RuleEngine:
         # sensor that exists only while verify is enabled.
         self._recently_enforced_verified: bool = False
         self._recently_enforced_verified_unsub: Callable[[], None] | None = None
+        # Failure twin of recently_enforced_verified. Armed only by _fire_unreachable
+        # (verify-on, exhausted-retries path); backs the recently_enforced_unreachable
+        # sensor that exists only while verify is enabled.
+        self._recently_enforced_unreachable: bool = False
+        self._recently_enforced_unreachable_unsub: Callable[[], None] | None = None
         # One-shot suppression-expiry timer (EG-4). Cancelled and replaced when
         # suppression is set, cleared, or the rule's lifecycle changes.
         self._suppression_timer_unsub: Callable[[], None] | None = None
@@ -276,6 +282,7 @@ class RuleEngine:
         self._cancel_suppression_timer()
         self._cancel_recently_enforced_timer()
         self._cancel_recently_enforced_verified_timer()
+        self._cancel_recently_enforced_unreachable_timer()
 
         self._persist()
         await self._store.async_save_now()
@@ -1109,6 +1116,10 @@ class RuleEngine:
                             "reason": REASON_UNREACHABLE_AFTER_RETRIES,
                         },
                     )
+                    # Dedicated failure signal (EVENT_UNREACHABLE + its 30s pulse
+                    # sensor) — the verify-only twin of _fire_verified. Same count==1
+                    # gate so it fires once per streak alongside the skipped event.
+                    self._fire_unreachable(entity_id)
                 if count >= CONSECUTIVE_EXHAUSTION_LIMIT:
                     # Dead-device kill-switch floor: trip loop protection directly.
                     # The direct call bypasses the rate-limit gate (only its caller
@@ -1775,6 +1786,11 @@ class RuleEngine:
             had_recently_enforced or self._recently_enforced_verified
         )
         self._recently_enforced_verified = False
+        self._cancel_recently_enforced_unreachable_timer()
+        had_recently_enforced = (
+            had_recently_enforced or self._recently_enforced_unreachable
+        )
+        self._recently_enforced_unreachable = False
         # Re-arm suppression timer so EG-4 expiry callback survives this reset.
         self._schedule_suppression_timer()
         # Resetting also clears the recovery counter so a fresh window starts.
@@ -1860,6 +1876,11 @@ class RuleEngine:
             had_recently_enforced or self._recently_enforced_verified
         )
         self._recently_enforced_verified = False
+        self._cancel_recently_enforced_unreachable_timer()
+        had_recently_enforced = (
+            had_recently_enforced or self._recently_enforced_unreachable
+        )
+        self._recently_enforced_unreachable = False
         # Re-arm suppression timer so EG-4 expiry callback survives this clear.
         self._schedule_suppression_timer()
         self._state.enforcement_count_today = 0
@@ -1988,6 +2009,10 @@ class RuleEngine:
     def is_recently_enforced_verified(self) -> bool:
         """Return True if a verify-confirmed enforcement fired in the last 30s."""
         return self._recently_enforced_verified
+
+    def is_recently_enforced_unreachable(self) -> bool:
+        """Return True if a verify-exhausted failure fired in the last 30s."""
+        return self._recently_enforced_unreachable
 
     def cooldown_remaining_seconds(self) -> float:
         """Return the largest remaining cooldown across tracked entities."""
@@ -2208,6 +2233,76 @@ class RuleEngine:
             },
         )
         self._arm_recently_enforced_verified()
+
+    def _cancel_recently_enforced_unreachable_timer(self) -> None:
+        """Cancel any pending recently-enforced-unreachable reset timer."""
+        if self._recently_enforced_unreachable_unsub is None:
+            return
+        try:
+            self._recently_enforced_unreachable_unsub()
+        except Exception:
+            pass
+        self._recently_enforced_unreachable_unsub = None
+
+    def _arm_recently_enforced_unreachable(self) -> None:
+        """Set recently_enforced_unreachable flag and schedule a 30s reset.
+
+        Failure twin of _arm_recently_enforced_verified. Pulses off first so an
+        automation gating on the rising edge re-triggers on a second failure
+        within the window.
+        """
+        self._cancel_recently_enforced_unreachable_timer()
+
+        if self._recently_enforced_unreachable:
+            self._recently_enforced_unreachable = False
+            async_dispatcher_send(
+                self._hass, signal_rule_update(self._config.unique_id)
+            )
+
+        self._recently_enforced_unreachable = True
+
+        @callback
+        def _clear(_now: datetime) -> None:
+            self._recently_enforced_unreachable_unsub = None
+            if self._is_unloaded:
+                return
+            self._recently_enforced_unreachable = False
+            async_dispatcher_send(
+                self._hass, signal_rule_update(self._config.unique_id)
+            )
+
+        self._recently_enforced_unreachable_unsub = async_call_later(
+            self._hass,
+            RECENTLY_ENFORCED_WINDOW_SECONDS,
+            HassJob(
+                _clear,
+                "entity_guard_recently_enforced_unreachable_reset",
+                cancel_on_shutdown=True,
+            ),
+        )
+
+    def _fire_unreachable(self, target_entity_id: str) -> None:
+        """Emit the unreachable-failure event + arm the unreachable sensor.
+
+        Failure twin of _fire_verified. Called once per fresh exhaustion streak
+        (the count==1 boundary in _arm_verify), only under verify-on when the
+        target never reached desired after the corrective retries. Payload
+        mirrors EVENT_VERIFIED minus `attempts`, plus the failure `reason`.
+        """
+        self._hass.bus.async_fire(
+            EVENT_UNREACHABLE,
+            {
+                "rule_id": self._config.unique_id,
+                "rule_name": self._config.name,
+                "entity_id": self._get_rule_entity_id() or target_entity_id,
+                "target_entity_id": target_entity_id,
+                "domain": target_entity_id.split(".", 1)[0],
+                "trigger": self._config.mode,
+                "target": self._event_target(),
+                "reason": REASON_UNREACHABLE_AFTER_RETRIES,
+            },
+        )
+        self._arm_recently_enforced_unreachable()
 
     def _schedule_suppression_timer(self) -> None:
         """Schedule an expiry callback to refresh UI when suppression ends (EG-4).

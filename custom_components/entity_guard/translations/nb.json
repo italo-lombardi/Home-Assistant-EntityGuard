@@ -465,6 +465,9 @@
       },
       "recently_enforced_verified": {
         "name": "Nylig håndhevet (verifisert)"
+      },
+      "recently_enforced_unreachable": {
+        "name": "Nylig håndhevet (utilgjengelig)"
       }
     },
     "sensor": {

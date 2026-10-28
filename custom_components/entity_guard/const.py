@@ -353,6 +353,13 @@ EVENT_SUPPRESSED = "entity_guard_suppressed"
 # never on verify-off, never on a fail/suppress/kill-switch. A clean automation
 # gate: wait for this instead of EVENT_ENFORCED (which is provisional under verify).
 EVENT_VERIFIED = "entity_guard_enforced_verified"
+# The failure twin of EVENT_VERIFIED. Fired only when verify is enabled, only
+# when the target never reached desired after VERIFY_MAX_ATTEMPTS corrective
+# re-enforces (service call did NOT raise — a silent non-compliance the plain
+# skipped/error paths can't see). One pulse per fresh exhaustion streak, at the
+# same count==1 boundary as the skipped event, so a dead device doesn't flood
+# the bus. A recovery resets the streak, so a later death re-fires.
+EVENT_UNREACHABLE = "entity_guard_enforced_unreachable"
 
 # Services
 SERVICE_SUPPRESS = "suppress"

@@ -465,6 +465,9 @@
       },
       "recently_enforced_verified": {
         "name": "Impus recent (verificat)"
+      },
+      "recently_enforced_unreachable": {
+        "name": "Impus recent (inaccesibil)"
       }
     },
     "sensor": {

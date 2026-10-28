@@ -465,6 +465,9 @@
       },
       "recently_enforced_verified": {
         "name": "Niedawno wymuszone (zweryfikowane)"
+      },
+      "recently_enforced_unreachable": {
+        "name": "Niedawno wymuszone (nieosiągalne)"
       }
     },
     "sensor": {
