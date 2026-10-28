@@ -4315,6 +4315,42 @@ def test_fire_skipped_service_call_failed_not_counted(hass: HomeAssistant):
     assert engine.state.target_outcomes["light.bedroom"]["outcome"] == "failed"
 
 
+async def test_recovered_target_clears_stale_failed_outcome(hass: HomeAssistant):
+    """A target that failed while offline and then comes back already at the
+    desired state (so the rule no longer triggers) must clear its stale 'failed'
+    outcome — otherwise it sticks in 'Targets needing attention' forever since no
+    enforce fires to overwrite it."""
+    engine = _make_engine(hass)  # trigger on "on", target "off"
+    engine._startup_complete = True
+    # Latch a prior failure (as an offline enforce would).
+    engine.state.target_outcomes["light.bedroom"] = {
+        "outcome": "failed",
+        "reason": "service_call_failed",
+        "error": "boom",
+        "at": dt_util.now(),
+    }
+    # Target recovers at the desired state "off" → not triggered, live, compliant.
+    hass.states.async_set("light.bedroom", "off")
+    await engine.async_evaluate("light.bedroom", hass.states.get("light.bedroom"))
+    assert engine.state.target_outcomes["light.bedroom"]["outcome"] == "ok"
+
+
+async def test_offline_target_keeps_failed_outcome(hass: HomeAssistant):
+    """A still-offline target must NOT be falsely marked healthy — the stale
+    failed outcome persists while it is unavailable."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine.state.target_outcomes["light.bedroom"] = {
+        "outcome": "failed",
+        "reason": "service_call_failed",
+        "error": "boom",
+        "at": dt_util.now(),
+    }
+    hass.states.async_set("light.bedroom", "unavailable")
+    await engine.async_evaluate("light.bedroom", hass.states.get("light.bedroom"))
+    assert engine.state.target_outcomes["light.bedroom"]["outcome"] == "failed"
+
+
 def test_handle_midnight_resets_skip_today_not_total(hass: HomeAssistant):
     engine = _make_engine(hass)
     engine.state.skip_count_today = 9

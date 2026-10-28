@@ -521,6 +521,15 @@ class RuleEngine:
         if not triggered:
             # State no longer matches; cancel any pending delayed enforcement.
             self._cancel_pending(entity_id)
+            # Recovery: a target that is LIVE and no longer triggers the rule is
+            # compliant (it reached the desired state), so clear a stale non-ok
+            # outcome — otherwise a target that failed while offline and then came
+            # back already-correct stays in "Targets needing attention" forever,
+            # because no enforce fires to overwrite the latched failure. Guarded to
+            # a live state (new_state present and not unavailable/unknown) so an
+            # offline target is NOT falsely marked healthy, and only written when
+            # an outcome actually needs clearing (avoid broadcast churn).
+            self._clear_target_outcome_if_live(entity_id, new_state, now)
             self._set_or_force_broadcast(self._derive_armed_or_cooldown(now))
             return
 
@@ -569,6 +578,34 @@ class RuleEngine:
         """Return True if the rule's trigger condition holds for entity_id's state."""
         triggered, _skip_reason = self._trigger_decision(entity_id, new_state)
         return triggered
+
+    def _clear_target_outcome_if_live(
+        self, entity_id: str, new_state: Any, now: datetime
+    ) -> None:
+        """Clear a stale non-ok target outcome once the target is live + compliant.
+
+        Called from the not-triggered branch: a target that no longer triggers the
+        rule and is reachable has reached its desired state on its own (e.g. it
+        recovered from the offline failure that latched target_outcomes[...] =
+        failed). Overwrite that to ok so "Targets needing attention" drops it.
+        Skips offline targets (None / unavailable / unknown) and no-ops when there
+        is nothing non-ok to clear, so it never writes/broadcasts needlessly.
+        """
+        if new_state is None or getattr(new_state, "state", None) in (
+            STATE_UNAVAILABLE,
+            STATE_UNKNOWN,
+        ):
+            return
+        prev = self._state.target_outcomes.get(entity_id)
+        if prev is None or prev.get("outcome") == "ok":
+            return
+        self._state.target_outcomes[entity_id] = {
+            "outcome": "ok",
+            "reason": None,
+            "error": None,
+            "at": now,
+        }
+        self._persist()
 
     def _trigger_decision(
         self, entity_id: str, new_state: Any
