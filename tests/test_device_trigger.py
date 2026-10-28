@@ -80,7 +80,7 @@ async def test_get_triggers_none_for_foreign_domain_device(hass: HomeAssistant) 
 async def test_attach_trigger_fires_on_the_rules_event(hass: HomeAssistant) -> None:
     """Attaching an 'enforced' trigger fires the action when THIS rule's
     EVENT_ENFORCED fires (filtered by rule_id == entry.unique_id)."""
-    entry, dev = _rule_device(hass, unique_id="rule-uuid-xyz")
+    _entry, dev = _rule_device(hass, unique_id="rule-uuid-xyz")
     action = AsyncMock()
     config = {
         CONF_PLATFORM: "device",
