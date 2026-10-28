@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Debouncing włączony"
       },
+      "verify_enabled": {
+        "name": "Sprawdzaj, czy wymuszenie zadziałało"
+      },
       "master_enabled": {
         "name": "Główny włącznik"
       }

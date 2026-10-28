@@ -116,9 +116,23 @@ async def test_rule_step_no_entities(hass: HomeAssistant):
     assert res["errors"][CONF_TARGET_ENTITIES] == "empty_target_entities"
 
 
-# ---------------------------------------------------------------------------
-# State step — error paths
-# ---------------------------------------------------------------------------
+async def test_rule_step_read_only_target(hass: HomeAssistant):
+    """A read-only target (binary_sensor) is rejected by the domain-filtered
+    selector — it can never be driven, so the schema refuses it."""
+    from homeassistant.data_entry_flow import InvalidData
+
+    res = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    with pytest.raises(InvalidData):
+        await hass.config_entries.flow.async_configure(
+            res["flow_id"],
+            {
+                CONF_RULE_NAME: "Test",
+                CONF_TARGET_ENTITIES: ["binary_sensor.to_disable_2_active"],
+                CONF_MODE: MODE_FIXED_STATE,
+            },
+        )
 
 
 async def _begin_state_flow(hass: HomeAssistant, name="StateRule"):
@@ -682,6 +696,20 @@ async def test_options_edit_entities_empty(hass: HomeAssistant, options_rule_ent
         res["flow_id"], {CONF_TARGET_ENTITIES: []}
     )
     assert res["errors"][CONF_TARGET_ENTITIES] == "empty_target_entities"
+
+
+async def test_options_edit_entities_read_only(hass: HomeAssistant, options_rule_entry):
+    """Editing targets to a read-only entity is rejected by the schema too."""
+    from homeassistant.data_entry_flow import InvalidData
+
+    res = await hass.config_entries.options.async_init(options_rule_entry.entry_id)
+    res = await hass.config_entries.options.async_configure(
+        res["flow_id"], {"next_step_id": "edit_entities"}
+    )
+    with pytest.raises(InvalidData):
+        await hass.config_entries.options.async_configure(
+            res["flow_id"], {CONF_TARGET_ENTITIES: ["binary_sensor.x"]}
+        )
 
 
 async def test_options_edit_mode_state(hass: HomeAssistant, options_rule_entry):

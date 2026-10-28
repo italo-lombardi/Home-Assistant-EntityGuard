@@ -42,6 +42,7 @@ def _make_engine() -> MagicMock:
     c.flags = []  # keep simple; flag serialization covered via a real Flag below
     c.debounce_enabled = True
     c.debounce_seconds = 30
+    c.verify_enabled = True
     c.max_enforcements_per_minute = 10
     c.safety_acknowledged = True
     c.source_entity = None
@@ -102,6 +103,7 @@ async def test_rule_diagnostics_shape(hass: HomeAssistant):
     assert out["entry"]["entry_type"] == ENTRY_TYPE_RULE
     assert out["config"]["mode"] == "fixed_state"
     assert out["config"]["target_entities"] == ["lock.front_door"]
+    assert out["config"]["verify_enabled"] is True
     assert out["state"]["status"] == "armed"
     assert out["state"]["enforcement_count_total"] == 17
     assert out["state"]["skip_count_today"] == 5

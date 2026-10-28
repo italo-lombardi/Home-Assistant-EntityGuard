@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "已啟用去抖動"
       },
+      "verify_enabled": {
+        "name": "驗證強制執行是否生效"
+      },
       "master_enabled": {
         "name": "主開關已啟用"
       }

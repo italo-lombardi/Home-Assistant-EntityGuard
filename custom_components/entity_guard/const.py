@@ -284,6 +284,14 @@ DOMAIN_STATE_OPTIONS: dict[str, list[str]] = {
 # Fallback when no recognized domain in target list.
 FALLBACK_STATE_OPTIONS = ["on", "off"]
 
+# Drivable target domains — the keys of DOMAIN_STATE_OPTIONS, i.e. every domain
+# this integration can actually enforce (each resolves to a real service via
+# DOMAIN_SERVICE_MAP, DOMAIN_MODE_SERVICE_MAP, or the on/off fallback). Read-only
+# domains (binary_sensor, sensor, person, device_tracker, timer) are absent, so
+# the target-entity picker and the submit validation reject them — a read-only
+# entity can never be driven and would only ever skip (no_service_mapping).
+TARGET_DOMAINS: list[str] = sorted(DOMAIN_STATE_OPTIONS)
+
 # Follow mode: which LIVE source states count as "on" (see DOMAIN_STATE_OPTIONS /
 # DOMAIN_SERVICE_MAP above for the domain vocab this draws from). Any live state NOT
 # in this set is treated as OFF. Ambiguous states are deliberately pinned OFF

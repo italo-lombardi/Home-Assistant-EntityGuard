@@ -985,6 +985,18 @@ class EntityGuardCard extends LitElement {
         </div>`,
       });
     }
+    if (
+      (a.mode === "fixed_state" || a.mode === "dynamic_state") &&
+      a.verify_enabled != null
+    ) {
+      rows.push({
+        label: "Verify",
+        tpl: html`<div class="row">
+          <span class="label">Verify</span>
+          <span class="value">${a.verify_enabled ? "on" : "off"}</span>
+        </div>`,
+      });
+    }
     if (a.rate_limit_enabled != null) {
       const loopLabel = a.rate_limit_enabled
         ? `suppress >${a.max_enforcements_per_minute}/min (15 min)`

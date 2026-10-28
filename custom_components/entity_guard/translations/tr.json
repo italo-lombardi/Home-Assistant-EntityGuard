@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Debounce etkin"
       },
+      "verify_enabled": {
+        "name": "Uygulamanın işe yaradığını doğrula"
+      },
       "master_enabled": {
         "name": "Ana etkin"
       }

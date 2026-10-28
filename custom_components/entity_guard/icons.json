@@ -44,6 +44,9 @@
       "debounce_enabled": {
         "default": "mdi:timer-cog-outline"
       },
+      "verify_enabled": {
+        "default": "mdi:check-decagram-outline"
+      },
       "master_enabled": {
         "default": "mdi:shield-account"
       }

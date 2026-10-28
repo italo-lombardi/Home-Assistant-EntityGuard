@@ -603,3 +603,57 @@ test("updated() starts the tick for pending/cooldown/suppressed, clears otherwis
   assert.ok(cleared.length >= 1, "clearInterval called on transition out");
 });
 
+
+// --- Verify row in the Configuration section (_renderConfig) ---
+// Minimal ctx: _renderConfig reaches _formatSeconds + hass.states only when the
+// attrs it renders require them (debounce). We drive the verify-row branch.
+function configCtx(attrs) {
+  return {
+    _formatSeconds: Card.prototype._formatSeconds,
+    _handleEntityClick() {},
+    hass: { states: { "sensor.s": { attributes: attrs } } },
+  };
+}
+
+test("_renderConfig shows a Verify row for a state-mode rule with verify_enabled", () => {
+  const out = Card.prototype._renderConfig.call(
+    configCtx({ mode: "fixed_state", verify_enabled: true }),
+    { status: "sensor.s" },
+  );
+  assert.match(out.__html, /Verify/);
+  assert.match(out.__html, /on/);
+});
+
+test("_renderConfig hides the Verify row on an attribute-mode rule", () => {
+  const out = Card.prototype._renderConfig.call(
+    configCtx({ mode: "fixed_attribute", verify_enabled: true }),
+    { status: "sensor.s" },
+  );
+  // attribute mode -> no verify row even if the attr is present
+  assert.ok(out === "" || !/Verify/.test(out.__html ?? ""));
+});
+
+test("_renderConfig verify switch entity is not mis-anchored to the enabled ref", () => {
+  // The id regex /(_|^)enabled$/ matches switch.rule_verify_enabled, but the tk
+  // guard (tk === 'enabled') must keep it out of the enabled ref. Stub
+  // _findMatchIds so only the tk-guard logic in _findRuleEntities is exercised.
+  const ctx = {
+    _config: { rule_id: "rule" },
+    _findMatchIds: () => [
+      "switch.rule_verify_enabled",
+      "switch.rule_enabled",
+    ],
+    hass: {
+      entities: {
+        "switch.rule_verify_enabled": { translation_key: "verify_enabled" },
+        "switch.rule_enabled": { translation_key: "enabled" },
+      },
+      states: {
+        "switch.rule_verify_enabled": { attributes: {} },
+        "switch.rule_enabled": { attributes: {} },
+      },
+    },
+  };
+  const refs = Card.prototype._findRuleEntities.call(ctx);
+  assert.equal(refs.enabled, "switch.rule_enabled");
+});

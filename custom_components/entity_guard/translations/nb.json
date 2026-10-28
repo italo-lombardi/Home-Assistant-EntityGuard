@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Debounce aktivert"
       },
+      "verify_enabled": {
+        "name": "Bekreft at håndheving fungerte"
+      },
       "master_enabled": {
         "name": "Hovedbryter aktivert"
       }

@@ -12,6 +12,8 @@ from custom_components.entity_guard.const import (
     DOMAIN,
     ENTRY_TYPE_HUB,
     ENTRY_TYPE_RULE,
+    MODE_FIXED_ATTRIBUTE,
+    MODE_FIXED_STATE,
     signal_master,
     signal_rule_update,
 )
@@ -19,13 +21,22 @@ from custom_components.entity_guard.switch import (
     EntityGuardDebounceEnabledSwitch,
     EntityGuardEnabledSwitch,
     EntityGuardMasterEnabledSwitch,
+    EntityGuardVerifyEnabledSwitch,
 )
 
 
-def _make_engine(enabled=True, debounce_enabled=False, unique_id="test-uid"):
+def _make_engine(
+    enabled=True,
+    debounce_enabled=False,
+    unique_id="test-uid",
+    mode=MODE_FIXED_STATE,
+    verify_enabled=False,
+):
     engine = MagicMock()
     engine.config.unique_id = unique_id
     engine.config.debounce_enabled = debounce_enabled
+    engine.config.mode = mode
+    engine.config.verify_enabled = verify_enabled
     engine.state.enabled = enabled
     engine.set_enabled = MagicMock()
     return engine
@@ -185,6 +196,87 @@ async def test_debounce_switch_no_diff_skips_write(hass: HomeAssistant):
 
 
 # ---------------------------------------------------------------------------
+# EntityGuardVerifyEnabledSwitch
+# ---------------------------------------------------------------------------
+
+
+def test_verify_switch_is_on():
+    entry = _make_rule_entry()
+    engine = _make_engine(verify_enabled=True)
+    sw = EntityGuardVerifyEnabledSwitch(entry, engine)
+    assert sw.is_on is True
+
+
+def test_verify_switch_is_off():
+    entry = _make_rule_entry()
+    engine = _make_engine(verify_enabled=False)
+    sw = EntityGuardVerifyEnabledSwitch(entry, engine)
+    assert sw.is_on is False
+
+
+async def test_verify_switch_turn_on(hass: HomeAssistant):
+    from homeassistant.helpers.dispatcher import async_dispatcher_connect
+
+    from custom_components.entity_guard.const import signal_rule_update
+    from custom_components.entity_guard.number import SKIP_RELOAD_KEY
+
+    entry = _make_rule_entry()
+    engine = _make_engine(verify_enabled=False)
+    entry.add_to_hass(hass)
+    sw = EntityGuardVerifyEnabledSwitch(entry, engine)
+    sw.hass = hass
+    sw.async_write_ha_state = MagicMock()
+    signalled = MagicMock()
+    async_dispatcher_connect(
+        hass, signal_rule_update(engine.config.unique_id), signalled
+    )
+    await sw.async_turn_on()
+    await hass.async_block_till_done()
+    assert entry.options.get("verify_enabled") is True
+    assert engine.config.verify_enabled is True
+    assert entry.entry_id in hass.data[DOMAIN][SKIP_RELOAD_KEY]
+    signalled.assert_called_once()
+
+
+async def test_verify_switch_turn_off(hass: HomeAssistant):
+    from homeassistant.helpers.dispatcher import async_dispatcher_connect
+
+    from custom_components.entity_guard.const import signal_rule_update
+
+    entry = _make_rule_entry()
+    engine = _make_engine(verify_enabled=True)
+    entry.add_to_hass(hass)
+    sw = EntityGuardVerifyEnabledSwitch(entry, engine)
+    sw.hass = hass
+    sw.async_write_ha_state = MagicMock()
+    signalled = MagicMock()
+    async_dispatcher_connect(
+        hass, signal_rule_update(engine.config.unique_id), signalled
+    )
+    await sw.async_turn_off()
+    await hass.async_block_till_done()
+    assert entry.options.get("verify_enabled") is False
+    assert engine.config.verify_enabled is False
+    signalled.assert_called_once()
+
+
+async def test_verify_switch_no_diff_skips_write(hass: HomeAssistant):
+    """A no-op verify toggle writes nothing and leaves no skip-reload mark."""
+    from custom_components.entity_guard.number import SKIP_RELOAD_KEY
+
+    entry = _make_rule_entry()
+    engine = _make_engine(verify_enabled=True)
+    entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(entry, options={"verify_enabled": True})
+    sw = EntityGuardVerifyEnabledSwitch(entry, engine)
+    sw.hass = hass
+    sw.async_write_ha_state = MagicMock()
+    await sw.async_turn_on()
+    assert entry.options == {"verify_enabled": True}
+    assert entry.entry_id not in hass.data.get(DOMAIN, {}).get(SKIP_RELOAD_KEY, set())
+
+
+# ---------------------------------------------------------------------------
 # EntityGuardMasterEnabledSwitch
 # ---------------------------------------------------------------------------
 
@@ -258,14 +350,30 @@ async def test_setup_entry_rule(hass: HomeAssistant):
     from custom_components.entity_guard.switch import async_setup_entry
 
     entry = _make_rule_entry()
-    engine = _make_engine()
+    engine = _make_engine(mode=MODE_FIXED_STATE)
+    hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
+    added = []
+    await async_setup_entry(hass, entry, added.extend)
+    # State-mode rule gets the verify switch too.
+    assert len(added) == 3
+    types = [type(s).__name__ for s in added]
+    assert "EntityGuardEnabledSwitch" in types
+    assert "EntityGuardDebounceEnabledSwitch" in types
+    assert "EntityGuardVerifyEnabledSwitch" in types
+
+
+async def test_setup_entry_rule_attribute_mode_no_verify(hass: HomeAssistant):
+    """An attribute-mode rule gets no verify switch (verify is state-mode only)."""
+    from custom_components.entity_guard.switch import async_setup_entry
+
+    entry = _make_rule_entry()
+    engine = _make_engine(mode=MODE_FIXED_ATTRIBUTE)
     hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
     added = []
     await async_setup_entry(hass, entry, added.extend)
     assert len(added) == 2
     types = [type(s).__name__ for s in added]
-    assert "EntityGuardEnabledSwitch" in types
-    assert "EntityGuardDebounceEnabledSwitch" in types
+    assert "EntityGuardVerifyEnabledSwitch" not in types
 
 
 async def test_setup_entry_unknown_type(hass: HomeAssistant):

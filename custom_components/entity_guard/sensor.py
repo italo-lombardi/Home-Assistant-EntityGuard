@@ -170,6 +170,10 @@ class EntityGuardStatusSensor(EntityGuardSensor):
             "delay_off_seconds": self._engine.config.delay_off_seconds,
             "debounce_enabled": self._engine.config.debounce_enabled,
             "debounce_seconds": self._engine.config.debounce_seconds,
+            # verify-after-enforce is state-mode only; the card shows the row
+            # only for state modes, so publish the flag unconditionally and let
+            # the card gate on mode.
+            "verify_enabled": self._engine.config.verify_enabled,
             "rate_limit_enabled": self._engine.config.max_enforcements_per_minute != 0,
             "max_enforcements_per_minute": self._engine.config.max_enforcements_per_minute,
             "pending_enforcement_due": {

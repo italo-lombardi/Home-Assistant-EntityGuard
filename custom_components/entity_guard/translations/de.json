@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Entprellung aktiviert"
       },
+      "verify_enabled": {
+        "name": "Durchsetzung überprüfen"
+      },
       "master_enabled": {
         "name": "Hauptschalter aktiviert"
       }

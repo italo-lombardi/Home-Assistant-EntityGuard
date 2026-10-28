@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Odgoda ponavljanja omogućena"
       },
+      "verify_enabled": {
+        "name": "Provjeri je li provedba uspjela"
+      },
       "master_enabled": {
         "name": "Glavno omogućeno"
       }

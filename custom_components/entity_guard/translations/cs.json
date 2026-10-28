@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Potlačení zákmitů povoleno"
       },
+      "verify_enabled": {
+        "name": "Ověřit, že vynucení proběhlo"
+      },
       "master_enabled": {
         "name": "Hlavní povoleno"
       }

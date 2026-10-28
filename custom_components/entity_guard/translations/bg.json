@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Дебаунс активиран"
       },
+      "verify_enabled": {
+        "name": "Проверка на прилагането"
+      },
       "master_enabled": {
         "name": "Главно активирано"
       }

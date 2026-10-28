@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "デバウンス有効"
       },
+      "verify_enabled": {
+        "name": "強制が効いたか検証"
+      },
       "master_enabled": {
         "name": "マスター有効"
       }

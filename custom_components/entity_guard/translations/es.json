@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Antirrebote habilitado"
       },
+      "verify_enabled": {
+        "name": "Verificar que la actuación funcionó"
+      },
       "master_enabled": {
         "name": "Maestro habilitado"
       }

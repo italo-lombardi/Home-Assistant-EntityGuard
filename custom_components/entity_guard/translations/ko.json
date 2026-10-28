@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "디바운스 활성화됨"
       },
+      "verify_enabled": {
+        "name": "적용 성공 확인"
+      },
       "master_enabled": {
         "name": "마스터 활성화됨"
       }

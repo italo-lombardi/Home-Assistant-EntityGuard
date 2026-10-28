@@ -502,6 +502,9 @@
       "debounce_enabled": {
         "name": "Anti-rebond activé"
       },
+      "verify_enabled": {
+        "name": "Vérifier que l'application a fonctionné"
+      },
       "master_enabled": {
         "name": "Interrupteur principal activé"
       }
