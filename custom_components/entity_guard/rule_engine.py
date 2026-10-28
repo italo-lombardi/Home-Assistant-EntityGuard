@@ -55,6 +55,7 @@ from .const import (
     OPERATOR_LE,
     OPERATOR_LT,
     REASON_SERVICE_CALL_FAILED,
+    REASON_UNREACHABLE_AFTER_RETRIES,
     RECENTLY_ENFORCED_WINDOW_SECONDS,
     SOURCE_VALUE_FROM_ATTRIBUTE,
     STARTUP_GRACE_PERIOD_SECONDS,
@@ -68,6 +69,8 @@ from .const import (
     STATUS_PENDING,
     STATUS_STARTING,
     STATUS_SUPPRESSED,
+    VERIFY_DELAY_SECONDS,
+    VERIFY_MAX_ATTEMPTS,
     signal_master,
     signal_rule_update,
 )
@@ -109,6 +112,14 @@ class RuleEngine:
         self._pending_enforcements: dict[str, Callable[[], None]] = {}
         self._pending_enforcement_due: dict[str, datetime] = {}
         self._pending_eval_tasks: dict[str, asyncio.Task] = {}
+        # Verify-after-enforce (opt-in, state modes). Per-target one-shot verify
+        # timers armed on a successful enforce; _verify_attempts counts corrective
+        # re-enforces per target; _unreachable latches a target OFF verify after it
+        # exhausts VERIFY_MAX_ATTEMPTS, until a real state_changed clears it (else a
+        # dead device re-runs the whole cycle on every trigger forever).
+        self._pending_verifications: dict[str, Callable[[], None]] = {}
+        self._verify_attempts: dict[str, int] = {}
+        self._unreachable: set[str] = set()
         self._startup_complete = False
         self._is_unloaded: bool = False
         self._current_status: str = STATUS_STARTING
@@ -228,6 +239,17 @@ class RuleEngine:
         self._pending_enforcements.clear()
         self._pending_enforcement_due.clear()
 
+        # Verify timers (lifecycle gap): a verify timer firing after unload would
+        # enforce on a torn-down rule — cancel + clear like _pending_enforcements.
+        for cancel in list(self._pending_verifications.values()):
+            try:
+                cancel()
+            except Exception:
+                _LOGGER.debug("Pending verify cancel failed", exc_info=True)
+        self._pending_verifications.clear()
+        self._verify_attempts.clear()
+        self._unreachable.clear()
+
         for task in list(self._pending_eval_tasks.values()):
             task.cancel()
         self._pending_eval_tasks.clear()
@@ -252,6 +274,14 @@ class RuleEngine:
         new_state = event.data.get("new_state")
         if entity_id is None:
             return
+        # A REAL state_changed for a target supersedes any in-flight verify for it:
+        # cancel the pending verify (dedupe — the reactive path will re-evaluate) and
+        # clear the unreachable latch (the target moved, so it is reachable again and
+        # may be re-verified on its next enforce). Both hang off this one genuine-
+        # event hook. Guarded to target entities so a flag/source event is unaffected.
+        if entity_id in self._config.target_entities:
+            self._cancel_verify(entity_id)
+            self._unreachable.discard(entity_id)
         trigger_context_id: str | None = getattr(event.context, "id", None)
         self._schedule_eval_task(entity_id, new_state, trigger_context_id)
 
@@ -870,6 +900,115 @@ class RuleEngine:
         for eid in entity_ids:
             self._cancel_pending(eid)
 
+    # ----------------------------------------------------------- verify-after-enforce
+    def _cancel_verify(self, entity_id: str) -> None:
+        """Cancel any pending verify timer for entity_id (dedupe + teardown helper)."""
+        cancel = self._pending_verifications.pop(entity_id, None)
+        if cancel is not None:
+            try:
+                cancel()
+            except Exception:
+                _LOGGER.debug("Verify cancel failed for %s", entity_id, exc_info=True)
+
+    def _verify_reached(self, entity_id: str) -> bool:
+        """True when entity_id's live state now matches the rule's desired state.
+
+        Reuses the trigger decision: a state rule is 'triggered' only while the
+        target still violates desired, so reached == not triggered. A missing/
+        offline target (trigger_decision returns False) reads as 'reached' here —
+        we can't correct an offline target and must not loop on it; the reactive
+        listener handles it when it comes back.
+        """
+        current = self._hass.states.get(entity_id)
+        triggered, _skip = self._trigger_decision(entity_id, current)
+        return not triggered
+
+    def _arm_verify(
+        self, entity_id: str, trigger_context_id: str | None = None
+    ) -> None:
+        """Arm a one-shot verify re-read VERIFY_DELAY_SECONDS after a success."""
+        self._cancel_verify(entity_id)
+
+        async def _fire(_now: datetime) -> None:
+            if self._is_unloaded:
+                return
+            # Only clear our own handle (identity guard, like _schedule_delayed).
+            if self._pending_verifications.get(entity_id) is my_cancel:
+                self._pending_verifications.pop(entity_id, None)
+            if not self._state.enabled or not self._master_enabled_getter():
+                return
+            # Suppressed → do not correct; drop the cycle (a real event re-arms it).
+            if (
+                self._state.suppressed_until
+                and self._state.suppressed_until > dt_util.now()
+            ):
+                self._verify_attempts.pop(entity_id, None)
+                return
+            if self._verify_reached(entity_id):
+                # Reached desired — clean, reset the attempt counter.
+                self._verify_attempts.pop(entity_id, None)
+                return
+            attempts = self._verify_attempts.get(entity_id, 0)
+            if attempts >= VERIFY_MAX_ATTEMPTS:
+                # Exhausted — the genuine "cannot be reached". OVERWRITE the
+                # provisional "ok" the corrective enforce wrote; this re-read is the
+                # source of truth, not the service call's return. Latch OFF verify
+                # until a real state_changed clears it (else re-run every trigger).
+                self._verify_attempts.pop(entity_id, None)
+                self._unreachable.add(entity_id)
+                self._state.target_outcomes[entity_id] = {
+                    "outcome": "failed",
+                    "reason": REASON_UNREACHABLE_AFTER_RETRIES,
+                    "error": (
+                        f"target did not reach desired state after "
+                        f"{VERIFY_MAX_ATTEMPTS} corrective attempts"
+                    ),
+                    "at": dt_util.now(),
+                }
+                # NB: do NOT route this through _fire_skipped — its target_outcomes
+                # writer classifies any reason != service_call_failed as "skipped",
+                # which would clobber the "failed" written above. The direct write
+                # here is the source of truth (note C: the verify re-read, not an
+                # enforce outcome). Fire the skipped EVENT for logbook/automations
+                # without touching the shared outcome classifier.
+                self._hass.bus.async_fire(
+                    EVENT_SKIPPED,
+                    {
+                        "rule_id": self._config.unique_id,
+                        "rule_name": self._config.name,
+                        "entity_id": entity_id,
+                        "reason": REASON_UNREACHABLE_AFTER_RETRIES,
+                    },
+                )
+                self._broadcast_status()
+                return
+            # Not reached, attempts remain: corrective re-enforce (bypass rate limit
+            # + debounce/cooldown — it is corrective, not a new trigger), count it,
+            # and re-arm one more verify.
+            self._verify_attempts[entity_id] = attempts + 1
+            await self._enforce(
+                entity_id,
+                bypass_rate_limit=True,
+                trigger_context_id=trigger_context_id,
+                is_corrective=True,
+            )
+            # Re-arm only if still enabled/loaded and not newly latched.
+            if (
+                not self._is_unloaded
+                and self._state.enabled
+                and self._master_enabled_getter()
+                and entity_id not in self._unreachable
+            ):
+                self._arm_verify(entity_id, trigger_context_id)
+
+        @callback
+        def _fire_cb(now: datetime) -> None:
+            self._hass.async_create_task(_fire(now))
+
+        cancel = async_call_later(self._hass, VERIFY_DELAY_SECONDS, _fire_cb)
+        my_cancel = cancel
+        self._pending_verifications[entity_id] = cancel
+
     async def _enforce(
         self,
         entity_id: str,
@@ -877,8 +1016,14 @@ class RuleEngine:
         user_id: str | None = None,
         bypass_rate_limit: bool = False,
         trigger_context_id: str | None = None,
+        is_corrective: bool = False,
     ) -> None:
-        """Rate-limit, lock, and execute the enforcement service call."""
+        """Rate-limit, lock, and execute the enforcement service call.
+
+        is_corrective=True marks a verify-driven re-enforce: it must NOT arm a fresh
+        verify timer on success (the verify cycle that triggered it owns the retry
+        accounting), else each corrective would chain a new verify indefinitely.
+        """
         now = dt_util.now()
 
         async with self._state.reentrance_lock:
@@ -1071,6 +1216,18 @@ class RuleEngine:
                 "error": None,
                 "at": now,
             }
+            # Verify-after-enforce: on a NORMAL successful enforce of a verify-enabled
+            # state rule, arm a one-shot re-read. Not for corrective enforces (the
+            # verify cycle owns the retry), not for a latched-unreachable target. The
+            # "ok" write above is provisional — the verify re-read may overturn it to
+            # failed (the silent-ignore case: service returned OK, device never moved).
+            if (
+                not is_corrective
+                and self._config.verify_enabled
+                and self._config.mode in (MODE_FIXED_STATE, MODE_DYNAMIC_STATE)
+                and entity_id not in self._unreachable
+            ):
+                self._arm_verify(entity_id, trigger_context_id)
 
         # Pick the post-enforce status once and emit a single _set_status so the
         # dispatcher fires exactly one update — avoids ENFORCING→ARMED→ERROR
