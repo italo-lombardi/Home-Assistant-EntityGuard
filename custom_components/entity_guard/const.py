@@ -155,6 +155,12 @@ ENFORCE_TIMEOUT_SECONDS = 30
 VERIFY_DELAY_SECONDS = 5
 VERIFY_MAX_ATTEMPTS = 2
 
+# Self-heal ceiling. A verify-enabled target that exhausts VERIFY_MAX_ATTEMPTS
+# re-enters the counted enforcing cycle instead of dead-ending. After this many
+# consecutive full exhaustions with no real recovery, trip loop protection
+# (the dead-device kill-switch floor — fires even when the rate limit is disabled).
+CONSECUTIVE_EXHAUSTION_LIMIT = 5
+
 # Color enforcement tolerances. Small tolerances prevent repeat enforcement loops
 # caused by minor device drift and lossy RGB/color-temperature conversions.
 COLOR_RGB_TOLERANCE = 10

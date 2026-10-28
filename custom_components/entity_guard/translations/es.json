@@ -53,7 +53,7 @@
           "add_flags": "Marque para requerir condiciones extra (p. ej. solo actuar cuando no haya nadie en casa, solo después del atardecer). Deje sin marcar para actuar cada vez que se dispare el disparador.",
           "custom_rate_limit": "La protección contra bucles suprime automáticamente la regla si se dispara más de 10 veces por minuto (predeterminado). Deje sin marcar para usar el valor predeterminado. Marque para establecer su propio número, o para desactivar por completo la protección contra bucles en una pantalla posterior.",
           "add_debounce": "Marque para ignorar cambios rápidos de ida y vuelta. La regla solo actuará si el disparador permanece igual durante el tiempo que establezca en una pantalla posterior. Deje sin marcar para actuar ante cada cambio.",
-          "verify_enabled": "Marca esta opción para volver a comprobar el objetivo unos segundos después de actuar. Si el dispositivo aceptó el comando pero en realidad no cambió, la regla lo reintenta un par de veces y luego lo marca como inaccesible. Déjala sin marcar para dar por hecho que el comando funcionó."
+          "verify_enabled": "Marca esta opción para volver a comprobar el objetivo unos segundos después de actuar. Si el dispositivo aceptó el comando pero en realidad no cambió, la regla sigue reintentando la actuación hasta que el objetivo alcance el estado deseado; no se rinde por sí sola. Un objetivo que nunca se recupera queda suspendido automáticamente durante un tiempo por la protección contra bucles (y se marca como inaccesible), y después se vuelve a reintentar. Déjala sin marcar para dar por hecho que el comando funcionó."
         }
       },
       "flags": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Ventana en segundos. Mín. 0, máx. 86400 (24h).",
           "rate_limit_enabled": "Marque para mantener la protección contra bucles activada (recomendado). Desmarque para desactivarla en esta regla — los bucles descontrolados no se detendrán automáticamente.",
           "max_enforcements_per_minute": "Cuántas actuaciones por minuto se permiten antes de que la regla se autosuprima durante 15 minutos. Mín. 1, máx. 600. Se ignora cuando la protección contra bucles está desmarcada arriba.",
-          "verify_enabled": "Marca esta opción para volver a comprobar el objetivo unos segundos después de actuar y reintentar si el dispositivo aceptó el comando pero en realidad no cambió. Solo se muestra en las reglas de modo de estado."
+          "verify_enabled": "Marca esta opción para volver a comprobar el objetivo unos segundos después de actuar y seguir reintentando hasta que alcance el estado deseado si el dispositivo aceptó el comando pero en realidad no cambió. Un objetivo que nunca se recupera queda suspendido automáticamente por la protección contra bucles y después se vuelve a reintentar. Solo se muestra en las reglas de modo de estado."
         }
       },
       "edit_attribute_params": {

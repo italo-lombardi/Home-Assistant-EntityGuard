@@ -53,7 +53,7 @@
           "add_flags": "Atzīmējiet, lai pieprasītu papildu nosacījumus (piem., piemērot tikai tad, kad neviena nav mājās, tikai pēc saulrieta). Atstājiet neatzīmētu, lai piemērotu katru reizi, kad aktivizētājs nostrādā.",
           "custom_rate_limit": "Cilpu aizsardzība automātiski aptur noteikumu, ja tas nostrādā vairāk nekā 10 reizes minūtē (noklusējums). Atstājiet neatzīmētu, lai izmantotu noklusējumu. Atzīmējiet, lai iestatītu savu skaitli vai pilnībā izslēgtu cilpu aizsardzību nākamajā ekrānā.",
           "add_debounce": "Atzīmējiet, lai ignorētu ātras uz priekšu un atpakaļ izmaiņas. Noteikums darbojas tikai tad, ja aktivizētājs paliek nemainīgs jūsu nākamajā ekrānā iestatīto laiku. Atstājiet neatzīmētu, lai darbotos pie katras izmaiņas.",
-          "verify_enabled": "Atzīmējiet, lai dažas sekundes pēc piemērošanas vēlreiz pārbaudītu mērķi. Ja ierīce pieņēma komandu, bet patiesībā nekad nemainījās, noteikums mēģina vēlreiz pāris reizes un pēc tam atzīmē to kā nesasniedzamu. Atstājiet neatzīmētu, lai pieņemtu, ka komanda nostrādāja."
+          "verify_enabled": "Atzīmējiet, lai dažas sekundes pēc piemērošanas vēlreiz pārbaudītu mērķi. Ja ierīce pieņēma komandu, bet patiesībā nekad nemainījās, noteikums turpina piemērot atkārtoti, līdz mērķis sasniedz vēlamo stāvokli — tas pats no sevis nepadodas. Mērķis, kas nekad neatveseļojas, uz laiku tiek automātiski apturēts ar cilpu aizsardzību (un atzīmēts kā nesasniedzams) un pēc tam atkal mēģināts. Atstājiet neatzīmētu, lai pieņemtu, ka komanda nostrādāja."
         }
       },
       "flags": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Logs sekundēs. Min. 0, maks. 86400 (24 h).",
           "rate_limit_enabled": "Atzīmējiet, lai saglabātu cilpu aizsardzību ieslēgtu (ieteicams). Noņemiet atzīmi, lai to atspējotu šim noteikumam — nekontrolētas cilpas netiks automātiski apturētas.",
           "max_enforcements_per_minute": "Cik piemērošanu minūtē ir atļautas, pirms noteikums automātiski tiek apturēts uz 15 minūtēm. Min. 1, maks. 600. Ignorēts, kad cilpu aizsardzība iepriekš nav atzīmēta.",
-          "verify_enabled": "Atzīmējiet, lai dažas sekundes pēc piemērošanas vēlreiz pārbaudītu mērķi un mēģinātu vēlreiz, ja ierīce pieņēma komandu, bet patiesībā nekad nemainījās. Tiek rādīts tikai stāvokļa režīma noteikumiem."
+          "verify_enabled": "Atzīmējiet, lai dažas sekundes pēc piemērošanas vēlreiz pārbaudītu mērķi un turpinātu piemērot atkārtoti, līdz tas sasniedz vēlamo stāvokli, ja ierīce pieņēma komandu, bet patiesībā nekad nemainījās. Mērķis, kas nekad neatveseļojas, tiek automātiski apturēts ar cilpu aizsardzību un pēc tam atkal mēģināts. Tiek rādīts tikai stāvokļa režīma noteikumiem."
         }
       },
       "edit_attribute_params": {

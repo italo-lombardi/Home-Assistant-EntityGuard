@@ -53,7 +53,7 @@
           "add_flags": "Aktivieren, um zusätzliche Bedingungen zu verlangen (z. B. nur durchsetzen, wenn niemand zu Hause ist, nur nach Sonnenuntergang). Deaktiviert lassen, um bei jedem Auslöser durchzusetzen.",
           "custom_rate_limit": "Der Schleifenschutz unterdrückt die Regel automatisch, wenn sie häufiger als 10 Mal pro Minute auslöst (Standard). Deaktiviert lassen, um den Standard zu verwenden. Aktivieren, um einen eigenen Wert festzulegen oder den Schleifenschutz auf einem späteren Bildschirm vollständig zu deaktivieren.",
           "add_debounce": "Aktivieren, um schnelle Hin- und Her-Wechsel zu ignorieren. Die Regel reagiert nur, wenn der Auslöser für die auf einem späteren Bildschirm festgelegte Zeit unverändert bleibt. Deaktiviert lassen, um auf jede Änderung zu reagieren.",
-          "verify_enabled": "Aktivieren, um das Ziel ein paar Sekunden nach dem Durchsetzen erneut zu prüfen. Wenn das Gerät den Befehl angenommen, sich aber nie tatsächlich geändert hat, versucht es die Regel noch ein paar Mal und markiert es dann als nicht erreichbar. Deaktiviert lassen, um anzunehmen, dass der Befehl funktioniert hat."
+          "verify_enabled": "Aktivieren, um das Ziel einige Sekunden nach dem Durchsetzen erneut zu prüfen. Wenn das Gerät den Befehl angenommen, sich aber nie tatsächlich geändert hat, setzt die Regel so lange erneut durch, bis das Ziel den gewünschten Zustand erreicht – sie gibt nicht von selbst auf. Ein Ziel, das sich nie erholt, wird vom Schleifenschutz vorübergehend automatisch unterdrückt (und als nicht erreichbar markiert) und danach erneut versucht. Deaktiviert lassen, um anzunehmen, dass der Befehl funktioniert hat."
         }
       },
       "flags": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Fenster in Sekunden. Min. 0, max. 86400 (24 Std.).",
           "rate_limit_enabled": "Aktivieren, um den Schleifenschutz beizubehalten (empfohlen). Deaktivieren, um ihn für diese Regel auszuschalten — Endlosschleifen werden dann nicht automatisch gestoppt.",
           "max_enforcements_per_minute": "Wie viele Durchsetzungen pro Minute erlaubt sind, bevor sich die Regel für 15 Minuten automatisch unterdrückt. Min. 1, max. 600. Wird ignoriert, wenn der Schleifenschutz oben deaktiviert ist.",
-          "verify_enabled": "Aktivieren, um das Ziel ein paar Sekunden nach dem Durchsetzen erneut zu prüfen und es erneut zu versuchen, wenn das Gerät den Befehl angenommen, sich aber nie tatsächlich geändert hat. Wird nur bei Regeln im Statusmodus angezeigt."
+          "verify_enabled": "Aktivieren, um das Ziel einige Sekunden nach dem Durchsetzen erneut zu prüfen und so lange erneut durchzusetzen, bis es den gewünschten Zustand erreicht, falls das Gerät den Befehl angenommen, sich aber nie tatsächlich geändert hat. Ein Ziel, das sich nie erholt, wird vom Schleifenschutz automatisch unterdrückt und danach erneut versucht. Wird nur bei Regeln im Statusmodus angezeigt."
         }
       },
       "edit_attribute_params": {

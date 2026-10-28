@@ -53,7 +53,7 @@
           "add_flags": "Kryss av for å kreve ekstra betingelser (f.eks. håndhev kun når ingen er hjemme, kun etter solnedgang). La være å krysse av for å håndheve hver gang utløseren slår til.",
           "custom_rate_limit": "Løkkebeskyttelse undertrykker automatisk regelen hvis den utløses mer enn 10 ganger per minutt (standard). La være å krysse av for å bruke standard. Kryss av for å sette ditt eget tall, eller for å slå av løkkebeskyttelsen helt på et senere skjermbilde.",
           "add_debounce": "Kryss av for å ignorere raske endringer frem og tilbake. Regelen utføres bare hvis utløseren forblir den samme i tiden du angir på et senere skjermbilde. La være å krysse av for å reagere på hver endring.",
-          "verify_enabled": "Kryss av for å sjekke målet på nytt noen sekunder etter håndheving. Hvis enheten godtok kommandoen, men faktisk aldri endret seg, prøver regelen et par ganger til og merker det deretter som utilgjengelig. La være å krysse av for å anta at kommandoen fungerte."
+          "verify_enabled": "Kryss av for å sjekke målet på nytt noen sekunder etter håndheving. Hvis enheten godtok kommandoen, men faktisk aldri endret seg, fortsetter regelen å håndheve på nytt til målet når ønsket tilstand — den gir seg ikke av seg selv. Et mål som aldri kommer seg, blir en stund automatisk undertrykt av løkkebeskyttelsen (og merket som utilgjengelig), og deretter forsøkt på nytt igjen. La være å krysse av for å anta at kommandoen fungerte."
         }
       },
       "flags": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Vindu i sekunder. Min 0, maks 86400 (24t).",
           "rate_limit_enabled": "Kryss av for å beholde løkkebeskyttelsen på (anbefalt). Fjern avkryssing for å deaktivere den for denne regelen — løpske løkker vil ikke bli stoppet automatisk.",
           "max_enforcements_per_minute": "Hvor mange håndhevinger per minutt som tillates før regelen automatisk undertrykkes i 15 minutter. Min 1, maks 600. Ignoreres når løkkebeskyttelsen er fjernet over.",
-          "verify_enabled": "Kryss av for å sjekke målet på nytt noen sekunder etter håndheving og prøve på nytt hvis enheten godtok kommandoen, men faktisk aldri endret seg. Vises bare for regler i tilstandsmodus."
+          "verify_enabled": "Kryss av for å sjekke målet på nytt noen sekunder etter håndheving og fortsette å håndheve på nytt til det når ønsket tilstand hvis enheten godtok kommandoen, men faktisk aldri endret seg. Et mål som aldri kommer seg, blir automatisk undertrykt av løkkebeskyttelsen og deretter forsøkt på nytt. Vises bare for regler i tilstandsmodus."
         }
       },
       "edit_attribute_params": {

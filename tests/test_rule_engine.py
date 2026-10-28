@@ -16,9 +16,11 @@ from custom_components.entity_guard.const import (
     ATTR_RGB_COLOR,
     COLOR_RGB_TOLERANCE,
     COLOR_TEMP_KELVIN_TOLERANCE,
+    CONSECUTIVE_EXHAUSTION_LIMIT,
     ERROR_RECOVERY_SUCCESS_THRESHOLD,
     ERROR_THRESHOLD,
     EVENT_ENFORCED,
+    EVENT_LOOP_DETECTED,
     EVENT_SKIPPED,
     MODE_DYNAMIC_STATE,
     MODE_FIXED_ATTRIBUTE,
@@ -4489,7 +4491,8 @@ async def test_verify_reached_clears_cleanly(hass: HomeAssistant):
 
 async def test_verify_not_reached_corrective_then_exhausted(hass: HomeAssistant):
     """Silent-ignore: service returns OK but target never moves. Verify re-reads,
-    issues VERIFY_MAX_ATTEMPTS correctives, then writes failed + latches."""
+    issues VERIFY_MAX_ATTEMPTS correctives, then writes failed + SELF-HEALS by
+    re-entering the counted enforcing cycle (no permanent dead-end)."""
     engine = _make_engine(hass, _verify_config())
     engine._startup_complete = True
     # Service that returns OK but does NOT change state (the silent-ignore case).
@@ -4509,16 +4512,18 @@ async def test_verify_not_reached_corrective_then_exhausted(hass: HomeAssistant)
             if "light.bedroom" in engine._pending_verifications:
                 await _run_verify_timer(hass, engine, "light.bedroom")
 
-    # Exhausted → latched + failed outcome overwrites the provisional "ok".
-    assert "light.bedroom" in engine._unreachable
+    # Exhausted once → failed outcome overwrites the provisional "ok", counter at 1,
+    # and a re-entering delayed enforce is armed (self-heal, not a dead-end latch).
+    assert engine._consecutive_exhaustions["light.bedroom"] == 1
+    assert "light.bedroom" not in engine._unreachable
     outcome = engine.state.target_outcomes["light.bedroom"]
     assert outcome["outcome"] == "failed"
     assert outcome["reason"] == REASON_UNREACHABLE_AFTER_RETRIES
-    # Verify is done (handle popped, nothing pending): the card must leave
-    # VERIFYING for the real idle status, not stay stuck on the transient chip.
+    # Re-entered the counted enforcing cycle: a delayed enforce is pending.
+    assert "light.bedroom" in engine._pending_enforcements
+    # Verify is done (handle popped): the card must leave VERIFYING.
     assert engine._pending_verifications == {}
     assert engine._current_status != STATUS_VERIFYING
-    assert engine._current_status in (STATUS_ARMED, STATUS_COOLDOWN)
 
 
 async def test_corrective_enforce_does_not_touch_bookkeeping(hass: HomeAssistant):
@@ -4562,10 +4567,12 @@ async def test_corrective_enforce_does_not_touch_bookkeeping(hass: HomeAssistant
 
 
 async def test_verify_real_event_clears_latch_and_cancels(hass: HomeAssistant):
-    """A real state_changed for a latched target clears the latch + cancels verify."""
+    """A real state_changed for a target clears transient markers + cancels verify,
+    and resets the self-heal exhaustion counter so a later death starts fresh."""
     engine = _make_engine(hass, _verify_config())
     engine._startup_complete = True
     engine._unreachable.add("light.bedroom")
+    engine._consecutive_exhaustions["light.bedroom"] = 3
     engine._pending_verifications["light.bedroom"] = MagicMock()
 
     event = MagicMock()
@@ -4575,6 +4582,7 @@ async def test_verify_real_event_clears_latch_and_cancels(hass: HomeAssistant):
 
     assert "light.bedroom" not in engine._unreachable
     assert "light.bedroom" not in engine._pending_verifications
+    assert "light.bedroom" not in engine._consecutive_exhaustions
 
 
 async def test_verify_real_event_resets_attempt_count(hass: HomeAssistant):
@@ -4594,8 +4602,9 @@ async def test_verify_real_event_resets_attempt_count(hass: HomeAssistant):
     assert "light.bedroom" not in engine._verify_attempts
 
 
-async def test_verify_latched_target_not_rearmed(hass: HomeAssistant):
-    """A latched-unreachable target does not arm a fresh verify on a later enforce."""
+async def test_verify_unreachable_marker_blocks_rearm(hass: HomeAssistant):
+    """The transient _unreachable double-arm marker suppresses a fresh verify on an
+    enforce while it is set (it is dropped on re-entry / cleared on recovery)."""
     engine = _make_engine(hass, _verify_config())
     engine._startup_complete = True
     engine._unreachable.add("light.bedroom")
@@ -4653,11 +4662,13 @@ async def test_verify_unload_cancels_pending(hass: HomeAssistant):
     engine._pending_verifications["light.bedroom"] = cancel
     engine._verify_attempts["light.bedroom"] = 1
     engine._unreachable.add("light.bedroom")
+    engine._consecutive_exhaustions["light.bedroom"] = 2
     await engine.async_unload()
     cancel.assert_called_once()
     assert engine._pending_verifications == {}
     assert engine._verify_attempts == {}
     assert engine._unreachable == set()
+    assert engine._consecutive_exhaustions == {}
 
 
 async def test_verify_fire_noop_when_unloaded(hass: HomeAssistant):
@@ -4846,3 +4857,248 @@ async def test_status_leaves_verifying_when_disabled_mid_window(hass: HomeAssist
 
     assert engine._pending_verifications == {}
     assert engine._current_status == STATUS_DISABLED
+
+
+# ---------------------------------------------------------------------------
+# Self-heal: verify exhaustion re-enters the counted enforcing cycle, bounded
+# by loop protection (dead-device kill-switch floor).
+# ---------------------------------------------------------------------------
+
+
+async def _exhaust_once(hass, engine, entity_id="light.bedroom"):
+    """Run one full verify cycle to exhaustion (service never moves the target)."""
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        lambda h, d, cb: setattr(engine, "_test_verify_cb", cb) or MagicMock(),
+    ):
+        await engine._enforce(entity_id)
+        for _ in range(VERIFY_MAX_ATTEMPTS + 1):
+            if entity_id in engine._pending_verifications:
+                await _run_verify_timer(hass, engine, entity_id)
+
+
+async def test_selfheal_exhaustion_schedules_reentry_no_suppress(hass: HomeAssistant):
+    """First exhaustion: counter=1, failed outcome, a delayed enforce armed, NOT suppressed."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    await _exhaust_once(hass, engine)
+
+    assert engine._consecutive_exhaustions["light.bedroom"] == 1
+    assert "light.bedroom" in engine._pending_enforcements
+    assert engine._state.suppressed_until is None
+    assert engine._current_status != STATUS_SUPPRESSED
+
+
+async def test_selfheal_skipped_event_fires_only_on_first_exhaustion(hass: HomeAssistant):
+    """EVENT_SKIPPED is one-shot per fresh exhaustion streak (count==1), not every cycle."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    events = []
+    hass.bus.async_listen(EVENT_SKIPPED, lambda e: events.append(e))
+
+    await _exhaust_once(hass, engine)
+    await hass.async_block_till_done()
+    # Second exhaustion streak (seed counter so the next exhaustion is count==2).
+    engine._consecutive_exhaustions["light.bedroom"] = 1
+    engine._verify_attempts.pop("light.bedroom", None)
+    await _exhaust_once(hass, engine)
+    await hass.async_block_till_done()
+
+    unreachable = [
+        e for e in events
+        if e.data.get("reason") == REASON_UNREACHABLE_AFTER_RETRIES
+    ]
+    assert len(unreachable) == 1
+
+
+async def test_selfheal_limit_trips_loop_protection(hass: HomeAssistant):
+    """Reaching CONSECUTIVE_EXHAUSTION_LIMIT suppresses with reason unreachable_loop
+    and does NOT schedule another re-entry."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+    # Seed to one below the limit so this exhaustion trips it.
+    engine._consecutive_exhaustions["light.bedroom"] = CONSECUTIVE_EXHAUSTION_LIMIT - 1
+
+    await _exhaust_once(hass, engine)
+
+    assert engine._consecutive_exhaustions["light.bedroom"] == CONSECUTIVE_EXHAUSTION_LIMIT
+    assert engine._current_status == STATUS_SUPPRESSED
+    assert engine._state.suppression_reason == "unreachable_loop"
+    assert engine._state.suppressed_until is not None
+    # Kill-switch floor path cancels pending; no re-entry armed.
+    assert "light.bedroom" not in engine._pending_enforcements
+    await engine.async_unload()  # cancel the wall-clock unsuppress timer
+
+
+async def test_selfheal_floor_trips_with_rate_limit_disabled(hass: HomeAssistant):
+    """The kill-switch floor trips even when max_enforcements_per_minute == 0."""
+    engine = _make_engine(hass, _verify_config(max_enforcements_per_minute=0))
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+    engine._consecutive_exhaustions["light.bedroom"] = CONSECUTIVE_EXHAUSTION_LIMIT - 1
+
+    await _exhaust_once(hass, engine)
+
+    assert engine._current_status == STATUS_SUPPRESSED
+    assert engine._state.suppression_reason == "unreachable_loop"
+    await engine.async_unload()  # cancel the wall-clock unsuppress timer
+
+
+async def test_trigger_loop_protection_cause_wording(hass: HomeAssistant):
+    """cause='unreachable_loop' sets the unreachable reason + EVENT cause; the default
+    'rate_limit' keeps the classic loop_protection reason."""
+    events = []
+    hass.bus.async_listen(EVENT_LOOP_DETECTED, lambda e: events.append(e))
+
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    await engine._trigger_loop_protection("light.bedroom", cause="unreachable_loop")
+    assert engine._state.suppression_reason == "unreachable_loop"
+
+    engine2 = _make_engine(hass, _make_config())
+    engine2._startup_complete = True
+    await engine2._trigger_loop_protection("light.bedroom")
+    assert engine2._state.suppression_reason == "loop_protection"
+
+    await hass.async_block_till_done()
+    causes = sorted(e.data["cause"] for e in events)
+    assert causes == ["rate_limit", "unreachable_loop"]
+    await engine.async_unload()
+    await engine2.async_unload()
+
+
+async def test_selfheal_provisional_ok_not_clobbered_mid_exhaustion(hass: HomeAssistant):
+    """While mid-exhaustion (counter>0), a re-entering enforce's provisional 'ok' must
+    not overwrite the live failed/unreachable outcome (the verify re-read owns truth)."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+    engine._consecutive_exhaustions["light.bedroom"] = 1
+    engine._state.target_outcomes["light.bedroom"] = {
+        "outcome": "failed",
+        "reason": REASON_UNREACHABLE_AFTER_RETRIES,
+        "error": "x",
+        "at": dt_util.now(),
+    }
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        lambda h, d, cb: MagicMock(),
+    ):
+        await engine._enforce("light.bedroom")
+
+    outcome = engine._state.target_outcomes["light.bedroom"]
+    assert outcome["outcome"] == "failed"
+    assert outcome["reason"] == REASON_UNREACHABLE_AFTER_RETRIES
+
+
+async def test_suppressed_target_recovery_clears_outcome_keeps_suppression(
+    hass: HomeAssistant,
+):
+    """A target that recovers to desired WHILE suppressed drops from attention, but
+    the rule stays SUPPRESSED and suppressed_until is unchanged."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    suppressed_until = dt_util.now() + timedelta(minutes=10)
+    engine._state.suppressed_until = suppressed_until
+    engine._state.suppression_reason = "unreachable_loop"
+    engine._state.target_outcomes["light.bedroom"] = {
+        "outcome": "failed",
+        "reason": REASON_UNREACHABLE_AFTER_RETRIES,
+        "error": "x",
+        "at": dt_util.now(),
+    }
+    # Target recovers to the desired state ("off" -> no longer triggers).
+    hass.states.async_set("light.bedroom", "off")
+
+    broadcasts = []
+    async_dispatcher_connect(
+        hass, signal_for_rule(engine._config.unique_id),
+        lambda *_: broadcasts.append(1),
+    )
+    await engine.async_evaluate("light.bedroom", _state("off"))
+    await hass.async_block_till_done()
+
+    assert engine._state.target_outcomes["light.bedroom"]["outcome"] == "ok"
+    assert engine._current_status == STATUS_SUPPRESSED
+    assert engine._state.suppressed_until == suppressed_until
+    assert broadcasts  # a refresh fired so the card drops the attention row
+
+
+async def test_suppressed_still_failed_target_keeps_attention(hass: HomeAssistant):
+    """A target still non-compliant while suppressed keeps its failed outcome (no clear)."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    engine._state.suppressed_until = dt_util.now() + timedelta(minutes=10)
+    engine._state.target_outcomes["light.bedroom"] = {
+        "outcome": "failed",
+        "reason": REASON_UNREACHABLE_AFTER_RETRIES,
+        "error": "x",
+        "at": dt_util.now(),
+    }
+    hass.states.async_set("light.bedroom", "on")  # still triggers (non-compliant)
+
+    await engine.async_evaluate("light.bedroom", _state("on"))
+
+    assert engine._state.target_outcomes["light.bedroom"]["outcome"] == "failed"
+    assert engine._current_status == STATUS_SUPPRESSED
+
+
+async def test_fire_success_sibling_still_pending_broadcasts(hass: HomeAssistant):
+    """B1: with a still-pending sibling, firing one target's delayed enforce must
+    force a broadcast whose pending_enforcement_due excludes the fired target, even
+    though the derived status stays PENDING (dedupe would otherwise swallow it)."""
+    config = _make_config(
+        delay_seconds=30,
+        target_entities=["light.a", "light.b"],
+        max_enforcements_per_minute=0,
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    # Both targets arm via the same patched async_call_later, which can't see the
+    # entity_id — so evaluate them one at a time and grab each entity's _fire cb.
+    cbs = {}
+    arming = {"eid": None}
+
+    def _fake_later(h, d, cb):
+        cbs[arming["eid"]] = cb
+        return MagicMock()
+
+    for eid in ("light.a", "light.b"):
+        hass.states.async_set(eid, "on")
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        for eid in ("light.a", "light.b"):
+            arming["eid"] = eid
+            await engine.async_evaluate(eid, hass.states.get(eid))
+            await hass.async_block_till_done()
+    assert engine.current_status() == STATUS_PENDING
+    assert set(engine.pending_enforcement_due()) == {"light.a", "light.b"}
+
+    snaps = []
+    async_dispatcher_connect(
+        hass, signal_for_rule(config.unique_id),
+        lambda *_: snaps.append(set(engine.pending_enforcement_due())),
+    )
+    # Fire light.a's delayed enforce; light.b stays pending (status remains PENDING).
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        cbs["light.a"](dt_util.now())
+        await hass.async_block_till_done()
+
+    assert snaps, "no broadcast fired after the fired target was popped"
+    assert "light.a" not in snaps[-1]
+    assert "light.b" in snaps[-1]

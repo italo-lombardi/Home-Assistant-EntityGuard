@@ -97,6 +97,12 @@ const STATUS_LABELS = {
   verifying: "Verifying",
 };
 
+const SUPPRESSION_REASON_LABELS = {
+  loop_protection: "Loop protection",
+  unreachable_loop: "Target unreachable",
+  manual: "Manual",
+};
+
 const cardStyles = css`
   :host {
     --eg-text-primary: var(--primary-text-color, #212121);
@@ -1322,7 +1328,10 @@ class EntityGuardCard extends LitElement {
         ? Math.max(0, Math.ceil((d.getTime() - Date.now()) / 1000))
         : 0;
       const left = secsLeft > 0 ? ` (${this._formatSeconds(secsLeft)})` : "";
-      const reason = a.suppression_reason;
+      const rawReason = a.suppression_reason;
+      const reason = rawReason
+        ? SUPPRESSION_REASON_LABELS[rawReason] || rawReason.replace(/_/g, " ")
+        : null;
       if (when && reason) text = `Suppressed until ${when}${left} — ${reason}`;
       else if (when) text = `Suppressed until ${when}${left}`;
       else if (reason) text = `Suppressed — ${reason}`;

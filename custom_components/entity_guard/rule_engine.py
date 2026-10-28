@@ -34,6 +34,7 @@ from .const import (
     COLOR_ATTRIBUTES,
     COLOR_RGB_TOLERANCE,
     COLOR_TEMP_KELVIN_TOLERANCE,
+    CONSECUTIVE_EXHAUSTION_LIMIT,
     DEFAULT_LOOP_SUPPRESS_MINUTES,
     DOMAIN,
     DOMAIN_MODE_SERVICE_MAP,
@@ -115,12 +116,15 @@ class RuleEngine:
         self._pending_eval_tasks: dict[str, asyncio.Task] = {}
         # Verify-after-enforce (opt-in, state modes). Per-target one-shot verify
         # timers armed on a successful enforce; _verify_attempts counts corrective
-        # re-enforces per target; _unreachable latches a target OFF verify after it
-        # exhausts VERIFY_MAX_ATTEMPTS, until a real state_changed clears it (else a
-        # dead device re-runs the whole cycle on every trigger forever).
+        # re-enforces per target. On exhaustion the target re-enters the counted
+        # enforcing cycle (self-heal) rather than dead-ending; _consecutive_exhaustions
+        # counts full exhaustions per target and trips loop protection at
+        # CONSECUTIVE_EXHAUSTION_LIMIT. _unreachable is now only a brief double-arm
+        # guard across the corrective window (no longer a permanent latch).
         self._pending_verifications: dict[str, Callable[[], None]] = {}
         self._verify_attempts: dict[str, int] = {}
         self._unreachable: set[str] = set()
+        self._consecutive_exhaustions: dict[str, int] = {}
         self._startup_complete = False
         self._is_unloaded: bool = False
         self._current_status: str = STATUS_STARTING
@@ -250,6 +254,7 @@ class RuleEngine:
         self._pending_verifications.clear()
         self._verify_attempts.clear()
         self._unreachable.clear()
+        self._consecutive_exhaustions.clear()
 
         for task in list(self._pending_eval_tasks.values()):
             task.cancel()
@@ -290,6 +295,9 @@ class RuleEngine:
             # — the genuine-event site — NOT inside _cancel_verify, which the
             # escalation path calls mid-cycle right after incrementing.
             self._verify_attempts.pop(entity_id, None)
+            # The target moved → the self-heal cycle recovered; reset its exhaustion
+            # counter so a later death starts fresh and re-fires the one-shot event.
+            self._consecutive_exhaustions.pop(entity_id, None)
         trigger_context_id: str | None = getattr(event.context, "id", None)
         self._schedule_eval_task(entity_id, new_state, trigger_context_id)
 
@@ -424,6 +432,19 @@ class RuleEngine:
                 prev_status == self._current_status
             ):
                 self._broadcast_status()
+            # A target can recover to its desired state WHILE the rule is
+            # suppressed (e.g. loop protection paused it, then the device came
+            # back correct on its own). Clear its stale non-ok outcome so
+            # "Targets needing attention" drops it — but do NOT touch suppression:
+            # the rule stays SUPPRESSED and suppressed_until is unchanged. This is
+            # the suppressed-path analogue of the not-triggered recovery clear.
+            if entity_id in self._config.target_entities and not is_source:
+                before = self._state.target_outcomes.get(entity_id)
+                triggered, _skip = self._trigger_decision(entity_id, new_state)
+                if not triggered:
+                    self._clear_target_outcome_if_live(entity_id, new_state, now)
+                    if self._state.target_outcomes.get(entity_id) is not before:
+                        self._broadcast_status()
             return
         if self._state.suppressed_until and self._state.suppressed_until <= now:
             # Lazy suppression expiry (the timer may not have drained yet). Clearing
@@ -926,9 +947,15 @@ class RuleEngine:
                     self._pending_enforcement_due.pop(entity_id, None)
                     # _enforce already called _set_status(post_status), but the
                     # entity was still in _pending_enforcements at that point so
-                    # _derive_armed_or_cooldown returned PENDING and the broadcast
-                    # was a no-op. Re-broadcast now that the dict is clean.
-                    self._broadcast_status()
+                    # _derive_armed_or_cooldown returned PENDING and the set was a
+                    # no-op. Re-DERIVE now that the dict is clean — a bare re-emit
+                    # would replay the stale PENDING and the card freezes there
+                    # (clear-suppression stuck-PENDING bug). broadcast_on_dedupe so
+                    # a still-pending SIBLING (derived status stays PENDING) still
+                    # force-broadcasts — else this entity's popped past-due row
+                    # lingers on the card until an unrelated broadcast. Matches the
+                    # sibling branches above (_set_or_force_broadcast).
+                    self._apply_idle_status(_now, broadcast_on_dedupe=True)
 
         @callback
         def _fire_cb(now: datetime) -> None:
@@ -1020,12 +1047,15 @@ class RuleEngine:
                 return
             attempts = self._verify_attempts.get(entity_id, 0)
             if attempts >= VERIFY_MAX_ATTEMPTS:
-                # Exhausted — the genuine "cannot be reached". OVERWRITE the
-                # provisional "ok" the corrective enforce wrote; this re-read is the
-                # source of truth, not the service call's return. Latch OFF verify
-                # until a real state_changed clears it (else re-run every trigger).
+                # Exhausted this verify cycle. OVERWRITE the provisional "ok" the
+                # corrective enforce wrote with a "failed" outcome (this re-read is
+                # the source of truth, not the service call's return), then SELF-HEAL:
+                # re-enter the COUNTED enforcing cycle instead of dead-ending, so a
+                # target EG is supposed to own is driven to desired without human
+                # action. The only terminators are the existing guards.
                 self._verify_attempts.pop(entity_id, None)
-                self._unreachable.add(entity_id)
+                count = self._consecutive_exhaustions.get(entity_id, 0) + 1
+                self._consecutive_exhaustions[entity_id] = count
                 self._state.target_outcomes[entity_id] = {
                     "outcome": "failed",
                     "reason": REASON_UNREACHABLE_AFTER_RETRIES,
@@ -1035,26 +1065,42 @@ class RuleEngine:
                     ),
                     "at": dt_util.now(),
                 }
-                # NB: do NOT route this through _fire_skipped — its target_outcomes
-                # writer classifies any reason != service_call_failed as "skipped",
-                # which would clobber the "failed" written above. The direct write
-                # here is the source of truth (note C: the verify re-read, not an
-                # enforce outcome). Fire the skipped EVENT for logbook/automations
-                # without touching the shared outcome classifier.
-                self._hass.bus.async_fire(
-                    EVENT_SKIPPED,
-                    {
-                        "rule_id": self._config.unique_id,
-                        "rule_name": self._config.name,
-                        "entity_id": entity_id,
-                        "reason": REASON_UNREACHABLE_AFTER_RETRIES,
-                    },
+                if count == 1:
+                    # Fire the skipped EVENT once per fresh exhaustion streak — not
+                    # every 5 s cycle (that floods the bus on a dead device). A real
+                    # recovery resets the counter (see _handle_state_event), so a
+                    # later death re-fires it. NB: do NOT route through _fire_skipped
+                    # — its classifier would clobber the "failed" outcome to "skipped".
+                    self._hass.bus.async_fire(
+                        EVENT_SKIPPED,
+                        {
+                            "rule_id": self._config.unique_id,
+                            "rule_name": self._config.name,
+                            "entity_id": entity_id,
+                            "reason": REASON_UNREACHABLE_AFTER_RETRIES,
+                        },
+                    )
+                if count >= CONSECUTIVE_EXHAUSTION_LIMIT:
+                    # Dead-device kill-switch floor: trip loop protection directly.
+                    # The direct call bypasses the rate-limit gate (only its caller
+                    # at the enforce site is gated on max_enforcements_per_minute),
+                    # so a dead target is suppressed even when the rate limit is off.
+                    await self._trigger_loop_protection(
+                        entity_id, cause="unreachable_loop"
+                    )
+                    self._apply_idle_status()
+                    return
+                # Re-enter the enforcing cycle: drop the transient double-arm marker
+                # (so the re-entering enforce can re-arm verify) and schedule a COUNTED
+                # non-corrective enforce after the rule delay. Counted + non-corrective
+                # is load-bearing: it feeds the rate_limit_window so loop protection can
+                # trip — the corrective bypass path would be invisible to the guards.
+                self._unreachable.discard(entity_id)
+                self._schedule_delayed_enforcement(
+                    entity_id, trigger_context_id=trigger_context_id
                 )
-                # Verify exhausted: our handle was popped at fire time, so no
-                # verify is pending. Re-derive (not a bare broadcast of the stale
-                # _current_status, which is still VERIFYING) so the card leaves
-                # VERIFYING for the real idle status (ARMED/COOLDOWN); the failed
-                # outcome surfaces in the "needing attention" panel separately.
+                # Re-derive off VERIFYING; _schedule_delayed_enforcement sets PENDING
+                # when it arms, which _apply_idle_status reflects.
                 self._apply_idle_status()
                 return
             # Not reached, attempts remain: corrective re-enforce (bypass rate limit
@@ -1303,13 +1349,26 @@ class RuleEngine:
             self._arm_recently_enforced()
             self._persist()
             # Per-target success — overwrites any prior skipped/failed entry so the
-            # card row for this target clears once it enforces cleanly again.
-            self._state.target_outcomes[entity_id] = {
-                "outcome": "ok",
-                "reason": None,
-                "error": None,
-                "at": now,
-            }
+            # card row for this target clears once it enforces cleanly again. BUT do
+            # not clobber a live "failed/unreachable" outcome mid-self-heal: this
+            # enforce is the re-entry of a cycle whose verify has not yet re-read, so
+            # the failed signal must stay visible between cycles. It flips back to ok
+            # when the verify re-read reaches desired (resets the counter) or a real
+            # state_changed recovers the target.
+            prior = self._state.target_outcomes.get(entity_id)
+            mid_exhaustion = self._consecutive_exhaustions.get(entity_id, 0) > 0
+            if not (
+                mid_exhaustion
+                and prior is not None
+                and prior.get("outcome") == "failed"
+                and prior.get("reason") == REASON_UNREACHABLE_AFTER_RETRIES
+            ):
+                self._state.target_outcomes[entity_id] = {
+                    "outcome": "ok",
+                    "reason": None,
+                    "error": None,
+                    "at": now,
+                }
             # Verify-after-enforce: on a NORMAL successful enforce of a verify-enabled
             # state rule, arm a one-shot re-read. Not for corrective enforces (the
             # verify cycle owns the retry), not for a latched-unreachable target. The
@@ -1364,21 +1423,55 @@ class RuleEngine:
                     )
                     self._cooldown_broadcast_unsubs[entity_id] = unsub
 
-    async def _trigger_loop_protection(self, entity_id: str) -> None:
-        """Auto-suppress on rate-limit breach and notify the user."""
-        _LOGGER.warning(
-            "Loop protection triggered: rule='%s' entity=%s limit=%d/min — "
-            "auto-suppressing for %d min",
-            self._config.name,
-            entity_id,
-            self._config.max_enforcements_per_minute,
-            DEFAULT_LOOP_SUPPRESS_MINUTES,
-        )
+    async def _trigger_loop_protection(
+        self, entity_id: str, *, cause: str = "rate_limit"
+    ) -> None:
+        """Auto-suppress and notify the user.
+
+        cause="rate_limit" (default): too many enforces/min — the classic loop.
+        cause="unreachable_loop": a verify-enabled target never reached desired
+        after CONSECUTIVE_EXHAUSTION_LIMIT full self-heal cycles — the dead-device
+        kill-switch floor (fires even when the rate limit is disabled). Only the
+        three user-facing strings branch on cause; the suppress-timer, pending
+        cancel, and status set are identical either way.
+        """
+        if cause == "unreachable_loop":
+            _LOGGER.warning(
+                "Self-heal ceiling hit: rule='%s' entity=%s never reached desired "
+                "after %d verify cycles — auto-suppressing for %d min",
+                self._config.name,
+                entity_id,
+                CONSECUTIVE_EXHAUSTION_LIMIT,
+                DEFAULT_LOOP_SUPPRESS_MINUTES,
+            )
+            suppression_reason = "unreachable_loop"
+            notification = (
+                f"Entity Guard rule `{self._config.name}` could not drive target "
+                f"`{entity_id}` to its desired state after {CONSECUTIVE_EXHAUSTION_LIMIT} "
+                f"verify cycles and was auto-suppressed for "
+                f"{DEFAULT_LOOP_SUPPRESS_MINUTES} minutes. The target is likely "
+                f"offline or being overridden."
+            )
+        else:
+            _LOGGER.warning(
+                "Loop protection triggered: rule='%s' entity=%s limit=%d/min — "
+                "auto-suppressing for %d min",
+                self._config.name,
+                entity_id,
+                self._config.max_enforcements_per_minute,
+                DEFAULT_LOOP_SUPPRESS_MINUTES,
+            )
+            suppression_reason = "loop_protection"
+            notification = (
+                f"Entity Guard rule `{self._config.name}` exceeded "
+                f"{self._config.max_enforcements_per_minute} enforcements/min and was "
+                f"auto-suppressed for {DEFAULT_LOOP_SUPPRESS_MINUTES} minutes."
+            )
         suppress_until = dt_util.now() + timedelta(
             minutes=DEFAULT_LOOP_SUPPRESS_MINUTES
         )
         self._state.suppressed_until = suppress_until
-        self._state.suppression_reason = "loop_protection"
+        self._state.suppression_reason = suppression_reason
         self._persist()
         self._schedule_suppression_timer()
         # Stop any pending enforcement too (same reason as manual suppress).
@@ -1392,13 +1485,12 @@ class RuleEngine:
                 "entity_id": entity_id,
                 "suppressed_until": suppress_until.isoformat(),
                 "limit": self._config.max_enforcements_per_minute,
+                "cause": cause,
             },
         )
         persistent_notification.async_create(
             self._hass,
-            f"Entity Guard rule `{self._config.name}` exceeded "
-            f"{self._config.max_enforcements_per_minute} enforcements/min and was "
-            f"auto-suppressed for {DEFAULT_LOOP_SUPPRESS_MINUTES} minutes.",
+            notification,
             title="Entity Guard loop detected",
             notification_id=f"{DOMAIN}_loop_{self._config.unique_id}",
         )

@@ -53,7 +53,7 @@
           "add_flags": "Označite za zahtijevanje dodatnih uvjeta (npr. provedi samo kada nitko nije kod kuće, samo nakon zalaska sunca). Ostavite neoznačeno za provedbu svaki put kada se okidač pokrene.",
           "custom_rate_limit": "Zaštita od petlji automatski potiskuje pravilo ako se pokrene više od 10 puta u minuti (zadano). Ostavite neoznačeno za korištenje zadane vrijednosti. Označite za postavljanje vlastitog broja ili za potpuno isključivanje zaštite od petlji na sljedećem zaslonu.",
           "add_debounce": "Označite za zanemarivanje brzih naprijed-natrag promjena. Pravilo djeluje samo ako okidač ostane isti tijekom vremena koje postavite na sljedećem zaslonu. Ostavite neoznačeno za djelovanje na svaku promjenu.",
-          "verify_enabled": "Označite za ponovnu provjeru cilja nekoliko sekundi nakon provedbe. Ako je uređaj prihvatio naredbu, ali se zapravo nije promijenio, pravilo pokušava još nekoliko puta, a zatim ga označava kao nedostupnog. Ostavite neoznačeno za pretpostavku da je naredba uspjela."
+          "verify_enabled": "Označite za ponovnu provjeru cilja nekoliko sekundi nakon provedbe. Ako je uređaj prihvatio naredbu, ali se zapravo nije promijenio, pravilo nastavlja ponavljati provedbu sve dok cilj ne dosegne željeno stanje — ne odustaje samo od sebe. Cilj koji se nikada ne oporavi zaštita od petlji nakratko automatski potisne (i označi kao nedostupan), a zatim ponovno pokušava. Ostavite neoznačeno za pretpostavku da je naredba uspjela."
         }
       },
       "flags": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Prozor u sekundama. Min 0, maks 86400 (24 h).",
           "rate_limit_enabled": "Označite za zadržavanje uključene zaštite od petlji (preporučeno). Odznačite za onemogućavanje za ovo pravilo — nekontrolirane petlje neće biti automatski zaustavljene.",
           "max_enforcements_per_minute": "Koliko je provedbi u minuti dopušteno prije nego se pravilo automatski potisne na 15 minuta. Min 1, maks 600. Zanemaruje se kada je zaštita od petlji odznačena iznad.",
-          "verify_enabled": "Označite za ponovnu provjeru cilja nekoliko sekundi nakon provedbe i ponovni pokušaj ako je uređaj prihvatio naredbu, ali se zapravo nije promijenio. Prikazuje se samo za pravila u načinu rada stanja."
+          "verify_enabled": "Označite za ponovnu provjeru cilja nekoliko sekundi nakon provedbe i nastavak ponavljanja provedbe sve dok ne dosegne željeno stanje ako je uređaj prihvatio naredbu, ali se zapravo nije promijenio. Cilj koji se nikada ne oporavi zaštita od petlji automatski potisne, a zatim ponovno pokušava. Prikazuje se samo za pravila u načinu rada stanja."
         }
       },
       "edit_attribute_params": {

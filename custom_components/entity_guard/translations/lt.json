@@ -53,7 +53,7 @@
           "add_flags": "Pažymėkite, kad reikalautumėte papildomų sąlygų (pvz., taikyti tik tada, kai niekas nėra namuose, tik po saulėlydžio). Nepažymėkite, kad taikymas vyktų kaskart, kai suveikia aktyvinimas.",
           "custom_rate_limit": "Ciklo apsauga automatiškai slopina taisyklę, jei ji suveikia daugiau nei 10 kartų per minutę (numatyta). Nepažymėkite, kad naudotumėte numatytą reikšmę. Pažymėkite, kad nustatytumėte savo skaičių arba visiškai išjungtumėte ciklo apsaugą kitame ekrane.",
           "add_debounce": "Pažymėkite, kad ignoruotumėte greitus pirmyn-atgal pokyčius. Taisyklė veikia tik tada, jei aktyvinimas išlieka nepakitęs jūsų nustatytą laiką kitame ekrane. Nepažymėkite, kad veiktų kiekvieno pokyčio metu.",
-          "verify_enabled": "Pažymėkite, kad tikslas būtų pakartotinai patikrintas praėjus kelioms sekundėms po taikymo. Jei įrenginys priėmė komandą, bet iš tikrųjų nepasikeitė, taisyklė pakartoja kelis kartus ir pažymi jį kaip nepasiekiamą. Nepažymėkite, kad būtų laikoma, jog komanda pavyko."
+          "verify_enabled": "Pažymėkite, kad tikslas būtų pakartotinai patikrintas praėjus kelioms sekundėms po taikymo. Jei įrenginys priėmė komandą, bet iš tikrųjų nepasikeitė, taisyklė kartoja taikymą tol, kol tikslas pasieks norimą būseną — pati nenustoja. Jei tikslas niekaip neatsigauna, ciklo apsauga jį laikinai susislopina (ir pažymi kaip nepasiekiamą), o paskui bando iš naujo. Nepažymėkite, kad būtų laikoma, jog komanda pavyko."
         }
       },
       "flags": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Langas sekundėmis. Mažiausia 0, daugiausia 86400 (24 val.).",
           "rate_limit_enabled": "Pažymėkite, kad ciklo apsauga liktų įjungta (rekomenduojama). Nuimkite žymėjimą, kad išjungtumėte ją šiai taisyklei — nekontroliuojami ciklai nebus automatiškai sustabdyti.",
           "max_enforcements_per_minute": "Kiek taikymų per minutę leidžiama prieš taisyklei automatiškai susislopinant 15 minučių. Mažiausia 1, daugiausia 600. Ignoruojama, kai ciklo apsauga aukščiau nepažymėta.",
-          "verify_enabled": "Pažymėkite, kad tikslas būtų pakartotinai patikrintas praėjus kelioms sekundėms po taikymo ir pakartotas, jei įrenginys priėmė komandą, bet iš tikrųjų nepasikeitė. Rodoma tik būsenos režimo taisyklėms."
+          "verify_enabled": "Pažymėkite, kad tikslas būtų pakartotinai patikrintas praėjus kelioms sekundėms po taikymo ir kad taikymas būtų kartojamas tol, kol tikslas pasieks norimą būseną, jei įrenginys priėmė komandą, bet iš tikrųjų nepasikeitė. Jei tikslas niekaip neatsigauna, ciklo apsauga jį automatiškai susislopina, o paskui bando iš naujo. Rodoma tik būsenos režimo taisyklėms."
         }
       },
       "edit_attribute_params": {
