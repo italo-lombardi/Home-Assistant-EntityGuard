@@ -246,9 +246,39 @@ async def test_slider_flush_end_to_end_skips_reload_but_real_change_reloads(
     mock_reload.assert_awaited_once_with(rule_entry.entry_id)
 
 
-# ---------------------------------------------------------------------------
-# async_remove_entry
-# ---------------------------------------------------------------------------
+async def test_verify_toggle_end_to_end_reloads_entry(hass: HomeAssistant, rule_entry):
+    """End-to-end: toggling the verify device-switch reloads the entry.
+
+    The counterpart to the slider end-to-end above — verify is the one toggle
+    whose effect (binary_sensor.<rule>_recently_enforced_verified appearing /
+    disappearing) requires the entry setup pass, so it must NOT mark
+    SKIP_RELOAD_KEY and the registered listener MUST reload. This joins the two
+    halves the unit tests cover in isolation (switch writes the option without
+    the skip mark; the listener reloads when the mark is absent).
+    """
+    from custom_components.entity_guard.const import CONF_VERIFY_ENABLED
+    from custom_components.entity_guard.number import SKIP_RELOAD_KEY
+    from custom_components.entity_guard.switch import EntityGuardVerifyEnabledSwitch
+
+    rule_entry.add_to_hass(hass)
+    rule_entry.add_update_listener(_async_update_listener)
+
+    engine = MagicMock()
+    engine.config.unique_id = "test-rule-uuid"
+    engine.config.verify_enabled = False
+    sw = EntityGuardVerifyEnabledSwitch(rule_entry, engine)
+    sw.hass = hass
+
+    with patch.object(
+        hass.config_entries, "async_reload", new_callable=AsyncMock
+    ) as mock_reload:
+        await sw.async_turn_on()
+        await hass.async_block_till_done()
+    assert rule_entry.options[CONF_VERIFY_ENABLED] is True
+    assert rule_entry.entry_id not in hass.data.get(DOMAIN, {}).get(
+        SKIP_RELOAD_KEY, set()
+    )
+    mock_reload.assert_awaited_once_with(rule_entry.entry_id)
 
 
 async def test_async_remove_rule_entry(hass: HomeAssistant, rule_entry):

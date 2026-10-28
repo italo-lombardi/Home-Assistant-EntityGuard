@@ -215,9 +215,12 @@ def test_verify_switch_is_off():
 
 
 async def test_verify_switch_turn_on(hass: HomeAssistant):
-    from homeassistant.helpers.dispatcher import async_dispatcher_connect
+    """Toggle ON writes the option and does NOT mark SKIP_RELOAD.
 
-    from custom_components.entity_guard.const import signal_rule_update
+    The verify switch must let the entry reload so binary_sensor.async_setup_entry
+    reconciles the verified sensor — unlike the debounce/delay toggles, it must not
+    suppress that reload.
+    """
     from custom_components.entity_guard.number import SKIP_RELOAD_KEY
 
     entry = _make_rule_entry()
@@ -225,39 +228,24 @@ async def test_verify_switch_turn_on(hass: HomeAssistant):
     entry.add_to_hass(hass)
     sw = EntityGuardVerifyEnabledSwitch(entry, engine)
     sw.hass = hass
-    sw.async_write_ha_state = MagicMock()
-    signalled = MagicMock()
-    async_dispatcher_connect(
-        hass, signal_rule_update(engine.config.unique_id), signalled
-    )
     await sw.async_turn_on()
-    await hass.async_block_till_done()
     assert entry.options.get("verify_enabled") is True
-    assert engine.config.verify_enabled is True
-    assert entry.entry_id in hass.data[DOMAIN][SKIP_RELOAD_KEY]
-    signalled.assert_called_once()
+    assert entry.entry_id not in hass.data.get(DOMAIN, {}).get(SKIP_RELOAD_KEY, set())
 
 
 async def test_verify_switch_turn_off(hass: HomeAssistant):
-    from homeassistant.helpers.dispatcher import async_dispatcher_connect
-
-    from custom_components.entity_guard.const import signal_rule_update
+    """Toggle OFF writes the option and does NOT mark SKIP_RELOAD."""
+    from custom_components.entity_guard.number import SKIP_RELOAD_KEY
 
     entry = _make_rule_entry()
     engine = _make_engine(verify_enabled=True)
     entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(entry, options={"verify_enabled": True})
     sw = EntityGuardVerifyEnabledSwitch(entry, engine)
     sw.hass = hass
-    sw.async_write_ha_state = MagicMock()
-    signalled = MagicMock()
-    async_dispatcher_connect(
-        hass, signal_rule_update(engine.config.unique_id), signalled
-    )
     await sw.async_turn_off()
-    await hass.async_block_till_done()
     assert entry.options.get("verify_enabled") is False
-    assert engine.config.verify_enabled is False
-    signalled.assert_called_once()
+    assert entry.entry_id not in hass.data.get(DOMAIN, {}).get(SKIP_RELOAD_KEY, set())
 
 
 async def test_verify_switch_no_diff_skips_write(hass: HomeAssistant):

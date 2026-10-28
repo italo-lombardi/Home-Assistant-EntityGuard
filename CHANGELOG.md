@@ -2,6 +2,10 @@
 
 ## [0.4.0] — 2026-10-26
 
+### Fixed
+
+- **Verify device-switch now reconciles the verified sensor.** Toggling **Verify enforcement worked** (`switch.<rule>_verify_enabled`) on a rule's device page now creates `binary_sensor.<rule>_recently_enforced_verified` (and re-enables/disables it on later toggles). Previously only the config/options flow did this: the device switch suppressed the entry reload — correct for the debounce/delay toggles, but the verify toggle is the one whose effect (an entity appearing/disappearing) requires the setup pass — so the sensor never appeared when verify was turned on from the device page.
+
 ### Added
 
 - **Dynamic rule modes — bind a target to a live source entity.** Rules now come in a clean 2×2: **Fixed state**, **Fixed attribute**, **Dynamic state (Follow mode)**, **Dynamic attribute (Follow mode)**. A *dynamic* mode behaves exactly like its *fixed* counterpart — same enforcement, debounce, delay, conditions (flags), rate limit, loop protection, suppression, counters, status model — except the target value is read **live from a source entity** instead of a value you type.
