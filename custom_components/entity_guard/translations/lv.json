@@ -46,12 +46,14 @@
         "data": {
           "add_flags": "Pievienot papildu nosacījumus",
           "custom_rate_limit": "Pielāgot cilpu aizsardzību",
-          "add_debounce": "Iespējot atsitiena novēršanu"
+          "add_debounce": "Iespējot atsitiena novēršanu",
+          "verify_enabled": "Pārbaudīt, vai piemērošana nostrādāja"
         },
         "data_description": {
           "add_flags": "Atzīmējiet, lai pieprasītu papildu nosacījumus (piem., piemērot tikai tad, kad neviena nav mājās, tikai pēc saulrieta). Atstājiet neatzīmētu, lai piemērotu katru reizi, kad aktivizētājs nostrādā.",
           "custom_rate_limit": "Cilpu aizsardzība automātiski aptur noteikumu, ja tas nostrādā vairāk nekā 10 reizes minūtē (noklusējums). Atstājiet neatzīmētu, lai izmantotu noklusējumu. Atzīmējiet, lai iestatītu savu skaitli vai pilnībā izslēgtu cilpu aizsardzību nākamajā ekrānā.",
-          "add_debounce": "Atzīmējiet, lai ignorētu ātras uz priekšu un atpakaļ izmaiņas. Noteikums darbojas tikai tad, ja aktivizētājs paliek nemainīgs jūsu nākamajā ekrānā iestatīto laiku. Atstājiet neatzīmētu, lai darbotos pie katras izmaiņas."
+          "add_debounce": "Atzīmējiet, lai ignorētu ātras uz priekšu un atpakaļ izmaiņas. Noteikums darbojas tikai tad, ja aktivizētājs paliek nemainīgs jūsu nākamajā ekrānā iestatīto laiku. Atstājiet neatzīmētu, lai darbotos pie katras izmaiņas.",
+          "verify_enabled": "Atzīmējiet, lai dažas sekundes pēc piemērošanas vēlreiz pārbaudītu mērķi. Ja ierīce pieņēma komandu, bet patiesībā nekad nemainījās, noteikums mēģina vēlreiz pāris reizes un pēc tam atzīmē to kā nesasniedzamu. Atstājiet neatzīmētu, lai pieņemtu, ka komanda nostrādāja."
         }
       },
       "flags": {
@@ -243,13 +245,15 @@
           "debounce_enabled": "Iespējot atsitiena novēršanu",
           "debounce_seconds": "Atsitiena novēršanas logs (sekundes)",
           "rate_limit_enabled": "Piemērot cilpu aizsardzību",
-          "max_enforcements_per_minute": "Maks. piemērošanas minūtē"
+          "max_enforcements_per_minute": "Maks. piemērošanas minūtē",
+          "verify_enabled": "Pārbaudīt, vai piemērošana nostrādāja"
         },
         "data_description": {
           "debounce_enabled": "Atzīmējiet, lai ignorētu ātras uz priekšu un atpakaļ izmaiņas. Noteikums darbojas tikai tad, ja aktivizētājs paliek nemainīgs zemāk iestatīto atsitiena novēršanas logu. Atstājiet neatzīmētu, lai darbotos pie katras izmaiņas.",
           "debounce_seconds": "Logs sekundēs. Min. 0, maks. 86400 (24 h).",
           "rate_limit_enabled": "Atzīmējiet, lai saglabātu cilpu aizsardzību ieslēgtu (ieteicams). Noņemiet atzīmi, lai to atspējotu šim noteikumam — nekontrolētas cilpas netiks automātiski apturētas.",
-          "max_enforcements_per_minute": "Cik piemērošanu minūtē ir atļautas, pirms noteikums automātiski tiek apturēts uz 15 minūtēm. Min. 1, maks. 600. Ignorēts, kad cilpu aizsardzība iepriekš nav atzīmēta."
+          "max_enforcements_per_minute": "Cik piemērošanu minūtē ir atļautas, pirms noteikums automātiski tiek apturēts uz 15 minūtēm. Min. 1, maks. 600. Ignorēts, kad cilpu aizsardzība iepriekš nav atzīmēta.",
+          "verify_enabled": "Atzīmējiet, lai dažas sekundes pēc piemērošanas vēlreiz pārbaudītu mērķi un mēģinātu vēlreiz, ja ierīce pieņēma komandu, bet patiesībā nekad nemainījās. Tiek rādīts tikai stāvokļa režīma noteikumiem."
         }
       },
       "edit_attribute_params": {
@@ -472,6 +476,12 @@
       "enforcement_count_total": {
         "name": "Piemērošanas kopā"
       },
+      "skip_count_today": {
+        "name": "Izlaišanas šodien"
+      },
+      "skip_count_total": {
+        "name": "Izlaišanas kopā"
+      },
       "cooldown_remaining": {
         "name": "Atlikusī atdzišana"
       },
@@ -540,6 +550,13 @@
     "target_entity_missing": {
       "title": "Trūkst mērķa entītijas kārtulā \"{rule_name}\"",
       "description": "Šādas mērķa entītijas vairs neeksistē, bet uz tām ir atsauce kārtulā: {missing_entities}. Kārtula vairs nevar tām uzturēt stāvokli (pārdēvēts vai noņemts mērķis liek kārtulai novērot neesošu entītiju). Atjauniniet vai noņemiet kārtulu, lai atrisinātu šo problēmu."
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "enforced": "Noteikums piemēroja mērķi",
+      "skipped": "Noteikums izlaida piemērošanu",
+      "loop_detected": "Noteikums konstatēja piemērošanas cilpu"
     }
   }
 }

@@ -46,12 +46,14 @@
         "data": {
           "add_flags": "新增額外條件",
           "custom_rate_limit": "自訂迴圈保護",
-          "add_debounce": "啟用去抖動"
+          "add_debounce": "啟用去抖動",
+          "verify_enabled": "驗證強制執行是否生效"
         },
         "data_description": {
           "add_flags": "勾選以要求額外條件（例如僅在無人在家時強制執行、僅在日落後執行）。不勾選則每次觸發時皆強制執行。",
           "custom_rate_limit": "迴圈保護會在規則每分鐘觸發超過 10 次（預設值）時自動抑制該規則。不勾選則使用預設值。勾選以設定您自己的數值，或在後續畫面中完全關閉迴圈保護。",
-          "add_debounce": "勾選以忽略快速來回的變化。規則僅在觸發狀態於您設定的時間內保持不變時才動作。不勾選則每次變化皆動作。"
+          "add_debounce": "勾選以忽略快速來回的變化。規則僅在觸發狀態於您設定的時間內保持不變時才動作。不勾選則每次變化皆動作。",
+          "verify_enabled": "勾選以在強制執行數秒後重新檢查目標。若裝置已接受指令但實際上從未變更，規則會重試幾次，然後將其標示為無法連線。不勾選則假設指令已生效。"
         }
       },
       "flags": {
@@ -243,13 +245,15 @@
           "debounce_enabled": "啟用去抖動",
           "debounce_seconds": "去抖動時間窗（秒）",
           "rate_limit_enabled": "強制執行迴圈保護",
-          "max_enforcements_per_minute": "每分鐘最大強制執行次數"
+          "max_enforcements_per_minute": "每分鐘最大強制執行次數",
+          "verify_enabled": "驗證強制執行是否生效"
         },
         "data_description": {
           "debounce_enabled": "勾選以忽略快速來回的變化。規則僅在觸發狀態於下方設定的去抖動時間窗內保持不變時才動作。不勾選則每次變化皆動作。",
           "debounce_seconds": "以秒為單位的時間窗。最小 0，最大 86400（24 小時）。",
           "rate_limit_enabled": "勾選以保持迴圈保護開啟（建議）。取消勾選則為此規則停用迴圈保護 — 失控迴圈將不會被自動停止。",
-          "max_enforcements_per_minute": "規則在自動抑制 15 分鐘前，每分鐘允許的強制執行次數。最小 1，最大 600。當上方取消勾選迴圈保護時，此設定會被忽略。"
+          "max_enforcements_per_minute": "規則在自動抑制 15 分鐘前，每分鐘允許的強制執行次數。最小 1，最大 600。當上方取消勾選迴圈保護時，此設定會被忽略。",
+          "verify_enabled": "勾選以在強制執行數秒後重新檢查目標，並在裝置已接受指令但實際上從未變更時重試。僅在狀態模式規則中顯示。"
         }
       },
       "edit_attribute_params": {
@@ -472,6 +476,12 @@
       "enforcement_count_total": {
         "name": "強制執行總次數"
       },
+      "skip_count_today": {
+        "name": "今日略過次數"
+      },
+      "skip_count_total": {
+        "name": "略過總次數"
+      },
       "cooldown_remaining": {
         "name": "剩餘冷卻時間"
       },
@@ -540,6 +550,13 @@
     "target_entity_missing": {
       "title": "規則「{rule_name}」參照的目標實體已不存在",
       "description": "下列目標實體已不存在，但規則仍在參照它們：{missing_entities}。規則已無法對這些實體強制套用狀態（目標遭重新命名或移除後，規則會持續監控一個失效的實體）。請更新或移除該規則以解決此問題。"
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "enforced": "規則已強制執行目標",
+      "skipped": "規則已略過強制執行",
+      "loop_detected": "規則偵測到強制執行迴圈"
     }
   }
 }

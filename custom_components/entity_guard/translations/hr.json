@@ -46,12 +46,14 @@
         "data": {
           "add_flags": "Dodaj dodatne uvjete",
           "custom_rate_limit": "Prilagodi zaštitu od petlji",
-          "add_debounce": "Omogući odgodu ponavljanja"
+          "add_debounce": "Omogući odgodu ponavljanja",
+          "verify_enabled": "Provjeri je li provedba uspjela"
         },
         "data_description": {
           "add_flags": "Označite za zahtijevanje dodatnih uvjeta (npr. provedi samo kada nitko nije kod kuće, samo nakon zalaska sunca). Ostavite neoznačeno za provedbu svaki put kada se okidač pokrene.",
           "custom_rate_limit": "Zaštita od petlji automatski potiskuje pravilo ako se pokrene više od 10 puta u minuti (zadano). Ostavite neoznačeno za korištenje zadane vrijednosti. Označite za postavljanje vlastitog broja ili za potpuno isključivanje zaštite od petlji na sljedećem zaslonu.",
-          "add_debounce": "Označite za zanemarivanje brzih naprijed-natrag promjena. Pravilo djeluje samo ako okidač ostane isti tijekom vremena koje postavite na sljedećem zaslonu. Ostavite neoznačeno za djelovanje na svaku promjenu."
+          "add_debounce": "Označite za zanemarivanje brzih naprijed-natrag promjena. Pravilo djeluje samo ako okidač ostane isti tijekom vremena koje postavite na sljedećem zaslonu. Ostavite neoznačeno za djelovanje na svaku promjenu.",
+          "verify_enabled": "Označite za ponovnu provjeru cilja nekoliko sekundi nakon provedbe. Ako je uređaj prihvatio naredbu, ali se zapravo nije promijenio, pravilo pokušava još nekoliko puta, a zatim ga označava kao nedostupnog. Ostavite neoznačeno za pretpostavku da je naredba uspjela."
         }
       },
       "flags": {
@@ -243,13 +245,15 @@
           "debounce_enabled": "Omogući odgodu ponavljanja",
           "debounce_seconds": "Prozor odgode ponavljanja (sekunde)",
           "rate_limit_enabled": "Provedi zaštitu od petlji",
-          "max_enforcements_per_minute": "Maks. provedbi u minuti"
+          "max_enforcements_per_minute": "Maks. provedbi u minuti",
+          "verify_enabled": "Provjeri je li provedba uspjela"
         },
         "data_description": {
           "debounce_enabled": "Označite za zanemarivanje brzih naprijed-natrag promjena. Pravilo djeluje samo ako okidač ostane isti tijekom prozora odgode ponavljanja postavljenog u nastavku. Ostavite neoznačeno za djelovanje na svaku promjenu.",
           "debounce_seconds": "Prozor u sekundama. Min 0, maks 86400 (24 h).",
           "rate_limit_enabled": "Označite za zadržavanje uključene zaštite od petlji (preporučeno). Odznačite za onemogućavanje za ovo pravilo — nekontrolirane petlje neće biti automatski zaustavljene.",
-          "max_enforcements_per_minute": "Koliko je provedbi u minuti dopušteno prije nego se pravilo automatski potisne na 15 minuta. Min 1, maks 600. Zanemaruje se kada je zaštita od petlji odznačena iznad."
+          "max_enforcements_per_minute": "Koliko je provedbi u minuti dopušteno prije nego se pravilo automatski potisne na 15 minuta. Min 1, maks 600. Zanemaruje se kada je zaštita od petlji odznačena iznad.",
+          "verify_enabled": "Označite za ponovnu provjeru cilja nekoliko sekundi nakon provedbe i ponovni pokušaj ako je uređaj prihvatio naredbu, ali se zapravo nije promijenio. Prikazuje se samo za pravila u načinu rada stanja."
         }
       },
       "edit_attribute_params": {
@@ -472,6 +476,12 @@
       "enforcement_count_total": {
         "name": "Ukupno provedbi"
       },
+      "skip_count_today": {
+        "name": "Preskakanja danas"
+      },
+      "skip_count_total": {
+        "name": "Ukupno preskakanja"
+      },
       "cooldown_remaining": {
         "name": "Preostalo razdoblje mirovanja"
       },
@@ -540,6 +550,13 @@
     "target_entity_missing": {
       "title": "Ciljni entitet nedostaje u pravilu „{rule_name}”",
       "description": "Sljedeći ciljni entiteti navedeni u pravilu više ne postoje: {missing_entities}. Pravilo više ne može održavati njihovo stanje (preimenovani ili uklonjeni ciljni entitet ostavlja pravilo da nadzire nepostojeći entitet). Ažurirajte ili uklonite pravilo za rješavanje ovog problema."
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "enforced": "Pravilo je provelo nad ciljem",
+      "skipped": "Pravilo je preskočilo provedbu",
+      "loop_detected": "Pravilo je otkrilo petlju provedbe"
     }
   }
 }

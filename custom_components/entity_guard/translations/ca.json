@@ -46,12 +46,14 @@
         "data": {
           "add_flags": "Afegeix condicions addicionals",
           "custom_rate_limit": "Personalitza la protecció contra bucles",
-          "add_debounce": "Activa l'antirebot"
+          "add_debounce": "Activa l'antirebot",
+          "verify_enabled": "Verifica que l'aplicació ha funcionat"
         },
         "data_description": {
           "add_flags": "Marqueu per requerir condicions addicionals (p. ex. aplicar només quan no hi ha ningú a casa, només després de la posta de sol). Deixeu sense marcar per aplicar sempre que es dispari l'activador.",
           "custom_rate_limit": "La protecció contra bucles suprimeix automàticament la regla si es dispara més de 10 vegades per minut (per defecte). Deixeu sense marcar per usar el valor predeterminat. Marqueu per establir el vostre propi nombre, o per desactivar completament la protecció contra bucles en una pantalla posterior.",
-          "add_debounce": "Marqueu per ignorar canvis ràpids d'anada i tornada. La regla només actua si l'activador es manté igual durant el temps que establiu en una pantalla posterior. Deixeu sense marcar per actuar en cada canvi."
+          "add_debounce": "Marqueu per ignorar canvis ràpids d'anada i tornada. La regla només actua si l'activador es manté igual durant el temps que establiu en una pantalla posterior. Deixeu sense marcar per actuar en cada canvi.",
+          "verify_enabled": "Marqueu-ho per tornar a comprovar l'objectiu uns segons després d'aplicar-hi l'estat. Si el dispositiu ha acceptat l'ordre però en realitat no ha canviat mai, la regla ho torna a intentar un parell de vegades i després el marca com a inaccessible. Deixeu-ho sense marcar per donar per fet que l'ordre ha funcionat."
         }
       },
       "flags": {
@@ -243,13 +245,15 @@
           "debounce_enabled": "Activa l'antirebot",
           "debounce_seconds": "Finestra d'antirebot (segons)",
           "rate_limit_enabled": "Aplica la protecció contra bucles",
-          "max_enforcements_per_minute": "Màxim d'aplicacions per minut"
+          "max_enforcements_per_minute": "Màxim d'aplicacions per minut",
+          "verify_enabled": "Verifica que l'aplicació ha funcionat"
         },
         "data_description": {
           "debounce_enabled": "Marqueu per ignorar canvis ràpids d'anada i tornada. La regla només actua si l'activador es manté igual durant la finestra d'antirebot que establiu a sota. Deixeu sense marcar per actuar en cada canvi.",
           "debounce_seconds": "Finestra en segons. Mín. 0, màx. 86400 (24 h).",
           "rate_limit_enabled": "Marqueu per mantenir activada la protecció contra bucles (recomanat). Desmarqueu per desactivar-la per a aquesta regla — els bucles descontrolats no s'aturaran automàticament.",
-          "max_enforcements_per_minute": "Quantes aplicacions per minut es permeten abans que la regla se suprimeixi automàticament durant 15 minuts. Mín. 1, màx. 600. S'ignora quan la protecció contra bucles està desmarcada a dalt."
+          "max_enforcements_per_minute": "Quantes aplicacions per minut es permeten abans que la regla se suprimeixi automàticament durant 15 minuts. Mín. 1, màx. 600. S'ignora quan la protecció contra bucles està desmarcada a dalt.",
+          "verify_enabled": "Marqueu-ho per tornar a comprovar l'objectiu uns segons després d'aplicar-hi l'estat i tornar-ho a intentar si el dispositiu ha acceptat l'ordre però en realitat no ha canviat mai. Només es mostra per a les regles en mode d'estat."
         }
       },
       "edit_attribute_params": {
@@ -472,6 +476,12 @@
       "enforcement_count_total": {
         "name": "Aplicacions totals"
       },
+      "skip_count_today": {
+        "name": "Omissions d'avui"
+      },
+      "skip_count_total": {
+        "name": "Omissions totals"
+      },
       "cooldown_remaining": {
         "name": "Temps d'espera restant"
       },
@@ -540,6 +550,13 @@
     "target_entity_missing": {
       "title": "L'entitat objectiu no existeix a la regla \"{rule_name}\"",
       "description": "Les entitats objectiu següents ja no existeixen, però la regla encara hi fa referència: {missing_entities}. La regla ja no pot aplicar-hi l'estat (una entitat objectiu reanomenada o eliminada fa que la regla vigili una entitat inexistent). Actualitzeu o elimineu la regla per resoldre aquest problema."
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "enforced": "La regla ha aplicat un objectiu",
+      "skipped": "La regla ha omès l'aplicació",
+      "loop_detected": "La regla ha detectat un bucle d'aplicació"
     }
   }
 }

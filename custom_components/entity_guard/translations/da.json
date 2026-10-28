@@ -46,12 +46,14 @@
         "data": {
           "add_flags": "Tilføj ekstra betingelser",
           "custom_rate_limit": "Tilpas løkkebeskyttelse",
-          "add_debounce": "Aktivér debounce"
+          "add_debounce": "Aktivér debounce",
+          "verify_enabled": "Verificér at håndhævelsen virkede"
         },
         "data_description": {
           "add_flags": "Marker for at kræve ekstra betingelser (f.eks. håndhæv kun når ingen er hjemme, kun efter solnedgang). Lad være umarkeret for at håndhæve hver gang udløseren aktiveres.",
           "custom_rate_limit": "Løkkebeskyttelse undertrykker automatisk reglen, hvis den udløses mere end 10 gange i minuttet (standard). Lad være umarkeret for at bruge standardværdien. Marker for at angive dit eget antal eller for helt at slå løkkebeskyttelsen fra på et senere skærmbillede.",
-          "add_debounce": "Marker for at ignorere hurtige frem-og-tilbage-ændringer. Reglen handler kun, hvis udløseren forbliver den samme i den tid, du angiver på et senere skærmbillede. Lad være umarkeret for at handle på hver ændring."
+          "add_debounce": "Marker for at ignorere hurtige frem-og-tilbage-ændringer. Reglen handler kun, hvis udløseren forbliver den samme i den tid, du angiver på et senere skærmbillede. Lad være umarkeret for at handle på hver ændring.",
+          "verify_enabled": "Marker for at tjekke målet igen nogle sekunder efter håndhævelse. Hvis enheden accepterede kommandoen, men reelt aldrig ændrede sig, prøver reglen et par gange mere og markerer det derefter som uden for rækkevidde. Lad være umarkeret for at antage, at kommandoen virkede."
         }
       },
       "flags": {
@@ -243,13 +245,15 @@
           "debounce_enabled": "Aktivér debounce",
           "debounce_seconds": "Debounce-vindue (sekunder)",
           "rate_limit_enabled": "Håndhæv løkkebeskyttelse",
-          "max_enforcements_per_minute": "Maks. håndhævelser i minuttet"
+          "max_enforcements_per_minute": "Maks. håndhævelser i minuttet",
+          "verify_enabled": "Verificér at håndhævelsen virkede"
         },
         "data_description": {
           "debounce_enabled": "Marker for at ignorere hurtige frem-og-tilbage-ændringer. Reglen handler kun, hvis udløseren forbliver den samme i det debounce-vindue, du angiver nedenfor. Lad være umarkeret for at handle på hver ændring.",
           "debounce_seconds": "Vindue i sekunder. Min. 0, maks. 86400 (24t).",
           "rate_limit_enabled": "Marker for at lade løkkebeskyttelsen være slået til (anbefales). Fjern markering for at deaktivere den for denne regel — løbske løkker vil ikke blive standset automatisk.",
-          "max_enforcements_per_minute": "Hvor mange håndhævelser i minuttet der er tilladt, før reglen automatisk undertrykkes i 15 minutter. Min. 1, maks. 600. Ignoreres når løkkebeskyttelsen er fjernet ovenfor."
+          "max_enforcements_per_minute": "Hvor mange håndhævelser i minuttet der er tilladt, før reglen automatisk undertrykkes i 15 minutter. Min. 1, maks. 600. Ignoreres når løkkebeskyttelsen er fjernet ovenfor.",
+          "verify_enabled": "Marker for at tjekke målet igen nogle sekunder efter håndhævelse og prøve igen, hvis enheden accepterede kommandoen, men reelt aldrig ændrede sig. Vises kun for regler i tilstandsmode."
         }
       },
       "edit_attribute_params": {
@@ -472,6 +476,12 @@
       "enforcement_count_total": {
         "name": "Håndhævelser i alt"
       },
+      "skip_count_today": {
+        "name": "Oversprungne i dag"
+      },
+      "skip_count_total": {
+        "name": "Oversprungne i alt"
+      },
       "cooldown_remaining": {
         "name": "Nedkøling tilbage"
       },
@@ -540,6 +550,13 @@
     "target_entity_missing": {
       "title": "Målenhed mangler i reglen \"{rule_name}\"",
       "description": "Følgende målenhed(er) findes ikke længere, men der henvises til dem i reglen: {missing_entities}. Reglen kan ikke længere håndhæve tilstanden på dem (en omdøbt eller fjernet målenhed gør, at reglen overvåger en død enhed). Opdater eller fjern reglen for at løse problemet."
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "enforced": "Reglen håndhævede et mål",
+      "skipped": "Reglen sprang håndhævelse over",
+      "loop_detected": "Reglen registrerede en håndhævelsesløkke"
     }
   }
 }

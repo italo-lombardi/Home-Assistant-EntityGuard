@@ -46,12 +46,14 @@
         "data": {
           "add_flags": "Adăugați condiții suplimentare",
           "custom_rate_limit": "Personalizați protecția împotriva buclelor",
-          "add_debounce": "Activați debounce"
+          "add_debounce": "Activați debounce",
+          "verify_enabled": "Verifică dacă impunerea a reușit"
         },
         "data_description": {
           "add_flags": "Bifați pentru a solicita condiții suplimentare (de ex. impuneți doar când nu este nimeni acasă, doar după apus). Lăsați nebifat pentru a impune de fiecare dată când se produce declanșarea.",
           "custom_rate_limit": "Protecția împotriva buclelor suprimă automat regula dacă se declanșează de mai mult de 10 ori pe minut (implicit). Lăsați nebifat pentru a folosi valoarea implicită. Bifați pentru a seta propriul număr sau pentru a dezactiva complet protecția împotriva buclelor pe un ecran ulterior.",
-          "add_debounce": "Bifați pentru a ignora schimbările rapide dus-întors. Regula acționează doar dacă declanșarea rămâne aceeași pe durata pe care o setați pe un ecran ulterior. Lăsați nebifat pentru a acționa la fiecare schimbare."
+          "add_debounce": "Bifați pentru a ignora schimbările rapide dus-întors. Regula acționează doar dacă declanșarea rămâne aceeași pe durata pe care o setați pe un ecran ulterior. Lăsați nebifat pentru a acționa la fiecare schimbare.",
+          "verify_enabled": "Bifați pentru a reverifica ținta la câteva secunde după impunere. Dacă dispozitivul a acceptat comanda, dar nu s-a modificat efectiv, regula reîncearcă de câteva ori, apoi o marchează ca inaccesibilă. Lăsați nebifat pentru a presupune că comanda a reușit."
         }
       },
       "flags": {
@@ -243,13 +245,15 @@
           "debounce_enabled": "Activează debounce",
           "debounce_seconds": "Fereastră debounce (secunde)",
           "rate_limit_enabled": "Impune protecția împotriva buclelor",
-          "max_enforcements_per_minute": "Impuneri maxime pe minut"
+          "max_enforcements_per_minute": "Impuneri maxime pe minut",
+          "verify_enabled": "Verifică dacă impunerea a reușit"
         },
         "data_description": {
           "debounce_enabled": "Bifați pentru a ignora schimbările rapide dus-întors. Regula acționează doar dacă declanșarea rămâne aceeași pe durata ferestrei debounce setate mai jos. Lăsați nebifat pentru a acționa la fiecare schimbare.",
           "debounce_seconds": "Fereastră în secunde. Minim 0, maxim 86400 (24h).",
           "rate_limit_enabled": "Bifați pentru a menține activă protecția împotriva buclelor (recomandat). Debifați pentru a o dezactiva pentru această regulă — buclele scăpate de sub control nu vor fi oprite automat.",
-          "max_enforcements_per_minute": "Câte impuneri pe minut sunt permise înainte ca regula să se suprime automat timp de 15 minute. Minim 1, maxim 600. Ignorat când protecția împotriva buclelor este debifată mai sus."
+          "max_enforcements_per_minute": "Câte impuneri pe minut sunt permise înainte ca regula să se suprime automat timp de 15 minute. Minim 1, maxim 600. Ignorat când protecția împotriva buclelor este debifată mai sus.",
+          "verify_enabled": "Bifați pentru a reverifica ținta la câteva secunde după impunere și a reîncerca dacă dispozitivul a acceptat comanda, dar nu s-a modificat efectiv. Se afișează doar pentru regulile în mod stare."
         }
       },
       "edit_attribute_params": {
@@ -472,6 +476,12 @@
       "enforcement_count_total": {
         "name": "Impuneri total"
       },
+      "skip_count_today": {
+        "name": "Omiteri astăzi"
+      },
+      "skip_count_total": {
+        "name": "Omiteri total"
+      },
       "cooldown_remaining": {
         "name": "Așteptare rămasă"
       },
@@ -540,6 +550,13 @@
     "target_entity_missing": {
       "title": "Entitate țintă lipsă în regula „{rule_name}”",
       "description": "Următoarea entitate țintă/următoarele entități țintă nu mai există, dar sunt menționate în regulă: {missing_entities}. Regula nu mai poate aplica starea pentru acestea (o țintă redenumită sau eliminată lasă regula să monitorizeze o entitate care nu mai există). Actualizați sau eliminați regula pentru a rezolva această problemă."
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "enforced": "Regula a impus o țintă",
+      "skipped": "Regula a omis impunerea",
+      "loop_detected": "Regula a detectat o buclă de impunere"
     }
   }
 }

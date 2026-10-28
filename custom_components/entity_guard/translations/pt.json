@@ -46,12 +46,14 @@
         "data": {
           "add_flags": "Adicionar condições extra",
           "custom_rate_limit": "Personalizar proteção contra ciclos",
-          "add_debounce": "Ativar debounce"
+          "add_debounce": "Ativar debounce",
+          "verify_enabled": "Verificar se a aplicação funcionou"
         },
         "data_description": {
           "add_flags": "Selecione para exigir condições extra (ex.: aplicar apenas quando ninguém está em casa, apenas após o pôr-do-sol). Deixe sem selecionar para aplicar sempre que o gatilho disparar.",
           "custom_rate_limit": "A proteção contra ciclos suprime automaticamente a regra se esta disparar mais de 10 vezes por minuto (predefinição). Deixe sem selecionar para usar a predefinição. Selecione para definir o seu próprio número, ou para desligar completamente a proteção contra ciclos num ecrã posterior.",
-          "add_debounce": "Selecione para ignorar mudanças rápidas e repetidas. A regra apenas atua se o gatilho se mantiver igual durante o tempo definido num ecrã posterior. Deixe sem selecionar para atuar a cada mudança."
+          "add_debounce": "Selecione para ignorar mudanças rápidas e repetidas. A regra apenas atua se o gatilho se mantiver igual durante o tempo definido num ecrã posterior. Deixe sem selecionar para atuar a cada mudança.",
+          "verify_enabled": "Marque para verificar novamente o alvo alguns segundos após a aplicação. Se o dispositivo aceitou o comando mas não mudou de facto, a regra tenta novamente algumas vezes e depois assinala-o como inacessível. Deixe desmarcado para assumir que o comando funcionou."
         }
       },
       "flags": {
@@ -243,13 +245,15 @@
           "debounce_enabled": "Ativar debounce",
           "debounce_seconds": "Janela de debounce (segundos)",
           "rate_limit_enabled": "Aplicar proteção contra ciclos",
-          "max_enforcements_per_minute": "Máximo de aplicações por minuto"
+          "max_enforcements_per_minute": "Máximo de aplicações por minuto",
+          "verify_enabled": "Verificar se a aplicação funcionou"
         },
         "data_description": {
           "debounce_enabled": "Selecione para ignorar mudanças rápidas e repetidas. A regra apenas atua se o gatilho se mantiver igual durante a janela de debounce definida abaixo. Deixe sem selecionar para atuar a cada mudança.",
           "debounce_seconds": "Janela em segundos. Mín. 0, máx. 86400 (24h).",
           "rate_limit_enabled": "Selecione para manter a proteção contra ciclos ativa (recomendado). Desmarque para a desativar nesta regra — ciclos descontrolados não serão parados automaticamente.",
-          "max_enforcements_per_minute": "Quantas aplicações por minuto são permitidas antes da regra ser auto-suprimida durante 15 minutos. Mín. 1, máx. 600. Ignorado quando a proteção contra ciclos está desmarcada acima."
+          "max_enforcements_per_minute": "Quantas aplicações por minuto são permitidas antes da regra ser auto-suprimida durante 15 minutos. Mín. 1, máx. 600. Ignorado quando a proteção contra ciclos está desmarcada acima.",
+          "verify_enabled": "Marque para verificar novamente o alvo alguns segundos após a aplicação e tentar novamente se o dispositivo aceitou o comando mas não mudou de facto. Apresentado apenas para regras no modo de estado."
         }
       },
       "edit_attribute_params": {
@@ -472,6 +476,12 @@
       "enforcement_count_total": {
         "name": "Aplicações no total"
       },
+      "skip_count_today": {
+        "name": "Ignorados hoje"
+      },
+      "skip_count_total": {
+        "name": "Ignorados no total"
+      },
       "cooldown_remaining": {
         "name": "Tempo de espera restante"
       },
@@ -540,6 +550,13 @@
     "target_entity_missing": {
       "title": "Entidade de destino ausente na regra \"{rule_name}\"",
       "description": "A(s) seguinte(s) entidade(s) de destino já não existe(m), mas continua(m) a ser referenciada(s) na regra: {missing_entities}. A regra já não consegue aplicar o estado a essa(s) entidade(s) (um destino renomeado ou removido deixa a regra a vigiar uma entidade inexistente). Atualize ou remova a regra para resolver este problema."
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "enforced": "Regra aplicou a um alvo",
+      "skipped": "Regra ignorou a aplicação",
+      "loop_detected": "Regra detetou um ciclo de aplicação"
     }
   }
 }
