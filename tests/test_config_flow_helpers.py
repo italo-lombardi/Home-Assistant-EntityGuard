@@ -43,6 +43,7 @@ from custom_components.entity_guard.const import (
     CONF_TARGET_VALUE,
     CONF_THRESHOLD,
     CONF_TRIGGER_STATES,
+    CONF_VERIFY_ENABLED,
     DOMAIN,
     ENTRY_TYPE_HUB,
     ENTRY_TYPE_RULE,
@@ -313,6 +314,24 @@ def test_build_summary_state_mode_minimal():
     assert "immediate" in summary
     assert "Conditions" in summary
     assert "Debounce" in summary
+
+
+def test_build_summary_includes_verify_line_when_enabled():
+    data = {
+        CONF_RULE_NAME: "Test",
+        CONF_TARGET_ENTITIES: ["light.bedroom"],
+        CONF_MODE: MODE_FIXED_STATE,
+        CONF_TRIGGER_STATES: ["on"],
+        CONF_TARGET_STATE: "off",
+        CONF_DELAY_SECONDS: 0,
+        CONF_FLAGS: [],
+        CONF_VERIFY_ENABLED: True,
+    }
+    summary = _build_summary(data)
+    assert "Verify" in summary
+    # Absent/false → no verify line.
+    data[CONF_VERIFY_ENABLED] = False
+    assert "Verify" not in _build_summary(data)
 
 
 def test_build_summary_attribute_mode():

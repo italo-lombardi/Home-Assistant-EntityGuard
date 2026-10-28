@@ -35,6 +35,7 @@ CONF_FLAG_ENTITY = "entity"
 CONF_FLAG_MATCH_STATE = "match_state"
 CONF_DEBOUNCE_ENABLED = "debounce_enabled"
 CONF_DEBOUNCE_SECONDS = "debounce_seconds"
+CONF_VERIFY_ENABLED = "verify_enabled"
 CONF_MAX_ENFORCEMENTS_PER_MINUTE = "max_enforcements_per_minute"
 CONF_SAFETY_ACKNOWLEDGED = "safety_acknowledged"
 CONF_DURATION_MINUTES = "duration_minutes"
@@ -144,6 +145,16 @@ RECENTLY_ENFORCED_WINDOW_SECONDS = 30
 # migration if a specific install runs a slower integration.
 ENFORCE_TIMEOUT_SECONDS = 30
 
+# Verify-after-enforce (opt-in, per-rule, state modes only). After a successful
+# enforce, re-read the target after VERIFY_DELAY_SECONDS; if it never actually
+# reached the desired state (a device that accepted the command but silently
+# ignored it — no state_changed event, so the reactive model never re-enforces),
+# issue up to VERIFY_MAX_ATTEMPTS corrective re-enforces. VERIFY_DELAY floors above
+# Zigbee/cloud readback latency (1-3s) so a still-settling device is not misread as
+# "not reached". Module consts, hardware-tuned, tunable without a schema change.
+VERIFY_DELAY_SECONDS = 5
+VERIFY_MAX_ATTEMPTS = 2
+
 # Color enforcement tolerances. Small tolerances prevent repeat enforcement loops
 # caused by minor device drift and lossy RGB/color-temperature conversions.
 COLOR_RGB_TOLERANCE = 10
@@ -186,6 +197,11 @@ ERROR_RECOVERY_SUCCESS_THRESHOLD = 3
 # but the per-target outcome classifies it as "failed" not "skipped" — kept as a
 # shared const so the producer (except block) and that classifier can't drift.
 REASON_SERVICE_CALL_FAILED = "service_call_failed"
+# Verify-after-enforce exhausted all corrective attempts and the target still never
+# reached desired — the genuine "cannot be reached". Classified "failed" in
+# target_outcomes (the real failure signal the visibility feature otherwise only got
+# from exception-fails). Shared const so the verify writer and any reader can't drift.
+REASON_UNREACHABLE_AFTER_RETRIES = "unreachable_after_retries"
 
 # Domain service map for state mode enforcement.
 # Shape: {domain: {target_state: "service.name"}}. Each entry is a parameterless

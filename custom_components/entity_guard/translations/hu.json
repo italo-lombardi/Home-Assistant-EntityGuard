@@ -46,12 +46,14 @@
         "data": {
           "add_flags": "További feltételek hozzáadása",
           "custom_rate_limit": "Hurokvédelem testreszabása",
-          "add_debounce": "Debounce engedélyezése"
+          "add_debounce": "Debounce engedélyezése",
+          "verify_enabled": "Kényszerítés sikerének ellenőrzése"
         },
         "data_description": {
           "add_flags": "Jelölje be, ha további feltételeket szeretne megkövetelni (pl. csak akkor kényszerítsen, ha senki sincs otthon, csak naplemente után). Hagyja bejelöletlenül, hogy minden alkalommal kényszerítsen, amikor a trigger aktiválódik.",
           "custom_rate_limit": "A hurokvédelem automatikusan elnyomja a szabályt, ha percenként több mint 10-szer aktiválódik (alapértelmezett). Hagyja bejelöletlenül az alapértelmezett használatához. Jelölje be, hogy saját számot állítson be, vagy hogy a hurokvédelmet teljesen kikapcsolja egy későbbi képernyőn.",
-          "add_debounce": "Jelölje be, hogy figyelmen kívül hagyja a gyors oda-vissza változásokat. A szabály csak akkor lép fel, ha a trigger a beállított ideig változatlan marad egy későbbi képernyőn. Hagyja bejelöletlenül, hogy minden változásra fellépjen."
+          "add_debounce": "Jelölje be, hogy figyelmen kívül hagyja a gyors oda-vissza változásokat. A szabály csak akkor lép fel, ha a trigger a beállított ideig változatlan marad egy későbbi képernyőn. Hagyja bejelöletlenül, hogy minden változásra fellépjen.",
+          "verify_enabled": "Jelölje be, hogy a kényszerítés után néhány másodperccel újraellenőrizze a célt. Ha az eszköz elfogadta a parancsot, de valójában nem változott meg, a szabály néhányszor újrapróbálkozik, majd elérhetetlennek jelöli. Hagyja bejelöletlenül, ha feltételezi, hogy a parancs sikeres volt."
         }
       },
       "flags": {
@@ -243,13 +245,15 @@
           "debounce_enabled": "Debounce engedélyezése",
           "debounce_seconds": "Debounce ablak (másodperc)",
           "rate_limit_enabled": "Hurokvédelem kényszerítése",
-          "max_enforcements_per_minute": "Maximális kényszerítés percenként"
+          "max_enforcements_per_minute": "Maximális kényszerítés percenként",
+          "verify_enabled": "Kényszerítés sikerének ellenőrzése"
         },
         "data_description": {
           "debounce_enabled": "Jelölje be, hogy figyelmen kívül hagyja a gyors oda-vissza változásokat. A szabály csak akkor lép fel, ha a trigger változatlan marad az alább beállított debounce ablak idejéig. Hagyja bejelöletlenül, hogy minden változásra fellépjen.",
           "debounce_seconds": "Ablak másodpercben. Min. 0, max. 86400 (24 óra).",
           "rate_limit_enabled": "Jelölje be a hurokvédelem bekapcsolva tartásához (ajánlott). Vegye ki a jelölést, hogy letiltsa ehhez a szabályhoz — a megszaladt hurkok nem állnak le automatikusan.",
-          "max_enforcements_per_minute": "Hány kényszerítés engedélyezett percenként, mielőtt a szabály automatikusan elnyomja magát 15 percre. Min. 1, max. 600. Figyelmen kívül hagyva, ha a hurokvédelem fentebb ki van kapcsolva."
+          "max_enforcements_per_minute": "Hány kényszerítés engedélyezett percenként, mielőtt a szabály automatikusan elnyomja magát 15 percre. Min. 1, max. 600. Figyelmen kívül hagyva, ha a hurokvédelem fentebb ki van kapcsolva.",
+          "verify_enabled": "Jelölje be, hogy a kényszerítés után néhány másodperccel újraellenőrizze a célt, és újrapróbálkozzon, ha az eszköz elfogadta a parancsot, de valójában nem változott meg. Csak állapot módú szabályoknál jelenik meg."
         }
       },
       "edit_attribute_params": {
@@ -472,6 +476,12 @@
       "enforcement_count_total": {
         "name": "Összes kényszerítés"
       },
+      "skip_count_today": {
+        "name": "Mai kihagyások"
+      },
+      "skip_count_total": {
+        "name": "Összes kihagyás"
+      },
       "cooldown_remaining": {
         "name": "Hátralévő várakozási idő"
       },
@@ -540,6 +550,13 @@
     "target_entity_missing": {
       "title": "A(z) „{rule_name}” szabály célentitása hiányzik",
       "description": "A következő célentitás(ok) már nem léteznek, de a szabály még hivatkozik rájuk: {missing_entities}. A szabály többé nem tudja rajtuk érvényesíteni az állapotot (egy átnevezett vagy eltávolított cél miatt a szabály egy nem létező entitást figyel). A probléma megoldásához frissítse vagy törölje a szabályt."
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "enforced": "A szabály kényszerített egy célt",
+      "skipped": "A szabály kihagyta a kényszerítést",
+      "loop_detected": "A szabály kényszerítési hurkot észlelt"
     }
   }
 }

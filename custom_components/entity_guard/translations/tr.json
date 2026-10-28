@@ -46,12 +46,14 @@
         "data": {
           "add_flags": "Ek koşullar ekle",
           "custom_rate_limit": "Döngü korumasını özelleştir",
-          "add_debounce": "Debounce'u etkinleştir"
+          "add_debounce": "Debounce'u etkinleştir",
+          "verify_enabled": "Uygulamanın işe yaradığını doğrula"
         },
         "data_description": {
           "add_flags": "Ek koşullar gerektirmek için işaretleyin (ör. yalnızca kimse evde yokken, yalnızca gün batımından sonra uygula). Tetikleme her gerçekleştiğinde uygulamak için işaretsiz bırakın.",
           "custom_rate_limit": "Döngü koruması, kural dakikada 10'dan fazla gerçekleşirse onu otomatik olarak bastırır (varsayılan). Varsayılanı kullanmak için işaretsiz bırakın. Kendi sayınızı belirlemek veya sonraki bir ekranda döngü korumasını tamamen kapatmak için işaretleyin.",
-          "add_debounce": "Hızlı gidip gelen değişiklikleri yoksaymak için işaretleyin. Kural yalnızca tetikleyici, sonraki bir ekranda belirlediğiniz süre boyunca aynı kalırsa harekete geçer. Her değişiklikte harekete geçmek için işaretsiz bırakın."
+          "add_debounce": "Hızlı gidip gelen değişiklikleri yoksaymak için işaretleyin. Kural yalnızca tetikleyici, sonraki bir ekranda belirlediğiniz süre boyunca aynı kalırsa harekete geçer. Her değişiklikte harekete geçmek için işaretsiz bırakın.",
+          "verify_enabled": "Uyguladıktan birkaç saniye sonra hedefi yeniden kontrol etmek için işaretleyin. Cihaz komutu kabul ettiği hâlde gerçekte hiç değişmediyse, kural birkaç kez yeniden dener ve ardından onu erişilemez olarak işaretler. Komutun işe yaradığını varsaymak için işaretsiz bırakın."
         }
       },
       "flags": {
@@ -243,13 +245,15 @@
           "debounce_enabled": "Debounce'u etkinleştir",
           "debounce_seconds": "Debounce penceresi (saniye)",
           "rate_limit_enabled": "Döngü korumasını uygula",
-          "max_enforcements_per_minute": "Dakika başına maksimum uygulama"
+          "max_enforcements_per_minute": "Dakika başına maksimum uygulama",
+          "verify_enabled": "Uygulamanın işe yaradığını doğrula"
         },
         "data_description": {
           "debounce_enabled": "Hızlı gidip gelen değişiklikleri yoksaymak için işaretleyin. Kural yalnızca tetikleyici, aşağıda belirlediğiniz debounce penceresi boyunca aynı kalırsa harekete geçer. Her değişiklikte harekete geçmek için işaretsiz bırakın.",
           "debounce_seconds": "Saniye cinsinden pencere. En az 0, en fazla 86400 (24s).",
           "rate_limit_enabled": "Döngü korumasını açık tutmak için işaretleyin (önerilir). Bu kural için devre dışı bırakmak üzere işareti kaldırın — kontrolden çıkan döngüler otomatik olarak durdurulmaz.",
-          "max_enforcements_per_minute": "Kural 15 dakika boyunca otomatik olarak bastırılmadan önce dakikada kaç uygulamaya izin verilir. En az 1, en fazla 600. Yukarıda döngü koruması işaretlenmediğinde yoksayılır."
+          "max_enforcements_per_minute": "Kural 15 dakika boyunca otomatik olarak bastırılmadan önce dakikada kaç uygulamaya izin verilir. En az 1, en fazla 600. Yukarıda döngü koruması işaretlenmediğinde yoksayılır.",
+          "verify_enabled": "Uyguladıktan birkaç saniye sonra hedefi yeniden kontrol etmek ve cihaz komutu kabul ettiği hâlde gerçekte hiç değişmediyse yeniden denemek için işaretleyin. Yalnızca durum modundaki kurallar için gösterilir."
         }
       },
       "edit_attribute_params": {
@@ -472,6 +476,12 @@
       "enforcement_count_total": {
         "name": "Toplam uygulamalar"
       },
+      "skip_count_today": {
+        "name": "Bugünkü atlamalar"
+      },
+      "skip_count_total": {
+        "name": "Toplam atlamalar"
+      },
       "cooldown_remaining": {
         "name": "Kalan bekleme süresi"
       },
@@ -540,6 +550,13 @@
     "target_entity_missing": {
       "title": "\"{rule_name}\" kuralındaki hedef varlık eksik",
       "description": "Aşağıdaki hedef varlıklar artık mevcut değil ancak kuralda başvuruluyor: {missing_entities}. Kural artık bu varlıklarda durumu zorunlu tutamıyor (yeniden adlandırılan veya kaldırılan bir hedef, kuralın geçersiz bir varlığı izlemesine yol açar). Bu sorunu gidermek için kuralı güncelleyin veya kaldırın."
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "enforced": "Kural bir hedefte durumu uyguladı",
+      "skipped": "Kural uygulamayı atladı",
+      "loop_detected": "Kural bir uygulama döngüsü algıladı"
     }
   }
 }

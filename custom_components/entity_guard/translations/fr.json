@@ -46,12 +46,14 @@
         "data": {
           "add_flags": "Ajouter des conditions supplémentaires",
           "custom_rate_limit": "Personnaliser la protection anti-boucle",
-          "add_debounce": "Activer l'anti-rebond"
+          "add_debounce": "Activer l'anti-rebond",
+          "verify_enabled": "Vérifier que l'application a fonctionné"
         },
         "data_description": {
           "add_flags": "Cochez pour exiger des conditions supplémentaires (par ex. n'appliquer que lorsque personne n'est à la maison, uniquement après le coucher du soleil). Laissez décoché pour appliquer à chaque déclenchement.",
           "custom_rate_limit": "La protection anti-boucle supprime automatiquement la règle si elle se déclenche plus de 10 fois par minute (par défaut). Laissez décoché pour utiliser la valeur par défaut. Cochez pour définir votre propre nombre, ou pour désactiver totalement la protection anti-boucle dans un écran ultérieur.",
-          "add_debounce": "Cochez pour ignorer les changements rapides de va-et-vient. La règle n'agit que si le déclencheur reste identique pendant la durée définie sur un écran ultérieur. Laissez décoché pour agir à chaque changement."
+          "add_debounce": "Cochez pour ignorer les changements rapides de va-et-vient. La règle n'agit que si le déclencheur reste identique pendant la durée définie sur un écran ultérieur. Laissez décoché pour agir à chaque changement.",
+          "verify_enabled": "Cochez pour revérifier la cible quelques secondes après l'application. Si l'appareil a accepté la commande mais n'a en réalité jamais changé, la règle réessaie à deux ou trois reprises, puis la signale comme injoignable. Laissez décoché pour supposer que la commande a fonctionné."
         }
       },
       "flags": {
@@ -243,13 +245,15 @@
           "debounce_enabled": "Activer l'anti-rebond",
           "debounce_seconds": "Fenêtre d'anti-rebond (secondes)",
           "rate_limit_enabled": "Activer la protection anti-boucle",
-          "max_enforcements_per_minute": "Nombre maximal d'applications par minute"
+          "max_enforcements_per_minute": "Nombre maximal d'applications par minute",
+          "verify_enabled": "Vérifier que l'application a fonctionné"
         },
         "data_description": {
           "debounce_enabled": "Cochez pour ignorer les changements rapides de va-et-vient. La règle n'agit que si le déclencheur reste identique pendant la fenêtre d'anti-rebond définie ci-dessous. Laissez décoché pour agir à chaque changement.",
           "debounce_seconds": "Fenêtre en secondes. Min 0, max 86400 (24 h).",
           "rate_limit_enabled": "Cochez pour conserver la protection anti-boucle activée (recommandé). Décochez pour la désactiver pour cette règle — les boucles incontrôlées ne seront pas arrêtées automatiquement.",
-          "max_enforcements_per_minute": "Combien d'applications par minute sont autorisées avant que la règle ne s'auto-supprime pendant 15 minutes. Min 1, max 600. Ignoré si la protection anti-boucle est décochée ci-dessus."
+          "max_enforcements_per_minute": "Combien d'applications par minute sont autorisées avant que la règle ne s'auto-supprime pendant 15 minutes. Min 1, max 600. Ignoré si la protection anti-boucle est décochée ci-dessus.",
+          "verify_enabled": "Cochez pour revérifier la cible quelques secondes après l'application et réessayer si l'appareil a accepté la commande mais n'a en réalité jamais changé. Affiché uniquement pour les règles en mode État."
         }
       },
       "edit_attribute_params": {
@@ -472,6 +476,12 @@
       "enforcement_count_total": {
         "name": "Applications au total"
       },
+      "skip_count_today": {
+        "name": "Ignorées aujourd'hui"
+      },
+      "skip_count_total": {
+        "name": "Ignorées au total"
+      },
       "cooldown_remaining": {
         "name": "Récupération restante"
       },
@@ -540,6 +550,13 @@
     "target_entity_missing": {
       "title": "Entité cible manquante dans la règle « {rule_name} »",
       "description": "Les entités cibles suivantes n'existent plus mais sont référencées dans la règle : {missing_entities}. La règle ne peut plus leur appliquer son état (une cible renommée ou supprimée laisse la règle surveiller une entité inexistante). Modifiez ou supprimez la règle pour résoudre ce problème."
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "enforced": "La règle a appliqué une cible",
+      "skipped": "La règle a ignoré l'application",
+      "loop_detected": "La règle a détecté une boucle d'application"
     }
   }
 }

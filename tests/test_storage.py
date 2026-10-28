@@ -408,3 +408,31 @@ def test_blob_to_runtime_skips_bad_rate_window_timestamp(hass: HomeAssistant):
     blob = {"cooldowns": {}, "rate_limit_window": ["not-a-date"]}
     state = EntityGuardStore.blob_to_runtime(blob)
     assert state.rate_limit_window == []
+
+
+def test_skip_counts_roundtrip():
+    """skip_count_today/total persist through runtime_to_blob -> blob_to_runtime
+    like the enforcement counters (silent-reset trap if any storage spot missed)."""
+    state = RuleRuntimeState(skip_count_today=4, skip_count_total=19)
+    blob = EntityGuardStore.runtime_to_blob(state)
+    assert blob["skip_count_today"] == 4
+    assert blob["skip_count_total"] == 19
+    restored = EntityGuardStore.blob_to_runtime(blob)
+    assert restored.skip_count_today == 4
+    assert restored.skip_count_total == 19
+
+
+def test_default_blob_includes_skip_counts():
+    blob = _default_rule_blob()
+    assert blob["skip_count_today"] == 0
+    assert blob["skip_count_total"] == 0
+
+
+def test_blob_to_runtime_missing_skip_counts_default_zero():
+    """A legacy blob without skip keys restores them as 0, not an error."""
+    blob = _default_rule_blob()
+    del blob["skip_count_today"]
+    del blob["skip_count_total"]
+    state = EntityGuardStore.blob_to_runtime(blob)
+    assert state.skip_count_today == 0
+    assert state.skip_count_total == 0

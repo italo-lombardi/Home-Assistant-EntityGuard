@@ -46,12 +46,14 @@
         "data": {
           "add_flags": "Pridať ďalšie podmienky",
           "custom_rate_limit": "Prispôsobiť ochranu proti slučkám",
-          "add_debounce": "Povoliť potlačenie zákmitov"
+          "add_debounce": "Povoliť potlačenie zákmitov",
+          "verify_enabled": "Overiť, či vynútenie zabralo"
         },
         "data_description": {
           "add_flags": "Začiarknite, ak chcete vyžadovať ďalšie podmienky (napr. vynucovať iba keď nikto nie je doma, iba po západe slnka). Ak nezačiarknete, pravidlo sa vynúti pri každom spustení.",
           "custom_rate_limit": "Ochrana proti slučkám automaticky potlačí pravidlo, ak sa spustí viac ako 10-krát za minútu (predvolené). Ak nezačiarknete, použije sa predvolená hodnota. Začiarknite pre nastavenie vlastného počtu alebo pre úplné vypnutie ochrany proti slučkám na neskoršej obrazovke.",
-          "add_debounce": "Začiarknite pre ignorovanie rýchlych zmien tam a späť. Pravidlo zareaguje iba vtedy, ak spúšťač zostane rovnaký po dobu, ktorú nastavíte na neskoršej obrazovke. Ak nezačiarknete, zareaguje na každú zmenu."
+          "add_debounce": "Začiarknite pre ignorovanie rýchlych zmien tam a späť. Pravidlo zareaguje iba vtedy, ak spúšťač zostane rovnaký po dobu, ktorú nastavíte na neskoršej obrazovke. Ak nezačiarknete, zareaguje na každú zmenu.",
+          "verify_enabled": "Začiarknite pre opätovnú kontrolu cieľa pár sekúnd po vynútení. Ak zariadenie prijalo príkaz, no v skutočnosti sa nikdy nezmenilo, pravidlo to párkrát zopakuje a potom ho označí ako nedostupné. Ak nezačiarknete, bude sa predpokladať, že príkaz zabral."
         }
       },
       "flags": {
@@ -243,13 +245,15 @@
           "debounce_enabled": "Povoliť potlačenie zákmitov",
           "debounce_seconds": "Okno potlačenia zákmitov (sekundy)",
           "rate_limit_enabled": "Vynucovať ochranu proti slučkám",
-          "max_enforcements_per_minute": "Maximálny počet vynútení za minútu"
+          "max_enforcements_per_minute": "Maximálny počet vynútení za minútu",
+          "verify_enabled": "Overiť, či vynútenie zabralo"
         },
         "data_description": {
           "debounce_enabled": "Začiarknite pre ignorovanie rýchlych zmien tam a späť. Pravidlo zareaguje iba vtedy, ak spúšťač zostane rovnaký po dobu okna potlačenia zákmitov nastaveného nižšie. Ak nezačiarknete, zareaguje na každú zmenu.",
           "debounce_seconds": "Okno v sekundách. Min 0, max 86400 (24 h).",
           "rate_limit_enabled": "Začiarknite pre ponechanie ochrany proti slučkám zapnutej (odporúčané). Zrušte začiarknutie pre jej vypnutie pre toto pravidlo — nekontrolovateľné slučky nebudú automaticky zastavené.",
-          "max_enforcements_per_minute": "Koľko vynútení za minútu je povolených predtým, ako sa pravidlo automaticky potlačí na 15 minút. Min 1, max 600. Ignoruje sa, keď je ochrana proti slučkám vyššie nezačiarknutá."
+          "max_enforcements_per_minute": "Koľko vynútení za minútu je povolených predtým, ako sa pravidlo automaticky potlačí na 15 minút. Min 1, max 600. Ignoruje sa, keď je ochrana proti slučkám vyššie nezačiarknutá.",
+          "verify_enabled": "Začiarknite pre opätovnú kontrolu cieľa pár sekúnd po vynútení a zopakovanie, ak zariadenie prijalo príkaz, no v skutočnosti sa nikdy nezmenilo. Zobrazuje sa iba pri pravidlách v stavovom režime."
         }
       },
       "edit_attribute_params": {
@@ -472,6 +476,12 @@
       "enforcement_count_total": {
         "name": "Vynútenia celkovo"
       },
+      "skip_count_today": {
+        "name": "Preskočenia dnes"
+      },
+      "skip_count_total": {
+        "name": "Preskočenia celkovo"
+      },
       "cooldown_remaining": {
         "name": "Zostávajúce vychladnutie"
       },
@@ -540,6 +550,13 @@
     "target_entity_missing": {
       "title": "Chýbajúca cieľová entita v pravidle „{rule_name}“",
       "description": "Nasledujúce cieľové entity už neexistujú, no pravidlo sa na ne stále odkazuje: {missing_entities}. Pravidlo na nich už nemôže vynucovať stav (premenovaním alebo odstránením cieľa pravidlo sleduje neexistujúcu entitu). Problém vyriešite aktualizáciou alebo odstránením pravidla."
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "enforced": "Pravidlo vynútilo cieľ",
+      "skipped": "Pravidlo preskočilo vynútenie",
+      "loop_detected": "Pravidlo zistilo slučku vynucovania"
     }
   }
 }

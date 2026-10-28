@@ -46,12 +46,14 @@
         "data": {
           "add_flags": "添加额外条件",
           "custom_rate_limit": "自定义循环保护",
-          "add_debounce": "启用防抖"
+          "add_debounce": "启用防抖",
+          "verify_enabled": "验证强制执行是否生效"
         },
         "data_description": {
           "add_flags": "勾选以要求额外条件（例如仅在无人在家时强制执行，仅在日落后强制执行）。不勾选则每次触发时都执行强制。",
           "custom_rate_limit": "循环保护会在规则每分钟触发超过 10 次时自动抑制它（默认）。不勾选则使用默认值。勾选可自行设置数值，或在后续界面完全关闭循环保护。",
-          "add_debounce": "勾选以忽略快速来回的变化。仅当触发在您设定的时长内保持不变时规则才会执行操作（时长在后续界面设置）。不勾选则每次变化都执行操作。"
+          "add_debounce": "勾选以忽略快速来回的变化。仅当触发在您设定的时长内保持不变时规则才会执行操作（时长在后续界面设置）。不勾选则每次变化都执行操作。",
+          "verify_enabled": "勾选后，将在强制执行几秒钟后重新检查目标。如果设备已接受命令但实际上并未改变状态，规则会重试几次，然后将其标记为无法访问。不勾选则默认命令已生效。"
         }
       },
       "flags": {
@@ -243,13 +245,15 @@
           "debounce_enabled": "启用防抖",
           "debounce_seconds": "防抖窗口（秒）",
           "rate_limit_enabled": "启用循环保护",
-          "max_enforcements_per_minute": "每分钟最大强制执行次数"
+          "max_enforcements_per_minute": "每分钟最大强制执行次数",
+          "verify_enabled": "验证强制执行是否生效"
         },
         "data_description": {
           "debounce_enabled": "勾选以忽略快速来回的变化。仅当触发在您于下方设定的防抖窗口内保持不变时规则才会执行操作。不勾选则每次变化都执行操作。",
           "debounce_seconds": "窗口时长（秒）。最小 0，最大 86400（24 小时）。",
           "rate_limit_enabled": "勾选以保持循环保护开启（推荐）。取消勾选可为此规则禁用它 — 失控循环将不会被自动阻止。",
-          "max_enforcements_per_minute": "规则自动抑制 15 分钟前每分钟允许的强制执行次数。最小 1，最大 600。上方取消勾选循环保护时忽略此项。"
+          "max_enforcements_per_minute": "规则自动抑制 15 分钟前每分钟允许的强制执行次数。最小 1，最大 600。上方取消勾选循环保护时忽略此项。",
+          "verify_enabled": "勾选后，将在强制执行几秒钟后重新检查目标；如果设备已接受命令但实际上并未改变状态，则进行重试。仅对状态模式规则显示。"
         }
       },
       "edit_attribute_params": {
@@ -472,6 +476,12 @@
       "enforcement_count_total": {
         "name": "强制执行总次数"
       },
+      "skip_count_today": {
+        "name": "今日跳过次数"
+      },
+      "skip_count_total": {
+        "name": "跳过总次数"
+      },
       "cooldown_remaining": {
         "name": "剩余冷却时间"
       },
@@ -540,6 +550,13 @@
     "target_entity_missing": {
       "title": "规则“{rule_name}”中的目标实体缺失",
       "description": "以下目标实体已不存在，但仍被该规则引用：{missing_entities}。规则无法再对其强制执行状态（目标被重命名或删除后，规则会一直监视一个已失效的实体）。请更新或删除该规则以解决此问题。"
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "enforced": "规则已强制执行目标",
+      "skipped": "规则已跳过强制执行",
+      "loop_detected": "规则检测到强制执行循环"
     }
   }
 }

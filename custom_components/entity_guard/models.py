@@ -36,6 +36,7 @@ from .const import (
     CONF_TARGET_VALUE,
     CONF_THRESHOLD,
     CONF_TRIGGER_STATES,
+    CONF_VERIFY_ENABLED,
     DEFAULT_DEBOUNCE_ENABLED,
     DEFAULT_DEBOUNCE_SECONDS,
     DEFAULT_DELAY_SECONDS,
@@ -111,6 +112,10 @@ class RuleConfig:
     # from unset). Non-dynamic-state modes ignore these. See effective_delay.
     delay_on_seconds: int | None = None
     delay_off_seconds: int | None = None
+    # Verify-after-enforce (opt-in, default OFF). State modes only — attribute-mode
+    # verify is deferred (readback normalization). When True, a successful enforce
+    # arms a re-read + corrective re-enforce cycle. See RuleEngine verify logic.
+    verify_enabled: bool = False
 
     def effective_delay(self, desired_on: bool | None) -> int:
         """Delay (seconds) to use for driving a target toward `desired_on`.
@@ -146,6 +151,13 @@ class RuleRuntimeState:
     cooldowns: dict[str, datetime] = field(default_factory=dict)
     enforcement_count_today: int = 0
     enforcement_count_total: int = 0
+    # Skips = triggers the rule did NOT act on (no_service_mapping, light_off,
+    # source_offline, …). A rising skip count is the earliest misconfig/bad-device
+    # signal — a silently-skipping rule otherwise looks identical to a healthy idle
+    # one. service_call_failed is NOT counted here (it has its own error path).
+    # Persisted like the enforcement counters; today resets at the daily rollover.
+    skip_count_today: int = 0
+    skip_count_total: int = 0
     last_enforced: datetime | None = None
     suppressed_until: datetime | None = None
     today_reset_date: date | None = None
@@ -272,6 +284,9 @@ def parse_rule_config(entry: ConfigEntry) -> RuleConfig:
         source_attribute=raw.get(CONF_SOURCE_ATTRIBUTE) or None,
         delay_on_seconds=_delay_on,
         delay_off_seconds=_delay_off,
+        # Opt-in verify-after-enforce; absent key (every pre-feature rule) → False.
+        # No migration needed — same defaulted-get pattern as debounce_enabled.
+        verify_enabled=bool(raw.get(CONF_VERIFY_ENABLED, False)),
     )
 
 

@@ -52,6 +52,7 @@ from .const import (
     CONF_TARGET_VALUE,
     CONF_THRESHOLD,
     CONF_TRIGGER_STATES,
+    CONF_VERIFY_ENABLED,
     DEFAULT_DEBOUNCE_ENABLED,
     DEFAULT_DEBOUNCE_SECONDS,
     DEFAULT_DELAY_SECONDS,
@@ -221,6 +222,9 @@ def _build_summary(data: dict[str, Any], hass: Any = None) -> str:
 
     if data.get(CONF_SAFETY_ACKNOWLEDGED):
         lines.append("**Safety:** acknowledged")
+
+    if data.get(CONF_VERIFY_ENABLED):
+        lines.append("**Verify:** re-check after enforcing; retry if not reached")
 
     return "\n\n".join(lines)
 
@@ -1090,17 +1094,29 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_extras(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Three opt-in toggles, sorted A-Z by visible label."""
+        """Opt-in toggles, sorted A-Z by visible label. The verify toggle is shown
+        only for state modes (fixed_state / dynamic_state) — verify-after-enforce is
+        state-only in v1, so it would be a dead toggle on an attribute rule."""
+        verify_applicable = self._rule_data.get(CONF_MODE) in (
+            MODE_FIXED_STATE,
+            MODE_DYNAMIC_STATE,
+        )
         if user_input is not None:
             self._add_debounce = bool(user_input.get(CONF_ADD_DEBOUNCE, False))
             self._custom_rate_limit = bool(
                 user_input.get(CONF_CUSTOM_RATE_LIMIT, False)
             )
+            # Only honor the verify toggle when it was actually shown; on an
+            # attribute rule it is absent and verify stays off.
+            self._rule_data[CONF_VERIFY_ENABLED] = verify_applicable and bool(
+                user_input.get(CONF_VERIFY_ENABLED, False)
+            )
             _LOGGER.debug(
-                "Extras chosen: flags=%s debounce=%s custom_rate=%s",
+                "Extras chosen: flags=%s debounce=%s custom_rate=%s verify=%s",
                 user_input.get(CONF_ADD_FLAGS, False),
                 self._add_debounce,
                 self._custom_rate_limit,
+                self._rule_data[CONF_VERIFY_ENABLED],
             )
             if user_input.get(CONF_ADD_FLAGS, False):
                 return await self.async_step_flags()
@@ -1108,19 +1124,20 @@ class EntityGuardConfigFlow(ConfigFlow, domain=DOMAIN):
             return await self._after_flags()
 
         # Order alphabetically by English label:
-        # "Add extra conditions" → "Customize loop protection" → "Enable debounce".
-        schema = vol.Schema(
-            {
-                vol.Required(CONF_ADD_FLAGS, default=False): selector.BooleanSelector(),
-                vol.Required(
-                    CONF_CUSTOM_RATE_LIMIT, default=False
-                ): selector.BooleanSelector(),
-                vol.Required(
-                    CONF_ADD_DEBOUNCE, default=False
-                ): selector.BooleanSelector(),
-            }
-        )
-        return self.async_show_form(step_id="extras", data_schema=schema)
+        # "Add extra conditions" → "Customize loop protection" → "Enable debounce"
+        # → "Verify enforcement worked" (verify shown only for state modes).
+        fields: dict[Any, Any] = {
+            vol.Required(CONF_ADD_FLAGS, default=False): selector.BooleanSelector(),
+            vol.Required(
+                CONF_CUSTOM_RATE_LIMIT, default=False
+            ): selector.BooleanSelector(),
+            vol.Required(CONF_ADD_DEBOUNCE, default=False): selector.BooleanSelector(),
+        }
+        if verify_applicable:
+            fields[vol.Required(CONF_VERIFY_ENABLED, default=False)] = (
+                selector.BooleanSelector()
+            )
+        return self.async_show_form(step_id="extras", data_schema=vol.Schema(fields))
 
     # ------------------------------------------------------------------ Flags (repeating)
 
@@ -1897,7 +1914,11 @@ class EntityGuardOptionsFlow(OptionsFlow):
     async def async_step_edit_advanced(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Edit debounce + rate limit."""
+        """Edit debounce + rate limit (+ verify for state modes)."""
+        verify_applicable = self._working.get(CONF_MODE) in (
+            MODE_FIXED_STATE,
+            MODE_DYNAMIC_STATE,
+        )
         if user_input is not None:
             self._working[CONF_DEBOUNCE_ENABLED] = bool(
                 user_input[CONF_DEBOUNCE_ENABLED]
@@ -1915,37 +1936,49 @@ class EntityGuardOptionsFlow(OptionsFlow):
                 )
             else:
                 self._working[CONF_MAX_ENFORCEMENTS_PER_MINUTE] = 0
+            # Verify toggle only when shown (state modes); untouched on attribute rules.
+            if verify_applicable:
+                self._working[CONF_VERIFY_ENABLED] = bool(
+                    user_input.get(CONF_VERIFY_ENABLED, False)
+                )
             return self._save()
 
         current_rate = self._working.get(
             CONF_MAX_ENFORCEMENTS_PER_MINUTE, DEFAULT_MAX_ENFORCEMENTS_PER_MINUTE
         )
-        schema = vol.Schema(
-            {
+        fields: dict[Any, Any] = {
+            vol.Required(
+                CONF_DEBOUNCE_ENABLED,
+                default=self._working.get(
+                    CONF_DEBOUNCE_ENABLED, DEFAULT_DEBOUNCE_ENABLED
+                ),
+            ): selector.BooleanSelector(),
+            vol.Required(
+                CONF_DEBOUNCE_SECONDS,
+                default=self._working.get(
+                    CONF_DEBOUNCE_SECONDS, DEFAULT_DEBOUNCE_SECONDS
+                ),
+            ): _debounce_selector(),
+            vol.Required(
+                CONF_RATE_LIMIT_ENABLED,
+                default=current_rate not in (None, 0),
+            ): selector.BooleanSelector(),
+            vol.Required(
+                CONF_MAX_ENFORCEMENTS_PER_MINUTE,
+                # Never seed below the selector min; 0 (disabled) is carried by
+                # the toggle above, so show the default rate when disabled.
+                default=current_rate
+                if current_rate
+                else DEFAULT_MAX_ENFORCEMENTS_PER_MINUTE,
+            ): _rate_selector(),
+        }
+        if verify_applicable:
+            fields[
                 vol.Required(
-                    CONF_DEBOUNCE_ENABLED,
-                    default=self._working.get(
-                        CONF_DEBOUNCE_ENABLED, DEFAULT_DEBOUNCE_ENABLED
-                    ),
-                ): selector.BooleanSelector(),
-                vol.Required(
-                    CONF_DEBOUNCE_SECONDS,
-                    default=self._working.get(
-                        CONF_DEBOUNCE_SECONDS, DEFAULT_DEBOUNCE_SECONDS
-                    ),
-                ): _debounce_selector(),
-                vol.Required(
-                    CONF_RATE_LIMIT_ENABLED,
-                    default=current_rate not in (None, 0),
-                ): selector.BooleanSelector(),
-                vol.Required(
-                    CONF_MAX_ENFORCEMENTS_PER_MINUTE,
-                    # Never seed below the selector min; 0 (disabled) is carried by
-                    # the toggle above, so show the default rate when disabled.
-                    default=current_rate
-                    if current_rate
-                    else DEFAULT_MAX_ENFORCEMENTS_PER_MINUTE,
-                ): _rate_selector(),
-            }
+                    CONF_VERIFY_ENABLED,
+                    default=self._working.get(CONF_VERIFY_ENABLED, False),
+                )
+            ] = selector.BooleanSelector()
+        return self.async_show_form(
+            step_id="edit_advanced", data_schema=vol.Schema(fields)
         )
-        return self.async_show_form(step_id="edit_advanced", data_schema=schema)

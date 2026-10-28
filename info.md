@@ -2,6 +2,15 @@
 
 Declarative state-enforcement rules. Bind one or more entities to a rule that defines a trigger condition and a desired target state — Entity Guard enforces it automatically, with cooldowns, suppression, rate limiting, and a custom dashboard card.
 
+## What's new in 0.4.0
+
+- **Dynamic rule modes (Follow mode)** -- a rule's target value can be read live from a source entity instead of typed; "light follows motion" is now one rule, not two. Fixed and Dynamic variants of both state and attribute modes.
+- **Per-target outcome visibility** -- a failure on one target no longer hides behind the rule-wide status; the card shows a "Targets needing attention" panel.
+- **Verify-after-enforce (opt-in)** -- tick **Verify enforcement worked** and a state-mode rule re-reads its target after enforcing, retrying if the device accepted the command but silently never changed, then flags it as unreachable.
+- **Skip counters** -- `sensor.<rule>_skips_today` / `_skips_total` count declined enforcements, separate from the enforcement counters.
+- **Device-automation triggers** -- build "When [rule] enforced / skipped / detected a loop" automations visually, without a hand-typed `event` trigger.
+- **Config-entry diagnostics** -- a downloadable structured dump of a rule's (or the hub's) config and live state, with user identifiers redacted.
+
 ## What's new in 0.2.7
 
 - **`counter_since` / `counter_days` attributes** on the total-enforcements sensor. Card templates can now show "156 enforcements · since Mar 12 (118 days)". Backfilled from rule creation on upgrade; reset by **Clear History**.
