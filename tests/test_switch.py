@@ -258,7 +258,6 @@ async def test_verify_switch_no_diff_skips_write(hass: HomeAssistant):
     hass.config_entries.async_update_entry(entry, options={"verify_enabled": True})
     sw = EntityGuardVerifyEnabledSwitch(entry, engine)
     sw.hass = hass
-    sw.async_write_ha_state = MagicMock()
     await sw.async_turn_on()
     assert entry.options == {"verify_enabled": True}
     assert entry.entry_id not in hass.data.get(DOMAIN, {}).get(SKIP_RELOAD_KEY, set())
