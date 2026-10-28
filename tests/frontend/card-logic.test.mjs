@@ -657,3 +657,25 @@ test("_renderConfig verify switch entity is not mis-anchored to the enabled ref"
   const refs = Card.prototype._findRuleEntities.call(ctx);
   assert.equal(refs.enabled, "switch.rule_enabled");
 });
+
+test("_findRuleEntities: fallback (no translation_key) still anchors Enabled correctly", () => {
+  // Registry-less fallback: tk is undefined for every id. The loose /_enabled$/
+  // must NOT bind out.enabled to the verify_ or debounce_ switch.
+  const ctx = {
+    _findMatchIds: () => [
+      "switch.rule_debounce_enabled",
+      "switch.rule_verify_enabled",
+      "switch.rule_enabled",
+    ],
+    hass: {
+      entities: {}, // no registry entries -> tk undefined
+      states: {
+        "switch.rule_debounce_enabled": { attributes: {} },
+        "switch.rule_verify_enabled": { attributes: {} },
+        "switch.rule_enabled": { attributes: {} },
+      },
+    },
+  };
+  const refs = Card.prototype._findRuleEntities.call(ctx);
+  assert.equal(refs.enabled, "switch.rule_enabled");
+});
