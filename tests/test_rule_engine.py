@@ -2292,6 +2292,135 @@ async def test_entity_both_flag_and_target_sweeps_other_targets(hass: HomeAssist
     assert "switch.humidifier" in enforced
 
 
+# ---------------------------------------------------------------------------
+# Suppression lazy-expiry clear-path: hardening of untested param combos.
+# The plain-target lazy-expiry branch (suppressed_until <= now) clears
+# suppression, sweeps the SIBLING targets, then falls through to enforce the
+# triggering target itself. The existing coverage only exercises this at
+# delay=0, debounce off, fixed_state mode — these assert the downstream
+# debounce guard, the delay>0 PENDING arming, and dynamic mode behave on it.
+# ---------------------------------------------------------------------------
+
+
+async def test_suppression_expiry_sibling_sweep_respects_debounce(
+    hass: HomeAssistant,
+):
+    """A sibling re-armed by the lazy-expiry sweep must still honour its debounce
+    cooldown: the debounce guard is downstream of the sweep, so a sibling inside
+    its cooldown window is NOT enforced while the triggering target is."""
+    config = _make_config(
+        target_entities=["light.bedroom", "light.kitchen"],
+        trigger_states=["on"],
+        target_state="off",
+        debounce_enabled=True,
+        debounce_seconds=60,
+        delay_seconds=0,
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    now = dt_util.now()
+    # Suppression already expired → lazy-expiry branch fires on this event.
+    engine._state.suppressed_until = now - timedelta(seconds=1)
+    # Sibling is mid-debounce — its re-armed eval must bail at the cooldown guard.
+    engine._state.cooldowns["light.kitchen"] = now + timedelta(seconds=60)
+
+    hass.states.async_set("light.bedroom", "on")
+    hass.states.async_set("light.kitchen", "on")
+    trigger_st = hass.states.get("light.bedroom")
+
+    with patch.object(engine, "_enforce", new_callable=AsyncMock) as mock_enforce:
+        await engine.async_evaluate("light.bedroom", trigger_st)
+        await hass.async_block_till_done()
+
+    enforced = {call.args[0] for call in mock_enforce.await_args_list}
+    assert engine._state.suppressed_until is None
+    # Triggering target (no cooldown) enforces; debounced sibling does not.
+    assert "light.bedroom" in enforced
+    assert "light.kitchen" not in enforced
+
+
+async def test_suppression_expiry_sibling_sweep_arms_delay(hass: HomeAssistant):
+    """With delay_seconds>0, the lazy-expiry sweep must ARM a delayed enforcement
+    for every triggered target (status PENDING, both entities in the due map with
+    the correct delay) rather than enforcing immediately."""
+    config = _make_config(
+        target_entities=["light.bedroom", "light.kitchen"],
+        trigger_states=["on"],
+        target_state="off",
+        delay_seconds=5,
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    now = dt_util.now()
+    engine._state.suppressed_until = now - timedelta(seconds=1)
+
+    hass.states.async_set("light.bedroom", "on")
+    hass.states.async_set("light.kitchen", "on")
+    trigger_st = hass.states.get("light.bedroom")
+
+    with (
+        patch.object(engine, "_enforce", new_callable=AsyncMock) as mock_enforce,
+        patch(
+            "custom_components.entity_guard.rule_engine.async_call_later",
+            return_value=MagicMock(),
+        ),
+    ):
+        await engine.async_evaluate("light.bedroom", trigger_st)
+        await hass.async_block_till_done()
+
+    assert engine._state.suppressed_until is None
+    # Nothing enforced yet — both are armed on the 5s timer instead.
+    mock_enforce.assert_not_awaited()
+    assert engine.current_status() == STATUS_PENDING
+    assert set(engine._pending_enforcement_due) == {"light.bedroom", "light.kitchen"}
+    for due in engine._pending_enforcement_due.values():
+        delta = (due - now).total_seconds()
+        assert 4 <= delta <= 6  # ~5s countdown, allowing for test-clock drift
+
+
+async def test_suppression_expiry_dynamic_source_sweep_enforces_once(
+    hass: HomeAssistant,
+):
+    """A dynamic_state (follow) SOURCE trigger that also lazily expires suppression
+    must not double-enforce. The lazy sibling sweep is skipped for source triggers
+    (is_source guard) because the dynamic source-sweep branch already sweeps ALL
+    targets; running both would enforce each target twice at delay 0. Assert each
+    target is enforced exactly once — the skip, not a cancel, is what prevents the
+    double (the first delay-0 eval runs to completion before the second schedules,
+    so a per-entity cancel would be a no-op)."""
+    config = _make_config(
+        mode=MODE_DYNAMIC_STATE,
+        source_entity="input_boolean.src",
+        target_entities=["light.bedroom", "light.kitchen"],
+        delay_seconds=0,
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    now = dt_util.now()
+    engine._state.suppressed_until = now - timedelta(seconds=1)
+
+    # Source on → desired_on True; both targets off → both triggered (cur != desired).
+    hass.states.async_set("input_boolean.src", "on")
+    hass.states.async_set("light.bedroom", "off")
+    hass.states.async_set("light.kitchen", "off")
+    trigger_st = hass.states.get("input_boolean.src")
+
+    with patch.object(engine, "_enforce", new_callable=AsyncMock) as mock_enforce:
+        # Trigger via the SOURCE: this both lazily clears suppression AND enters
+        # the dynamic source-sweep branch. The lazy sibling sweep must be skipped.
+        await engine.async_evaluate("input_boolean.src", trigger_st)
+        await hass.async_block_till_done()
+
+    assert engine._state.suppressed_until is None
+    enforced = [call.args[0] for call in mock_enforce.await_args_list]
+    # Each target swept exactly once by the source branch; lazy sweep skipped.
+    assert enforced.count("light.bedroom") == 1
+    assert enforced.count("light.kitchen") == 1
+
+
 def test_is_triggered_ignores_unavailable_state():
     """trigger_states must never match unavailable or unknown."""
     config = _make_config(trigger_states=["on", "unavailable"])
