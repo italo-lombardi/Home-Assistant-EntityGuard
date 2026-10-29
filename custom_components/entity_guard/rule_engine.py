@@ -296,36 +296,69 @@ class RuleEngine:
             return
         # A REAL state_changed for a target clears the unreachable latch (the target
         # moved, so it is reachable again and may be re-verified) and resets the
-        # self-heal counters. But whether it SUPERSEDES an in-flight verify depends on
-        # WHERE it moved: a move that reached desired is exactly the success the verify
-        # was armed to confirm — cancelling it here (the target's own post-enforce
-        # off→on event lands before the 5 s re-read) would make EVENT_VERIFIED / the
-        # verified sensor unreachable on the normal happy path. So cancel the pending
-        # verify ONLY when the target is still (or newly) OFF desired — a genuine
-        # away-move makes the in-flight cycle stale; the reactive path re-evaluates.
-        # When it reached desired, leave the verify armed: its re-read confirms and
-        # fires the signal. (Offline/unknown counts as away here so we never confirm
-        # on a vanished target — the timer's own _verify_reached must not be the only
-        # guard.)
+        # self-heal counters. What it does to an in-flight verify depends on WHERE it
+        # moved: a move that reached desired IS the success the verify was armed to
+        # confirm — so when a verify is pending and the target reached desired we
+        # CONFIRM NOW (the target's own post-enforce off→on event lands ~100ms after
+        # enforce, long before the 5 s deadline), collapsing the old blind dwell to
+        # device latency. A move still OFF desired (or offline/unknown) is a genuine
+        # away-move that makes the in-flight cycle stale: cancel it, the reactive path
+        # re-evaluates. (Offline/unknown counts as not-reached so we never confirm on
+        # a vanished target — the timer's _verify_reached must not be the only guard.)
         if entity_id in self._config.target_entities:
             reached_desired = (
                 new_state is not None
                 and new_state.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN)
                 and not self._trigger_decision(entity_id, new_state)[0]
             )
+            pending = entity_id in self._pending_verifications
             if not reached_desired:
+                # Away-move / offline: cancel the stale deadline timer.
                 self._cancel_verify(entity_id)
+            # Clear the self-heal markers BEFORE a possible confirm: the target moved,
+            # so the superseded cycle is abandoned. Reset here — the genuine-event
+            # site — NOT inside _cancel_verify, which the escalation path calls
+            # mid-cycle right after incrementing. Without this the next enforce's
+            # fresh verify cycle would inherit a stale count and latch early.
             self._unreachable.discard(entity_id)
-            # Reset the attempt count too: the target moved, so the superseded
-            # cycle is abandoned. Without this, the NEXT enforce's fresh verify
-            # cycle inherits the stale count and latches unreachable early (only
-            # VERIFY_MAX_ATTEMPTS minus the stale count correctives). Reset here
-            # — the genuine-event site — NOT inside _cancel_verify, which the
-            # escalation path calls mid-cycle right after incrementing.
-            self._verify_attempts.pop(entity_id, None)
-            # The target moved → the self-heal cycle recovered; reset its exhaustion
-            # counter so a later death starts fresh and re-fires the one-shot event.
             self._consecutive_exhaustions.pop(entity_id, None)
+            if (
+                reached_desired
+                and pending
+                and not self._verify_event_dropped(entity_id)
+            ):
+                # HAPPY PATH, event-driven confirm. Order is load-bearing:
+                #   1. _cancel_verify pops _pending_verifications AND unsubscribes the
+                #      deadline cb — so the timer can never also fire (no double
+                #      EVENT_VERIFIED, no stray exhaustion path).
+                #   2. _confirm_verified then re-derives status against an EMPTY
+                #      pending map, leaving VERIFYING for ARMED/COOLDOWN. Cancel MUST
+                #      precede confirm, else the derive still sees pending → stuck.
+                self._cancel_verify(entity_id)
+                self._confirm_verified(entity_id)
+            else:
+                # No confirm (not reached, no pending, or dropped for disabled/
+                # suppressed): abandon the superseded cycle's attempt count. Re-derive
+                # whenever a verify was pending so a VERIFYING card resolves NOW
+                # instead of lingering until the ~5s deadline _fire:
+                #   - not reached: _cancel_verify above already popped pending, so the
+                #     derive yields the real idle status (ARMED/COOLDOWN).
+                #   - reached but DROPPED (disabled/master-off/suppressed): the
+                #     target already complied, so no VERIFYING is owed. Drop the
+                #     stale deadline handle too — else an unsuppress / suppression
+                #     expiry + re-arm BEFORE the ~5s deadline fires clears
+                #     suppressed_until while _pending_verifications still holds this
+                #     entity, and the next derive falls through to the
+                #     pending→VERIFYING branch: a phantom VERIFYING on an
+                #     already-compliant target until the stale timer finally fires.
+                #     _derive_idle_status ranks DISABLED/MASTER_DISABLED/SUPPRESSED
+                #     above VERIFYING, so the card is correct WHILE dropped; the
+                #     cancel only prevents the stale handle outliving the drop.
+                self._verify_attempts.pop(entity_id, None)
+                if pending:
+                    if reached_desired:
+                        self._cancel_verify(entity_id)
+                    self._apply_idle_status()
         trigger_context_id: str | None = getattr(event.context, "id", None)
         self._schedule_eval_task(entity_id, new_state, trigger_context_id)
 
@@ -1035,6 +1068,49 @@ class RuleEngine:
         triggered, _skip = self._trigger_decision(entity_id, current)
         return not triggered
 
+    def _confirm_verified(self, entity_id: str) -> None:
+        """Resolve a reached-desired verify cycle: fire EVENT_VERIFIED, go idle.
+
+        Shared by the event-driven happy-path confirm (_handle_state_event, the
+        instant the target's post-enforce ACK reaches desired) and the deadline
+        timer's reached branch (_fire, the fallback for a device whose ACK the
+        listener computed as not-reached but the re-read now sees compliant).
+
+        CONTRACT: the caller MUST have already removed this entity's handle from
+        _pending_verifications (the timer pops it via the identity guard; the
+        event site via _cancel_verify) so the _apply_idle_status below sees an
+        empty pending map and leaves VERIFYING for the real idle status.
+
+        attempts = corrective re-enforces done + 1 (the original enforce). First
+        clean read (no corrective) -> 1; after N correctives -> N+1.
+        """
+        attempts = self._verify_attempts.get(entity_id, 0) + 1
+        self._verify_attempts.pop(entity_id, None)
+        # Confirmed success — the one clean signal automations gate on. verify-on
+        # by construction, success-only (reached desired), one pulse per cycle.
+        # Arms the recently_enforced_verified sensor too.
+        self._fire_verified(entity_id, attempts)
+        # Verify cycle closed and target compliant: re-derive so the card leaves
+        # VERIFYING for the real idle status (ARMED / COOLDOWN).
+        self._apply_idle_status()
+
+    def _verify_event_dropped(self, entity_id: str) -> bool:
+        """True when a pending verify must be DROPPED (not confirmed) because the
+        rule went inactive mid-window — shared drop decision for the event-confirm
+        site. Mirrors _fire's disabled/master-off and suppressed early-returns so
+        the event path and the deadline timer stay in lockstep.
+        """
+        if self._is_unloaded:
+            return True
+        if not self._state.enabled or not self._master_enabled_getter():
+            return True
+        if (
+            self._state.suppressed_until
+            and self._state.suppressed_until > dt_util.now()
+        ):
+            return True
+        return False
+
     def _arm_verify(
         self, entity_id: str, trigger_context_id: str | None = None
     ) -> None:
@@ -1044,16 +1120,22 @@ class RuleEngine:
         async def _fire(_now: datetime) -> None:
             if self._is_unloaded:
                 return
-            # Only clear our own handle (identity guard, like _schedule_delayed).
-            if self._pending_verifications.get(entity_id) is my_cancel:
-                self._pending_verifications.pop(entity_id, None)
+            # Only act on OUR OWN handle (identity guard, like _schedule_delayed).
+            # If the handle in the map is not ours — the event-driven happy-path
+            # confirm already cancelled+confirmed this cycle (popping the map), or a
+            # later cycle re-armed over us — this fire is STALE: return without
+            # re-confirming (else a cancelled deadline that still fires would emit a
+            # second EVENT_VERIFIED / run a stray corrective). A re-armed newer cycle
+            # owns the live handle and will confirm on its own fire.
+            if self._pending_verifications.get(entity_id) is not my_cancel:
+                return
+            self._pending_verifications.pop(entity_id, None)
             if not self._state.enabled or not self._master_enabled_getter():
                 # Rule went inactive during the verify window; our handle was
                 # cleared by the identity-guarded pop above. Re-derive so VERIFYING
                 # resolves to the real idle status (DISABLED / MASTER_DISABLED)
                 # instead of staying stuck on the card, mirroring the suppressed
-                # drop below. (If a stale fire loses the identity guard, a live
-                # handle remains and VERIFYING correctly persists for it.)
+                # drop below.
                 self._apply_idle_status()
                 return
             # Suppressed → do not correct; drop the cycle (a real event re-arms it).
@@ -1067,19 +1149,14 @@ class RuleEngine:
                 self._apply_idle_status()
                 return
             if self._verify_reached(entity_id):
-                # Reached desired — clean, reset the attempt counter.
-                # attempts = corrective re-enforces done + 1 (the original enforce).
-                # First-read success (no corrective yet) → 1; after N correctives → N+1.
-                attempts = self._verify_attempts.get(entity_id, 0) + 1
-                self._verify_attempts.pop(entity_id, None)
-                # Confirmed success — the one clean signal automations gate on. Fired
-                # here and ONLY here: verify-on by construction (this closure is armed
-                # only when verify_enabled), success-only (we reached desired), one
-                # pulse per cycle. Arms the recently_enforced_verified sensor too.
-                self._fire_verified(entity_id, attempts)
-                # Verify window closed and the target is compliant: re-derive so the
-                # card leaves VERIFYING for the real idle status (ARMED/COOLDOWN).
-                self._apply_idle_status()
+                # Reached desired — DEFENSIVE deadline-path confirm. On the happy
+                # path the event site (_handle_state_event) already confirmed and
+                # cancelled this timer, so we rarely arrive here; this remains the
+                # fallback for a target whose ACK the listener computed as
+                # not-reached but the re-read now sees compliant. Our handle was
+                # popped by the identity guard above, so _confirm_verified's
+                # _apply_idle_status leaves VERIFYING.
+                self._confirm_verified(entity_id)
                 return
             attempts = self._verify_attempts.get(entity_id, 0)
             if attempts >= VERIFY_MAX_ATTEMPTS:
