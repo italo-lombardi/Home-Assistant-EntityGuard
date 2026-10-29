@@ -1068,6 +1068,33 @@ class RuleEngine:
         triggered, _skip = self._trigger_decision(entity_id, current)
         return not triggered
 
+    def _dead_group_members(self, entity_id: str) -> list[str]:
+        """Friendly-names of a light group's unavailable/unknown members.
+
+        Empty list when entity_id is not a group (plain entity has no member
+        `entity_id` attribute) or every member is live. Used only to annotate a
+        group enforce that raised because one dead member's integration threw
+        while the group aggregate already read the desired state — the card
+        shows which members are the problem.
+        """
+        gstate = self._hass.states.get(entity_id)
+        if gstate is None:
+            return []
+        members = gstate.attributes.get("entity_id")
+        if not isinstance(members, (list, tuple)):
+            return []  # plain entity, not a group
+        dead: list[str] = []
+        for member in members:
+            mstate = self._hass.states.get(member)
+            if mstate is None or mstate.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+                name = (
+                    mstate.attributes.get("friendly_name")
+                    if mstate is not None
+                    else None
+                )
+                dead.append(name or member)
+        return dead
+
     def _confirm_verified(self, entity_id: str) -> None:
         """Resolve a reached-desired verify cycle: fire EVENT_VERIFIED, go idle.
 
@@ -1348,6 +1375,28 @@ class RuleEngine:
                 # timeout — identical except for the message. Routes through the
                 # service_call_failed path so a timeout composes with the per-target
                 # "failed" outcome (target_outcomes) exactly like any other failure.
+                #
+                # GROUP-MEMBER RECLASSIFICATION: a light group's blocking turn-off
+                # fans out; a dead member whose integration RAISES (e.g. SwitchBot
+                # Cloud offline) propagates one exception out of the group call even
+                # though the group AGGREGATE already reached desired (HA any-on: a
+                # group of N-off + M-unavailable reads 'off'). That is not a rule
+                # failure — the group IS at desired; only a dead member couldn't be
+                # commanded. Reclassify as a clean skip so it does NOT climb
+                # consecutive_errors into a sticky STATUS_ERROR red banner. Keyed on
+                # _verify_reached (group as a whole at desired), NOT the literal
+                # 'off' — a single dead light that raised is itself the unreached
+                # thing (_verify_reached False), so it still counts as an error.
+                dead = self._dead_group_members(entity_id)
+                if dead and self._verify_reached(entity_id):
+                    self._fire_skipped(
+                        entity_id,
+                        "member_unavailable",
+                        error=err_str,
+                        members=dead,
+                    )
+                    self._set_status(self._derive_armed_or_cooldown(now))
+                    return
                 self._fire_skipped(entity_id, REASON_SERVICE_CALL_FAILED, error=err_str)
                 self._state.consecutive_errors += 1
                 self._state.last_error = err_str
@@ -1777,9 +1826,19 @@ class RuleEngine:
         return None
 
     def _fire_skipped(
-        self, entity_id: str, reason: str, *, error: str | None = None
+        self,
+        entity_id: str,
+        reason: str,
+        *,
+        error: str | None = None,
+        members: list[str] | None = None,
     ) -> None:
-        """Emit a skipped-enforcement event."""
+        """Emit a skipped-enforcement event.
+
+        members: friendly-names of the group members behind a member_unavailable
+        skip. Stored on the outcome (capped) so the card can list which members
+        failed without re-deriving them.
+        """
         data: dict[str, Any] = {
             "rule_id": self._config.unique_id,
             "rule_name": self._config.name,
@@ -1806,6 +1865,15 @@ class RuleEngine:
             "error": error,
             "at": dt_util.now(),
         }
+        # member_unavailable carries the failing group members for the card. Cap at
+        # 3 names + a "+N more" tail so a group with many dead members stays one
+        # short line. Only set when present so other outcomes keep their old shape.
+        if members:
+            cap = 3
+            shown = members[:cap]
+            if len(members) > cap:
+                shown = [*shown, f"+{len(members) - cap} more"]
+            self._state.target_outcomes[entity_id]["members"] = shown
         # Persist so skip counts survive a restart like the enforcement counters.
         # A skip-only rule never hits the enforce-success persist, so without this
         # its skip_count_total would reset to 0 on every restart. _persist ->
