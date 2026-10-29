@@ -5118,6 +5118,62 @@ async def test_verify_kept_on_intermediate_still_triggering_event(hass: HomeAssi
     assert len(events) == 1
 
 
+async def test_verify_kept_on_intermediate_still_exhausts_to_unreachable(
+    hass: HomeAssistant,
+):
+    """Keeping the verify armed on an intermediate still-online event must NOT
+    defeat the deadline terminator: a target that stays online but NEVER reaches
+    desired (stuck group member, silent-ignore device) must still exhaust the
+    corrective loop and fire EVENT_UNREACHABLE. This locks the safety property
+    that de-risks the intermediate-keep-alive branch — both reviewers flagged it
+    as implied-by, but not asserted-in, the kept-alive test (which uses a bare
+    MagicMock handle and never runs the real 5s _fire). Here the deadline cb is
+    captured and driven to exhaustion with the target still reading 'on'."""
+    engine = _make_engine(hass, _verify_config())  # trigger "on", desired "off"
+    engine._startup_complete = True
+    # Service that does NOT move the target — the enforce is a silent no-op, so
+    # every _fire re-reads 'on' (online, not reached) exactly like a stuck group.
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    events = []
+    hass.bus.async_listen(EVENT_UNREACHABLE, lambda e: events.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        if delay == 5:  # VERIFY_DELAY_SECONDS — not the recently_enforced pulse timer
+            engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        assert "light.bedroom" in engine._pending_verifications  # armed
+
+        # An intermediate still-online-not-reached event lands mid-window (the
+        # branch under test): it must leave the verify armed, not cancel it.
+        intermediate = MagicMock()
+        intermediate.data = {"entity_id": "light.bedroom", "new_state": _state("on")}
+        intermediate.context = MagicMock(id="ctx-mid")
+        engine._handle_state_event(intermediate)
+        await hass.async_block_till_done()
+        assert "light.bedroom" in engine._pending_verifications, (
+            "intermediate event must not drop the verify"
+        )
+
+        # Deadline fires + correctives run; target never moves → exhaustion.
+        for _ in range(VERIFY_MAX_ATTEMPTS + 1):
+            if "light.bedroom" in engine._pending_verifications:
+                await _run_verify_timer(hass, engine, "light.bedroom")
+
+    assert len(events) == 1, "stuck-online target must still fire EVENT_UNREACHABLE"
+    assert events[0].data["reason"] == REASON_UNREACHABLE_AFTER_RETRIES
+    assert engine.is_recently_enforced_unreachable() is True
+    assert "light.bedroom" not in engine._pending_verifications, (
+        "pending must be cleared on exhaustion — no leak"
+    )
+
+
 async def test_verify_not_rearmed_while_pending(hass: HomeAssistant):
     """A re-enforce fired while a verify is already pending must NOT re-arm over
     it. _arm_verify cancels the live timer first, so a re-enforce churned by an
