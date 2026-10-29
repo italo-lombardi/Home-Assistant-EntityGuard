@@ -205,7 +205,17 @@ def main() -> int:
 
         # Kill one member; aggregate must still read 'off' (dead member dragged
         # to unavailable, live member off -> any-on aggregate 'off' = desired).
-        sv.force_state(token, M_DEAD, "unavailable")
+        # Inject WITH a friendly_name (raw /api/states, not sv.force_state which
+        # posts no attributes): the best-effort member_unavailable reclassify
+        # branch below matches the dead member by friendly-name, so an attribute
+        # strip would make that match silently fall back to the entity_id. Branch
+        # is unit-locked, but keep the live probe honest if it ever fires.
+        sf.api(
+            token,
+            "POST",
+            f"/api/states/{M_DEAD}",
+            {"state": "unavailable", "attributes": {"friendly_name": "Dead Member"}},
+        )
         time.sleep(1.0)
         agg = sf.get_state(token, gid)
         sf.check(
