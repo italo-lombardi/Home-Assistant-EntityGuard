@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
+import pytest
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -551,6 +552,44 @@ def test_recently_enforced_unreachable_sensor_is_off():
     engine = _make_engine(recently_enforced_unreachable=False)
     sensor = EntityGuardRecentlyEnforcedUnreachableSensor(entry, engine)
     assert sensor.is_on is False
+
+
+@pytest.mark.parametrize(
+    "cls_name",
+    [
+        "EntityGuardRecentlyEnforcedSensor",
+        "EntityGuardRecentlyEnforcedVerifiedSensor",
+        "EntityGuardRecentlyEnforcedUnreachableSensor",
+    ],
+)
+def test_all_recently_enforced_sensors_expose_rule_context(cls_name):
+    """All three pulse sensors carry rule_name/target/delay attrs (not just the base one).
+
+    Regression: verified/unreachable used to subclass EntityGuardBinarySensor
+    directly, so automations triggered on them got None for target_entities and
+    crashed on `None | join`.
+    """
+    import custom_components.entity_guard.binary_sensor as bs
+    from custom_components.entity_guard.const import MODE_FIXED_STATE
+
+    entry = MockConfigEntry(
+        domain=DOMAIN, data={CONF_ENTRY_TYPE: ENTRY_TYPE_RULE}, title="My Rule"
+    )
+    engine = MagicMock()
+    engine.config.unique_id = "uid"
+    engine.config.mode = MODE_FIXED_STATE
+    engine.config.target_entities = ["light.balcony", "light.kitchen"]
+    engine.config.target_state = "off"
+    engine.config.target_value = None
+    engine.config.delay_seconds = 90
+
+    sensor = getattr(bs, cls_name)(entry, engine)
+    attrs = sensor.extra_state_attributes
+
+    assert attrs["rule_name"] == "My Rule"
+    assert attrs["target_entities"] == ["light.balcony", "light.kitchen"]
+    assert attrs["target"] == "off"
+    assert attrs["delay_seconds"] == 90
 
 
 async def test_setup_entry_adds_unreachable_sensor_when_verify_on(
