@@ -114,6 +114,21 @@ def main() -> int:
         time.sleep(1)
     sf.check("recently_enforced_verified pulses ON after a confirmed enforce", saw_on)
 
+    # Attr parity: the verified sensor must carry the SAME rule context the base
+    # recently_enforced sensor does (rule_name/target_entities/target/
+    # delay_seconds). Regression guard for the bug where the verified/unreachable
+    # twins subclassed the bare base and exposed NO attributes, so an automation
+    # reading state_attr(verified, 'target_entities') got None and crashed on
+    # `| join`. Read the real entity's live attrs, not just the Python class.
+    vattrs = sf.get_state(token, verified_eid).get("attributes", {})
+    sf.check(
+        "verified sensor exposes target_entities attr",
+        isinstance(vattrs.get("target_entities"), list),
+    )
+    sf.check("verified sensor exposes rule_name attr", bool(vattrs.get("rule_name")))
+    sf.check("verified sensor exposes target attr", "target" in vattrs)
+    sf.check("verified sensor exposes delay_seconds attr", "delay_seconds" in vattrs)
+
     # (3) verify ON->OFF -> the verified sensor's registry row is DISABLED:
     # its state leaves the state machine (get_state returns empty/unavailable).
     set_verify_via_options(token, entry_id, verify=False)
