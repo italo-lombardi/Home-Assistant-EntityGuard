@@ -312,8 +312,22 @@ class RuleEngine:
                 and not self._trigger_decision(entity_id, new_state)[0]
             )
             pending = entity_id in self._pending_verifications
-            if not reached_desired:
-                # Away-move / offline: cancel the stale deadline timer.
+            offline = new_state is None or new_state.state in (
+                STATE_UNAVAILABLE,
+                STATE_UNKNOWN,
+            )
+            if not reached_desired and (offline or not pending):
+                # Cancel the stale deadline timer on a genuine away-move: the target
+                # vanished (offline/unknown — never confirm on it), or no verify is
+                # in flight so this is a plain reactive supersede. BUT when a verify
+                # IS pending and the target is merely still-online-not-yet-reached
+                # (a light GROUP reads any-on 'on' mid fan-out until its LAST member
+                # turns off), do NOT cancel: that intermediate event is the enforce's
+                # own in-progress transition, not an away-move. The in-flight verify
+                # owns the deadline timer + corrective loop and will confirm on the
+                # final reached event. Cancelling here popped pending, so the confirm
+                # survived only by racing a re-enforce — flaky; prod lost the race
+                # and recently_enforced_verified never pulsed.
                 self._cancel_verify(entity_id)
             # Clear the self-heal markers BEFORE a possible confirm: the target moved,
             # so the superseded cycle is abandoned. Reset here — the genuine-event
@@ -1545,7 +1559,15 @@ class RuleEngine:
                 and self._config.verify_enabled
                 and self._config.mode in (MODE_FIXED_STATE, MODE_DYNAMIC_STATE)
                 and entity_id not in self._unreachable
+                and entity_id not in self._pending_verifications
             ):
+                # Already-pending guard: a verify in flight owns its deadline timer
+                # and corrective loop. A re-enforce fired by an intermediate event
+                # (e.g. a light GROUP mid fan-out still reads any-on 'on', so the
+                # reactive path re-enforces before the group settles) must NOT
+                # re-arm over it — _arm_verify cancels the live timer first, so
+                # churning re-arms kept resetting the 5s deadline and the confirm
+                # survived only by racing the group's final member-off event.
                 self._arm_verify(entity_id, trigger_context_id)
 
         # Pick the post-enforce status once and emit a single _set_status so the
