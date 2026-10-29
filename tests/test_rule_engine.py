@@ -31,6 +31,7 @@ from custom_components.entity_guard.const import (
     OPERATOR_GT,
     OPERATOR_LE,
     OPERATOR_LT,
+    REASON_SERVICE_CALL_FAILED,
     REASON_UNREACHABLE_AFTER_RETRIES,
     STATUS_ARMED,
     STATUS_CONDITIONAL,
@@ -2661,6 +2662,125 @@ async def test_threshold_failures_set_error(hass: HomeAssistant):
     assert engine.state.consecutive_errors == ERROR_THRESHOLD
     assert engine.state.last_error == "device offline"
     assert engine.current_status() == STATUS_ERROR
+
+
+# ---------------------------------------------------------------------------
+# Group dead-member reclassification: a group turn-off whose aggregate already
+# reached desired, but one dead member's integration RAISED, must NOT become a
+# sticky STATUS_ERROR — it is a clean member_unavailable skip carrying the
+# offline members for the card.
+# ---------------------------------------------------------------------------
+
+
+def _set_group(hass, gid, agg_state, members):
+    """Register a group `gid` at aggregate `agg_state` with `members` (dict of
+    member_eid -> state). The group exposes its members via the `entity_id`
+    attribute exactly like HA's light-group aggregate."""
+    for meid, mstate in members.items():
+        hass.states.async_set(meid, mstate, {"friendly_name": meid.split(".")[-1]})
+    hass.states.async_set(gid, agg_state, {"entity_id": list(members)})
+
+
+async def test_group_dead_member_raise_is_skip_not_error(hass: HomeAssistant):
+    """Group aggregate already 'off' (desired) + a dead member raises → clean
+    member_unavailable skip: no consecutive_errors bump, not STATUS_ERROR."""
+    gid = "light.group"
+    config = _make_config(target_entities=[gid], target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    async def _fail(call):
+        raise RuntimeError("SwitchBot Cloud device is offline")
+
+    hass.services.async_register("light", "turn_off", _fail)
+    # 2 live-off members + 1 dead; any-on aggregate reads 'off' = desired.
+    _set_group(
+        hass,
+        gid,
+        "off",
+        {"light.a": "off", "light.b": "off", "light.dead": "unavailable"},
+    )
+
+    # Drive _enforce directly: the real case trips while the group reads 'on'
+    # then the aggregate settles to 'off' before the dead member's exception
+    # surfaces — in a zero-delay unit test trigger+enforce read the same state,
+    # so an already-'off' aggregate would never trip. _enforce is the unit under
+    # test (the except-block reclassification), not the trigger gate.
+    for _ in range(ERROR_THRESHOLD + 2):
+        await engine._enforce(gid, bypass_rate_limit=True)
+
+    assert engine.state.consecutive_errors == 0
+    assert engine.current_status() != STATUS_ERROR
+    outcome = engine.state.target_outcomes.get(gid)
+    assert outcome is not None
+    assert outcome["outcome"] == "skipped"
+    assert outcome["reason"] == "member_unavailable"
+    assert outcome["members"] == ["dead"]
+
+
+async def test_group_dead_member_many_members_capped(hass: HomeAssistant):
+    """More than 3 dead members → list capped to 3 names + a '+N more' tail."""
+    gid = "light.group"
+    config = _make_config(target_entities=[gid], target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    async def _fail(call):
+        raise RuntimeError("offline")
+
+    hass.services.async_register("light", "turn_off", _fail)
+    members = {f"light.d{i}": "unavailable" for i in range(5)}
+    members["light.live"] = "off"
+    _set_group(hass, gid, "off", members)
+    await engine._enforce(gid, bypass_rate_limit=True)
+
+    shown = engine.state.target_outcomes[gid]["members"]
+    assert len(shown) == 4  # 3 names + tail
+    assert shown[-1] == "+2 more"
+
+
+async def test_group_not_reached_still_errors(hass: HomeAssistant):
+    """A group whose aggregate is NOT at desired (still 'on') when the call
+    raises is a real failure — must still climb consecutive_errors, NOT be
+    masked as a member_unavailable skip."""
+    gid = "light.group"
+    config = _make_config(target_entities=[gid], target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    async def _fail(call):
+        raise RuntimeError("boom")
+
+    hass.services.async_register("light", "turn_off", _fail)
+    # Aggregate 'on' (a live member still on) — desired 'off' NOT reached.
+    _set_group(hass, gid, "on", {"light.a": "on", "light.dead": "unavailable"})
+    st = hass.states.get(gid)
+    await engine.async_evaluate(gid, st)
+
+    assert engine.state.consecutive_errors == 1
+    outcome = engine.state.target_outcomes.get(gid)
+    assert outcome["outcome"] == "failed"
+    assert outcome["reason"] == REASON_SERVICE_CALL_FAILED
+
+
+async def test_single_entity_raise_still_errors(hass: HomeAssistant):
+    """Regression guard: a lone (non-group) target that raises is itself the
+    unreached thing (_verify_reached False), so it must still count as an error
+    exactly as before the group reclassification."""
+    config = _make_config(target_state="off")
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    async def _fail(call):
+        raise RuntimeError("boom")
+
+    hass.services.async_register("light", "turn_off", _fail)
+    hass.states.async_set("light.bedroom", "on")  # stays on after a raised turn_off
+    st = hass.states.get("light.bedroom")
+    await engine.async_evaluate("light.bedroom", st)
+
+    assert engine.state.consecutive_errors == 1
+    assert engine.state.target_outcomes["light.bedroom"]["outcome"] == "failed"
 
 
 # ---------------------------------------------------------------------------

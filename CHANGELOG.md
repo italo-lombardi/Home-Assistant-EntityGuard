@@ -29,6 +29,7 @@
 
 ### Fixed
 
+- **A group target with one dead member no longer flags a false error.** Enforcing a light group whose aggregate already reached the desired state, but where one offline member's integration *raises* (e.g. a SwitchBot Cloud device offline), is now a clean `member_unavailable` skip instead of climbing `consecutive_errors` into a sticky red "error" banner — the group as a whole obeyed; only a dead member couldn't be commanded. The card's "Targets needing attention" panel lists the offline members (up to 3 names + "+N more", one line) so the problem is visible without the false fault. A single (non-group) target that raises still counts as a real error, and a group whose aggregate is *not* at desired when the call raises still errors.
 - **Suppressing a rule cancels a pending enforcement.** Manual + loop-protection suppression cancel an in-flight pending enforce and clear the countdown; the enforce path re-checks suppression before acting; ending suppression re-evaluates targets.
 - **Condition rows show the correct state label.** Card formats each shown value against *that* value, not the live state, so an off-state no longer renders with the on-state's label.
 - **Card stays live while a rule is inactive.** Engine forces a status refresh on disabled/suppressed paths so live `flags[].current` no longer freezes while watched entities change.

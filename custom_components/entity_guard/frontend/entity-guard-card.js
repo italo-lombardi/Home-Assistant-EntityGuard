@@ -230,6 +230,14 @@ const cardStyles = css`
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .entity-name .member-list {
+    display: block;
+    font-size: 11px;
+    color: var(--eg-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .entity-state {
     color: var(--eg-text-secondary);
     white-space: nowrap;
@@ -1224,14 +1232,21 @@ class EntityGuardCard extends LitElement {
       // target_outcomes is an HA-controlled status-sensor attribute; guard a
       // malformed entry (null / non-object) so one bad element can't throw.
       if (!o || typeof o !== "object") return false;
-      // Only surface ACTIONABLE outcomes: a true service failure, or a
+      // Only surface ACTIONABLE outcomes: a true service failure, a
       // misconfiguration the user must fix (target state can't be driven —
-      // no_service_mapping). Benign/transient skips (light_off, source_offline,
+      // no_service_mapping), or a group with dead members that couldn't be
+      // commanded (member_unavailable — the group as a whole reached desired so
+      // it is NOT a rule error, but the user still wants to see WHICH members
+      // are offline). Benign/transient skips (light_off, source_offline,
       // source_value_unavailable, source_is_target, light_unavailable,
       // attribute_unavailable) mean the rule is simply waiting and self-heal on
       // the next clean enforce — showing them here reads as a fault. The engine
       // still records the raw reason on the attribute for diagnostics.
-      return o.outcome === "failed" || o.reason === "no_service_mapping";
+      return (
+        o.outcome === "failed" ||
+        o.reason === "no_service_mapping" ||
+        o.reason === "member_unavailable"
+      );
     });
     if (bad.length === 0) return nothing;
     return html`
@@ -1241,7 +1256,11 @@ class EntityGuardCard extends LitElement {
           const st = this.hass.states[entityId];
           const name = st?.attributes?.friendly_name || entityId;
           const failed = o.outcome === "failed";
-          const detail = o.error || o.reason || o.outcome;
+          // member_unavailable lists the offline group members (already capped to
+          // 3 + "+N more" by the engine) instead of the raw exception string.
+          const detail = Array.isArray(o.members)
+            ? `Offline members: ${o.members.join(", ")}`
+            : o.error || o.reason || o.outcome;
           return html`
             <div
               class="entity-row"
@@ -1255,7 +1274,13 @@ class EntityGuardCard extends LitElement {
                 }
               }}
             >
-              <span class="entity-name" title="${entityId}">${name}</span>
+              <span class="entity-name" title="${entityId}">
+                ${name}${Array.isArray(o.members)
+                  ? html`<span class="member-list" title="${detail}"
+                      >${o.members.join(", ")}</span
+                    >`
+                  : nothing}
+              </span>
               <span class="entity-state" title="${detail}">
                 ${o.outcome}
                 <span
