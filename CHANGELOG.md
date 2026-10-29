@@ -25,6 +25,7 @@
 - **Rule modes renamed (fixed-vs-dynamic axis):** `State`→`Fixed state`, `Attribute`→`Fixed attribute`, plus new `Dynamic state` / `Dynamic attribute`. Auto-migrates (schema v1→v2); behaviour unchanged, no user action.
 - Card bumped to `v0.4.0`; version bump cache-busts the auto-registered Lovelace resource.
 - **Translation polish.** Dynamic-state delay help reworded to idiomatic native phrasing in several locales; Turkish hours abbreviation disambiguated (`24s`→`24 sa.`).
+- **Verify confirms on device ACK, not a blind 5 s wait.** The happy-path verify now confirms the moment the target's `state_changed` reports it reached desired (~ms), instead of dwelling on the full `VERIFY_DELAY_SECONDS` snapshot. That delay is now a *deadline* — the fallback for a device that ignores the command — so corrective-retry, exhaustion kill-switch, and the unreachable signal are unchanged for non-compliant devices.
 
 ### Fixed
 

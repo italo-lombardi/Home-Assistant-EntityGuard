@@ -25,9 +25,13 @@ Two assertions, both honest about what a compliant-device container can show:
   only. (Same SKIP honesty as smoke_unreachable_signal / smoke_verify_enforce:
   the compliant container cannot force the slow verify branch on demand.)
 
-Deterministic target: a verify-ON fixed_state rule on the allowed
-`input_boolean.ea_ctrl_kitchen_1` (memory: smoke_test_entities). force_state
-trips/writes it; no real-device side effect.
+Deterministic target: a verify-ON fixed_state rule driving the allowed
+`light.living_room_under_cabinet_lights` (sv.TARGET), triggered off the allowed
+`input_boolean.ea_ctrl_kitchen_1` (sv.TRIGGER) — memory: smoke_test_entities.
+force_state trips/writes the target; no real-device side effect. Because that
+light has read 'unavailable' in past sessions, the HARD leg is gated behind a
+pre-trip availability guard (an unavailable target can't ACK, which would false-
+FAIL on the re-arm — a precondition miss, not a fix regression).
 
 Run INSIDE the container:
   /home/vscode/.local/ha-venv/bin/python -I scripts/smoke_verify_suppress_drop.py
@@ -62,6 +66,23 @@ def main() -> int:
         sv.status_sensor_for(token, slug)  # status sensor live
         armed = sf.wait_for_armed(token, "fixed_state", [TARGET])
         sf.check("rule left startup grace (armed)", armed)
+
+        # Precondition: TARGET must be available before the trip. If it is
+        # unavailable/unknown, force_state(off) writes over it but the real
+        # device never ACKs reaching desired -> the suppress/unsuppress leg may
+        # not land a LIVE status -> a false HARD FAIL that wrongly blames the
+        # b983de0 fix (memory: under_cabinet was 'unavailable' in a past
+        # session). Bail explicitly instead. Early return is inside the try, so
+        # finally still cleans up our rule. Mirrors smoke_fast_verify.py.
+        pre = sf.get_state(token, TARGET)
+        pre_ok = pre and pre.get("state") not in (None, "unavailable", "unknown")
+        sf.check(
+            "target available before trip (else false FAIL unrelated to fix)",
+            pre_ok,
+            f"target state={pre.get('state') if pre else None}",
+        )
+        if not pre_ok:
+            return 1  # unavailable device can't ACK; precondition, not our bug
 
         # --- best-effort: try to wedge verify-pending WHILE suppressed --------
         # Trip the off->on rule (target reports "off"); the engine enforces "on".
