@@ -4966,6 +4966,9 @@ async def test_verify_event_confirm_fires_once_and_cancels_timer(hass: HomeAssis
     assert len(events) == 1  # confirmed once, no double-fire
     assert events[0].data["attempts"] == 1
     assert "light.bedroom" not in engine._pending_verifications
+
+
+async def test_verify_unreachable_marker_blocks_rearm(hass: HomeAssistant):
     """The transient _unreachable double-arm marker suppresses a fresh verify on an
     enforce while it is set (it is dropped on re-entry / cleared on recovery)."""
     engine = _make_engine(hass, _verify_config())
