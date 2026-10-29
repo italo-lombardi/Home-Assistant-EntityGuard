@@ -338,11 +338,18 @@ class RuleEngine:
                 self._confirm_verified(entity_id)
             else:
                 # No confirm (not reached, no pending, or dropped for disabled/
-                # suppressed): abandon the superseded cycle's attempt count. If we
-                # cancelled a still-VERIFYING cycle above, re-derive so it resolves
-                # instead of sticking (cancel already popped pending → leaves VERIFYING).
+                # suppressed): abandon the superseded cycle's attempt count. Re-derive
+                # whenever a verify was pending so a VERIFYING card resolves NOW
+                # instead of lingering until the ~5s deadline _fire:
+                #   - not reached: _cancel_verify above already popped pending, so the
+                #     derive yields the real idle status (ARMED/COOLDOWN).
+                #   - reached but DROPPED (disabled/master-off/suppressed): pending is
+                #     still armed (timer stays as the safety net), but
+                #     _derive_idle_status ranks DISABLED/MASTER_DISABLED/SUPPRESSED
+                #     ABOVE the pending→VERIFYING derive, so the card flips to the
+                #     correct inactive status immediately without touching the timer.
                 self._verify_attempts.pop(entity_id, None)
-                if pending and not reached_desired:
+                if pending:
                     self._apply_idle_status()
         trigger_context_id: str | None = getattr(event.context, "id", None)
         self._schedule_eval_task(entity_id, new_state, trigger_context_id)

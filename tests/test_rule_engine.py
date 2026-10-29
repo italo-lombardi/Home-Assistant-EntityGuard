@@ -4886,6 +4886,10 @@ async def test_verify_event_confirm_dropped_when_suppressed_mid_window(
     # Timer still armed (not cancelled) — it is the safety net that resolves on fire.
     assert engine._pending_verifications.get("light.bedroom") is pending
     pending.assert_not_called()
+    # Card resolves to SUPPRESSED NOW, not lingering on VERIFYING until the ~5s
+    # deadline: _derive_idle_status ranks SUPPRESSED above the pending→VERIFYING
+    # derive, so the dropped-but-reached event re-derive surfaces it immediately.
+    assert engine.current_status() == STATUS_SUPPRESSED
 
 
 async def test_verify_event_dropped_when_unloaded(hass: HomeAssistant):
