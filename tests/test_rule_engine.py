@@ -4888,6 +4888,25 @@ async def test_verify_event_confirm_dropped_when_suppressed_mid_window(
     pending.assert_not_called()
 
 
+async def test_verify_event_dropped_when_unloaded(hass: HomeAssistant):
+    """_verify_event_dropped returns True once the engine is unloaded. This branch
+    is unreachable via a live state_changed (unload unsubscribes the listener
+    first), so it is asserted directly — the predicate still guards it for
+    lockstep with the timer's _is_unloaded early-return."""
+    engine = _make_engine(hass, _verify_config())
+    engine._is_unloaded = True
+    assert engine._verify_event_dropped("light.bedroom") is True
+
+
+async def test_verify_event_dropped_when_disabled(hass: HomeAssistant):
+    """_verify_event_dropped returns True when the rule (or master) is disabled —
+    mirrors the timer's disabled/master-off drop so an event confirm cannot fire
+    for an inactive rule."""
+    engine = _make_engine(hass, _verify_config())
+    engine._state.enabled = False
+    assert engine._verify_event_dropped("light.bedroom") is True
+
+
 async def test_verify_cancelled_when_target_offline(hass: HomeAssistant):
     """A target that goes offline/unknown counts as 'not reached': cancel the
     pending verify so we never confirm the signal on a vanished target."""
