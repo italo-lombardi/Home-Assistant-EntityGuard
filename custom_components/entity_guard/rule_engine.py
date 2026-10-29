@@ -343,13 +343,21 @@ class RuleEngine:
                 # instead of lingering until the ~5s deadline _fire:
                 #   - not reached: _cancel_verify above already popped pending, so the
                 #     derive yields the real idle status (ARMED/COOLDOWN).
-                #   - reached but DROPPED (disabled/master-off/suppressed): pending is
-                #     still armed (timer stays as the safety net), but
+                #   - reached but DROPPED (disabled/master-off/suppressed): the
+                #     target already complied, so no VERIFYING is owed. Drop the
+                #     stale deadline handle too — else an unsuppress / suppression
+                #     expiry + re-arm BEFORE the ~5s deadline fires clears
+                #     suppressed_until while _pending_verifications still holds this
+                #     entity, and the next derive falls through to the
+                #     pending→VERIFYING branch: a phantom VERIFYING on an
+                #     already-compliant target until the stale timer finally fires.
                 #     _derive_idle_status ranks DISABLED/MASTER_DISABLED/SUPPRESSED
-                #     ABOVE the pending→VERIFYING derive, so the card flips to the
-                #     correct inactive status immediately without touching the timer.
+                #     above VERIFYING, so the card is correct WHILE dropped; the
+                #     cancel only prevents the stale handle outliving the drop.
                 self._verify_attempts.pop(entity_id, None)
                 if pending:
+                    if reached_desired:
+                        self._cancel_verify(entity_id)
                     self._apply_idle_status()
         trigger_context_id: str | None = getattr(event.context, "id", None)
         self._schedule_eval_task(entity_id, new_state, trigger_context_id)

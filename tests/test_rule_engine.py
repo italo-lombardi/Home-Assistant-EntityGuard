@@ -4862,8 +4862,10 @@ async def test_verify_event_confirm_dropped_when_suppressed_mid_window(
     hass: HomeAssistant,
 ):
     """A reached-desired event while the rule is suppressed mid-window must NOT
-    confirm (mirrors the timer's suppressed drop): no EVENT_VERIFIED, the attempt
-    count is abandoned, and the deadline timer stays armed as the safety net."""
+    confirm (mirrors the timer's suppressed drop): no EVENT_VERIFIED and the
+    attempt count is abandoned. Because the target already complied, the stale
+    deadline handle is dropped so a later unsuppress cannot re-derive a phantom
+    VERIFYING (see test_verify_dropped_reached_drops_stale_handle)."""
     engine = _make_engine(hass, _verify_config())
     engine._startup_complete = True
     engine._verify_attempts["light.bedroom"] = 1
@@ -4883,13 +4885,37 @@ async def test_verify_event_confirm_dropped_when_suppressed_mid_window(
 
     assert events == []  # dropped, not confirmed
     assert "light.bedroom" not in engine._verify_attempts  # superseded count dropped
-    # Timer still armed (not cancelled) — it is the safety net that resolves on fire.
-    assert engine._pending_verifications.get("light.bedroom") is pending
-    pending.assert_not_called()
+    # Target complied, so no VERIFYING owed: the stale deadline handle is dropped.
+    assert "light.bedroom" not in engine._pending_verifications
     # Card resolves to SUPPRESSED NOW, not lingering on VERIFYING until the ~5s
     # deadline: _derive_idle_status ranks SUPPRESSED above the pending→VERIFYING
     # derive, so the dropped-but-reached event re-derive surfaces it immediately.
     assert engine.current_status() == STATUS_SUPPRESSED
+
+
+async def test_verify_dropped_reached_drops_stale_handle(hass: HomeAssistant):
+    """Reached-desired while suppressed drops the deadline handle, so a later
+    unsuppress BEFORE the ~5s deadline does not re-derive a phantom VERIFYING on
+    an already-compliant target. Regression: _clear_suppression_state clears
+    suppressed_until but not _pending_verifications, so a stale handle would fall
+    through _derive_armed_or_cooldown to STATUS_VERIFYING until the timer fired."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    engine._pending_verifications["light.bedroom"] = MagicMock()
+    engine._state.suppressed_until = dt_util.now() + timedelta(minutes=5)
+    hass.states.async_set("light.bedroom", "off")
+
+    # Target reaches desired WHILE suppressed → dropped confirm, handle cleared.
+    event = MagicMock()
+    event.data = {"entity_id": "light.bedroom", "new_state": _state("off")}
+    event.context = MagicMock(id="ctx-1")
+    engine._handle_state_event(event)
+    await hass.async_block_till_done()
+    assert "light.bedroom" not in engine._pending_verifications
+
+    # Unsuppress before any deadline fire: status must NOT be VERIFYING.
+    await engine.async_unsuppress()
+    assert engine.current_status() != STATUS_VERIFYING
 
 
 async def test_verify_event_dropped_when_unloaded(hass: HomeAssistant):
