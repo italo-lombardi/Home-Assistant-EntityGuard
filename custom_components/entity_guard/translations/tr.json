@@ -193,7 +193,7 @@
           "edit_mode": "Moda özel ayarları düzenle",
           "edit_entities": "Hedef varlık ekle veya kaldır",
           "edit_flags": "Bayrak koşullarını düzenle",
-          "edit_advanced": "Debounce ve hız sınırını düzenle"
+          "edit_advanced": "Doğrulama, debounce ve hız sınırını düzenle"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Saniye cinsinden pencere. En az 0, en fazla 86400 (24s).",
           "rate_limit_enabled": "Döngü korumasını açık tutmak için işaretleyin (önerilir). Bu kural için devre dışı bırakmak üzere işareti kaldırın — kontrolden çıkan döngüler otomatik olarak durdurulmaz.",
           "max_enforcements_per_minute": "Kural 15 dakika boyunca otomatik olarak bastırılmadan önce dakikada kaç uygulamaya izin verilir. En az 1, en fazla 600. Yukarıda döngü koruması işaretlenmediğinde yoksayılır.",
-          "verify_enabled": "Uyguladıktan birkaç saniye sonra hedefi yeniden kontrol etmek ve cihaz komutu kabul ettiği hâlde gerçekte hiç değişmediyse istenen duruma ulaşana dek uygulamayı sürdürmek için işaretleyin. Hiç düzelmeyen bir hedef, döngü koruması tarafından otomatik olarak askıya alınır, ardından yeniden denenir. Yalnızca durum modundaki kurallar için gösterilir."
+          "verify_enabled": "Uyguladıktan sonra hedefin istenen duruma gerçekten ulaştığını onaylamak için işaretleyin. Kural, cihazın kendi durum değişikliğini izler (genellikle bir saniye içinde) ve komut kabul edildiği hâlde hiçbir şey değişmediyse hedef duruma ulaşana dek uygulamayı sürdürür; sessiz kalan bir cihaz için birkaç saniyelik son tarih yedek güvence işlevi görür. Hiç düzelmeyen bir hedef, döngü koruması tarafından otomatik olarak askıya alınır, ardından yeniden denenir. Yalnızca durum modundaki kurallar için gösterilir."
         }
       },
       "edit_attribute_params": {

@@ -193,7 +193,7 @@
           "edit_mode": "Rediger modusspesifikke innstillinger",
           "edit_entities": "Legg til eller fjern målenheter",
           "edit_flags": "Rediger flaggbetingelser",
-          "edit_advanced": "Rediger debounce og hastighetsgrense"
+          "edit_advanced": "Rediger verifisering, debounce og hastighetsgrense"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Vindu i sekunder. Min 0, maks 86400 (24t).",
           "rate_limit_enabled": "Kryss av for å beholde løkkebeskyttelsen på (anbefalt). Fjern avkryssing for å deaktivere den for denne regelen — løpske løkker vil ikke bli stoppet automatisk.",
           "max_enforcements_per_minute": "Hvor mange håndhevinger per minutt som tillates før regelen automatisk undertrykkes i 15 minutter. Min 1, maks 600. Ignoreres når løkkebeskyttelsen er fjernet over.",
-          "verify_enabled": "Kryss av for å sjekke målet på nytt noen sekunder etter håndheving og fortsette å håndheve på nytt til det når ønsket tilstand hvis enheten godtok kommandoen, men faktisk aldri endret seg. Et mål som aldri kommer seg, blir automatisk undertrykt av løkkebeskyttelsen og deretter forsøkt på nytt. Vises bare for regler i tilstandsmodus."
+          "verify_enabled": "Kryss av for å bekrefte at målet faktisk nådde ønsket tilstand etter håndheving. Regelen følger med på enhetens egen tilstandsendring (vanligvis innen ett sekund) og fortsetter å håndheve på nytt til målet lander, hvis kommandoen ble godtatt men ingenting endret seg; en frist på noen sekunder er bare et sikkerhetsnett for en enhet som er taus. Et mål som aldri kommer seg, blir automatisk undertrykt av løkkebeskyttelsen og deretter forsøkt på nytt. Vises bare for regler i tilstandsmodus."
         }
       },
       "edit_attribute_params": {

@@ -193,7 +193,7 @@
           "edit_mode": "Editar ajustes específicos del modo",
           "edit_entities": "Añadir o eliminar entidades objetivo",
           "edit_flags": "Editar condiciones de marca",
-          "edit_advanced": "Editar antirrebote y límite de tasa"
+          "edit_advanced": "Editar verificación, antirrebote y límite de tasa"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Ventana en segundos. Mín. 0, máx. 86400 (24h).",
           "rate_limit_enabled": "Marque para mantener la protección contra bucles activada (recomendado). Desmarque para desactivarla en esta regla — los bucles descontrolados no se detendrán automáticamente.",
           "max_enforcements_per_minute": "Cuántas actuaciones por minuto se permiten antes de que la regla se autosuprima durante 15 minutos. Mín. 1, máx. 600. Se ignora cuando la protección contra bucles está desmarcada arriba.",
-          "verify_enabled": "Marca esta opción para volver a comprobar el objetivo unos segundos después de actuar y seguir reintentando hasta que alcance el estado deseado si el dispositivo aceptó el comando pero en realidad no cambió. Un objetivo que nunca se recupera queda suspendido automáticamente por la protección contra bucles y después se vuelve a reintentar. Solo se muestra en las reglas de modo de estado."
+          "verify_enabled": "Marca esta opción para confirmar que el objetivo alcanzó realmente el estado deseado tras actuar. La regla observa el propio cambio de estado del dispositivo (normalmente en un segundo) y sigue reaplicando hasta que lo alcance si el comando se aceptó pero nada cambió; un plazo de unos segundos sirve de red de seguridad para un dispositivo que no responde. Un objetivo que nunca se recupera queda suspendido automáticamente por la protección contra bucles y después se vuelve a reintentar. Solo se muestra en las reglas de modo de estado."
         }
       },
       "edit_attribute_params": {

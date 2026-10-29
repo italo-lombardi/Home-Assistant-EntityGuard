@@ -193,7 +193,7 @@
           "edit_mode": "Modusspezifische Einstellungen bearbeiten",
           "edit_entities": "Zielentitäten hinzufügen oder entfernen",
           "edit_flags": "Flag-Bedingungen bearbeiten",
-          "edit_advanced": "Entprellung und Ratenlimit bearbeiten"
+          "edit_advanced": "Überprüfung, Entprellung und Ratenlimit bearbeiten"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Fenster in Sekunden. Min. 0, max. 86400 (24 Std.).",
           "rate_limit_enabled": "Aktivieren, um den Schleifenschutz beizubehalten (empfohlen). Deaktivieren, um ihn für diese Regel auszuschalten — Endlosschleifen werden dann nicht automatisch gestoppt.",
           "max_enforcements_per_minute": "Wie viele Durchsetzungen pro Minute erlaubt sind, bevor sich die Regel für 15 Minuten automatisch unterdrückt. Min. 1, max. 600. Wird ignoriert, wenn der Schleifenschutz oben deaktiviert ist.",
-          "verify_enabled": "Aktivieren, um das Ziel einige Sekunden nach dem Durchsetzen erneut zu prüfen und so lange erneut durchzusetzen, bis es den gewünschten Zustand erreicht, falls das Gerät den Befehl angenommen, sich aber nie tatsächlich geändert hat. Ein Ziel, das sich nie erholt, wird vom Schleifenschutz automatisch unterdrückt und danach erneut versucht. Wird nur bei Regeln im Statusmodus angezeigt."
+          "verify_enabled": "Aktivieren, um zu bestätigen, dass das Ziel nach dem Durchsetzen den gewünschten Zustand tatsächlich erreicht hat. Die Regel wartet auf die eigene Zustandsänderung des Geräts (meist innerhalb einer Sekunde) und setzt so lange erneut durch, bis das Ziel den Zustand erreicht, falls der Befehl zwar angenommen wurde, sich aber nichts geändert hat; eine Frist von einigen Sekunden dient dabei nur als Rückfallebene für ein Gerät, das keine Rückmeldung gibt. Ein Ziel, das sich nie erholt, wird vom Schleifenschutz automatisch unterdrückt und danach erneut versucht. Wird nur bei Regeln im Statusmodus angezeigt."
         }
       },
       "edit_attribute_params": {

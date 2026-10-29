@@ -193,7 +193,7 @@
           "edit_mode": "Uredi postavke specifične za način rada",
           "edit_entities": "Dodaj ili ukloni ciljne entitete",
           "edit_flags": "Uredi uvjete zastavica",
-          "edit_advanced": "Uredi odgodu ponavljanja i ograničenje učestalosti"
+          "edit_advanced": "Uredi provjeru, odgodu ponavljanja i ograničenje učestalosti"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Prozor u sekundama. Min 0, maks 86400 (24 h).",
           "rate_limit_enabled": "Označite za zadržavanje uključene zaštite od petlji (preporučeno). Odznačite za onemogućavanje za ovo pravilo — nekontrolirane petlje neće biti automatski zaustavljene.",
           "max_enforcements_per_minute": "Koliko je provedbi u minuti dopušteno prije nego se pravilo automatski potisne na 15 minuta. Min 1, maks 600. Zanemaruje se kada je zaštita od petlji odznačena iznad.",
-          "verify_enabled": "Označite za ponovnu provjeru cilja nekoliko sekundi nakon provedbe i nastavak ponavljanja provedbe sve dok ne dosegne željeno stanje ako je uređaj prihvatio naredbu, ali se zapravo nije promijenio. Cilj koji se nikada ne oporavi zaštita od petlji automatski potisne, a zatim ponovno pokušava. Prikazuje se samo za pravila u načinu rada stanja."
+          "verify_enabled": "Označite za potvrdu da je cilj doista dosegao željeno stanje nakon provedbe. Pravilo prati vlastitu promjenu stanja uređaja (obično unutar sekunde) i nastavlja ponavljati provedbu dok je ne dosegne ako je naredba prihvaćena, ali se ništa nije promijenilo; rok od nekoliko sekundi služi kao sigurnosna zaštita za uređaj koji šuti. Cilj koji se nikada ne oporavi zaštita od petlji automatski potisne, a zatim ponovno pokušava. Prikazuje se samo za pravila u načinu rada stanja."
         }
       },
       "edit_attribute_params": {

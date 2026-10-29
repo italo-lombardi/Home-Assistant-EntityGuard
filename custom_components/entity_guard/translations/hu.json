@@ -193,7 +193,7 @@
           "edit_mode": "Mód-specifikus beállítások szerkesztése",
           "edit_entities": "Cél entitások hozzáadása vagy eltávolítása",
           "edit_flags": "Flag feltételek szerkesztése",
-          "edit_advanced": "Debounce és sebességkorlát szerkesztése"
+          "edit_advanced": "Ellenőrzés, debounce és sebességkorlát szerkesztése"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Ablak másodpercben. Min. 0, max. 86400 (24 óra).",
           "rate_limit_enabled": "Jelölje be a hurokvédelem bekapcsolva tartásához (ajánlott). Vegye ki a jelölést, hogy letiltsa ehhez a szabályhoz — a megszaladt hurkok nem állnak le automatikusan.",
           "max_enforcements_per_minute": "Hány kényszerítés engedélyezett percenként, mielőtt a szabály automatikusan elnyomja magát 15 percre. Min. 1, max. 600. Figyelmen kívül hagyva, ha a hurokvédelem fentebb ki van kapcsolva.",
-          "verify_enabled": "Jelölje be, hogy a kényszerítés után néhány másodperccel újraellenőrizze a célt, és addig ismételje a kényszerítést, amíg a cél el nem éri a kívánt állapotot, ha az eszköz elfogadta a parancsot, de valójában nem változott meg. Azt a célt, amely egyáltalán nem áll helyre, a hurokvédelem automatikusan felfüggeszti, majd ismét újrapróbálkozik. Csak állapot módú szabályoknál jelenik meg."
+          "verify_enabled": "Jelölje be, hogy a kényszerítés után megerősítse, a cél valóban elérte-e a kívánt állapotot. A szabály az eszköz saját állapotváltozását figyeli (általában egy másodpercen belül), és addig ismétli a kényszerítést, amíg a cél be nem áll, ha az eszköz elfogadta a parancsot, de valójában nem változott meg; néhány másodperces határidő csak tartalékként szolgál a néma eszközökhöz. Azt a célt, amely egyáltalán nem áll helyre, a hurokvédelem automatikusan felfüggeszti, majd ismét újrapróbálkozik. Csak állapot módú szabályoknál jelenik meg."
         }
       },
       "edit_attribute_params": {

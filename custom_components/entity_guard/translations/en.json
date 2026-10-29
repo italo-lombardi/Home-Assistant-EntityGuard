@@ -193,7 +193,7 @@
           "edit_mode": "Edit mode-specific settings",
           "edit_entities": "Add or remove target entities",
           "edit_flags": "Edit flag conditions",
-          "edit_advanced": "Edit debounce and rate limit"
+          "edit_advanced": "Edit verify, debounce and rate limit"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Window in seconds. Min 0, max 86400 (24h).",
           "rate_limit_enabled": "Tick to keep loop protection on (recommended). Untick to disable it for this rule — runaway loops will not be stopped automatically.",
           "max_enforcements_per_minute": "How many enforcements per minute are allowed before the rule auto-suppresses for 15 minutes. Min 1, max 600. Ignored when loop protection is unticked above.",
-          "verify_enabled": "Tick to re-check the target a few seconds after enforcing and keep re-enforcing until it reaches the desired state if the device accepted the command but never actually changed. A target that never recovers is auto-suppressed by loop protection, then retried. Shown for state-mode rules only."
+          "verify_enabled": "Tick to confirm the target actually reached the desired state after enforcing. The rule watches for the device's own state change (usually within a second) and keeps re-enforcing until it lands if the command was accepted but nothing changed; a few seconds' deadline backstops a silent device. A target that never recovers is auto-suppressed by loop protection, then retried. Shown for state-mode rules only."
         }
       },
       "edit_attribute_params": {

@@ -193,7 +193,7 @@
           "edit_mode": "Modusspecifieke instellingen bewerken",
           "edit_entities": "Doelentiteiten toevoegen of verwijderen",
           "edit_flags": "Voorwaarden bewerken",
-          "edit_advanced": "Debounce en rate limit bewerken"
+          "edit_advanced": "Verificatie, debounce en rate limit bewerken"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Venster in seconden. Min 0, max 86400 (24u).",
           "rate_limit_enabled": "Aanvinken om lusbeveiliging aan te houden (aanbevolen). Uitvinken om deze voor deze regel uit te schakelen — op hol geslagen lussen worden niet automatisch gestopt.",
           "max_enforcements_per_minute": "Hoeveel afdwingingen per minuut zijn toegestaan voordat de regel zichzelf 15 minuten onderdrukt. Min 1, max 600. Genegeerd wanneer lusbeveiliging hierboven niet is aangevinkt.",
-          "verify_enabled": "Aanvinken om het doel enkele seconden na het afdwingen opnieuw te controleren en te blijven afdwingen totdat het de gewenste status bereikt als het apparaat de opdracht wel heeft geaccepteerd maar in werkelijkheid niet is veranderd. Een doel dat nooit herstelt, wordt door de lusbeveiliging automatisch onderdrukt en daarna opnieuw geprobeerd. Alleen getoond voor regels in statusmodus."
+          "verify_enabled": "Aanvinken om te bevestigen dat het doel na het afdwingen daadwerkelijk de gewenste status heeft bereikt. De regel let op de eigen statuswijziging van het apparaat (meestal binnen een seconde) en blijft afdwingen totdat het de status bereikt als de opdracht wel is geaccepteerd maar er niets is veranderd; een deadline van enkele seconden dient als vangnet voor een apparaat dat niets terugmeldt. Een doel dat nooit herstelt, wordt door de lusbeveiliging automatisch onderdrukt en daarna opnieuw geprobeerd. Alleen getoond voor regels in statusmodus."
         }
       },
       "edit_attribute_params": {
