@@ -1568,6 +1568,12 @@ class RuleEngine:
                 # re-arm over it — _arm_verify cancels the live timer first, so
                 # churning re-arms kept resetting the 5s deadline and the confirm
                 # survived only by racing the group's final member-off event.
+                # ponytail: a genuinely NEW reactive trigger on the same entity
+                # mid-window reuses the in-flight verify's attempts/context_id
+                # rather than arming a fresh cycle — the pulse still fires, only
+                # its attribution is the prior cycle's. Edge-only (single-entity
+                # reached event confirms+pops in ~100ms); carry a cycle-id on the
+                # pending entry if that attribution ever needs to be exact.
                 self._arm_verify(entity_id, trigger_context_id)
 
         # Pick the post-enforce status once and emit a single _set_status so the
