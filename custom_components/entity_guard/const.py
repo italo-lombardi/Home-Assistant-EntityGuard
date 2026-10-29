@@ -146,12 +146,15 @@ RECENTLY_ENFORCED_WINDOW_SECONDS = 30
 ENFORCE_TIMEOUT_SECONDS = 30
 
 # Verify-after-enforce (opt-in, per-rule, state modes only). After a successful
-# enforce, re-read the target after VERIFY_DELAY_SECONDS; if it never actually
-# reached the desired state (a device that accepted the command but silently
-# ignored it — no state_changed event, so the reactive model never re-enforces),
-# issue up to VERIFY_MAX_ATTEMPTS corrective re-enforces. VERIFY_DELAY floors above
-# Zigbee/cloud readback latency (1-3s) so a still-settling device is not misread as
-# "not reached". Module consts, hardware-tuned, tunable without a schema change.
+# enforce the happy path confirms on the target's own state-change ACK (the
+# reactive listener fires the instant it reaches desired, ~100ms after enforce);
+# VERIFY_DELAY_SECONDS is the DEADLINE, not a dwell — the fallback for a device
+# that accepted the command but silently ignored it (no state_changed event, so
+# the event-driven confirm never lands). On deadline-with-no-ACK the engine
+# issues up to VERIFY_MAX_ATTEMPTS corrective re-enforces. The deadline floors
+# above Zigbee/cloud readback latency (1-3s) so a still-settling device is not
+# misread as "not reached". Module consts, hardware-tuned, tunable without a
+# schema change.
 VERIFY_DELAY_SECONDS = 5
 VERIFY_MAX_ATTEMPTS = 2
 

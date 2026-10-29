@@ -4802,11 +4802,12 @@ async def test_verify_real_event_resets_attempt_count(hass: HomeAssistant):
     assert "light.bedroom" not in engine._verify_attempts
 
 
-async def test_verify_kept_armed_when_target_reaches_desired(hass: HomeAssistant):
-    """The target's own post-enforce move TO the desired state must NOT cancel the
-    in-flight verify — that event lands before the 5 s re-read, and cancelling it
-    would make EVENT_VERIFIED / the verified sensor unreachable on the happy path.
-    The latch clear + counter resets still happen."""
+async def test_verify_confirmed_on_target_reach_event(hass: HomeAssistant):
+    """The target's own post-enforce move TO the desired state is the ACK: a
+    reached-desired event with a pending verify CONFIRMS NOW (event-driven happy
+    path) — cancels the deadline timer and fires EVENT_VERIFIED immediately
+    instead of waiting the full 5 s. The latch clear + counter resets still
+    happen. attempts == stale _verify_attempts + 1 (here 1 → 2)."""
     engine = _make_engine(hass, _verify_config())  # trigger "on", desired "off"
     engine._startup_complete = True
     engine._unreachable.add("light.bedroom")
@@ -4814,17 +4815,77 @@ async def test_verify_kept_armed_when_target_reaches_desired(hass: HomeAssistant
     engine._consecutive_exhaustions["light.bedroom"] = 2
     pending = MagicMock()
     engine._pending_verifications["light.bedroom"] = pending
+    # _confirm_verified → _apply_idle_status re-reads live state; make it consistent.
+    hass.states.async_set("light.bedroom", "off")
+
+    events = []
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: events.append(e))
 
     event = MagicMock()
     event.data = {"entity_id": "light.bedroom", "new_state": _state("off")}  # desired
     event.context = MagicMock(id="ctx-1")
     engine._handle_state_event(event)
+    await hass.async_block_till_done()
 
-    # Verify left armed (its re-read confirms), but transient markers cleared.
-    assert engine._pending_verifications.get("light.bedroom") is pending
+    # Deadline timer cancelled (handle called, pending popped) and confirmed now.
+    pending.assert_called_once()
+    assert "light.bedroom" not in engine._pending_verifications
+    assert len(events) == 1
+    assert events[0].data["attempts"] == 2  # stale 1 + 1
+    assert engine.is_recently_enforced_verified() is True
+    # Transient markers cleared.
     assert "light.bedroom" not in engine._unreachable
     assert "light.bedroom" not in engine._verify_attempts
     assert "light.bedroom" not in engine._consecutive_exhaustions
+
+
+async def test_verify_event_confirm_ignored_when_no_pending(hass: HomeAssistant):
+    """A reached-desired event with NO pending verify must not fire EVENT_VERIFIED
+    (nothing to confirm) and must not crash — the `pending` gate protects it."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "off")
+
+    events = []
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: events.append(e))
+
+    event = MagicMock()
+    event.data = {"entity_id": "light.bedroom", "new_state": _state("off")}
+    event.context = MagicMock(id="ctx-1")
+    engine._handle_state_event(event)
+    await hass.async_block_till_done()
+
+    assert events == []
+
+
+async def test_verify_event_confirm_dropped_when_suppressed_mid_window(
+    hass: HomeAssistant,
+):
+    """A reached-desired event while the rule is suppressed mid-window must NOT
+    confirm (mirrors the timer's suppressed drop): no EVENT_VERIFIED, the attempt
+    count is abandoned, and the deadline timer stays armed as the safety net."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    engine._verify_attempts["light.bedroom"] = 1
+    pending = MagicMock()
+    engine._pending_verifications["light.bedroom"] = pending
+    engine._state.suppressed_until = dt_util.now() + timedelta(minutes=5)
+    hass.states.async_set("light.bedroom", "off")
+
+    events = []
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: events.append(e))
+
+    event = MagicMock()
+    event.data = {"entity_id": "light.bedroom", "new_state": _state("off")}
+    event.context = MagicMock(id="ctx-1")
+    engine._handle_state_event(event)
+    await hass.async_block_till_done()
+
+    assert events == []  # dropped, not confirmed
+    assert "light.bedroom" not in engine._verify_attempts  # superseded count dropped
+    # Timer still armed (not cancelled) — it is the safety net that resolves on fire.
+    assert engine._pending_verifications.get("light.bedroom") is pending
+    pending.assert_not_called()
 
 
 async def test_verify_cancelled_when_target_offline(hass: HomeAssistant):
@@ -4842,7 +4903,46 @@ async def test_verify_cancelled_when_target_offline(hass: HomeAssistant):
     assert "light.bedroom" not in engine._pending_verifications
 
 
-async def test_verify_unreachable_marker_blocks_rearm(hass: HomeAssistant):
+async def test_verify_event_confirm_fires_once_and_cancels_timer(hass: HomeAssistant):
+    """Event-driven confirm fires EVENT_VERIFIED exactly once and neutralises the
+    deadline timer: a reached event confirms, then firing the (now-stale) captured
+    timer cb must NOT emit a second EVENT_VERIFIED (the _fire identity guard returns
+    early once its handle has been popped by the event site's cancel)."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    events = []
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: events.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        if delay == 5:  # VERIFY_DELAY_SECONDS — not the recently_enforced pulse timer
+            engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        assert "light.bedroom" in engine._pending_verifications  # armed
+        # Target's own post-enforce ACK reaches desired → event-driven confirm.
+        hass.states.async_set("light.bedroom", "off")
+        event = MagicMock()
+        event.data = {"entity_id": "light.bedroom", "new_state": _state("off")}
+        event.context = MagicMock(id="ctx-1")
+        engine._handle_state_event(event)
+        await hass.async_block_till_done()
+        # Fire the captured deadline cb ANYWAY (in prod the cancel prevents this;
+        # here we force it directly — the handle is already popped, so
+        # _run_verify_timer's pending assert would trip) — the stale-fire guard
+        # must suppress a second confirm.
+        engine._test_verify_cb(dt_util.now())
+        await hass.async_block_till_done()
+
+    assert len(events) == 1  # confirmed once, no double-fire
+    assert events[0].data["attempts"] == 1
+    assert "light.bedroom" not in engine._pending_verifications
     """The transient _unreachable double-arm marker suppresses a fresh verify on an
     enforce while it is set (it is dropped on re-entry / cleared on recovery)."""
     engine = _make_engine(hass, _verify_config())
@@ -5021,7 +5121,9 @@ async def test_status_verifying_while_verify_pending(hass: HomeAssistant):
 
 async def test_status_leaves_verifying_when_reached(hass: HomeAssistant):
     """When the verify fires and the target is compliant, status resolves off
-    VERIFYING back to the real idle status (ARMED here, no cooldown)."""
+    VERIFYING back to the real idle status (ARMED here, no cooldown). Fires the
+    timer directly (no state_changed dispatch), so this now covers the DEADLINE
+    FALLBACK confirm path (routes through _confirm_verified), not the event one."""
     engine = _make_engine(hass, _verify_config())
     engine._startup_complete = True
     hass.services.async_register("light", "turn_off", lambda c: None)
