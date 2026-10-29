@@ -181,17 +181,13 @@ class EntityGuardPendingSensor(EntityGuardBinarySensor):
         return bool(self._engine.is_pending())
 
 
-class EntityGuardRecentlyEnforcedSensor(EntityGuardBinarySensor):
-    """Binary sensor that stays ON for 30 seconds after any enforcement."""
+class EntityGuardRecentlyEnforcedBase(EntityGuardBinarySensor):
+    """Base for the recently-enforced pulse sensors.
 
-    def __init__(self, entry: ConfigEntry, engine: RuleEngine) -> None:
-        """Initialize the recently enforced sensor."""
-        super().__init__(entry, engine, "recently_enforced", "recently_enforced")
-
-    @property
-    def is_on(self) -> bool:
-        """Return True if enforcement fired within the last 30 seconds."""
-        return bool(self._engine.is_recently_enforced())
+    Exposes rule context (name, targets, desired state, delay) as attributes so
+    automations can build notifications from any of the three pulse sensors —
+    recently_enforced, recently_enforced_verified, recently_enforced_unreachable.
+    """
 
     @property
     def extra_state_attributes(self) -> dict[str, object]:
@@ -218,7 +214,20 @@ class EntityGuardRecentlyEnforcedSensor(EntityGuardBinarySensor):
         }
 
 
-class EntityGuardRecentlyEnforcedVerifiedSensor(EntityGuardBinarySensor):
+class EntityGuardRecentlyEnforcedSensor(EntityGuardRecentlyEnforcedBase):
+    """Binary sensor that stays ON for 30 seconds after any enforcement."""
+
+    def __init__(self, entry: ConfigEntry, engine: RuleEngine) -> None:
+        """Initialize the recently enforced sensor."""
+        super().__init__(entry, engine, "recently_enforced", "recently_enforced")
+
+    @property
+    def is_on(self) -> bool:
+        """Return True if enforcement fired within the last 30 seconds."""
+        return bool(self._engine.is_recently_enforced())
+
+
+class EntityGuardRecentlyEnforcedVerifiedSensor(EntityGuardRecentlyEnforcedBase):
     """ON for 30 seconds after a verify-CONFIRMED enforcement.
 
     Created only while verify is enabled (see async_setup_entry). The clean
@@ -241,7 +250,7 @@ class EntityGuardRecentlyEnforcedVerifiedSensor(EntityGuardBinarySensor):
         return bool(self._engine.is_recently_enforced_verified())
 
 
-class EntityGuardRecentlyEnforcedUnreachableSensor(EntityGuardBinarySensor):
+class EntityGuardRecentlyEnforcedUnreachableSensor(EntityGuardRecentlyEnforcedBase):
     """ON for 30 seconds after a verify-EXHAUSTED enforcement failure.
 
     Created only while verify is enabled (see async_setup_entry). The failure
