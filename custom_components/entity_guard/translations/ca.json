@@ -193,7 +193,7 @@
           "edit_mode": "Edita la configuració específica del mode",
           "edit_entities": "Afegeix o elimina entitats objectiu",
           "edit_flags": "Edita les condicions de les banderes",
-          "edit_advanced": "Edita l'antirebot i el límit de freqüència"
+          "edit_advanced": "Edita la verificació, l'antirebot i el límit de freqüència"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Finestra en segons. Mín. 0, màx. 86400 (24 h).",
           "rate_limit_enabled": "Marqueu per mantenir activada la protecció contra bucles (recomanat). Desmarqueu per desactivar-la per a aquesta regla — els bucles descontrolats no s'aturaran automàticament.",
           "max_enforcements_per_minute": "Quantes aplicacions per minut es permeten abans que la regla se suprimeixi automàticament durant 15 minuts. Mín. 1, màx. 600. S'ignora quan la protecció contra bucles està desmarcada a dalt.",
-          "verify_enabled": "Marqueu-ho per tornar a comprovar l'objectiu uns segons després d'aplicar-hi l'estat i continuar aplicant-la fins que assoleixi l'estat desitjat si el dispositiu ha acceptat l'ordre però en realitat no ha canviat mai. Si un objectiu no es recupera mai, la protecció contra bucles el suprimeix automàticament i després ho torna a intentar. Només es mostra per a les regles en mode d'estat."
+          "verify_enabled": "Marqueu-ho per confirmar que l'objectiu ha assolit realment l'estat desitjat després d'aplicar-l'hi. La regla vigila el canvi d'estat propi del dispositiu (normalment en un segon) i continua tornant a aplicar-lo fins que hi arriba si l'ordre s'ha acceptat però res no ha canviat; un termini d'uns segons fa de xarxa de seguretat per a un dispositiu silenciós. Un objectiu que no es recupera mai queda suprimit automàticament per la protecció contra bucles i després es torna a intentar. Només es mostra per a les regles en mode d'estat."
         }
       },
       "edit_attribute_params": {

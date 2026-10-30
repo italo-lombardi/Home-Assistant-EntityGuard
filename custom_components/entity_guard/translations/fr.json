@@ -193,7 +193,7 @@
           "edit_mode": "Modifier les paramètres spécifiques au mode",
           "edit_entities": "Ajouter ou supprimer des entités cibles",
           "edit_flags": "Modifier les conditions",
-          "edit_advanced": "Modifier l'anti-rebond et la limite de fréquence"
+          "edit_advanced": "Modifier la vérification, l'anti-rebond et la limite de fréquence"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Fenêtre en secondes. Min 0, max 86400 (24 h).",
           "rate_limit_enabled": "Cochez pour conserver la protection anti-boucle activée (recommandé). Décochez pour la désactiver pour cette règle — les boucles incontrôlées ne seront pas arrêtées automatiquement.",
           "max_enforcements_per_minute": "Combien d'applications par minute sont autorisées avant que la règle ne s'auto-supprime pendant 15 minutes. Min 1, max 600. Ignoré si la protection anti-boucle est décochée ci-dessus.",
-          "verify_enabled": "Cochez pour revérifier la cible quelques secondes après l'application et continuer de réappliquer jusqu'à ce qu'elle atteigne l'état souhaité si l'appareil a accepté la commande mais n'a en réalité jamais changé. Une cible qui ne se rétablit jamais est automatiquement suspendue par la protection anti-boucle, puis réessayée. Affiché uniquement pour les règles en mode État."
+          "verify_enabled": "Cochez pour confirmer que la cible a réellement atteint l'état souhaité après l'application. La règle surveille le propre changement d'état de l'appareil (généralement en une seconde) et continue de réappliquer jusqu'à ce qu'il soit atteint si la commande a été acceptée mais que rien n'a changé ; un délai limite de quelques secondes sert de filet de sécurité pour un appareil silencieux. Une cible qui ne se rétablit jamais est automatiquement suspendue par la protection anti-boucle, puis réessayée. Affiché uniquement pour les règles en mode État."
         }
       },
       "edit_attribute_params": {

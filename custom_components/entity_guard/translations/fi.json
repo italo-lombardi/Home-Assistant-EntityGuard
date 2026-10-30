@@ -193,7 +193,7 @@
           "edit_mode": "Muokkaa tilakohtaisia asetuksia",
           "edit_entities": "Lisää tai poista kohdeentiteettejä",
           "edit_flags": "Muokkaa ehtoja",
-          "edit_advanced": "Muokkaa viivevakautusta ja nopeusrajaa"
+          "edit_advanced": "Muokkaa vahvistusta, viivevakautusta ja nopeusrajaa"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Ikkuna sekunteina. Vähintään 0, enintään 86400 (24 h).",
           "rate_limit_enabled": "Valitse pitääksesi silmukkasuojauksen päällä (suositeltavaa). Poista valinta poistaaksesi sen käytöstä tälle säännölle — karkaavia silmukoita ei pysäytetä automaattisesti.",
           "max_enforcements_per_minute": "Kuinka monta valvontatoimenpidettä minuutissa sallitaan ennen kuin sääntö estää itsensä automaattisesti 15 minuutiksi. Vähintään 1, enintään 600. Ohitetaan, kun silmukkasuojaus on yllä valitsematta.",
-          "verify_enabled": "Valitse tarkistaaksesi kohteen uudelleen muutama sekunti pakotuksen jälkeen ja jatkaaksesi pakottamista, kunnes kohde saavuttaa halutun tilan, jos laite hyväksyi komennon mutta ei todellisuudessa muuttunut. Jos kohde ei koskaan palaudu, silmukkasuojaus estää säännön automaattisesti, minkä jälkeen yritystä jatketaan. Näytetään vain tilatilan säännöille."
+          "verify_enabled": "Valitse varmistaaksesi, että kohde todella saavutti halutun tilan pakotuksen jälkeen. Sääntö tarkkailee laitteen omaa tilan muutosta (yleensä sekunnin sisällä) ja jatkaa pakottamista, kunnes kohde saavuttaa tilan, jos laite hyväksyi komennon mutta mikään ei muuttunut; muutaman sekunnin määräaika toimii varmistuksena hiljaiselle laitteelle. Jos kohde ei koskaan palaudu, silmukkasuojaus estää sen automaattisesti, minkä jälkeen yritystä jatketaan. Näytetään vain tilatilan säännöille."
         }
       },
       "edit_attribute_params": {

@@ -193,7 +193,7 @@
           "edit_mode": "Editează setările specifice modului",
           "edit_entities": "Adaugă sau elimină entități țintă",
           "edit_flags": "Editează condițiile",
-          "edit_advanced": "Editează debounce și limita de rată"
+          "edit_advanced": "Editează verificarea, debounce și limita de rată"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Fereastră în secunde. Minim 0, maxim 86400 (24h).",
           "rate_limit_enabled": "Bifați pentru a menține activă protecția împotriva buclelor (recomandat). Debifați pentru a o dezactiva pentru această regulă — buclele scăpate de sub control nu vor fi oprite automat.",
           "max_enforcements_per_minute": "Câte impuneri pe minut sunt permise înainte ca regula să se suprime automat timp de 15 minute. Minim 1, maxim 600. Ignorat când protecția împotriva buclelor este debifată mai sus.",
-          "verify_enabled": "Bifați pentru a reverifica ținta la câteva secunde după impunere și a continua impunerea până când ajunge la starea dorită, dacă dispozitivul a acceptat comanda, dar nu s-a modificat efectiv. O țintă care nu se recuperează niciodată este suprimată automat de protecția împotriva buclelor, apoi este reîncercată. Se afișează doar pentru regulile în mod stare."
+          "verify_enabled": "Bifați pentru a confirma că ținta a ajuns efectiv la starea dorită după impunere. Regula urmărește propria schimbare de stare a dispozitivului (de obicei într-o secundă) și continuă să impună până când ajunge la stare, dacă dispozitivul a acceptat comanda, dar nu s-a modificat efectiv; un termen-limită de câteva secunde servește drept plasă de siguranță pentru un dispozitiv care nu raportează nimic. O țintă care nu se recuperează niciodată este suprimată automat de protecția împotriva buclelor, apoi este reîncercată. Se afișează doar pentru regulile în mod stare."
         }
       },
       "edit_attribute_params": {

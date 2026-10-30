@@ -193,7 +193,7 @@
           "edit_mode": "Redaguoti režimui būdingus nustatymus",
           "edit_entities": "Pridėti arba pašalinti tikslines esybes",
           "edit_flags": "Redaguoti vėliavų sąlygas",
-          "edit_advanced": "Redaguoti nutildymą ir dažnio ribą"
+          "edit_advanced": "Redaguoti patikrą, nutildymą ir dažnio ribą"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Langas sekundėmis. Mažiausia 0, daugiausia 86400 (24 val.).",
           "rate_limit_enabled": "Pažymėkite, kad ciklo apsauga liktų įjungta (rekomenduojama). Nuimkite žymėjimą, kad išjungtumėte ją šiai taisyklei — nekontroliuojami ciklai nebus automatiškai sustabdyti.",
           "max_enforcements_per_minute": "Kiek taikymų per minutę leidžiama prieš taisyklei automatiškai susislopinant 15 minučių. Mažiausia 1, daugiausia 600. Ignoruojama, kai ciklo apsauga aukščiau nepažymėta.",
-          "verify_enabled": "Pažymėkite, kad tikslas būtų pakartotinai patikrintas praėjus kelioms sekundėms po taikymo ir kad taikymas būtų kartojamas tol, kol tikslas pasieks norimą būseną, jei įrenginys priėmė komandą, bet iš tikrųjų nepasikeitė. Jei tikslas niekaip neatsigauna, ciklo apsauga jį automatiškai susislopina, o paskui bando iš naujo. Rodoma tik būsenos režimo taisyklėms."
+          "verify_enabled": "Pažymėkite, kad patvirtintumėte, jog tikslas po taikymo tikrai pasiekė norimą būseną. Taisyklė laukia paties įrenginio būsenos pasikeitimo (paprastai per sekundę) ir, jei komanda buvo priimta, bet niekas nepasikeitė, kartoja taikymą tol, kol būsena nusistovi; kelių sekundžių terminas yra tik atsarginė riba tyliam įrenginiui, o ne privalomas laukimas. Tikslą, kuris niekaip neatsigauna, ciklo apsauga automatiškai susislopina, o paskui bando iš naujo. Rodoma tik būsenos režimo taisyklėms."
         }
       },
       "edit_attribute_params": {

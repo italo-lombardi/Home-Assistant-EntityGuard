@@ -193,7 +193,7 @@
           "edit_mode": "Upraviť nastavenia špecifické pre režim",
           "edit_entities": "Pridať alebo odstrániť cieľové entity",
           "edit_flags": "Upraviť podmienky príznakov",
-          "edit_advanced": "Upraviť potlačenie zákmitov a limit rýchlosti"
+          "edit_advanced": "Upraviť overenie, potlačenie zákmitov a limit rýchlosti"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Okno v sekundách. Min 0, max 86400 (24 h).",
           "rate_limit_enabled": "Začiarknite pre ponechanie ochrany proti slučkám zapnutej (odporúčané). Zrušte začiarknutie pre jej vypnutie pre toto pravidlo — nekontrolovateľné slučky nebudú automaticky zastavené.",
           "max_enforcements_per_minute": "Koľko vynútení za minútu je povolených predtým, ako sa pravidlo automaticky potlačí na 15 minút. Min 1, max 600. Ignoruje sa, keď je ochrana proti slučkám vyššie nezačiarknutá.",
-          "verify_enabled": "Začiarknite pre opätovnú kontrolu cieľa pár sekúnd po vynútení a pokračovanie vo vynucovaní, kým nedosiahne požadovaný stav, ak zariadenie prijalo príkaz, no v skutočnosti sa nikdy nezmenilo. Cieľ, ktorý sa nikdy neobnoví, ochrana proti slučkám automaticky potlačí a potom to skúsi znova. Zobrazuje sa iba pri pravidlách v stavovom režime."
+          "verify_enabled": "Začiarknite pre potvrdenie, že cieľ po vynútení naozaj dosiahol požadovaný stav. Pravidlo sleduje vlastnú zmenu stavu zariadenia (zvyčajne do sekundy) a pokračuje vo vynucovaní, kým sa stav neusadí, ak zariadenie príkaz prijalo, no nič sa nezmenilo; niekoľkosekundový termín slúži len ako záchranná poistka pre mlčanlivé zariadenie. Cieľ, ktorý sa nikdy neobnoví, ochrana proti slučkám automaticky potlačí a potom to skúsi znova. Zobrazuje sa iba pri pravidlách v stavovom režime."
         }
       },
       "edit_attribute_params": {

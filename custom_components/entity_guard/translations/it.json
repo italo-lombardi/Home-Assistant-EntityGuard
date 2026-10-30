@@ -193,7 +193,7 @@
           "edit_mode": "Modifica impostazioni specifiche della modalità",
           "edit_entities": "Aggiungi o rimuovi entità di destinazione",
           "edit_flags": "Modifica condizioni",
-          "edit_advanced": "Modifica debounce e limite di frequenza"
+          "edit_advanced": "Modifica verifica, debounce e limite di frequenza"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Finestra in secondi. Min 0, max 86400 (24h).",
           "rate_limit_enabled": "Seleziona per mantenere attiva la protezione anti-loop (consigliato). Deseleziona per disabilitarla per questa regola — i loop incontrollati non verranno fermati automaticamente.",
           "max_enforcements_per_minute": "Quante applicazioni al minuto sono consentite prima che la regola venga auto-soppressa per 15 minuti. Min 1, max 600. Ignorato quando la protezione anti-loop è deselezionata sopra.",
-          "verify_enabled": "Seleziona per ricontrollare la destinazione alcuni secondi dopo l'applicazione e continuare a riapplicarla finché non raggiunge lo stato desiderato, se il dispositivo ha accettato il comando ma non è mai cambiato davvero. Una destinazione che non si riprende mai viene sospesa automaticamente dalla protezione anti-loop, poi viene riprovata. Mostrato solo per le regole in modalità Stato."
+          "verify_enabled": "Seleziona per confermare che la destinazione abbia effettivamente raggiunto lo stato desiderato dopo l'applicazione. La regola osserva il cambiamento di stato del dispositivo stesso (di solito entro un secondo) e continua a riapplicare finché non lo raggiunge, se il comando è stato accettato ma nulla è cambiato; una scadenza di alcuni secondi fa da rete di sicurezza per un dispositivo che resta silenzioso. Una destinazione che non si riprende mai viene sospesa automaticamente dalla protezione anti-loop, poi viene riprovata. Mostrato solo per le regole in modalità Stato."
         }
       },
       "edit_attribute_params": {

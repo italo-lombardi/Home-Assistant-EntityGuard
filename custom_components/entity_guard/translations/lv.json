@@ -193,7 +193,7 @@
           "edit_mode": "Rediģēt režīmam specifiskos iestatījumus",
           "edit_entities": "Pievienot vai noņemt mērķa entītijas",
           "edit_flags": "Rediģēt karodziņu nosacījumus",
-          "edit_advanced": "Rediģēt atsitiena novēršanu un biežuma ierobežojumu"
+          "edit_advanced": "Rediģēt pārbaudi, atsitiena novēršanu un biežuma ierobežojumu"
         }
       },
       "edit_basics": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Logs sekundēs. Min. 0, maks. 86400 (24 h).",
           "rate_limit_enabled": "Atzīmējiet, lai saglabātu cilpu aizsardzību ieslēgtu (ieteicams). Noņemiet atzīmi, lai to atspējotu šim noteikumam — nekontrolētas cilpas netiks automātiski apturētas.",
           "max_enforcements_per_minute": "Cik piemērošanu minūtē ir atļautas, pirms noteikums automātiski tiek apturēts uz 15 minūtēm. Min. 1, maks. 600. Ignorēts, kad cilpu aizsardzība iepriekš nav atzīmēta.",
-          "verify_enabled": "Atzīmējiet, lai dažas sekundes pēc piemērošanas vēlreiz pārbaudītu mērķi un turpinātu piemērot atkārtoti, līdz tas sasniedz vēlamo stāvokli, ja ierīce pieņēma komandu, bet patiesībā nekad nemainījās. Mērķis, kas nekad neatveseļojas, tiek automātiski apturēts ar cilpu aizsardzību un pēc tam atkal mēģināts. Tiek rādīts tikai stāvokļa režīma noteikumiem."
+          "verify_enabled": "Atzīmējiet, lai apstiprinātu, ka mērķis patiešām sasniedza vēlamo stāvokli pēc piemērošanas. Noteikums gaida pašas ierīces stāvokļa maiņu (parasti sekundes laikā) un, ja komanda tika pieņemta, bet nekas nemainījās, turpina piemērot atkārtoti, līdz mērķis sasniedz stāvokli; dažu sekunžu termiņš kalpo tikai kā rezerves aizsardzība klusai ierīcei. Mērķis, kas nekad neatveseļojas, tiek automātiski apturēts ar cilpu aizsardzību un pēc tam atkal mēģināts. Tiek rādīts tikai stāvokļa režīma noteikumiem."
         }
       },
       "edit_attribute_params": {
