@@ -299,9 +299,13 @@ class RuleEngine:
         # self-heal counters. What it does to an in-flight verify depends on WHERE it
         # moved: a move that reached desired IS the success the verify was armed to
         # confirm — so when a verify is pending and the target reached desired we
-        # CONFIRM NOW (the target's own post-enforce off→on event lands ~100ms after
-        # enforce, long before the 5 s deadline), collapsing the old blind dwell to
-        # device latency. A move still OFF desired (or offline/unknown) is a genuine
+        # CONFIRM NOW. This is the confirm route for a target whose ACK lands just
+        # AFTER the enforce call returned (the enforce tail's synchronous fast-read
+        # already saw not-reached and armed this listener); the event lands well
+        # before the 5 s deadline, collapsing the old blind dwell to device latency.
+        # A responsive blocking=True target instead commits its state DURING the
+        # call and is confirmed in-tick by the enforce tail — never reaching here.
+        # A move still OFF desired (or offline/unknown) is a genuine
         # away-move that makes the in-flight cycle stale: cancel it, the reactive path
         # re-evaluates. (Offline/unknown counts as not-reached so we never confirm on
         # a vanished target — the timer's _verify_reached must not be the only guard.)
