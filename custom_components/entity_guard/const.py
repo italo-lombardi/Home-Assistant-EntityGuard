@@ -146,14 +146,17 @@ RECENTLY_ENFORCED_WINDOW_SECONDS = 30
 ENFORCE_TIMEOUT_SECONDS = 30
 
 # Verify-after-enforce (opt-in, per-rule, state modes only). After a successful
-# enforce the happy path confirms on the target's own state-change ACK (the
-# reactive listener fires the instant it reaches desired, ~100ms after enforce);
-# VERIFY_DELAY_SECONDS is the DEADLINE, not a dwell — the fallback for a device
-# that accepted the command but silently ignored it (no state_changed event, so
-# the event-driven confirm never lands). On deadline-with-no-ACK the engine
-# issues up to VERIFY_MAX_ATTEMPTS corrective re-enforces. The deadline floors
-# above Zigbee/cloud readback latency (1-3s) so a still-settling device is not
-# misread as "not reached". Module consts, hardware-tuned, tunable without a
+# enforce the happy path confirms WITHOUT waiting out the deadline, via two
+# same-cycle routes: (a) a responsive blocking=True target commits its new state
+# DURING the service call, so the enforce tail's synchronous re-read sees it
+# already reached and confirms in that same tick; (b) a target whose ACK arrives
+# slightly later fires a state_changed the reactive listener catches the instant
+# it reaches desired. VERIFY_DELAY_SECONDS is the DEADLINE, not a dwell — the
+# fallback for a device that accepted the command but silently ignored it (no
+# state_changed, so neither same-cycle route lands). On deadline-with-no-ACK the
+# engine issues up to VERIFY_MAX_ATTEMPTS corrective re-enforces. The deadline
+# floors above Zigbee/cloud readback latency (1-3s) so a still-settling device is
+# not misread as "not reached". Module consts, hardware-tuned, tunable without a
 # schema change.
 VERIFY_DELAY_SECONDS = 5
 VERIFY_MAX_ATTEMPTS = 2
@@ -363,6 +366,15 @@ EVENT_VERIFIED = "entity_guard_enforced_verified"
 # same count==1 boundary as the skipped event, so a dead device doesn't flood
 # the bus. A recovery resets the streak, so a later death re-fires.
 EVENT_UNREACHABLE = "entity_guard_enforced_unreachable"
+# The neutral sibling of EVENT_VERIFIED (success) and EVENT_UNREACHABLE (device
+# failure). Fired only when verify is enabled, when an armed verify cycle is
+# ABANDONED before any verdict because an external condition changed mid-window —
+# the rule was disabled, the master switch went off, the rule was suppressed, or
+# its conditional flags went unmet. NOT a device fault (the target may already be
+# at desired) and NOT a success. One pulse per abandoned cycle, at drop time.
+# Deliberately NOT fired on integration unload (the entry is tearing down; the
+# 30s pulse timer would be cancelled immediately and listeners are going away).
+EVENT_CANCELLED = "entity_guard_enforced_cancelled"
 
 # Services
 SERVICE_SUPPRESS = "suppress"

@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Recentemente aplicada (inacessível)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Recentemente aplicada (abandonada)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Regra detetou um ciclo de aplicação",
       "verified": "Regra verificou que um alvo atingiu o estado pretendido",
       "unreachable": "Regra não conseguiu que um alvo atingisse o estado pretendido",
+      "cancelled": "Regra abandonou um ciclo de verificação (a condição mudou)",
       "suppressed": "Regra suprimiu a aplicação (proteção contra ciclos)"
     }
   }

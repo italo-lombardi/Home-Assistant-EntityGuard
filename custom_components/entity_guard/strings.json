@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Recently enforced (unreachable)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Recently enforced (cancelled)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Rule detected an enforcement loop",
       "verified": "Rule verified a target reached the desired state",
       "unreachable": "Rule could not make a target reach the desired state",
+      "cancelled": "Rule abandoned a verify cycle (condition changed)",
       "suppressed": "Rule suppressed enforcement (loop protection)"
     }
   }

@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "最近已強制執行（無法到達）"
+      },
+      "recently_enforced_cancelled": {
+        "name": "最近已強制執行（已放棄）"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "規則偵測到強制執行迴圈",
       "verified": "規則已確認目標達到所需狀態",
       "unreachable": "規則無法使目標達到所需狀態",
+      "cancelled": "規則已放棄一次驗證循環（條件已改變）",
       "suppressed": "規則已抑制強制執行（迴圈保護）"
     }
   }

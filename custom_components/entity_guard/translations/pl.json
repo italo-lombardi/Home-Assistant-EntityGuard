@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Niedawno wymuszone (nieosiągalne)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Niedawno wymuszone (porzucone)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Reguła wykryła pętlę wymuszania",
       "verified": "Reguła potwierdziła, że cel osiągnął żądany stan",
       "unreachable": "Reguła nie zdołała doprowadzić celu do żądanego stanu",
+      "cancelled": "Reguła porzuciła cykl weryfikacji (zmienił się warunek)",
       "suppressed": "Reguła wstrzymała wymuszanie (ochrona przed pętlami)"
     }
   }

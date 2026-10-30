@@ -12,6 +12,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.entity_guard.const import (
     DOMAIN,
+    EVENT_CANCELLED,
     EVENT_ENFORCED,
     EVENT_SUPPRESSED,
     EVENT_UNREACHABLE,
@@ -37,7 +38,7 @@ def _rule_device(hass: HomeAssistant, unique_id: str = "rule-uuid-1"):
     return entry, dev
 
 
-async def test_get_triggers_lists_all_six_for_a_rule(hass: HomeAssistant) -> None:
+async def test_get_triggers_lists_all_seven_for_a_rule(hass: HomeAssistant) -> None:
     _entry, dev = _rule_device(hass)
     triggers = await async_get_triggers(hass, dev.id)
     types = {t[CONF_TYPE] for t in triggers}
@@ -47,6 +48,7 @@ async def test_get_triggers_lists_all_six_for_a_rule(hass: HomeAssistant) -> Non
         "loop_detected",
         "verified",
         "unreachable",
+        "cancelled",
         "suppressed",
     }
     for t in triggers:
@@ -122,6 +124,7 @@ async def test_attach_trigger_fires_on_the_rules_event(hass: HomeAssistant) -> N
     [
         ("verified", EVENT_VERIFIED),
         ("unreachable", EVENT_UNREACHABLE),
+        ("cancelled", EVENT_CANCELLED),
         ("suppressed", EVENT_SUPPRESSED),
     ],
 )

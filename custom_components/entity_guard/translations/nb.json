@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Nylig håndhevet (utilgjengelig)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Nylig håndhevet (forlatt)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Regel oppdaget en håndhevingsløkke",
       "verified": "Regel bekreftet at et mål nådde ønsket tilstand",
       "unreachable": "Regel klarte ikke å få et mål til ønsket tilstand",
+      "cancelled": "Regel forlot en verifiseringssyklus (betingelse endret seg)",
       "suppressed": "Regel undertrykte håndheving (løkkevern)"
     }
   }

@@ -1,7 +1,7 @@
 """Device-automation triggers for Entity Guard.
 
 Exposes each rule's events — enforced / skipped / loop-detected / verified /
-unreachable / suppressed — as visual device triggers in the Home Assistant
+unreachable / cancelled / suppressed — as visual device triggers in the Home Assistant
 automation editor, so a user can build "When [rule] enforced → notify me"
 without hand-typing an `event` trigger.
 
@@ -33,6 +33,7 @@ from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     DOMAIN,
+    EVENT_CANCELLED,
     EVENT_ENFORCED,
     EVENT_LOOP_DETECTED,
     EVENT_SKIPPED,
@@ -49,6 +50,7 @@ TRIGGER_TYPE_EVENT = {
     "loop_detected": EVENT_LOOP_DETECTED,
     "verified": EVENT_VERIFIED,
     "unreachable": EVENT_UNREACHABLE,
+    "cancelled": EVENT_CANCELLED,
     "suppressed": EVENT_SUPPRESSED,
 }
 TRIGGER_TYPES = set(TRIGGER_TYPE_EVENT)

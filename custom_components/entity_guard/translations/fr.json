@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Récemment appliquée (injoignable)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Récemment appliquée (abandonnée)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "La règle a détecté une boucle d'application",
       "verified": "La règle a confirmé qu'une cible a atteint l'état souhaité",
       "unreachable": "La règle n'a pas pu faire atteindre l'état souhaité à une cible",
+      "cancelled": "La règle a abandonné une vérification (une condition a changé)",
       "suppressed": "La règle a suspendu l'application (protection anti-boucle)"
     }
   }

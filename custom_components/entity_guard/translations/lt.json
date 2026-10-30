@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Neseniai pritaikyta (nepasiekiama)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Neseniai pritaikyta (atmesta)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Taisyklė aptiko taikymo ciklą",
       "verified": "Taisyklė patvirtino, kad tikslas pasiekė norimą būseną",
       "unreachable": "Taisyklė nepajėgė priversti tikslą pasiekti norimos būsenos",
+      "cancelled": "Taisyklė atmetė patikros ciklą (pasikeitė sąlyga)",
       "suppressed": "Taisyklė sustabdė taikymą (ciklo apsauga)"
     }
   }

@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 from homeassistant.core import HomeAssistant
 
 from custom_components.entity_guard.const import (
+    EVENT_CANCELLED,
     EVENT_ENFORCED,
     EVENT_LOOP_DETECTED,
     EVENT_SKIPPED,
@@ -36,6 +37,7 @@ def test_async_describe_events_registers(hass: HomeAssistant):
     assert EVENT_SUPPRESSED in registered
     assert EVENT_VERIFIED in registered
     assert EVENT_UNREACHABLE in registered
+    assert EVENT_CANCELLED in registered
 
 
 def test_describe_enforced():
@@ -180,4 +182,37 @@ def test_describe_unreachable_fallbacks():
     result = registered[EVENT_UNREACHABLE](_make_event({"entity_id": "light.x"}))
     assert result["name"] == "Entity Guard"
     assert "light.x" in result["message"]
+    assert result["entity_id"] == "light.x"
+
+
+def test_describe_cancelled():
+    registered = {}
+    async_describe_events(MagicMock(), lambda d, e, f: registered.update({e: f}))
+    result = registered[EVENT_CANCELLED](
+        _make_event(
+            {
+                "rule_name": "My Rule",
+                "entity_id": "sensor.my_rule_status",
+                "target_entity_id": "light.bedroom",
+                "target": "off",
+                "reason": "flags_unmet",
+            }
+        )
+    )
+    assert result["name"] == "My Rule"
+    assert "cancelled" in result["message"]
+    assert "light.bedroom" in result["message"]
+    assert "off" in result["message"]
+    assert "flags_unmet" in result["message"]
+    assert result["entity_id"] == "sensor.my_rule_status"
+
+
+def test_describe_cancelled_fallbacks():
+    registered = {}
+    async_describe_events(MagicMock(), lambda d, e, f: registered.update({e: f}))
+    # no target_entity_id / target / reason / rule_name → fallbacks all apply.
+    result = registered[EVENT_CANCELLED](_make_event({"entity_id": "light.x"}))
+    assert result["name"] == "Entity Guard"
+    assert "light.x" in result["message"]
+    assert "condition changed" in result["message"]
     assert result["entity_id"] == "light.x"

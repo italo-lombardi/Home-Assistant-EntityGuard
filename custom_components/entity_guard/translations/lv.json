@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Nesen piemērots (nav sasniedzams)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Nesen piemērots (pārtraukts)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Noteikums konstatēja piemērošanas cilpu",
       "verified": "Noteikums pārbaudīja, ka mērķis sasniedza vēlamo stāvokli",
       "unreachable": "Noteikums piemēroja, bet mērķis nesasniedza vēlamo stāvokli",
+      "cancelled": "Noteikums pārtrauca pārbaudes ciklu (nosacījums mainījās)",
       "suppressed": "Noteikums apturēja piemērošanu (cilpu aizsardzība)"
     }
   }

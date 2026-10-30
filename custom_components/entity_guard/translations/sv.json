@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Nyligen tillämpad (oåtkomlig)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Nyligen tillämpad (övergiven)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Regel upptäckte en tillämpningsloop",
       "verified": "Regel verifierade att ett mål nådde önskat läge",
       "unreachable": "Regel kunde inte få ett mål att nå önskat läge",
+      "cancelled": "Regel övergav en verifieringscykel (villkor ändrades)",
       "suppressed": "Regel stoppade tillämpningen (loopskydd)"
     }
   }

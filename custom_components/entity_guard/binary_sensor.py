@@ -62,11 +62,13 @@ async def async_setup_entry(
     # listening to it sees an orderly "entity disabled" instead of a silently
     # dead trigger; OFF->ON re-enables. Reconcile here, on every (re)setup —
     # the options flow edits verify_enabled and reloads the entry, re-running us.
-    # The unreachable failure twin shares the same verify-only lifecycle.
+    # The unreachable failure twin and the cancelled abandoned-cycle twin share
+    # the same verify-only lifecycle.
     ent_reg = er.async_get(hass)
     for uid_suffix, sensor_cls in (
         ("recently_enforced_verified", EntityGuardRecentlyEnforcedVerifiedSensor),
         ("recently_enforced_unreachable", EntityGuardRecentlyEnforcedUnreachableSensor),
+        ("recently_enforced_cancelled", EntityGuardRecentlyEnforcedCancelledSensor),
     ):
         uid = f"{entry.entry_id}_{uid_suffix}"
         existing = ent_reg.async_get_entity_id("binary_sensor", DOMAIN, uid)
@@ -272,3 +274,29 @@ class EntityGuardRecentlyEnforcedUnreachableSensor(EntityGuardRecentlyEnforcedBa
     def is_on(self) -> bool:
         """Return True if a verify-exhausted failure fired in the last 30s."""
         return bool(self._engine.is_recently_enforced_unreachable())
+
+
+class EntityGuardRecentlyEnforcedCancelledSensor(EntityGuardRecentlyEnforcedBase):
+    """ON for 30 seconds after a verify cycle was ABANDONED mid-window.
+
+    Created only while verify is enabled (see async_setup_entry). The neutral
+    sibling of recently_enforced_verified (success) and _unreachable (device
+    failure): pulses when an armed verify cycle was dropped because an external
+    condition changed — the rule was disabled, master went off, the rule was
+    suppressed, or its conditional flags went unmet. Not a device fault (the
+    target may already be at desired), not a success — no verdict was reached.
+    """
+
+    def __init__(self, entry: ConfigEntry, engine: RuleEngine) -> None:
+        """Initialize the recently-enforced-cancelled sensor."""
+        super().__init__(
+            entry,
+            engine,
+            "recently_enforced_cancelled",
+            "recently_enforced_cancelled",
+        )
+
+    @property
+    def is_on(self) -> bool:
+        """Return True if a verify cycle was abandoned in the last 30s."""
+        return bool(self._engine.is_recently_enforced_cancelled())

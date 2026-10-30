@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Nedávno vynuceno (nedosažitelné)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Nedávno vynuceno (přerušeno)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Pravidlo zjistilo smyčku vynucení",
       "verified": "Pravidlo ověřilo, že cíl dosáhl požadovaného stavu",
       "unreachable": "Pravidlo nedokázalo přimět cíl dosáhnout požadovaného stavu",
+      "cancelled": "Pravidlo přerušilo ověřovací cyklus (změnila se podmínka)",
       "suppressed": "Pravidlo potlačilo vynucení (ochrana proti smyčkám)"
     }
   }

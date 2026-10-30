@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Recent toegepast (onbereikbaar)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Recent toegepast (afgebroken)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Regel heeft een afdwingingslus gedetecteerd",
       "verified": "Regel heeft bevestigd dat een doel de gewenste toestand heeft bereikt",
       "unreachable": "Regel kon een doel de gewenste toestand niet laten bereiken",
+      "cancelled": "Regel heeft een verificatiecyclus afgebroken (voorwaarde gewijzigd)",
       "suppressed": "Regel heeft afdwinging onderdrukt (lusbeveiliging)"
     }
   }

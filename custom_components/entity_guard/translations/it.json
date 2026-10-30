@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Applicata di recente (irraggiungibile)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Applicata di recente (abbandonata)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "La regola ha rilevato un loop di applicazione",
       "verified": "La regola ha verificato che una destinazione ha raggiunto lo stato desiderato",
       "unreachable": "La regola non è riuscita a far raggiungere lo stato desiderato a una destinazione",
+      "cancelled": "La regola ha abbandonato un ciclo di verifica (condizione cambiata)",
       "suppressed": "La regola ha sospeso l'applicazione (protezione anti-loop)"
     }
   }

@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Nemrég kényszerítve (elérhetetlen)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Nemrég kényszerítve (elvetve)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "A szabály kényszerítési hurkot észlelt",
       "verified": "A szabály ellenőrizte, hogy egy cél elérte a kívánt állapotot",
       "unreachable": "A szabály nem tudta a célt a kívánt állapotba kényszeríteni",
+      "cancelled": "A szabály elvetett egy ellenőrzési ciklust (megváltozott egy feltétel)",
       "suppressed": "A szabály elnyomta a kényszerítést (hurokvédelem)"
     }
   }
