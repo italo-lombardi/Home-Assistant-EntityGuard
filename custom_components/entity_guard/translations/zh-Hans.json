@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "最近已强制执行（无法到达）"
+      },
+      "recently_enforced_cancelled": {
+        "name": "最近已强制执行（已放弃）"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "规则检测到强制执行循环",
       "verified": "规则已确认目标达到期望状态",
       "unreachable": "规则无法使目标达到期望状态",
+      "cancelled": "规则因外部条件变化而放弃了一次验证检查",
       "suppressed": "规则已抑制强制执行（循环保护）"
     }
   }

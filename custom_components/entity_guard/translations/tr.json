@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Yakın zamanda uygulandı (ulaşılamadı)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Yakın zamanda uygulandı (vazgeçildi)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Kural bir uygulama döngüsü algıladı",
       "verified": "Kural bir hedefin istenen duruma ulaştığını doğruladı",
       "unreachable": "Kural bir hedefi istenen duruma ulaştıramadı",
+      "cancelled": "Kural bir doğrulama döngüsünden vazgeçti (koşul değişti)",
       "suppressed": "Kural uygulamayı bastırdı (döngü koruması)"
     }
   }

@@ -28,6 +28,7 @@ def _make_engine(
     verify_enabled=False,
     recently_enforced_verified=False,
     recently_enforced_unreachable=False,
+    recently_enforced_cancelled=False,
 ):
     engine = MagicMock()
     engine.config.unique_id = "test-uid"
@@ -37,6 +38,7 @@ def _make_engine(
     engine.is_in_cooldown.return_value = in_cooldown
     engine.is_recently_enforced_verified.return_value = recently_enforced_verified
     engine.is_recently_enforced_unreachable.return_value = recently_enforced_unreachable
+    engine.is_recently_enforced_cancelled.return_value = recently_enforced_cancelled
     return engine
 
 
@@ -452,10 +454,11 @@ async def test_setup_entry_adds_verified_sensor_when_verify_on(hass: HomeAssista
     hass.data.setdefault(DOMAIN, {})["engines"] = {entry.entry_id: engine}
     added = []
     await async_setup_entry(hass, entry, added.extend)
-    assert len(added) == 7
+    assert len(added) == 8
     type_names = [type(s).__name__ for s in added]
     assert "EntityGuardRecentlyEnforcedVerifiedSensor" in type_names
     assert "EntityGuardRecentlyEnforcedUnreachableSensor" in type_names
+    assert "EntityGuardRecentlyEnforcedCancelledSensor" in type_names
 
 
 async def test_setup_entry_omits_verified_sensor_when_verify_off(hass: HomeAssistant):
@@ -554,12 +557,40 @@ def test_recently_enforced_unreachable_sensor_is_off():
     assert sensor.is_on is False
 
 
+# ---------------------------------------------------------------------------
+# EntityGuardRecentlyEnforcedCancelledSensor
+# ---------------------------------------------------------------------------
+
+
+def test_recently_enforced_cancelled_sensor_is_on():
+    from custom_components.entity_guard.binary_sensor import (
+        EntityGuardRecentlyEnforcedCancelledSensor,
+    )
+
+    entry = _make_rule_entry()
+    engine = _make_engine(recently_enforced_cancelled=True)
+    sensor = EntityGuardRecentlyEnforcedCancelledSensor(entry, engine)
+    assert sensor.is_on is True
+
+
+def test_recently_enforced_cancelled_sensor_is_off():
+    from custom_components.entity_guard.binary_sensor import (
+        EntityGuardRecentlyEnforcedCancelledSensor,
+    )
+
+    entry = _make_rule_entry()
+    engine = _make_engine(recently_enforced_cancelled=False)
+    sensor = EntityGuardRecentlyEnforcedCancelledSensor(entry, engine)
+    assert sensor.is_on is False
+
+
 @pytest.mark.parametrize(
     "cls_name",
     [
         "EntityGuardRecentlyEnforcedSensor",
         "EntityGuardRecentlyEnforcedVerifiedSensor",
         "EntityGuardRecentlyEnforcedUnreachableSensor",
+        "EntityGuardRecentlyEnforcedCancelledSensor",
     ],
 )
 def test_all_recently_enforced_sensors_expose_rule_context(cls_name):

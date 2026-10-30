@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Nedavno provedeno (nedostupno)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Nedavno provedeno (napušteno)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Pravilo je otkrilo petlju provedbe",
       "verified": "Pravilo je potvrdilo da je cilj dosegao željeno stanje",
       "unreachable": "Pravilo nije uspjelo dovesti cilj do željenog stanja",
+      "cancelled": "Pravilo je napustilo ciklus provjere (uvjet se promijenio)",
       "suppressed": "Pravilo je potisnulo provedbu (zaštita od petlji)"
     }
   }

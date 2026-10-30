@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Aplicada recientemente (inalcanzable)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Aplicada recientemente (abandonada)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "La regla detectó un bucle de actuación",
       "verified": "La regla verificó que un objetivo alcanzó el estado deseado",
       "unreachable": "La regla no logró que un objetivo alcanzara el estado deseado",
+      "cancelled": "La regla abandonó un ciclo de verificación (cambió una condición)",
       "suppressed": "La regla suprimió la actuación (protección contra bucles)"
     }
   }

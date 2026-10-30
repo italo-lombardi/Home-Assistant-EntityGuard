@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Kürzlich durchgesetzt (nicht erreichbar)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Kürzlich durchgesetzt (verworfen)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Regel hat eine Durchsetzungsschleife erkannt",
       "verified": "Regel hat bestätigt, dass ein Ziel den gewünschten Zustand erreicht hat",
       "unreachable": "Regel konnte ein Ziel nicht in den gewünschten Zustand bringen",
+      "cancelled": "Regel hat eine Überprüfung verworfen (Bedingung geändert)",
       "suppressed": "Regel hat die Durchsetzung unterdrückt (Schleifenschutz)"
     }
   }

@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Nyligt håndhævet (uopnåelig)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Nyligt håndhævet (afbrudt)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Reglen registrerede en håndhævelsesløkke",
       "verified": "Reglen bekræftede, at et mål nåede den ønskede tilstand",
       "unreachable": "Reglen kunne ikke få et mål til at nå den ønskede tilstand",
+      "cancelled": "Reglen afbrød en verificeringscyklus (betingelse ændret)",
       "suppressed": "Reglen undertrykte håndhævelse (løkkebeskyttelse)"
     }
   }

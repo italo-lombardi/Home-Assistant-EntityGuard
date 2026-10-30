@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Impus recent (inaccesibil)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Impus recent (abandonat)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Regula a detectat o buclă de impunere",
       "verified": "Regula a confirmat că o țintă a ajuns la starea dorită",
       "unreachable": "Regula nu a putut aduce o țintă la starea dorită",
+      "cancelled": "Regula a abandonat o verificare (condiția s-a schimbat)",
       "suppressed": "Regula a suprimat impunerea (protecție împotriva buclelor)"
     }
   }

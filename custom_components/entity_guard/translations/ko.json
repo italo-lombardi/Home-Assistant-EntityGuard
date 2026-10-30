@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "최근 적용됨(도달 불가)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "최근 적용됨(중단됨)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "규칙이 적용 루프를 감지함",
       "verified": "규칙이 대상이 원하는 상태에 도달했음을 확인함",
       "unreachable": "규칙이 대상을 원하는 상태로 만들지 못함",
+      "cancelled": "규칙이 조건 변경으로 검증 주기를 중단함",
       "suppressed": "규칙이 적용을 억제함(루프 보호)"
     }
   }

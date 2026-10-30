@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Äskettäin valvottu (ei tavoitettu)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Äskettäin valvottu (rauennut)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Sääntö havaitsi valvontasilmukan",
       "verified": "Sääntö varmisti, että kohde saavutti halutun tilan",
       "unreachable": "Sääntö ei saanut kohdetta saavuttamaan haluttua tilaa",
+      "cancelled": "Varmistus raukesi (ehto muuttui)",
       "suppressed": "Sääntö esti pakotuksen (silmukkasuojaus)"
     }
   }

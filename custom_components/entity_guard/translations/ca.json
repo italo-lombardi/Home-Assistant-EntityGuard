@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Aplicada recentment (inabastable)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Aplicada recentment (abandonada)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "La regla ha detectat un bucle d'aplicació",
       "verified": "La regla ha verificat que un objectiu ha assolit l'estat desitjat",
       "unreachable": "La regla no ha pogut fer que un objectiu assolís l'estat desitjat",
+      "cancelled": "La regla ha abandonat una verificació (ha canviat una condició)",
       "suppressed": "La regla ha suprimit l'aplicació (protecció contra bucles)"
     }
   }

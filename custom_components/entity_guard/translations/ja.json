@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "最近強制（到達不可）"
+      },
+      "recently_enforced_cancelled": {
+        "name": "最近強制（中止）"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "ルールが強制ループを検出したとき",
       "verified": "ルールが対象の目的の状態への到達を確認したとき",
       "unreachable": "ルールが強制しても対象を目的の状態にできなかったとき",
+      "cancelled": "ルールが条件の変化により検証サイクルを中止したとき",
       "suppressed": "ルールがループ保護により強制を抑制したとき"
     }
   }

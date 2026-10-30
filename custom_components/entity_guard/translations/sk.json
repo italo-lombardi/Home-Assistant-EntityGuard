@@ -468,6 +468,9 @@
       },
       "recently_enforced_unreachable": {
         "name": "Nedávno vynútené (nedosiahnuteľné)"
+      },
+      "recently_enforced_cancelled": {
+        "name": "Nedávno vynútené (opustené)"
       }
     },
     "sensor": {
@@ -569,6 +572,7 @@
       "loop_detected": "Pravidlo zistilo slučku vynucovania",
       "verified": "Pravidlo overilo, že cieľ dosiahol požadovaný stav",
       "unreachable": "Pravidlo nedokázalo dosiahnuť požadovaný stav cieľa",
+      "cancelled": "Pravidlo opustilo overovací cyklus (podmienka sa zmenila)",
       "suppressed": "Pravidlo potlačilo vynucovanie (ochrana proti slučkám)"
     }
   }

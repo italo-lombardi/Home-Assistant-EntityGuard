@@ -19,6 +19,7 @@ from custom_components.entity_guard.const import (
     CONSECUTIVE_EXHAUSTION_LIMIT,
     ERROR_RECOVERY_SUCCESS_THRESHOLD,
     ERROR_THRESHOLD,
+    EVENT_CANCELLED,
     EVENT_ENFORCED,
     EVENT_LOOP_DETECTED,
     EVENT_SKIPPED,
@@ -5531,6 +5532,9 @@ async def test_verify_fire_drops_when_flags_unmet(hass: HomeAssistant):
     hass.states.async_set("input_boolean.guard", "on")  # flags met → enforce allowed
     hass.states.async_set("light.bedroom", "on")
 
+    cancelled = []
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+
     def _fake_later(hass_, delay, cb):
         engine._test_verify_cb = cb
         return MagicMock()
@@ -5549,6 +5553,14 @@ async def test_verify_fire_drops_when_flags_unmet(hass: HomeAssistant):
     assert engine._verify_attempts.get("light.bedroom") is None
     spy.assert_not_awaited()
     assert engine.current_status() == STATUS_CONDITIONAL
+    # Abandoned, not failed: the deadline drop fires exactly one EVENT_CANCELLED
+    # (reason flags_unmet) and pulses the cancelled sensor — the neutral sibling
+    # of the verified/unreachable signals.
+    await hass.async_block_till_done()
+    assert len(cancelled) == 1
+    assert cancelled[0].data["reason"] == "flags_unmet"
+    assert cancelled[0].data["target_entity_id"] == "light.bedroom"
+    assert engine.is_recently_enforced_cancelled() is True
 
 
 async def test_verify_event_dropped_when_flags_unmet(hass: HomeAssistant):
@@ -5588,7 +5600,9 @@ async def test_verify_event_confirm_drops_when_flags_unmet(hass: HomeAssistant):
     hass.states.async_set("light.bedroom", "on")
 
     events = []
+    cancelled = []
     hass.bus.async_listen(EVENT_VERIFIED, lambda e: events.append(e))
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
 
     def _fake_later(hass_, delay, cb):
         engine._test_verify_cb = cb
@@ -5614,6 +5628,146 @@ async def test_verify_event_confirm_drops_when_flags_unmet(hass: HomeAssistant):
     assert len(events) == 0, "flags-unmet reached event must not fire EVENT_VERIFIED"
     assert "light.bedroom" not in engine._pending_verifications
     assert engine.current_status() == STATUS_CONDITIONAL
+    # The event path fired the abandoned-cycle signal exactly once (reason
+    # flags_unmet) and pulsed the cancelled sensor — the neutral sibling.
+    assert len(cancelled) == 1, "exactly one EVENT_CANCELLED for the abandoned cycle"
+    assert cancelled[0].data["reason"] == "flags_unmet"
+    assert engine.is_recently_enforced_cancelled() is True
+
+
+async def test_verify_fire_cancelled_when_suppressed(hass: HomeAssistant):
+    """The suppressed deadline drop fires EVENT_CANCELLED (reason suppressed).
+
+    Companion to test_verify_fire_drops_when_suppressed (which only asserts the
+    counter clears): the abandoned-cycle signal must fire at the suppressed drop
+    site too, not only at flags_unmet.
+    """
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    cancelled = []
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        engine._state.suppressed_until = dt_util.now() + timedelta(minutes=5)
+        await _run_verify_timer(hass, engine, "light.bedroom")
+
+    assert len(cancelled) == 1
+    assert cancelled[0].data["reason"] == "suppressed"
+    assert engine.is_recently_enforced_cancelled() is True
+
+
+async def test_verify_fire_cancelled_when_disabled(hass: HomeAssistant):
+    """The disabled deadline drop fires EVENT_CANCELLED (reason disabled)."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    cancelled = []
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        engine._state.enabled = False  # rule disabled during the verify window
+        await _run_verify_timer(hass, engine, "light.bedroom")
+
+    assert len(cancelled) == 1
+    assert cancelled[0].data["reason"] == "disabled"
+    assert engine.is_recently_enforced_cancelled() is True
+    # Disabled drop must clear the attempt counter (like suppressed/flags_unmet
+    # siblings), else a quick re-enable reads a stale high count and can latch
+    # exhaustion early → premature EVENT_UNREACHABLE on a device that only
+    # "failed" because the rule was off.
+    assert "light.bedroom" not in engine._verify_attempts
+
+
+async def test_verify_fire_no_cancelled_when_unloaded(hass: HomeAssistant):
+    """The unloaded drop does NOT fire EVENT_CANCELLED (entry tearing down).
+
+    _verify_drop_reason returns "unloaded" so the gate reads dropped, but no bus
+    event is fired for it: the pulse timer would be cancelled on unload anyway
+    and the listeners are going away. Deliberate asymmetry vs the other four
+    reasons — locked here so a refactor can't start firing into a dead entry.
+    """
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    cancelled = []
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        assert "light.bedroom" in engine._pending_verifications
+        engine._is_unloaded = True  # entry torn down during the window
+        # Deadline cb returns at the `if self._is_unloaded: return` guard — no
+        # drop-site reached, no fire. Call it directly (pending still armed).
+        engine._test_verify_cb(dt_util.now())
+        await hass.async_block_till_done()
+
+    assert len(cancelled) == 0, "unloaded drop must not fire EVENT_CANCELLED"
+    assert engine.is_recently_enforced_cancelled() is False
+
+
+async def test_verify_event_no_cancelled_when_unloaded(hass: HomeAssistant):
+    """The event path also suppresses EVENT_CANCELLED on reason=unloaded.
+
+    A reached-desired ACK landing while the entry is unloaded: _verify_drop_reason
+    returns "unloaded", the event branch cancels the pending verify but the
+    `reason != "unloaded"` guard skips the fire — the deliberate no-fire-on-unload
+    asymmetry holds on BOTH paths.
+    """
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    cancelled = []
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        assert "light.bedroom" in engine._pending_verifications
+        engine._is_unloaded = True
+        hass.states.async_set("light.bedroom", "off")
+        reached = MagicMock()
+        reached.data = {"entity_id": "light.bedroom", "new_state": _state("off")}
+        reached.context = MagicMock(id="ctx-ack")
+        engine._handle_state_event(reached)
+        await hass.async_block_till_done()
+
+    assert len(cancelled) == 0, "unloaded event drop must not fire EVENT_CANCELLED"
+    assert "light.bedroom" not in engine._pending_verifications
+    assert engine.is_recently_enforced_cancelled() is False
 
 
 def test_cancel_verify_swallows_exception(hass: HomeAssistant):

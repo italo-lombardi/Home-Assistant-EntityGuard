@@ -42,6 +42,7 @@ from .const import (
     ENFORCE_TIMEOUT_SECONDS,
     ERROR_RECOVERY_SUCCESS_THRESHOLD,
     ERROR_THRESHOLD,
+    EVENT_CANCELLED,
     EVENT_ENFORCED,
     EVENT_LOOP_DETECTED,
     EVENT_SKIPPED,
@@ -146,6 +147,14 @@ class RuleEngine:
         # sensor that exists only while verify is enabled.
         self._recently_enforced_unreachable: bool = False
         self._recently_enforced_unreachable_unsub: Callable[[], None] | None = None
+        # Abandoned-cycle twin of recently_enforced_verified. Armed only by
+        # _fire_cancelled (verify-on, verify armed then dropped because an external
+        # condition changed mid-window — disabled/master-off/suppressed/flags-unmet,
+        # NOT a device fault); backs the recently_enforced_cancelled sensor that
+        # exists only while verify is enabled. The neutral sibling of verified
+        # (success) / unreachable (device failure): no verdict was reached.
+        self._recently_enforced_cancelled: bool = False
+        self._recently_enforced_cancelled_unsub: Callable[[], None] | None = None
         # One-shot suppression-expiry timer (EG-4). Cancelled and replaced when
         # suppression is set, cleared, or the rule's lifecycle changes.
         self._suppression_timer_unsub: Callable[[], None] | None = None
@@ -283,6 +292,7 @@ class RuleEngine:
         self._cancel_recently_enforced_timer()
         self._cancel_recently_enforced_verified_timer()
         self._cancel_recently_enforced_unreachable_timer()
+        self._cancel_recently_enforced_cancelled_timer()
 
         self._persist()
         await self._store.async_save_now()
@@ -375,7 +385,16 @@ class RuleEngine:
                 self._verify_attempts.pop(entity_id, None)
                 if pending:
                     if reached_desired:
+                        # Reached-but-DROPPED: the twin of the deadline _fire drop
+                        # sites. Fire the abandoned-cycle signal with the same
+                        # reason the deadline path would, EXCEPT unloaded (entry
+                        # tearing down — no bus event, its pulse timer would be
+                        # cancelled immediately). _cancel_verify pops pending so the
+                        # deadline _fire can't also fire cancelled for this cycle.
+                        reason = self._verify_drop_reason(entity_id)
                         self._cancel_verify(entity_id)
+                        if reason is not None and reason != "unloaded":
+                            self._fire_cancelled(entity_id, reason)
                     self._apply_idle_status()
         trigger_context_id: str | None = getattr(event.context, "id", None)
         self._schedule_eval_task(entity_id, new_state, trigger_context_id)
@@ -1139,32 +1158,44 @@ class RuleEngine:
         # VERIFYING for the real idle status (ARMED / COOLDOWN).
         self._apply_idle_status()
 
-    def _verify_event_dropped(self, entity_id: str) -> bool:
-        """True when a pending verify must be DROPPED (not confirmed) because the
-        rule went inactive mid-window — shared drop decision for the event-confirm
-        site. Mirrors _fire's disabled/master-off, suppressed, AND flags-unmet
-        early-returns so the event path and the deadline timer stay in lockstep.
-        Flags are read HERE (event time, when the ACK lands), matching _fire's
-        read at deadline time: both paths decide on the flag state at the instant
-        they resolve, not at arm time, so a flag that flips mid-window drops the
-        cycle identically whichever path confirms first.
+    def _verify_drop_reason(self, entity_id: str) -> str | None:
+        """Return WHY a pending verify must be DROPPED mid-window, else None.
+
+        Single source of truth for the event-confirm drop decision. Mirrors
+        _fire's disabled/master-off, suppressed, AND flags-unmet early-returns so
+        the event path and the deadline timer stay in lockstep. Flags are read
+        HERE (event time, when the ACK lands), matching _fire's read at deadline
+        time: both paths decide on the flag state at the instant they resolve,
+        not at arm time, so a flag that flips mid-window drops the cycle
+        identically whichever path confirms first. The reason string feeds
+        _fire_cancelled; "unloaded" is returned for the drop decision but the
+        caller does NOT fire a cancelled signal for it (the entry is tearing down).
         """
         if self._is_unloaded:
-            return True
-        if not self._state.enabled or not self._master_enabled_getter():
-            return True
+            return "unloaded"
+        if not self._state.enabled:
+            return "disabled"
+        if not self._master_enabled_getter():
+            return "master_off"
         if (
             self._state.suppressed_until
             and self._state.suppressed_until > dt_util.now()
         ):
-            return True
+            return "suppressed"
         # Flags unmet → rule no longer allowed to act; drop without a verified
-        # pulse. Twin of _fire's flags-unmet drop (line ~1202). Without this the
-        # event path fires EVENT_VERIFIED for a cycle the deadline path abandons —
-        # a verified signal that flickers on device-ACK timing alone.
+        # pulse. Twin of _fire's flags-unmet drop. Without this the event path
+        # fires EVENT_VERIFIED for a cycle the deadline path abandons — a verified
+        # signal that flickers on device-ACK timing alone.
         if not self._flags_match():
-            return True
-        return False
+            return "flags_unmet"
+        return None
+
+    def _verify_event_dropped(self, entity_id: str) -> bool:
+        """True when a pending verify must be DROPPED (not confirmed) mid-window.
+
+        Thin boolean wrapper over _verify_drop_reason for the confirm-gate check.
+        """
+        return self._verify_drop_reason(entity_id) is not None
 
     def _arm_verify(
         self, entity_id: str, trigger_context_id: str | None = None
@@ -1190,7 +1221,10 @@ class RuleEngine:
                 # cleared by the identity-guarded pop above. Re-derive so VERIFYING
                 # resolves to the real idle status (DISABLED / MASTER_DISABLED)
                 # instead of staying stuck on the card, mirroring the suppressed
-                # drop below.
+                # drop below. Fire the abandoned-cycle signal (no verdict reached).
+                reason = "disabled" if not self._state.enabled else "master_off"
+                self._verify_attempts.pop(entity_id, None)
+                self._fire_cancelled(entity_id, reason)
                 self._apply_idle_status()
                 return
             # Suppressed → do not correct; drop the cycle (a real event re-arms it).
@@ -1201,6 +1235,7 @@ class RuleEngine:
                 self._verify_attempts.pop(entity_id, None)
                 # Our handle was cleared by the identity-guarded pop above; re-derive
                 # so VERIFYING resolves to the real idle status (SUPPRESSED here).
+                self._fire_cancelled(entity_id, "suppressed")
                 self._apply_idle_status()
                 return
             # Conditional flags went unmet during the verify window → the rule is no
@@ -1211,6 +1246,7 @@ class RuleEngine:
             # flags match". Mirrors the suppressed-drop above.
             if not self._flags_match():
                 self._verify_attempts.pop(entity_id, None)
+                self._fire_cancelled(entity_id, "flags_unmet")
                 self._apply_idle_status()
                 return
             if self._verify_reached(entity_id):
@@ -2052,6 +2088,11 @@ class RuleEngine:
             had_recently_enforced or self._recently_enforced_unreachable
         )
         self._recently_enforced_unreachable = False
+        self._cancel_recently_enforced_cancelled_timer()
+        had_recently_enforced = (
+            had_recently_enforced or self._recently_enforced_cancelled
+        )
+        self._recently_enforced_cancelled = False
         # Re-arm suppression timer so EG-4 expiry callback survives this reset.
         self._schedule_suppression_timer()
         # Resetting also clears the recovery counter so a fresh window starts.
@@ -2142,6 +2183,11 @@ class RuleEngine:
             had_recently_enforced or self._recently_enforced_unreachable
         )
         self._recently_enforced_unreachable = False
+        self._cancel_recently_enforced_cancelled_timer()
+        had_recently_enforced = (
+            had_recently_enforced or self._recently_enforced_cancelled
+        )
+        self._recently_enforced_cancelled = False
         # Re-arm suppression timer so EG-4 expiry callback survives this clear.
         self._schedule_suppression_timer()
         self._state.enforcement_count_today = 0
@@ -2281,6 +2327,10 @@ class RuleEngine:
     def is_recently_enforced_unreachable(self) -> bool:
         """Return True if a verify-exhausted failure fired in the last 30s."""
         return self._recently_enforced_unreachable
+
+    def is_recently_enforced_cancelled(self) -> bool:
+        """Return True if a verify cycle was abandoned in the last 30s."""
+        return self._recently_enforced_cancelled
 
     def cooldown_remaining_seconds(self) -> float:
         """Return the largest remaining cooldown across tracked entities."""
@@ -2586,6 +2636,78 @@ class RuleEngine:
             },
         )
         self._arm_recently_enforced_unreachable()
+
+    def _cancel_recently_enforced_cancelled_timer(self) -> None:
+        """Cancel any pending recently-enforced-cancelled reset timer."""
+        if self._recently_enforced_cancelled_unsub is None:
+            return
+        try:
+            self._recently_enforced_cancelled_unsub()
+        except Exception:
+            pass
+        self._recently_enforced_cancelled_unsub = None
+
+    def _arm_recently_enforced_cancelled(self) -> None:
+        """Set recently_enforced_cancelled flag and schedule a 30s reset.
+
+        Abandoned-cycle twin of _arm_recently_enforced_verified. Pulses off first
+        so an automation gating on the rising edge re-triggers on a second
+        abandonment within the window.
+        """
+        self._cancel_recently_enforced_cancelled_timer()
+
+        if self._recently_enforced_cancelled:
+            self._recently_enforced_cancelled = False
+            async_dispatcher_send(
+                self._hass, signal_rule_update(self._config.unique_id)
+            )
+
+        self._recently_enforced_cancelled = True
+
+        @callback
+        def _clear(_now: datetime) -> None:
+            self._recently_enforced_cancelled_unsub = None
+            if self._is_unloaded:
+                return
+            self._recently_enforced_cancelled = False
+            async_dispatcher_send(
+                self._hass, signal_rule_update(self._config.unique_id)
+            )
+
+        self._recently_enforced_cancelled_unsub = async_call_later(
+            self._hass,
+            RECENTLY_ENFORCED_WINDOW_SECONDS,
+            HassJob(
+                _clear,
+                "entity_guard_recently_enforced_cancelled_reset",
+                cancel_on_shutdown=True,
+            ),
+        )
+
+    def _fire_cancelled(self, target_entity_id: str, reason: str) -> None:
+        """Emit the abandoned-cycle event + arm the cancelled sensor.
+
+        Neutral sibling of _fire_verified / _fire_unreachable. Called at a verify
+        DROP site (deadline _fire or event _verify_event_dropped) when an armed
+        verify cycle is abandoned mid-window because an external condition changed
+        — reason ∈ {disabled, master_off, suppressed, flags_unmet}. NOT fired on
+        integration unload (the entry is tearing down). Payload mirrors
+        EVENT_UNREACHABLE with the abandonment `reason` in place of the failure one.
+        """
+        self._hass.bus.async_fire(
+            EVENT_CANCELLED,
+            {
+                "rule_id": self._config.unique_id,
+                "rule_name": self._config.name,
+                "entity_id": self._get_rule_entity_id() or target_entity_id,
+                "target_entity_id": target_entity_id,
+                "domain": target_entity_id.split(".", 1)[0],
+                "trigger": self._config.mode,
+                "target": self._event_target(),
+                "reason": reason,
+            },
+        )
+        self._arm_recently_enforced_cancelled()
 
     def _schedule_suppression_timer(self) -> None:
         """Schedule an expiry callback to refresh UI when suppression ends (EG-4).
