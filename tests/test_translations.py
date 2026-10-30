@@ -34,6 +34,11 @@ def _flatten(obj: object, prefix: str = "") -> dict[str, str]:
             out.update(_flatten(v, f"{prefix}.{k}" if prefix else k))
     elif isinstance(obj, str):
         out[prefix] = obj
+    else:
+        # HA translation files are dict-of-strings; a list/number/bool leaf
+        # would silently vanish from the map and escape both tests below.
+        # Fail loudly instead so a future non-string value gets coverage.
+        raise TypeError(f"unexpected leaf at {prefix!r}: {type(obj).__name__}")
     return out
 
 
