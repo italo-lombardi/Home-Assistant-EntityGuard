@@ -566,7 +566,10 @@
     "trigger_type": {
       "enforced": "Reguła wymusiła cel",
       "skipped": "Reguła pominęła wymuszenie",
-      "loop_detected": "Reguła wykryła pętlę wymuszania"
+      "loop_detected": "Reguła wykryła pętlę wymuszania",
+      "verified": "Reguła potwierdziła, że cel osiągnął żądany stan",
+      "unreachable": "Reguła nie zdołała doprowadzić celu do żądanego stanu",
+      "suppressed": "Reguła wstrzymała wymuszanie (ochrona przed pętlami)"
     }
   }
 }

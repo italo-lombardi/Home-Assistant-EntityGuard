@@ -1,8 +1,9 @@
 """Device-automation triggers for Entity Guard.
 
-Exposes each rule's events — enforced / skipped / loop-detected — as visual
-device triggers in the Home Assistant automation editor, so a user can build
-"When [rule] enforced → notify me" without hand-typing an `event` trigger.
+Exposes each rule's events — enforced / skipped / loop-detected / verified /
+unreachable / suppressed — as visual device triggers in the Home Assistant
+automation editor, so a user can build "When [rule] enforced → notify me"
+without hand-typing an `event` trigger.
 
 Wiring nuance: a rule's DEVICE identifier is (DOMAIN, entry_id), but the EVENTS
 carry `rule_id = config.unique_id` (a separate uuid4, not entry_id). So a
@@ -30,7 +31,15 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.trigger import TriggerActionType, TriggerInfo
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN, EVENT_ENFORCED, EVENT_LOOP_DETECTED, EVENT_SKIPPED
+from .const import (
+    DOMAIN,
+    EVENT_ENFORCED,
+    EVENT_LOOP_DETECTED,
+    EVENT_SKIPPED,
+    EVENT_SUPPRESSED,
+    EVENT_UNREACHABLE,
+    EVENT_VERIFIED,
+)
 
 # Trigger type (shown in the UI, keyed in strings.json device_automation.trigger_type)
 # → the event it fires on.
@@ -38,6 +47,9 @@ TRIGGER_TYPE_EVENT = {
     "enforced": EVENT_ENFORCED,
     "skipped": EVENT_SKIPPED,
     "loop_detected": EVENT_LOOP_DETECTED,
+    "verified": EVENT_VERIFIED,
+    "unreachable": EVENT_UNREACHABLE,
+    "suppressed": EVENT_SUPPRESSED,
 }
 TRIGGER_TYPES = set(TRIGGER_TYPE_EVENT)
 

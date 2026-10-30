@@ -566,7 +566,10 @@
     "trigger_type": {
       "enforced": "Sääntö pakotti kohteen",
       "skipped": "Sääntö ohitti pakotuksen",
-      "loop_detected": "Sääntö havaitsi valvontasilmukan"
+      "loop_detected": "Sääntö havaitsi valvontasilmukan",
+      "verified": "Sääntö varmisti, että kohde saavutti halutun tilan",
+      "unreachable": "Sääntö ei saanut kohdetta saavuttamaan haluttua tilaa",
+      "suppressed": "Sääntö esti pakotuksen (silmukkasuojaus)"
     }
   }
 }

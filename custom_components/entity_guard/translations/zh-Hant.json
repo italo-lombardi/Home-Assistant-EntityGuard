@@ -566,7 +566,10 @@
     "trigger_type": {
       "enforced": "規則已強制執行目標",
       "skipped": "規則已略過強制執行",
-      "loop_detected": "規則偵測到強制執行迴圈"
+      "loop_detected": "規則偵測到強制執行迴圈",
+      "verified": "規則已確認目標達到所需狀態",
+      "unreachable": "規則無法使目標達到所需狀態",
+      "suppressed": "規則已抑制強制執行（迴圈保護）"
     }
   }
 }

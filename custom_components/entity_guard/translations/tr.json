@@ -566,7 +566,10 @@
     "trigger_type": {
       "enforced": "Kural bir hedefte durumu uyguladı",
       "skipped": "Kural uygulamayı atladı",
-      "loop_detected": "Kural bir uygulama döngüsü algıladı"
+      "loop_detected": "Kural bir uygulama döngüsü algıladı",
+      "verified": "Kural bir hedefin istenen duruma ulaştığını doğruladı",
+      "unreachable": "Kural bir hedefi istenen duruma ulaştıramadı",
+      "suppressed": "Kural uygulamayı bastırdı (döngü koruması)"
     }
   }
 }

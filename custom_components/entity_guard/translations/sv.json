@@ -566,7 +566,10 @@
     "trigger_type": {
       "enforced": "Regel tillämpade ett mål",
       "skipped": "Regel hoppade över tillämpning",
-      "loop_detected": "Regel upptäckte en tillämpningsloop"
+      "loop_detected": "Regel upptäckte en tillämpningsloop",
+      "verified": "Regel verifierade att ett mål nådde önskat läge",
+      "unreachable": "Regel kunde inte få ett mål att nå önskat läge",
+      "suppressed": "Regel stoppade tillämpningen (loopskydd)"
     }
   }
 }

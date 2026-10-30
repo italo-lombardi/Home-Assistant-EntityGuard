@@ -566,7 +566,10 @@
     "trigger_type": {
       "enforced": "Pravilo je provelo nad ciljem",
       "skipped": "Pravilo je preskočilo provedbu",
-      "loop_detected": "Pravilo je otkrilo petlju provedbe"
+      "loop_detected": "Pravilo je otkrilo petlju provedbe",
+      "verified": "Pravilo je potvrdilo da je cilj dosegao željeno stanje",
+      "unreachable": "Pravilo nije uspjelo dovesti cilj do željenog stanja",
+      "suppressed": "Pravilo je potisnulo provedbu (zaštita od petlji)"
     }
   }
 }

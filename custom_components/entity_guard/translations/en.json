@@ -566,7 +566,10 @@
     "trigger_type": {
       "enforced": "Rule enforced a target",
       "skipped": "Rule skipped enforcement",
-      "loop_detected": "Rule detected an enforcement loop"
+      "loop_detected": "Rule detected an enforcement loop",
+      "verified": "Rule verified a target reached the desired state",
+      "unreachable": "Rule could not make a target reach the desired state",
+      "suppressed": "Rule suppressed enforcement (loop protection)"
     }
   }
 }

@@ -566,7 +566,10 @@
     "trigger_type": {
       "enforced": "La regla ha aplicat un objectiu",
       "skipped": "La regla ha omès l'aplicació",
-      "loop_detected": "La regla ha detectat un bucle d'aplicació"
+      "loop_detected": "La regla ha detectat un bucle d'aplicació",
+      "verified": "La regla ha verificat que un objectiu ha assolit l'estat desitjat",
+      "unreachable": "La regla no ha pogut fer que un objectiu assolís l'estat desitjat",
+      "suppressed": "La regla ha suprimit l'aplicació (protecció contra bucles)"
     }
   }
 }
