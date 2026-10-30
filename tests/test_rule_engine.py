@@ -5181,6 +5181,105 @@ async def test_manual_enforce_verifies_via_event_path_despite_flags_unmet(
     assert engine._forced_verifications == set()  # cleared on event-path confirm
 
 
+async def test_manual_enforce_verifies_despite_suppressed(hass: HomeAssistant):
+    """MANUAL force on a SUPPRESSED rule must bypass the suppressed drop and resolve
+    VERIFIED when the device reaches desired.
+
+    The flags_unmet half of the forced bypass is covered by
+    test_manual_enforce_verifies_despite_flags_unmet; this is its suppressed twin.
+    forced bypasses BOTH suppressed and flags_unmet (see the VERIFY-OUTCOME CONTRACT);
+    without this, the suppressed leg of the bypass was untested. Reverting the
+    `not forced` guard on the suppressed drop makes this fail (red-on-bug).
+    """
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    engine.state.suppressed_until = dt_util.now() + timedelta(hours=1)  # SUPPRESSED
+    hass.states.async_set("light.bedroom", "on")
+
+    # Responsive target: commits 'off' during the call (fast-confirm path).
+    async def _turn_off(call):
+        hass.states.async_set("light.bedroom", "off")
+
+    hass.services.async_register("light", "turn_off", _turn_off)
+
+    verified = []
+    cancelled = []
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: verified.append(e))
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine.async_test_enforce()
+        await hass.async_block_till_done()
+
+    assert len(verified) == 1
+    assert cancelled == []
+    assert engine.state.target_outcomes["light.bedroom"]["outcome"] == "ok"
+    assert engine._forced_verifications == set()  # cleared on resolve
+    engine._cancel_suppression_timer()
+
+
+async def test_forced_bypass_does_not_leak_into_next_automatic_cycle(
+    hass: HomeAssistant,
+):
+    """The forced marker must be per-cycle: after a manual-forced cycle resolves on an
+    entity, the NEXT automatic cycle on the SAME entity must honour the drops again.
+
+    End-to-end leak guard. _cancel_verify discards from _forced_verifications on every
+    resolve; if a resolve path ever forgot to, a forced bypass would silently persist
+    and the next automatic flags-unmet cycle would wrongly VERIFY. Proves no inherited
+    bypass. See the VERIFY-OUTCOME CONTRACT above _arm_verify.
+    """
+    engine = _make_engine(
+        hass,
+        _verify_config(flags=[Flag(entity="input_boolean.guard", match_state="on")]),
+    )
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+    hass.states.async_set("input_boolean.guard", "off")  # flag UNMET → CONDITIONAL
+
+    # Responsive target for the forced leg: commits 'off' during the call.
+    async def _turn_off(call):
+        hass.states.async_set("light.bedroom", "off")
+
+    hass.services.async_register("light", "turn_off", _turn_off)
+
+    verified = []
+    cancelled = []
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: verified.append(e))
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        # Leg 1: MANUAL force bypasses flags_unmet → VERIFIED, marker cleared.
+        await engine.async_test_enforce()
+        await hass.async_block_till_done()
+        assert len(verified) == 1
+        assert engine._forced_verifications == set()  # must be clear before leg 2
+
+        # Leg 2: AUTOMATIC cycle on the SAME entity, flags still unmet, SILENT target.
+        # If the forced marker had leaked, this would VERIFY; it must CANCEL.
+        hass.services.async_register("light", "turn_off", lambda c: None)  # silent now
+        hass.states.async_set("light.bedroom", "on")  # back on → desired unmet
+        await engine._enforce("light.bedroom")  # not forced
+        await _run_verify_timer(hass, engine, "light.bedroom")
+
+    assert len(verified) == 1  # ONLY the forced leg verified
+    assert len(cancelled) == 1
+    assert cancelled[0].data["reason"] == "flags_unmet"  # automatic leg dropped
+    assert engine._forced_verifications == set()
+
+
 async def test_automatic_flags_unmet_still_cancelled(hass: HomeAssistant):
     """Regression: the AUTOMATIC path is unchanged — a non-forced cycle whose flags
     go unmet with a silent target still drops CANCELLED(flags_unmet).

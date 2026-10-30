@@ -1780,6 +1780,14 @@ class RuleEngine:
                     # dropped is the twin of the event path's reached-but-dropped block
                     # (_handle_state_event): same reason, same unloaded-stays-silent.
                     reason = self._verify_drop_reason(entity_id)
+                    # Lockstep with the 5 sibling drop sites (event path + deadline
+                    # _fire branches) which all pop _verify_attempts alongside the
+                    # pending handle. Unreachable here (fast-confirm runs only on a
+                    # fresh non-corrective enforce, gated on pending ABSENT, so attempts
+                    # is always 0), but keep the sibling-drop set uniform so a future
+                    # reorder can't leak a stale count. _cancel_verify intentionally
+                    # does NOT pop attempts (the escalation path calls it mid-cycle).
+                    self._verify_attempts.pop(entity_id, None)
                     if reason is None:
                         self._cancel_verify(entity_id)
                         self._confirm_verified(entity_id)
