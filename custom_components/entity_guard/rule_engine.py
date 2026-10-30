@@ -1422,6 +1422,28 @@ class RuleEngine:
                 else:
                     self._set_status(self._derive_armed_or_cooldown(now))
 
+            # pending_cancel: the flag-sweep schedules one eval task per target
+            # (_schedule_eval_task, cancel-and-replace). A target's OWN post-enforce
+            # state_changed re-enters the sweep and cancels THIS still-awaiting task.
+            # For a battery/RF switch (SwitchBot etc.) the integration ACK — and the
+            # target's state_changed — lands SECONDS after the blocking call starts,
+            # so the cancel reliably arrives while we are parked in the await, after
+            # the device committed to moving but before the success tail (counters,
+            # last_enforced, EVENT_ENFORCED, _persist) runs. We must not lose that
+            # bookkeeping. Run the call as a SHIELDED child so the cancel cannot kill
+            # the in-flight device move; swallow the CancelledError delivered to our
+            # frame, remember it, let the (synchronous) success tail record, then
+            # re-raise after _set_status so the task still ends cancelled and the
+            # replacement eval task owns the entity going forward.
+            call = asyncio.ensure_future(
+                asyncio.wait_for(
+                    self._hass.services.async_call(
+                        domain, service, data, blocking=True, context=ctx
+                    ),
+                    ENFORCE_TIMEOUT_SECONDS,
+                )
+            )
+            pending_cancel = False
             try:
                 # Bound the call: a hung integration would otherwise block here
                 # forever while holding reentrance_lock, freezing the rule without
@@ -1430,12 +1452,19 @@ class RuleEngine:
                 # the lock — our coroutine frame is cleaned up, though a pathological
                 # integration ignoring cancellation may still finish its side effect
                 # in the background (not a leak this wrapper introduces).
-                await asyncio.wait_for(
-                    self._hass.services.async_call(
-                        domain, service, data, blocking=True, context=ctx
-                    ),
-                    ENFORCE_TIMEOUT_SECONDS,
-                )
+                while True:
+                    try:
+                        await asyncio.shield(call)
+                        break
+                    except asyncio.CancelledError:
+                        if call.cancelled():
+                            # The call itself was cancelled (not us) — real abort.
+                            raise
+                        # Our frame was cancelled by the per-entity replace. Keep
+                        # waiting on the shielded call so the device move + tail
+                        # still complete; record the cancel to re-raise at the end.
+                        pending_cancel = True
+                        continue
             except TimeoutError:
                 # 3.11+: TimeoutError is an alias of asyncio.TimeoutError. str() of it
                 # is empty, so synthesize a non-empty message for the card/last_error.
@@ -1591,6 +1620,9 @@ class RuleEngine:
         self._set_status(post_status)
 
         # Arm the cooldown-expiry broadcast (independent of status flicker).
+        # Done BEFORE honouring a deferred cancel so the card still gets its
+        # scheduled cooldown repaint on the cancel path (a debounced enforce
+        # cancelled mid-ACK still set a cooldown above).
         if self._config.debounce_enabled and self._config.debounce_seconds > 0:
             cooldown_end = self._state.cooldowns.get(entity_id)
             if cooldown_end is not None:
@@ -1616,6 +1648,13 @@ class RuleEngine:
                         self._hass, remaining, _broadcast_after_cooldown
                     )
                     self._cooldown_broadcast_unsubs[entity_id] = unsub
+
+        # Bookkeeping committed, status painted, cooldown broadcast armed — now
+        # honour the cancel the per-entity replace delivered mid service-ACK.
+        # Re-raising leaves this task cancelled; the replacement eval task
+        # already owns the entity going forward.
+        if pending_cancel:
+            raise asyncio.CancelledError
 
     async def _trigger_loop_protection(
         self, entity_id: str, *, cause: str = "rate_limit"

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.1] — 2026-10-30
+
+### Fixed
+
+- **Enforcements stopped counting while the switches still flipped.** On a rule driving slow battery/RF targets (e.g. SwitchBot), the target switches moved correctly but `enforcements_today`/`enforcements_total` froze, `last_enforced` stuck days old, no `entity_guard_enforced` event fired, and `binary_sensor.<rule>_recently_enforced` never pulsed. Cause: the target's own post-enforce `state_changed` — delayed by the device's multi-second ACK — re-entered the per-entity cancel-and-replace and cancelled the still-awaiting enforce task mid service-call, so the success bookkeeping (counters, `last_enforced`, the enforced event, persistence) was silently dropped after the device had already moved. The service call is now shielded: the device move and the full bookkeeping tail complete atomically before the deferred cancel is honoured, so counters, `last_enforced`, the event, and the `recently_enforced` pulse all land and persist across a restart. No config change; verify, cooldown broadcast, and the corrective/unreachable paths are unchanged.
+
 ## [0.4.0] — 2026-10-26
 
 ### Added
