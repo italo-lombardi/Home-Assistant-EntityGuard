@@ -1189,6 +1189,16 @@ class RuleEngine:
                 # so VERIFYING resolves to the real idle status (SUPPRESSED here).
                 self._apply_idle_status()
                 return
+            # Conditional flags went unmet during the verify window → the rule is no
+            # longer allowed to act. Drop the cycle without correcting; a later
+            # flag-met state event re-enters via the normal enforce path and re-arms
+            # verify. Without this, a corrective re-enforce would fire while the rule
+            # shows CONDITIONAL (flags unmet) — acting when the user said "only when
+            # flags match". Mirrors the suppressed-drop above.
+            if not self._flags_match():
+                self._verify_attempts.pop(entity_id, None)
+                self._apply_idle_status()
+                return
             if self._verify_reached(entity_id):
                 # Reached desired — DEFENSIVE deadline-path confirm. On the happy
                 # path the event site (_handle_state_event) already confirmed and
@@ -1587,6 +1597,8 @@ class RuleEngine:
                 not is_corrective
                 and self._config.verify_enabled
                 and self._config.mode in (MODE_FIXED_STATE, MODE_DYNAMIC_STATE)
+                and self._state.enabled
+                and self._master_enabled_getter()
                 and entity_id not in self._unreachable
                 and entity_id not in self._pending_verifications
             ):
@@ -1604,6 +1616,21 @@ class RuleEngine:
                 # reached event confirms+pops in ~100ms); carry a cycle-id on the
                 # pending entry if that attribution ever needs to be exact.
                 self._arm_verify(entity_id, trigger_context_id)
+                # Fast-confirm: a responsive target with blocking=True commits its
+                # post-enforce state to hass DURING the shielded await above, so
+                # the ACK state_changed already fired while _pending_verifications
+                # was empty — the event-driven confirm (_handle_state_event)
+                # missed it, and verify would otherwise eat the full
+                # VERIFY_DELAY_SECONDS blind deadline before re-reading (the
+                # user-visible "why the long delay before validation"). Re-read
+                # live state synchronously now that the verify is armed: if
+                # already reached, confirm in this same tick. Pop first (the
+                # _confirm_verified contract), then confirm. A silent-ignore
+                # target reads not-reached here and keeps its deadline for the
+                # corrective loop — unchanged.
+                if self._verify_reached(entity_id):
+                    self._cancel_verify(entity_id)
+                    self._confirm_verified(entity_id)
 
         # Pick the post-enforce status once and emit a single _set_status so the
         # dispatcher fires exactly one update — avoids ENFORCING→ARMED→ERROR
@@ -1616,7 +1643,15 @@ class RuleEngine:
             # armed (verify outranks COOLDOWN → VERIFYING for the re-check window). A
             # corrective sets no cooldown and must not claim STATUS_COOLDOWN (a
             # cooldown with no expiry), which deriving also gets right.
-            post_status = self._derive_armed_or_cooldown(dt_util.now())
+            #
+            # Route through _derive_idle_status, NOT _derive_armed_or_cooldown
+            # directly: set_enabled()/master toggle are SYNCHRONOUS and take no
+            # reentrance_lock, so a disable can interleave while this enforce is
+            # parked in the shielded service-call await above. On resume the tail
+            # must honour the now-off enabled/master flag and paint DISABLED/
+            # MASTER_DISABLED — the raw armed/cooldown deriver has no such gate and
+            # would overwrite the correct DISABLED paint with a stuck ARMED.
+            post_status = self._derive_idle_status(dt_util.now())
         self._set_status(post_status)
 
         # Arm the cooldown-expiry broadcast (independent of status flicker).
@@ -2147,6 +2182,13 @@ class RuleEngine:
             # Disabling cancels any pending suppression timer; suppression state
             # itself is preserved so re-enabling restores the remaining window.
             self._cancel_suppression_timer()
+            # Also cancel any in-flight verify timers: _apply_idle_status below
+            # cancels pending ENFORCEMENTS on the DISABLED branch but not verifies,
+            # so a stale verify deadline would otherwise survive the disable and
+            # fire later. Its _fire re-derives DISABLED (harmless today) but the
+            # lingering handle is fragile; drop it here at the source.
+            for eid in self._config.target_entities:
+                self._cancel_verify(eid)
         else:
             self._schedule_suppression_timer()
         self._persist()
@@ -2266,8 +2308,9 @@ class RuleEngine:
           2. Per-rule disabled -> DISABLED.
           3. STATUS_ERROR sticky -> ERROR (only when rule is active).
           4. Active suppression -> SUPPRESSED.
-          5. Conditional flags unmet -> CONDITIONAL.
-          6. Otherwise -> derive ARMED / COOLDOWN.
+          5. Action in flight (PENDING/VERIFYING) -> that action.
+          6. Conditional flags unmet -> CONDITIONAL.
+          7. Otherwise -> derive ARMED / COOLDOWN.
         """
         if not self._master_enabled_getter():
             return STATUS_MASTER_DISABLED
@@ -2279,6 +2322,20 @@ class RuleEngine:
             now = dt_util.now()
         if self._state.suppressed_until and self._state.suppressed_until > now:
             return STATUS_SUPPRESSED
+        # In-flight action outranks CONDITIONAL: a pending enforce or an armed
+        # verify re-read means we ALREADY decided to act (a trigger matched) and
+        # are mid-cycle. The flags were evaluated at trigger time; a flag that
+        # flips back during the enforce/verify window must not mask the live
+        # action as CONDITIONAL. Without this, a flag-gated rule shows
+        # ENFORCING -> CONDITIONAL the instant the target reaches desired, hiding
+        # the outstanding verify (which only surfaced later, backwards, when the
+        # deadline fired a corrective re-enforce). DISABLED/MASTER/ERROR/
+        # SUPPRESSED still outrank — those are "must not act" gates, not stale
+        # flag state.
+        if self._pending_enforcements:
+            return STATUS_PENDING
+        if self._pending_verifications:
+            return STATUS_VERIFYING
         if not self._flags_match():
             return STATUS_CONDITIONAL
         return self._derive_armed_or_cooldown(now)
