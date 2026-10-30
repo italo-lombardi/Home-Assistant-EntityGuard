@@ -575,5 +575,77 @@
       "cancelled": "Regel övergav en verifieringscykel (villkor ändrades)",
       "suppressed": "Regel stoppade tillämpningen (loopskydd)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: en regel tillämpade ett mål",
+      "description": "Utlöses när en regel tillämpar ett mål (ställer in det till önskat läge).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (lämna tomt för valfri regel)",
+          "description": "Begränsa den här triggern till en regel. Lämna tomt för att utlösa för valfri regel."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: en regel hoppade över tillämpning",
+      "description": "Utlöses när en regel hoppar över att tillämpa ett mål.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (lämna tomt för valfri regel)",
+          "description": "Begränsa den här triggern till en regel. Lämna tomt för att utlösa för valfri regel."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: en regel upptäckte en tillämpningsloop",
+      "description": "Utlöses när en regel upptäcker en tillämpningsloop.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (lämna tomt för valfri regel)",
+          "description": "Begränsa den här triggern till en regel. Lämna tomt för att utlösa för valfri regel."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: en regel verifierade att ett mål nådde önskat läge",
+      "description": "Utlöses när en regel bekräftar att ett mål nådde önskat läge efter tillämpning.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (lämna tomt för valfri regel)",
+          "description": "Begränsa den här triggern till en regel. Lämna tomt för att utlösa för valfri regel."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: en regel kunde inte få ett mål att nå önskat läge",
+      "description": "Utlöses när en regel inte kunde få ett mål att nå önskat läge.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (lämna tomt för valfri regel)",
+          "description": "Begränsa den här triggern till en regel. Lämna tomt för att utlösa för valfri regel."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: en regel övergav en verifieringscykel (ett villkor ändrades)",
+      "description": "Utlöses när en regel överger en påbörjad verifieringscykel utan resultat eftersom ett externt villkor ändrades (regeln undertrycktes, inaktiverades, huvudbrytaren stängdes av eller dess villkorsflaggor uppfylls inte längre).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (lämna tomt för valfri regel)",
+          "description": "Begränsa den här triggern till en regel. Lämna tomt för att utlösa för valfri regel."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: en regel stoppade tillämpningen (loopskydd)",
+      "description": "Utlöses när en regel stoppar tillämpningen för att skydda mot en loop.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (lämna tomt för valfri regel)",
+          "description": "Begränsa den här triggern till en regel. Lämna tomt för att utlösa för valfri regel."
+        }
+      }
+    }
   }
 }

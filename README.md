@@ -49,6 +49,8 @@ Enforce desired entity state in Home Assistant via declarative rules. Replaces N
 
 ## Installation
 
+> **Requirements:** Home Assistant **2026.7.0 or newer** (as of 0.5.0). HACS will not offer the update on older cores; upgrade Home Assistant first.
+
 ### HACS (Recommended)
 
 1. Open HACS in your Home Assistant instance.

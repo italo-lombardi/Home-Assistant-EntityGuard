@@ -575,5 +575,77 @@
       "cancelled": "La regla ha abandonat una verificació (ha canviat una condició)",
       "suppressed": "La regla ha suprimit l'aplicació (protecció contra bucles)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: una regla ha aplicat un objectiu",
+      "description": "S'activa quan una regla aplica un objectiu (l'estableix a l'estat desitjat).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regla (deixeu-ho buit per a qualsevol regla)",
+          "description": "Limita aquest activador a una sola regla. Deixeu-ho buit perquè s'activi amb qualsevol regla."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: una regla ha omès l'aplicació",
+      "description": "S'activa quan una regla omet l'aplicació d'un objectiu.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regla (deixeu-ho buit per a qualsevol regla)",
+          "description": "Limita aquest activador a una sola regla. Deixeu-ho buit perquè s'activi amb qualsevol regla."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: una regla ha detectat un bucle d'aplicació",
+      "description": "S'activa quan una regla detecta un bucle d'aplicació.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regla (deixeu-ho buit per a qualsevol regla)",
+          "description": "Limita aquest activador a una sola regla. Deixeu-ho buit perquè s'activi amb qualsevol regla."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: una regla ha verificat que un objectiu ha assolit l'estat desitjat",
+      "description": "S'activa quan una regla confirma que un objectiu ha assolit l'estat desitjat després d'aplicar-lo.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regla (deixeu-ho buit per a qualsevol regla)",
+          "description": "Limita aquest activador a una sola regla. Deixeu-ho buit perquè s'activi amb qualsevol regla."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: una regla no ha pogut fer que un objectiu assolís l'estat desitjat",
+      "description": "S'activa quan una regla no ha pogut fer que un objectiu assolís l'estat desitjat.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regla (deixeu-ho buit per a qualsevol regla)",
+          "description": "Limita aquest activador a una sola regla. Deixeu-ho buit perquè s'activi amb qualsevol regla."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: una regla ha abandonat un cicle de verificació (ha canviat una condició)",
+      "description": "S'activa quan una regla abandona un cicle de verificació iniciat sense veredicte perquè ha canviat una condició externa (la regla s'ha suprimit, s'ha desactivat, l'interruptor mestre s'ha apagat o els seus indicadors condicionals ja no es compleixen).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regla (deixeu-ho buit per a qualsevol regla)",
+          "description": "Limita aquest activador a una sola regla. Deixeu-ho buit perquè s'activi amb qualsevol regla."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: una regla ha suprimit l'aplicació (protecció contra bucles)",
+      "description": "S'activa quan una regla suprimeix l'aplicació per protegir contra un bucle.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regla (deixeu-ho buit per a qualsevol regla)",
+          "description": "Limita aquest activador a una sola regla. Deixeu-ho buit perquè s'activi amb qualsevol regla."
+        }
+      }
+    }
   }
 }

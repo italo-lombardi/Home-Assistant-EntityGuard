@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.0] — 2026-10-31
+
+### Added
+
+- **Integration-level triggers (any-rule, not just per-device).** All seven rule events — enforced / skipped / loop-detected / verified / unreachable / cancelled / suppressed — are now pickable directly in Home Assistant's generic trigger picker (Settings → Automations → add trigger), each with an optional **Rule** field: pick one rule to scope the trigger to it, or **leave it empty to fire for *any* rule**. The any-rule case ("notify me when *any* rule goes unreachable") is the new capability — the existing device-automation triggers (0.4.0) stay and remain per-device. Trigger payload carries `rule_id`, `rule_name`, `event_type`, and (for the target-bearing events) `entity_id` so any-rule automations can still branch per rule in conditions. Picker icons added.
+
+### Changed
+
+- **BREAKING: minimum Home Assistant raised to 2026.7.0** (HACS floor was `2024.1.0`). Required for the single-generation integration-trigger API with no version shims. HACS will not offer the update on cores older than 2026.7.0 until Home Assistant is upgraded.
+
 ## [0.4.2] — 2026-10-30
 
 ### Added

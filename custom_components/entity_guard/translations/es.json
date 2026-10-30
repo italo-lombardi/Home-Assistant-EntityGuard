@@ -575,5 +575,77 @@
       "cancelled": "La regla abandonó un ciclo de verificación (cambió una condición)",
       "suppressed": "La regla suprimió la actuación (protección contra bucles)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: Una regla actuó sobre un objetivo",
+      "description": "Se activa cuando una regla actúa sobre un objetivo (lo pone en el estado deseado).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regla (dejar vacío para cualquier regla)",
+          "description": "Limitar este activador a una regla. Dejar vacío para activar con cualquier regla."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: Una regla omitió la actuación",
+      "description": "Se activa cuando una regla omite la actuación sobre un objetivo.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regla (dejar vacío para cualquier regla)",
+          "description": "Limitar este activador a una regla. Dejar vacío para activar con cualquier regla."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: Una regla detectó un bucle de actuación",
+      "description": "Se activa cuando una regla detecta un bucle de actuación.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regla (dejar vacío para cualquier regla)",
+          "description": "Limitar este activador a una regla. Dejar vacío para activar con cualquier regla."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: Una regla verificó que un objetivo alcanzó el estado deseado",
+      "description": "Se activa cuando una regla confirma que un objetivo alcanzó el estado deseado tras la actuación.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regla (dejar vacío para cualquier regla)",
+          "description": "Limitar este activador a una regla. Dejar vacío para activar con cualquier regla."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: Una regla no logró que un objetivo alcanzara el estado deseado",
+      "description": "Se activa cuando una regla no logró que un objetivo alcanzara el estado deseado.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regla (dejar vacío para cualquier regla)",
+          "description": "Limitar este activador a una regla. Dejar vacío para activar con cualquier regla."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: Una regla abandonó un ciclo de verificación (cambió una condición)",
+      "description": "Se activa cuando una regla abandona un ciclo de verificación iniciado sin veredicto porque cambió una condición externa (la regla se suprimió, se desactivó, el interruptor maestro se apagó o sus indicadores condicionales ya no se cumplen).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regla (dejar vacío para cualquier regla)",
+          "description": "Limitar este activador a una regla. Dejar vacío para activar con cualquier regla."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: Una regla suprimió la actuación (protección contra bucles)",
+      "description": "Se activa cuando una regla suprime la actuación para protegerse contra un bucle.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regla (dejar vacío para cualquier regla)",
+          "description": "Limitar este activador a una regla. Dejar vacío para activar con cualquier regla."
+        }
+      }
+    }
   }
 }

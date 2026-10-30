@@ -575,5 +575,77 @@
       "cancelled": "Taisyklė atmetė patikros ciklą (pasikeitė sąlyga)",
       "suppressed": "Taisyklė sustabdė taikymą (ciklo apsauga)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: taisyklė pritaikė tikslui",
+      "description": "Suveikia, kai taisyklė pritaiko tikslui (nustato jį į norimą būseną).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Taisyklė (palikite tuščią bet kuriai taisyklei)",
+          "description": "Apriboti šį trigerį viena taisykle. Palikite tuščią, kad suveiktų bet kuriai taisyklei."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: taisyklė praleido taikymą",
+      "description": "Suveikia, kai taisyklė praleidžia tikslo taikymą.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Taisyklė (palikite tuščią bet kuriai taisyklei)",
+          "description": "Apriboti šį trigerį viena taisykle. Palikite tuščią, kad suveiktų bet kuriai taisyklei."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: taisyklė aptiko taikymo ciklą",
+      "description": "Suveikia, kai taisyklė aptinka taikymo ciklą.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Taisyklė (palikite tuščią bet kuriai taisyklei)",
+          "description": "Apriboti šį trigerį viena taisykle. Palikite tuščią, kad suveiktų bet kuriai taisyklei."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: taisyklė patvirtino, kad tikslas pasiekė norimą būseną",
+      "description": "Suveikia, kai taisyklė po taikymo patvirtina, kad tikslas pasiekė norimą būseną.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Taisyklė (palikite tuščią bet kuriai taisyklei)",
+          "description": "Apriboti šį trigerį viena taisykle. Palikite tuščią, kad suveiktų bet kuriai taisyklei."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: taisyklė nepajėgė priversti tikslą pasiekti norimos būsenos",
+      "description": "Suveikia, kai taisyklė nepajėgia priversti tikslą pasiekti norimos būsenos.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Taisyklė (palikite tuščią bet kuriai taisyklei)",
+          "description": "Apriboti šį trigerį viena taisykle. Palikite tuščią, kad suveiktų bet kuriai taisyklei."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: taisyklė atmetė patikros ciklą (pasikeitė sąlyga)",
+      "description": "Suveikia, kai taisyklė be rezultato atmeta pradėtą patikros ciklą, nes pasikeitė išorinė sąlyga (taisyklė buvo sustabdyta, išjungta, pagrindinis jungiklis buvo išjungtas arba jos sąlyginės vėliavėlės nebetenkinamos).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Taisyklė (palikite tuščią bet kuriai taisyklei)",
+          "description": "Apriboti šį trigerį viena taisykle. Palikite tuščią, kad suveiktų bet kuriai taisyklei."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: taisyklė sustabdė taikymą (ciklo apsauga)",
+      "description": "Suveikia, kai taisyklė sustabdo taikymą, kad apsaugotų nuo ciklo.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Taisyklė (palikite tuščią bet kuriai taisyklei)",
+          "description": "Apriboti šį trigerį viena taisykle. Palikite tuščią, kad suveiktų bet kuriai taisyklei."
+        }
+      }
+    }
   }
 }

@@ -575,5 +575,77 @@
       "cancelled": "Pravidlo přerušilo ověřovací cyklus (změnila se podmínka)",
       "suppressed": "Pravidlo potlačilo vynucení (ochrana proti smyčkám)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: pravidlo vynutilo cíl",
+      "description": "Spustí se, když pravidlo vynutí cíl (nastaví jej do požadovaného stavu).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravidlo (ponechte prázdné pro libovolné pravidlo)",
+          "description": "Omezit tento spouštěč na jedno pravidlo. Ponechte prázdné, aby se spustil pro libovolné pravidlo."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: pravidlo přeskočilo vynucení",
+      "description": "Spustí se, když pravidlo přeskočí vynucení cíle.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravidlo (ponechte prázdné pro libovolné pravidlo)",
+          "description": "Omezit tento spouštěč na jedno pravidlo. Ponechte prázdné, aby se spustil pro libovolné pravidlo."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: pravidlo zjistilo smyčku vynucení",
+      "description": "Spustí se, když pravidlo zjistí smyčku vynucení.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravidlo (ponechte prázdné pro libovolné pravidlo)",
+          "description": "Omezit tento spouštěč na jedno pravidlo. Ponechte prázdné, aby se spustil pro libovolné pravidlo."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: pravidlo ověřilo, že cíl dosáhl požadovaného stavu",
+      "description": "Spustí se, když pravidlo potvrdí, že cíl po vynucení dosáhl požadovaného stavu.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravidlo (ponechte prázdné pro libovolné pravidlo)",
+          "description": "Omezit tento spouštěč na jedno pravidlo. Ponechte prázdné, aby se spustil pro libovolné pravidlo."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: pravidlo nedokázalo přimět cíl dosáhnout požadovaného stavu",
+      "description": "Spustí se, když pravidlo nedokáže přimět cíl dosáhnout požadovaného stavu.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravidlo (ponechte prázdné pro libovolné pravidlo)",
+          "description": "Omezit tento spouštěč na jedno pravidlo. Ponechte prázdné, aby se spustil pro libovolné pravidlo."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: pravidlo přerušilo ověřovací cyklus (změnila se podmínka)",
+      "description": "Spustí se, když pravidlo přeruší zahájený ověřovací cyklus bez výsledku, protože se změnila vnější podmínka (pravidlo bylo potlačeno, zakázáno, hlavní přepínač byl vypnut nebo jeho podmíněné příznaky již nejsou splněny).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravidlo (ponechte prázdné pro libovolné pravidlo)",
+          "description": "Omezit tento spouštěč na jedno pravidlo. Ponechte prázdné, aby se spustil pro libovolné pravidlo."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: pravidlo potlačilo vynucení (ochrana proti smyčkám)",
+      "description": "Spustí se, když pravidlo potlačí vynucení, aby ochránilo před smyčkou.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravidlo (ponechte prázdné pro libovolné pravidlo)",
+          "description": "Omezit tento spouštěč na jedno pravidlo. Ponechte prázdné, aby se spustil pro libovolné pravidlo."
+        }
+      }
+    }
   }
 }

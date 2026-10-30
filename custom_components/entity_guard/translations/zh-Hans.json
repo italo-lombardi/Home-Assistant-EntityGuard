@@ -575,5 +575,77 @@
       "cancelled": "规则因外部条件变化而放弃了一次验证检查",
       "suppressed": "规则已抑制强制执行（循环保护）"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard：规则已强制执行目标",
+      "description": "当规则对目标强制执行（将其设置为期望状态）时触发。",
+      "fields": {
+        "config_entry_id": {
+          "name": "规则（留空表示任意规则）",
+          "description": "将此触发器限定为某一条规则。留空则对任意规则触发。"
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard：规则已跳过强制执行",
+      "description": "当规则跳过对目标的强制执行时触发。",
+      "fields": {
+        "config_entry_id": {
+          "name": "规则（留空表示任意规则）",
+          "description": "将此触发器限定为某一条规则。留空则对任意规则触发。"
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard：规则检测到强制执行循环",
+      "description": "当规则检测到强制执行循环时触发。",
+      "fields": {
+        "config_entry_id": {
+          "name": "规则（留空表示任意规则）",
+          "description": "将此触发器限定为某一条规则。留空则对任意规则触发。"
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard：规则已确认目标达到期望状态",
+      "description": "当规则在强制执行后确认目标达到期望状态时触发。",
+      "fields": {
+        "config_entry_id": {
+          "name": "规则（留空表示任意规则）",
+          "description": "将此触发器限定为某一条规则。留空则对任意规则触发。"
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard：规则无法使目标达到期望状态",
+      "description": "当规则无法使目标达到期望状态时触发。",
+      "fields": {
+        "config_entry_id": {
+          "name": "规则（留空表示任意规则）",
+          "description": "将此触发器限定为某一条规则。留空则对任意规则触发。"
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard：规则放弃了一次验证检查（条件已变化）",
+      "description": "当外部条件发生变化，规则放弃已开始的验证检查且未得出结论时触发（规则被抑制、被禁用、中枢主开关被关闭，或其条件标志不再满足）。",
+      "fields": {
+        "config_entry_id": {
+          "name": "规则（留空表示任意规则）",
+          "description": "将此触发器限定为某一条规则。留空则对任意规则触发。"
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard：规则已抑制强制执行（循环保护）",
+      "description": "当规则为防止循环而抑制强制执行时触发。",
+      "fields": {
+        "config_entry_id": {
+          "name": "规则（留空表示任意规则）",
+          "description": "将此触发器限定为某一条规则。留空则对任意规则触发。"
+        }
+      }
+    }
   }
 }
