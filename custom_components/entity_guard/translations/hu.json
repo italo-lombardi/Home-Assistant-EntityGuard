@@ -566,7 +566,10 @@
     "trigger_type": {
       "enforced": "A szabály kényszerített egy célt",
       "skipped": "A szabály kihagyta a kényszerítést",
-      "loop_detected": "A szabály kényszerítési hurkot észlelt"
+      "loop_detected": "A szabály kényszerítési hurkot észlelt",
+      "verified": "A szabály ellenőrizte, hogy egy cél elérte a kívánt állapotot",
+      "unreachable": "A szabály nem tudta a célt a kívánt állapotba kényszeríteni",
+      "suppressed": "A szabály elnyomta a kényszerítést (hurokvédelem)"
     }
   }
 }

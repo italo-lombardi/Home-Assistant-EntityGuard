@@ -566,7 +566,10 @@
     "trigger_type": {
       "enforced": "Pravidlo vynútilo cieľ",
       "skipped": "Pravidlo preskočilo vynútenie",
-      "loop_detected": "Pravidlo zistilo slučku vynucovania"
+      "loop_detected": "Pravidlo zistilo slučku vynucovania",
+      "verified": "Pravidlo overilo, že cieľ dosiahol požadovaný stav",
+      "unreachable": "Pravidlo nedokázalo dosiahnuť požadovaný stav cieľa",
+      "suppressed": "Pravidlo potlačilo vynucovanie (ochrana proti slučkám)"
     }
   }
 }

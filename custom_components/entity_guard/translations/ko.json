@@ -566,7 +566,10 @@
     "trigger_type": {
       "enforced": "규칙이 대상을 적용함",
       "skipped": "규칙이 적용을 건너뜀",
-      "loop_detected": "규칙이 적용 루프를 감지함"
+      "loop_detected": "규칙이 적용 루프를 감지함",
+      "verified": "규칙이 대상이 원하는 상태에 도달했음을 확인함",
+      "unreachable": "규칙이 대상을 원하는 상태로 만들지 못함",
+      "suppressed": "규칙이 적용을 억제함(루프 보호)"
     }
   }
 }

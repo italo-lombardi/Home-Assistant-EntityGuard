@@ -566,7 +566,10 @@
     "trigger_type": {
       "enforced": "Regel heeft een doel afgedwongen",
       "skipped": "Regel heeft afdwinging overgeslagen",
-      "loop_detected": "Regel heeft een afdwingingslus gedetecteerd"
+      "loop_detected": "Regel heeft een afdwingingslus gedetecteerd",
+      "verified": "Regel heeft bevestigd dat een doel de gewenste toestand heeft bereikt",
+      "unreachable": "Regel kon een doel de gewenste toestand niet laten bereiken",
+      "suppressed": "Regel heeft afdwinging onderdrukt (lusbeveiliging)"
     }
   }
 }

@@ -566,7 +566,10 @@
     "trigger_type": {
       "enforced": "Noteikums piemēroja mērķi",
       "skipped": "Noteikums izlaida piemērošanu",
-      "loop_detected": "Noteikums konstatēja piemērošanas cilpu"
+      "loop_detected": "Noteikums konstatēja piemērošanas cilpu",
+      "verified": "Noteikums pārbaudīja, ka mērķis sasniedza vēlamo stāvokli",
+      "unreachable": "Noteikums piemēroja, bet mērķis nesasniedza vēlamo stāvokli",
+      "suppressed": "Noteikums apturēja piemērošanu (cilpu aizsardzība)"
     }
   }
 }

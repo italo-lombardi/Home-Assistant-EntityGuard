@@ -10,7 +10,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.entity_guard.const import DOMAIN, EVENT_ENFORCED
+from custom_components.entity_guard.const import (
+    DOMAIN,
+    EVENT_ENFORCED,
+    EVENT_SUPPRESSED,
+    EVENT_UNREACHABLE,
+    EVENT_VERIFIED,
+)
 from custom_components.entity_guard.device_trigger import (
     async_attach_trigger,
     async_get_triggers,
@@ -31,11 +37,18 @@ def _rule_device(hass: HomeAssistant, unique_id: str = "rule-uuid-1"):
     return entry, dev
 
 
-async def test_get_triggers_lists_all_three_for_a_rule(hass: HomeAssistant) -> None:
+async def test_get_triggers_lists_all_six_for_a_rule(hass: HomeAssistant) -> None:
     _entry, dev = _rule_device(hass)
     triggers = await async_get_triggers(hass, dev.id)
     types = {t[CONF_TYPE] for t in triggers}
-    assert types == {"enforced", "skipped", "loop_detected"}
+    assert types == {
+        "enforced",
+        "skipped",
+        "loop_detected",
+        "verified",
+        "unreachable",
+        "suppressed",
+    }
     for t in triggers:
         assert t[CONF_PLATFORM] == "device"
         assert t[CONF_DOMAIN] == DOMAIN
@@ -98,6 +111,41 @@ async def test_attach_trigger_fires_on_the_rules_event(hass: HomeAssistant) -> N
         assert action.call_count == 1
         # A different rule's event → action does NOT fire.
         hass.bus.async_fire(EVENT_ENFORCED, {"rule_id": "some-other-rule"})
+        await hass.async_block_till_done()
+        assert action.call_count == 1
+    finally:
+        unsub()
+
+
+@pytest.mark.parametrize(
+    ("trigger_type", "event_type"),
+    [
+        ("verified", EVENT_VERIFIED),
+        ("unreachable", EVENT_UNREACHABLE),
+        ("suppressed", EVENT_SUPPRESSED),
+    ],
+)
+async def test_attach_trigger_fires_on_new_event_types(
+    hass: HomeAssistant, trigger_type: str, event_type: str
+) -> None:
+    """The verify/unreachable/suppressed triggers filter on rule_id the same way
+    as 'enforced' — one parametrized check, since the filter path is generic."""
+    _entry, dev = _rule_device(hass, unique_id="rule-uuid-xyz")
+    action = AsyncMock()
+    config = {
+        CONF_PLATFORM: "device",
+        CONF_DOMAIN: DOMAIN,
+        CONF_DEVICE_ID: dev.id,
+        CONF_TYPE: trigger_type,
+    }
+    unsub = await async_attach_trigger(
+        hass, config, action, {"trigger_data": {}, "variables": {}}
+    )
+    try:
+        hass.bus.async_fire(event_type, {"rule_id": "rule-uuid-xyz"})
+        await hass.async_block_till_done()
+        assert action.call_count == 1
+        hass.bus.async_fire(event_type, {"rule_id": "some-other-rule"})
         await hass.async_block_till_done()
         assert action.call_count == 1
     finally:

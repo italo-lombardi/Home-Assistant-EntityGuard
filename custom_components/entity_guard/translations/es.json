@@ -566,7 +566,10 @@
     "trigger_type": {
       "enforced": "La regla actuó sobre un objetivo",
       "skipped": "La regla omitió la actuación",
-      "loop_detected": "La regla detectó un bucle de actuación"
+      "loop_detected": "La regla detectó un bucle de actuación",
+      "verified": "La regla verificó que un objetivo alcanzó el estado deseado",
+      "unreachable": "La regla no logró que un objetivo alcanzara el estado deseado",
+      "suppressed": "La regla suprimió la actuación (protección contra bucles)"
     }
   }
 }

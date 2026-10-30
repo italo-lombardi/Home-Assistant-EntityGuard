@@ -566,7 +566,10 @@
     "trigger_type": {
       "enforced": "Regel hat ein Ziel durchgesetzt",
       "skipped": "Regel hat die Durchsetzung übersprungen",
-      "loop_detected": "Regel hat eine Durchsetzungsschleife erkannt"
+      "loop_detected": "Regel hat eine Durchsetzungsschleife erkannt",
+      "verified": "Regel hat bestätigt, dass ein Ziel den gewünschten Zustand erreicht hat",
+      "unreachable": "Regel konnte ein Ziel nicht in den gewünschten Zustand bringen",
+      "suppressed": "Regel hat die Durchsetzung unterdrückt (Schleifenschutz)"
     }
   }
 }
