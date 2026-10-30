@@ -6139,3 +6139,98 @@ async def test_recently_enforced_unreachable_cleared_by_clear_history(
     await engine.async_clear_history()
     assert engine.is_recently_enforced_unreachable() is False
     assert engine._recently_enforced_unreachable_unsub is None
+
+
+# ---------------------------------------------------------------------------
+# cancel-mid-enforce: the success tail must survive a self-cancel
+# ---------------------------------------------------------------------------
+
+
+async def test_enforce_tail_survives_cancel_during_service_call(hass: HomeAssistant):
+    """A target's own post-enforce state_changed re-enters the sweep and cancels
+    the still-awaiting enforce task mid service-ACK (_schedule_eval_task is
+    per-entity cancel-and-replace). Before the asyncio.shield, CancelledError
+    raised AT the await — after the device moved but BEFORE counters/last_enforced/
+    EVENT_ENFORCED/_persist — silently losing all bookkeeping while the physical
+    switch stayed flipped. The shield keeps the call + sync tail atomic: the
+    enforce must still record even though the task is cancelled during the call.
+    """
+    config = _make_config(target_state="on", trigger_states=["on"])
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    enforced_events = []
+    hass.bus.async_listen(EVENT_ENFORCED, lambda e: enforced_events.append(e))
+
+    config.target_entities = ["switch.bedroom"]
+    hass.states.async_set("switch.bedroom", "off")
+
+    # The service "succeeds" (device moves) but, like a slow battery/RF switch
+    # whose ACK lands seconds after the blocking call starts, the enclosing
+    # enforce task is cancelled while this call is in flight. The cancel must be
+    # deferred until the device move + the sync success tail have run.
+    outer_task: asyncio.Task | None = None
+
+    async def _slow_turn_on(call):
+        # Cancel the enforce task from OUTSIDE the call (the per-entity replace
+        # does exactly this), then yield so the cancellation is delivered while
+        # the shielded call is still awaited.
+        assert outer_task is not None
+        outer_task.cancel()
+        await asyncio.sleep(0)
+
+    hass.services.async_register("switch", "turn_on", _slow_turn_on)
+
+    before = engine.state.enforcement_count_total
+
+    outer_task = hass.async_create_task(engine._enforce("switch.bedroom"))
+    with pytest.raises(asyncio.CancelledError):
+        await outer_task
+
+    assert engine.state.enforcement_count_total == before + 1, (
+        "enforce tail did not record total count after a mid-call cancel"
+    )
+    assert engine.state.last_enforced is not None, "last_enforced not stamped"
+    assert len(enforced_events) == 1, "EVENT_ENFORCED did not fire"
+
+
+async def test_enforce_cancel_path_still_arms_cooldown_broadcast(hass: HomeAssistant):
+    """On the cancel path, the cooldown-expiry broadcast must still be armed for a
+    debounced rule — the re-raise sits AFTER the broadcast arming, so the card's
+    cooldown countdown gets its scheduled repaint even when the enforce task is
+    cancelled mid-ACK. Regression guard for the peer-review finding that moving
+    the re-raise before the broadcast would skip it on exactly this path.
+    """
+    config = _make_config(
+        target_state="on",
+        trigger_states=["on"],
+        debounce_enabled=True,
+        debounce_seconds=60,
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+
+    config.target_entities = ["switch.bedroom"]
+    hass.states.async_set("switch.bedroom", "off")
+
+    outer_task: asyncio.Task | None = None
+
+    async def _slow_turn_on(call):
+        assert outer_task is not None
+        outer_task.cancel()
+        await asyncio.sleep(0)
+
+    hass.services.async_register("switch", "turn_on", _slow_turn_on)
+
+    outer_task = hass.async_create_task(engine._enforce("switch.bedroom"))
+    with pytest.raises(asyncio.CancelledError):
+        await outer_task
+
+    # Cooldown was set in the (committed) tail, and its broadcast timer armed
+    # despite the cancel — the dict carries the unsub for this entity.
+    assert "switch.bedroom" in engine.state.cooldowns, "cooldown not set on cancel path"
+    assert "switch.bedroom" in engine._cooldown_broadcast_unsubs, (
+        "cooldown broadcast not armed on the cancel path (re-raise ran too early)"
+    )
+    # Cancel the armed 60s timer so the HA test harness sees no lingering job.
+    engine._cooldown_broadcast_unsubs["switch.bedroom"]()
