@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 DOMAIN = "entity_guard"
 
 # Entry types
@@ -130,8 +132,21 @@ MAX_DEBOUNCE_SECONDS = 86400
 MIN_RATE_LIMIT = 1
 MAX_RATE_LIMIT = 600
 
+
 # Behavior
-STARTUP_GRACE_PERIOD_SECONDS = 60
+# Startup grace: the engine ignores target state events for this long after load
+# so a restart's state-restore storm doesn't trigger a correction cascade. Prod
+# default 60s. Overridable via env for test/smoke harnesses that can't wait it out
+# (each rule arms only after grace → dominates smoke wall-clock). A bad value
+# falls back to 60 rather than crashing startup.
+def _startup_grace_seconds() -> int:
+    try:
+        return int(os.getenv("EG_STARTUP_GRACE_SECONDS", "60"))
+    except ValueError:
+        return 60
+
+
+STARTUP_GRACE_PERIOD_SECONDS = _startup_grace_seconds()
 STORE_VERSION = 1
 STORE_SAVE_DELAY_SECONDS = 10
 RECENTLY_ENFORCED_WINDOW_SECONDS = 30

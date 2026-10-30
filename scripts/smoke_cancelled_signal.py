@@ -67,10 +67,14 @@ MASTER = "switch.entity_guard_hub_master_enabled"
 def set_master(token: str, on: bool) -> None:
     """Flip the hub master-enable switch. The engine only arms rules while master
     is ON (else every rule reads 'master_disabled' and wait_for_armed times out).
-    Smoke turns it ON up front and OFF in `finally` so the container is left as
-    found regardless of pass/fail."""
+    Smoke turns it ON up front and restores the pre-run value in `finally` so the
+    container is left as found regardless of pass/fail."""
     svc = "turn_on" if on else "turn_off"
     sf.api(token, "POST", f"/api/services/switch/{svc}", {"entity_id": MASTER})
+
+
+def get_master(token: str) -> str | None:
+    return (sf.get_state(token, MASTER) or {}).get("state")
 
 
 def main() -> int:
@@ -86,8 +90,10 @@ def main() -> int:
 
     # Snapshot what we perturb so `finally` restores it: the TARGET's real state
     # (force_state injects a virtual value over it — no device command, but leaves
-    # the state machine reading the stale value) and the master switch (left OFF).
+    # the state machine reading the stale value) and the master switch (restored
+    # to its pre-run value, NOT hardcoded OFF — the batch may have it ON).
     target_pre = (sf.get_state(token, TARGET) or {}).get("state")
+    master_pre = get_master(token)
     set_master(token, True)
     time.sleep(2)
 
@@ -199,8 +205,10 @@ def main() -> int:
         # drops the injected state back to where we found it).
         if target_pre not in (None, "unavailable", "unknown"):
             sv.force_state(token, TARGET, target_pre)
-        # Always leave master OFF (as found) — on pass, fail, or exception.
-        set_master(token, False)
+        # Restore master to its pre-run value (on pass, fail, or exception).
+        # Only force OFF if it was not already ON before this run — never strand
+        # a batch that needs master ON.
+        set_master(token, master_pre == "on")
 
     if sf.FAILS:
         print(f"\nFAILED: {sf.FAILS}")

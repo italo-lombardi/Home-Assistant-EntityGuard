@@ -43,6 +43,11 @@ TARGET = "light.living_room_under_cabinet_lights"
 ATTR_SOURCE = "light.living_room_diffuser"
 ATTR_TARGET = "light.living_room_under_cabinet_lights"
 
+# Unique per-run suffix so a rule orphaned by a prior crashed/killed run can't
+# collide on name (flow returns 400 name_already_exists). Matches the sibling
+# smokes' idiom (smoke_color_guard.py, smoke_deliverable_states.py).
+RUN = str(int(time.time()))
+
 
 def mint_token() -> str:
     import jwt  # PyJWT, present in the HA venv
@@ -153,6 +158,14 @@ def check(name: str, cond: bool, detail: str = "") -> None:
     print(f"  [{mark}] {name}" + (f" — {detail}" if detail else ""))
     if not cond:
         FAILS.append(name)
+
+
+def skip(name: str, reason: str) -> None:
+    """A leg we could not validate because the test FIXTURE (a real HA light)
+    would not cooperate — e.g. a virtual/demo light that does not expose
+    brightness. Not a code failure, so it must not append to FAILS; print it so
+    the run is honest about what it did not cover (memory: no silent caps)."""
+    print(f"  [SKIP] {name} — {reason}")
 
 
 def cleanup(token: str) -> None:
@@ -401,7 +414,7 @@ def main() -> int:
     print("Creating dynamic_state (mirror) rule…")
     try:
         entry_id = create_dynamic_state_rule(
-            token, "EG Smoke Dynamic State", SOURCE, [TARGET], invert=False
+            token, f"EG Smoke Dynamic State {RUN}", SOURCE, [TARGET], invert=False
         )
     except Exception as e:
         print(f"  [FAIL] create dynamic_state rule — {e}")
@@ -526,7 +539,7 @@ def main() -> int:
     try:
         attr_entry = create_dynamic_attribute_rule(
             token,
-            "EG Smoke Dynamic Attribute",
+            f"EG Smoke Dynamic Attribute {RUN}",
             ATTR_SOURCE,
             [ATTR_TARGET],
             target_attribute="brightness",
@@ -539,7 +552,15 @@ def main() -> int:
 
     if attr_entry:
         # Both lights on; set source brightness; target must follow (while on).
-        api(token, "POST", "/api/services/light/turn_on", {"entity_id": ATTR_TARGET})
+        # Reset the target to a known baseline != the value we will mirror (123),
+        # so a stale brightness left by a PRIOR run's fixed_attribute leg (same
+        # physical light) can't masquerade as a pass OR a fail.
+        api(
+            token,
+            "POST",
+            "/api/services/light/turn_on",
+            {"entity_id": ATTR_TARGET, "brightness": 50},
+        )
         api(
             token,
             "POST",
@@ -577,12 +598,37 @@ def main() -> int:
             "/api/services/light/turn_on",
             {"entity_id": ATTR_SOURCE, "brightness": 123},
         )
-        ok = wait_for_attr(token, ATTR_TARGET, "brightness", 123, timeout=20)
-        check(
-            "dynamic_attribute: target brightness follows source",
-            ok,
-            f"target brightness={get_state(token, ATTR_TARGET).get('attributes', {}).get('brightness')}",
-        )
+        # The mirror can only follow a brightness the SOURCE actually reports.
+        # If this real light won't commit/expose brightness=123, the engine reads
+        # None and correctly skips the drive — a fixture limit, not a bug: SKIP.
+        src_ok = wait_for_attr(token, ATTR_SOURCE, "brightness", 123, timeout=10)
+        if not src_ok:
+            src_b = (
+                get_state(token, ATTR_SOURCE).get("attributes", {}).get("brightness")
+            )
+            skip(
+                "dynamic_attribute: target brightness follows source",
+                f"source {ATTR_SOURCE} did not expose brightness=123 (got {src_b})",
+            )
+        else:
+            # Real dimmers scale/round brightness; accept ±2 rather than exact ==.
+            deadline = time.time() + 20
+            tb = None
+            while time.time() < deadline:
+                tb = (
+                    get_state(token, ATTR_TARGET)
+                    .get("attributes", {})
+                    .get("brightness")
+                )
+                if isinstance(tb, (int, float)) and abs(tb - 123) <= 2:
+                    break
+                time.sleep(1)
+            ok = isinstance(tb, (int, float)) and abs(tb - 123) <= 2
+            check(
+                "dynamic_attribute: target brightness follows source",
+                ok,
+                f"target brightness={tb}",
+            )
 
     # Delete the dynamic-mode rules now so the fixed-mode rules below own their
     # targets outright (only two actuatable lights exist; overlapping rules on the
@@ -595,7 +641,7 @@ def main() -> int:
     try:
         create_fixed_state_rule(
             token,
-            "EG Smoke Fixed State",
+            f"EG Smoke Fixed State {RUN}",
             [TARGET],
             target_state="off",
             trigger_states=["on"],
@@ -618,7 +664,7 @@ def main() -> int:
     try:
         create_fixed_attribute_rule(
             token,
-            "EG Smoke Fixed Attribute",
+            f"EG Smoke Fixed Attribute {RUN}",
             [ATTR_TARGET],
             attribute="brightness",
             target_value=180,

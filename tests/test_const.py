@@ -52,6 +52,21 @@ def test_entry_types() -> None:
     assert const.ENTRY_TYPE_HUB != const.ENTRY_TYPE_RULE
 
 
+def test_startup_grace_default_is_60(monkeypatch) -> None:
+    monkeypatch.delenv("EG_STARTUP_GRACE_SECONDS", raising=False)
+    assert const._startup_grace_seconds() == 60
+
+
+def test_startup_grace_env_override(monkeypatch) -> None:
+    monkeypatch.setenv("EG_STARTUP_GRACE_SECONDS", "5")
+    assert const._startup_grace_seconds() == 5
+
+
+def test_startup_grace_bad_value_falls_back_to_60(monkeypatch) -> None:
+    monkeypatch.setenv("EG_STARTUP_GRACE_SECONDS", "not-an-int")
+    assert const._startup_grace_seconds() == 60
+
+
 def test_status_values_have_selector_translations() -> None:
     strings = json.loads(
         (
