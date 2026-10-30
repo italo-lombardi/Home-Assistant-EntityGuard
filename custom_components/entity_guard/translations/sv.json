@@ -53,7 +53,7 @@
           "add_flags": "Bocka i för att kräva extra villkor (t.ex. tillämpa endast när ingen är hemma, endast efter solnedgång). Lämna obockad för att tillämpa varje gång utlösaren aktiveras.",
           "custom_rate_limit": "Loopskydd undertrycker automatiskt regeln om den utlöses mer än 10 gånger per minut (standard). Lämna obockad för att använda standardvärdet. Bocka i för att ange ett eget värde, eller för att stänga av loopskyddet helt på en senare skärm.",
           "add_debounce": "Bocka i för att ignorera snabba fram-och-tillbaka-ändringar. Regeln agerar endast om utlösaren förblir densamma under den tid du ställer in på en senare skärm. Lämna obockad för att agera på varje ändring.",
-          "verify_enabled": "Bocka i för att kontrollera målet igen några sekunder efter tillämpning. Om enheten accepterade kommandot men aldrig faktiskt ändrades fortsätter regeln att tillämpa på nytt tills målet når önskat tillstånd — den ger inte upp av sig själv. Ett mål som aldrig återhämtar sig undertrycks automatiskt en stund av loopskyddet (och markeras som oåtkomligt), och försöks sedan igen. Lämna obockad för att anta att kommandot fungerade."
+          "verify_enabled": "Bocka i för att bekräfta att målet faktiskt nådde önskat tillstånd efter tillämpning. Regeln bevakar enhetens egen tillståndsändring (oftast inom en sekund) och fortsätter tillämpa på nytt tills det landar om kommandot accepterades men ingenting ändrades; en tidsgräns på några sekunder fungerar som skyddsnät för en tyst enhet. Ett mål som aldrig återhämtar sig undertrycks automatiskt av loopskyddet, och försöks sedan igen. Visas endast för regler i tillståndsläge."
         }
       },
       "flags": {

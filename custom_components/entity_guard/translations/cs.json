@@ -53,7 +53,7 @@
           "add_flags": "Zaškrtněte, chcete-li vyžadovat další podmínky (např. vynucovat pouze když nikdo není doma, pouze po západu slunce). Nechte nezaškrtnuté pro vynucení pokaždé, když se spouštěč aktivuje.",
           "custom_rate_limit": "Ochrana proti smyčkám automaticky potlačí pravidlo, pokud se spustí více než 10krát za minutu (výchozí). Nechte nezaškrtnuté pro použití výchozí hodnoty. Zaškrtněte pro nastavení vlastního čísla nebo pro úplné vypnutí ochrany proti smyčkám na další obrazovce.",
           "add_debounce": "Zaškrtněte pro ignorování rychlých změn tam a zpět. Pravidlo se aktivuje pouze tehdy, pokud spouštěč zůstane stejný po dobu, kterou nastavíte na další obrazovce. Nechte nezaškrtnuté pro reakci na každou změnu.",
-          "verify_enabled": "Zaškrtněte, pokud chcete cíl znovu zkontrolovat několik sekund po vynucení. Pokud zařízení příkaz přijalo, ale ve skutečnosti se nezměnilo, pravidlo bude vynucení opakovat tak dlouho, dokud cíl nedosáhne požadovaného stavu – samo se nevzdá. Cíl, který se nikdy neobnoví, ochrana proti smyčkám na čas automaticky potlačí (a označí jako nedostupný) a poté se pokus zopakuje. Ponechte nezaškrtnuté, pokud chcete předpokládat, že příkaz proběhl úspěšně."
+          "verify_enabled": "Zaškrtněte, pokud chcete po vynucení potvrdit, že cíl skutečně dosáhl požadovaného stavu. Pravidlo sleduje vlastní změnu stavu zařízení (obvykle do sekundy) a vynucení opakuje tak dlouho, dokud cíl požadovaného stavu nedosáhne, pokud zařízení příkaz přijalo, ale ve skutečnosti se nic nezměnilo; několikasekundová lhůta slouží jen jako záložní termín pro zařízení, které mlčí. Cíl, který se nikdy neobnoví, ochrana proti smyčkám automaticky potlačí a poté se pokus zopakuje. Zobrazuje se pouze u pravidel v režimu stavu."
         }
       },
       "flags": {
@@ -253,7 +253,7 @@
           "debounce_seconds": "Okno v sekundách. Min. 0, max. 86400 (24 h).",
           "rate_limit_enabled": "Zaškrtněte pro ponechání ochrany proti smyčkám zapnuté (doporučeno). Odškrtněte pro její vypnutí u tohoto pravidla — nekontrolované smyčky nebudou automaticky zastaveny.",
           "max_enforcements_per_minute": "Kolik vynucení za minutu je povoleno, než se pravidlo automaticky potlačí na 15 minut. Min. 1, max. 600. Ignoruje se, když je ochrana proti smyčkám výše odškrtnuta.",
-          "verify_enabled": "Zaškrtněte, pokud chcete po vynucení potvrdit, že cíl skutečně dosáhl požadovaného stavu. Pravidlo sleduje vlastní změnu stavu zařízení (obvykle do sekundy) a vynucení opakuje tak dlouho, dokud se stav neustálí, pokud zařízení příkaz přijalo, ale ve skutečnosti se nezměnilo; několikasekundová lhůta slouží jen jako záložní termín pro zařízení, které mlčí. Cíl, který se nikdy neobnoví, ochrana proti smyčkám automaticky potlačí a poté se pokus zopakuje. Zobrazuje se pouze u pravidel v režimu stavu."
+          "verify_enabled": "Zaškrtněte, pokud chcete po vynucení potvrdit, že cíl skutečně dosáhl požadovaného stavu. Pravidlo sleduje vlastní změnu stavu zařízení (obvykle do sekundy) a vynucení opakuje tak dlouho, dokud cíl požadovaného stavu nedosáhne, pokud zařízení příkaz přijalo, ale ve skutečnosti se nic nezměnilo; několikasekundová lhůta slouží jen jako záložní termín pro zařízení, které mlčí. Cíl, který se nikdy neobnoví, ochrana proti smyčkám automaticky potlačí a poté se pokus zopakuje. Zobrazuje se pouze u pravidel v režimu stavu."
         }
       },
       "edit_attribute_params": {

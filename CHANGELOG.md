@@ -42,6 +42,8 @@
 - **A renamed or removed target entity raises a repair issue** (WARNING, naming the missing targets; no auto-rewrite). Also fixes a latent bug where the flag-entity check caught removals but missed renames. State-machine-only targets (YAML `group.*`, unique_id-less template/MQTT) correctly not flagged.
 - **A hung integration can no longer freeze a rule forever.** Enforcement service call bounded by a 30 s timeout, treated as a failure (logged, counted, surfaced per-target) so the lock releases.
 - **Live cooldown/suppression countdowns on the card.** Reason line ticks down in real time for `cooldown` and `suppressed`, matching the pending countdown. (Status sensor gained `cooldown_ends`, excluded from recorder.)
+- **Create-flow verify help now matches the edit flow and the event-driven behaviour**, across `en` + all 28 locales. The *Verify enforcement worked* toggle help shown while creating a rule carried the old blind-delay wording; it now reads identically to the edit-flow help (confirms on the device's own state-change ACK; the few-second timer is a deadline backstop, not a mandatory dwell). A native-speaker pass also corrected two locales whose existing wording misstated the behaviour — Czech ("until the state settles" → "until the desired state is reached") and Latvian (a medical false-friend for "recover" + a weaker backstop framing) — in both the create and edit help.
+- **Translation tests guard against untranslated locales.** `tests/test_translations.py` fails CI if any locale file is a wholesale English paste (>15% of strings identical to English) or is missing a key present in `en.json` (which would silently fall back to English at runtime).
 
 ## [0.3.1] — 2026-10-19
 
