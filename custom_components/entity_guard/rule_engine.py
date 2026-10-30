@@ -126,6 +126,11 @@ class RuleEngine:
         # guard across the corrective window (no longer a permanent latch).
         self._pending_verifications: dict[str, Callable[[], None]] = {}
         self._verify_attempts: dict[str, int] = {}
+        # Entities whose in-flight verify was armed by a MANUAL force (test_enforce).
+        # A forced cycle bypasses the suppressed/flags_unmet drops (see the
+        # VERIFY-OUTCOME CONTRACT above _arm_verify). Mirrors _verify_attempts'
+        # lifecycle: populated at arm, cleared wherever a cycle resolves/drops.
+        self._forced_verifications: set[str] = set()
         self._unreachable: set[str] = set()
         self._consecutive_exhaustions: dict[str, int] = {}
         self._startup_complete = False
@@ -274,6 +279,7 @@ class RuleEngine:
                 _LOGGER.debug("Pending verify cancel failed", exc_info=True)
         self._pending_verifications.clear()
         self._verify_attempts.clear()
+        self._forced_verifications.clear()
         self._unreachable.clear()
         self._consecutive_exhaustions.clear()
 
@@ -1084,8 +1090,18 @@ class RuleEngine:
 
     # ----------------------------------------------------------- verify-after-enforce
     def _cancel_verify(self, entity_id: str) -> None:
-        """Cancel any pending verify timer for entity_id (dedupe + teardown helper)."""
+        """Cancel any pending verify timer for entity_id (dedupe + teardown helper).
+
+        Clears the forced-origin bit too: every event-path resolution routes its
+        teardown through here (away-move/offline cancel, reached-confirm,
+        reached-but-dropped, fast-confirm, set_enabled drop), so discarding from
+        _forced_verifications HERE keeps the R6 sibling-drop lockstep by
+        construction — no event-path caller can forget it. The deadline _fire
+        path pops _pending_verifications directly (identity guard) and so still
+        discards forced explicitly in each of its own branches.
+        """
         cancel = self._pending_verifications.pop(entity_id, None)
+        self._forced_verifications.discard(entity_id)
         if cancel is not None:
             try:
                 cancel()
@@ -1177,8 +1193,13 @@ class RuleEngine:
             return "disabled"
         if not self._master_enabled_getter():
             return "master_off"
+        # MANUAL force bypasses suppressed + flags_unmet: a forced cycle judges the
+        # DEVICE only (see VERIFY-OUTCOME CONTRACT above _arm_verify). Twin of the
+        # same bypass in _fire — both paths must honor forced identically.
+        forced = entity_id in self._forced_verifications
         if (
-            self._state.suppressed_until
+            not forced
+            and self._state.suppressed_until
             and self._state.suppressed_until > dt_util.now()
         ):
             return "suppressed"
@@ -1186,7 +1207,7 @@ class RuleEngine:
         # pulse. Twin of _fire's flags-unmet drop. Without this the event path
         # fires EVENT_VERIFIED for a cycle the deadline path abandons — a verified
         # signal that flickers on device-ACK timing alone.
-        if not self._flags_match():
+        if not forced and not self._flags_match():
             return "flags_unmet"
         return None
 
@@ -1197,11 +1218,53 @@ class RuleEngine:
         """
         return self._verify_drop_reason(entity_id) is not None
 
+    # ── VERIFY-OUTCOME CONTRACT (do not drift) ────────────────────────────────
+    # A verify cycle arms after a successful enforce and resolves to exactly one of:
+    #   VERIFIED    device reached desired (state-based; don't care who moved it — Ex4a)
+    #   UNREACHABLE device silent through VERIFY_MAX_ATTEMPTS correctives (attempt-based)
+    #   CANCELLED   cycle abandoned mid-window, no verdict, reason ∈
+    #               {disabled, master_off, suppressed, flags_unmet} (unloaded drops silently)
+    #
+    # MANUAL force (async_test_enforce) → FULL verify ALWAYS (Ex1-3). The user overrode
+    #   conditions on purpose, so a forced cycle judges the DEVICE only: it BYPASSES the
+    #   suppressed and flags_unmet drops. It still honors unloaded (teardown) and
+    #   disabled/master_off (the rule/hub is genuinely off — "forced" can't re-enable it).
+    #
+    # AUTOMATIC cycle (flags met → enforce) keeps all four drops. flags/suppression
+    # are read at RESOLVE time (whichever path confirms first), not at arm time:
+    #   auto + flags lapse mid-window (REACHED or not)  → CANCELLED(flags_unmet)
+    #   auto + suppressed mid-window                    → CANCELLED(suppressed)
+    #   auto + disabled/master_off mid-window           → CANCELLED(reason)
+    # The rule is no longer allowed to act the instant its flags/suppression lapse, so
+    # a target that reached desired is NOT confirmed VERIFIED — "only when flags match"
+    # outranks "device happens to be right". (Ex4a: VERIFIED requires who-cares-who-
+    # moved-it AND the rule still permitted to act at resolve time.)
+    #
+    # The `forced` bool threads the manual case through the THREE judgement paths that
+    # must stay in lockstep: the deadline `_fire` closure here, the event path via
+    # `_verify_drop_reason`, and the synchronous fast-confirm in `_enforce`'s tail
+    # (which also routes its in-tick confirm through `_verify_drop_reason` — flags can
+    # lapse during the shielded service await, so fast-confirm must gate identically or
+    # the outcome flips VERIFIED↔CANCELLED on ACK-timing luck). It is stored in
+    # `_forced_verifications` for the duration of the cycle so the event path (which has
+    # no call frame) can read it.
+    # ──────────────────────────────────────────────────────────────────────────
     def _arm_verify(
-        self, entity_id: str, trigger_context_id: str | None = None
+        self,
+        entity_id: str,
+        trigger_context_id: str | None = None,
+        forced: bool = False,
     ) -> None:
-        """Arm a one-shot verify re-read VERIFY_DELAY_SECONDS after a success."""
+        """Arm a one-shot verify re-read VERIFY_DELAY_SECONDS after a success.
+
+        forced=True (manual test_enforce) makes this cycle bypass the suppressed
+        and flags_unmet drops — see the VERIFY-OUTCOME CONTRACT above.
+        """
         self._cancel_verify(entity_id)
+        if forced:
+            self._forced_verifications.add(entity_id)
+        else:
+            self._forced_verifications.discard(entity_id)
 
         async def _fire(_now: datetime) -> None:
             if self._is_unloaded:
@@ -1216,20 +1279,33 @@ class RuleEngine:
             if self._pending_verifications.get(entity_id) is not my_cancel:
                 return
             self._pending_verifications.pop(entity_id, None)
+            # Read forced from the set (not the closure) so it stays in lockstep with
+            # _verify_drop_reason, and so a forced cycle's engine correctives — which
+            # re-arm preserving membership — keep bypassing the suppressed/flags_unmet
+            # drops until the cycle resolves VERIFIED or UNREACHABLE.
+            is_forced = entity_id in self._forced_verifications
             if not self._state.enabled or not self._master_enabled_getter():
                 # Rule went inactive during the verify window; our handle was
                 # cleared by the identity-guarded pop above. Re-derive so VERIFYING
                 # resolves to the real idle status (DISABLED / MASTER_DISABLED)
                 # instead of staying stuck on the card, mirroring the suppressed
                 # drop below. Fire the abandoned-cycle signal (no verdict reached).
+                # NB: disabled/master_off drop even when forced — a forced cycle
+                # judges the DEVICE but cannot re-enable a rule the user switched off.
                 reason = "disabled" if not self._state.enabled else "master_off"
                 self._verify_attempts.pop(entity_id, None)
+                self._forced_verifications.discard(entity_id)
                 self._fire_cancelled(entity_id, reason)
                 self._apply_idle_status()
                 return
             # Suppressed → do not correct; drop the cycle (a real event re-arms it).
+            # Bypassed when forced (manual force judges the device — see CONTRACT).
+            # ponytail: no _forced_verifications.discard here — the `not is_forced`
+            # guard means a forced entry can never reach this branch (nothing to
+            # discard). If the bypass is ever narrowed, add the discard then.
             if (
-                self._state.suppressed_until
+                not is_forced
+                and self._state.suppressed_until
                 and self._state.suppressed_until > dt_util.now()
             ):
                 self._verify_attempts.pop(entity_id, None)
@@ -1244,7 +1320,8 @@ class RuleEngine:
             # verify. Without this, a corrective re-enforce would fire while the rule
             # shows CONDITIONAL (flags unmet) — acting when the user said "only when
             # flags match". Mirrors the suppressed-drop above.
-            if not self._flags_match():
+            # Bypassed when forced (manual force judges the device — see CONTRACT).
+            if not is_forced and not self._flags_match():
                 self._verify_attempts.pop(entity_id, None)
                 self._fire_cancelled(entity_id, "flags_unmet")
                 self._apply_idle_status()
@@ -1257,6 +1334,7 @@ class RuleEngine:
                 # not-reached but the re-read now sees compliant. Our handle was
                 # popped by the identity guard above, so _confirm_verified's
                 # _apply_idle_status leaves VERIFYING.
+                self._forced_verifications.discard(entity_id)
                 self._confirm_verified(entity_id)
                 return
             attempts = self._verify_attempts.get(entity_id, 0)
@@ -1268,6 +1346,10 @@ class RuleEngine:
                 # target EG is supposed to own is driven to desired without human
                 # action. The only terminators are the existing guards.
                 self._verify_attempts.pop(entity_id, None)
+                # Forced cycle ends here: the self-heal re-enter below is a fresh
+                # ENGINE-driven enforce (not the user's manual force), so it must
+                # NOT inherit the bypass. Drop membership before re-entering.
+                self._forced_verifications.discard(entity_id)
                 count = self._consecutive_exhaustions.get(entity_id, 0) + 1
                 self._consecutive_exhaustions[entity_id] = count
                 self._state.target_outcomes[entity_id] = {
@@ -1338,7 +1420,7 @@ class RuleEngine:
                 and self._master_enabled_getter()
                 and entity_id not in self._unreachable
             ):
-                self._arm_verify(entity_id, trigger_context_id)
+                self._arm_verify(entity_id, trigger_context_id, forced=is_forced)
                 # The corrective _enforce above derived its post-status with no
                 # verify pending (our handle was popped at fire time), so it
                 # broadcast ARMED. Re-arming repopulated _pending_verifications;
@@ -1362,12 +1444,18 @@ class RuleEngine:
         bypass_rate_limit: bool = False,
         trigger_context_id: str | None = None,
         is_corrective: bool = False,
+        forced: bool = False,
     ) -> None:
         """Rate-limit, lock, and execute the enforcement service call.
 
         is_corrective=True marks a verify-driven re-enforce: it must NOT arm a fresh
         verify timer on success (the verify cycle that triggered it owns the retry
         accounting), else each corrective would chain a new verify indefinitely.
+
+        forced=True marks a MANUAL force (test_enforce): the verify cycle it arms
+        bypasses the suppressed/flags_unmet drops — see the VERIFY-OUTCOME CONTRACT
+        above _arm_verify. Only the user's first manual enforce is forced; the
+        engine's correctives are not.
         """
         now = dt_util.now()
 
@@ -1665,7 +1753,7 @@ class RuleEngine:
                 # its attribution is the prior cycle's. Edge-only (single-entity
                 # reached event confirms+pops in ~100ms); carry a cycle-id on the
                 # pending entry if that attribution ever needs to be exact.
-                self._arm_verify(entity_id, trigger_context_id)
+                self._arm_verify(entity_id, trigger_context_id, forced=forced)
                 # Fast-confirm: a responsive target with blocking=True commits its
                 # post-enforce state to hass DURING the shielded await above, so
                 # the ACK state_changed already fired while _pending_verifications
@@ -1679,8 +1767,26 @@ class RuleEngine:
                 # target reads not-reached here and keeps its deadline for the
                 # corrective loop — unchanged.
                 if self._verify_reached(entity_id):
-                    self._cancel_verify(entity_id)
-                    self._confirm_verified(entity_id)
+                    # Gate the in-tick confirm through _verify_drop_reason, the SAME
+                    # single source of truth the deadline _fire and event paths use.
+                    # flags/suppression can lapse DURING the shielded service await
+                    # above (set_enabled/master/flags are synchronous, take no
+                    # reentrance_lock — see the post_status note below), so a reached
+                    # AUTOMATIC cycle whose flags lapsed mid-enforce must drop
+                    # CANCELLED here too, not confirm VERIFIED — otherwise the outcome
+                    # flips VERIFIED↔CANCELLED on pure ACK-timing luck (fast vs
+                    # deadline/event path). forced bypasses the gate (device-only
+                    # judgement) identically to the other two paths. Reached-but-
+                    # dropped is the twin of the event path's reached-but-dropped block
+                    # (_handle_state_event): same reason, same unloaded-stays-silent.
+                    reason = self._verify_drop_reason(entity_id)
+                    if reason is None:
+                        self._cancel_verify(entity_id)
+                        self._confirm_verified(entity_id)
+                    else:
+                        self._cancel_verify(entity_id)
+                        if reason != "unloaded":
+                            self._fire_cancelled(entity_id, reason)
 
         # Pick the post-enforce status once and emit a single _set_status so the
         # dispatcher fires exactly one update — avoids ENFORCING→ARMED→ERROR
@@ -2051,7 +2157,9 @@ class RuleEngine:
             disabled,
         )
         for entity_id in self._config.target_entities:
-            await self._enforce(entity_id, user_id=user_id, bypass_rate_limit=True)
+            await self._enforce(
+                entity_id, user_id=user_id, bypass_rate_limit=True, forced=True
+            )
             if disabled:
                 # Restore correct disabled status after each enforce so
                 # intermediate ENFORCING/ARMED/COOLDOWN transitions never

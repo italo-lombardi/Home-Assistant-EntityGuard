@@ -5000,6 +5000,275 @@ async def test_verify_not_reached_corrective_then_exhausted(hass: HomeAssistant)
     assert engine._current_status != STATUS_VERIFYING
 
 
+async def test_manual_enforce_verifies_despite_flags_unmet(hass: HomeAssistant):
+    """MANUAL force (test_enforce) on a CONDITIONAL rule whose flags are unmet must
+    still run FULL verify and resolve VERIFIED when the device reaches desired.
+
+    The user pressed test_enforce — an explicit override of the rule's conditions —
+    so verify judges the DEVICE, not the flags. Prod bug: a forced cycle used to
+    drop CANCELLED(flags_unmet) before the reached-check ran. See the VERIFY-OUTCOME
+    CONTRACT above _arm_verify.
+    """
+    engine = _make_engine(
+        hass,
+        _verify_config(flags=[Flag(entity="input_boolean.guard", match_state="on")]),
+    )
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+    hass.states.async_set("input_boolean.guard", "off")  # flag UNMET → CONDITIONAL
+
+    # Responsive target: commits to 'off' during the call (fast-confirm path).
+    async def _turn_off(call):
+        hass.states.async_set("light.bedroom", "off")
+
+    hass.services.async_register("light", "turn_off", _turn_off)
+
+    verified = []
+    cancelled = []
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: verified.append(e))
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine.async_test_enforce()
+        await hass.async_block_till_done()
+
+    assert len(verified) == 1
+    assert cancelled == []
+    assert engine.state.target_outcomes["light.bedroom"]["outcome"] == "ok"
+    assert engine._forced_verifications == set()  # cleared on resolve
+
+
+async def test_manual_enforce_unreachable_despite_flags_unmet(hass: HomeAssistant):
+    """MANUAL force on a flags-unmet rule with a SILENT target must exhaust to
+    UNREACHABLE (not drop CANCELLED(flags_unmet) on the first re-read).
+
+    Forced bypass must persist through the engine's correctives so the full
+    attempt-based exhaustion runs — the failure twin of the verified case.
+    """
+    engine = _make_engine(
+        hass,
+        _verify_config(flags=[Flag(entity="input_boolean.guard", match_state="on")]),
+    )
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)  # silent
+    hass.states.async_set("light.bedroom", "on")  # stays on throughout
+    hass.states.async_set("input_boolean.guard", "off")  # flag UNMET
+
+    unreachable = []
+    cancelled = []
+    hass.bus.async_listen(EVENT_UNREACHABLE, lambda e: unreachable.append(e))
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine.async_test_enforce()
+        for _ in range(VERIFY_MAX_ATTEMPTS + 1):
+            if "light.bedroom" in engine._pending_verifications:
+                await _run_verify_timer(hass, engine, "light.bedroom")
+
+    # Exhausted to the failure signal, never cancelled for flags_unmet.
+    assert len(unreachable) == 1
+    assert cancelled == []
+    assert engine.state.target_outcomes["light.bedroom"]["outcome"] == "failed"
+    assert engine.state.target_outcomes["light.bedroom"]["reason"] == (
+        REASON_UNREACHABLE_AFTER_RETRIES
+    )
+    assert engine._forced_verifications == set()  # cleared at exhaustion
+
+
+async def test_manual_enforce_still_drops_when_disabled(hass: HomeAssistant):
+    """forced does NOT re-enable a disabled rule: a manual cycle that goes disabled
+    mid-window must still drop CANCELLED(disabled), never confirm VERIFIED.
+
+    unloaded/disabled/master_off bypass is explicitly NOT granted to forced — only
+    suppressed/flags_unmet are. See the VERIFY-OUTCOME CONTRACT.
+    """
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)  # silent
+    hass.states.async_set("light.bedroom", "on")  # never moves
+
+    cancelled = []
+    verified = []
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: verified.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine.async_test_enforce()
+        assert "light.bedroom" in engine._pending_verifications  # forced verify armed
+        assert engine._forced_verifications == {"light.bedroom"}
+        # set_enabled(False) IS the real disabled-drop site: it cancels the in-flight
+        # verify and fires CANCELLED(disabled) directly, before any deadline fires.
+        engine.set_enabled(False)
+
+    assert verified == []
+    assert len(cancelled) == 1
+    assert cancelled[0].data["reason"] == "disabled"
+    assert engine._pending_verifications == {}
+    assert engine._forced_verifications == set()
+
+
+async def test_manual_enforce_verifies_via_event_path_despite_flags_unmet(
+    hass: HomeAssistant,
+):
+    """MANUAL force on a flags-unmet rule whose ACK lands via the EVENT path (a real
+    state event AFTER the enforce call, not a synchronous fast-confirm) must confirm
+    EVENT_VERIFIED, never drop CANCELLED(flags_unmet).
+
+    This is the event-path twin of test_manual_enforce_verifies_despite_flags_unmet
+    (which exercises fast-confirm). The forced bypass lives in TWO mirrored sites:
+    the deadline _fire closure AND _verify_drop_reason (read by _handle_state_event's
+    confirm gate). Reverting the `not forced` guards in _verify_drop_reason makes this
+    test fail (red-on-bug) while the fast-confirm test stays green — proving the
+    mirror-path coverage. See the VERIFY-OUTCOME CONTRACT above _arm_verify.
+    """
+    engine = _make_engine(
+        hass,
+        _verify_config(flags=[Flag(entity="input_boolean.guard", match_state="on")]),
+    )
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)  # silent: no
+    #                                   sync commit → fast-confirm misses, event owns it
+    hass.states.async_set("light.bedroom", "on")
+    hass.states.async_set("input_boolean.guard", "off")  # flag UNMET throughout
+
+    verified = []
+    cancelled = []
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: verified.append(e))
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine.async_test_enforce()
+        assert "light.bedroom" in engine._pending_verifications  # forced verify armed
+        assert engine._forced_verifications == {"light.bedroom"}
+        # Target reaches desired LATER via a genuine state event → _handle_state_event
+        # owns the confirm, gated by _verify_drop_reason (the forced-bypass mirror).
+        # The watched-entities listener is patched out in _make_engine, so drive the
+        # event directly (as the other event-confirm tests do).
+        hass.states.async_set("light.bedroom", "off")  # live state for re-derive
+        event = MagicMock()
+        event.data = {"entity_id": "light.bedroom", "new_state": _state("off")}
+        event.context = MagicMock(id="ctx-forced")
+        engine._handle_state_event(event)
+        await hass.async_block_till_done()
+
+    assert len(verified) == 1
+    assert cancelled == []
+    assert engine.state.target_outcomes["light.bedroom"]["outcome"] == "ok"
+    assert engine._forced_verifications == set()  # cleared on event-path confirm
+
+
+async def test_automatic_flags_unmet_still_cancelled(hass: HomeAssistant):
+    """Regression: the AUTOMATIC path is unchanged — a non-forced cycle whose flags
+    go unmet with a silent target still drops CANCELLED(flags_unmet).
+
+    Proves the forced bypass is byte-isolated to the manual button.
+    """
+    engine = _make_engine(
+        hass,
+        _verify_config(flags=[Flag(entity="input_boolean.guard", match_state="on")]),
+    )
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)  # silent
+    hass.states.async_set("light.bedroom", "on")
+    hass.states.async_set("input_boolean.guard", "on")  # flag MET at arm time
+
+    cancelled = []
+    verified = []
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: verified.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")  # AUTOMATIC enforce, not forced
+        hass.states.async_set("input_boolean.guard", "off")  # flag lapses mid-window
+        await _run_verify_timer(hass, engine, "light.bedroom")
+
+    assert verified == []
+    assert len(cancelled) == 1
+    assert cancelled[0].data["reason"] == "flags_unmet"
+    assert engine._forced_verifications == set()
+
+
+async def test_automatic_fastconfirm_cancels_when_flags_lapse_mid_enforce(
+    hass: HomeAssistant,
+):
+    """AUTOMATIC cycle whose flags lapse DURING the shielded enforce await, with a
+    responsive target that reaches desired in the same tick (fast-confirm path), must
+    drop CANCELLED(flags_unmet) — NOT confirm VERIFIED.
+
+    Pre-fix bug: the synchronous fast-confirm in _enforce's tail had no flags gate, so
+    this reached-during-lapse case confirmed VERIFIED, while the deadline/event paths
+    (which read flags at resolve time) cancelled. Pure ACK-timing luck decided the
+    outcome. The fix routes fast-confirm through _verify_drop_reason like the other two
+    paths. Reverting that gate makes this test fail (red-on-bug). See VERIFY-OUTCOME
+    CONTRACT: "only when flags match" outranks "device happens to be right".
+    """
+    engine = _make_engine(
+        hass,
+        _verify_config(flags=[Flag(entity="input_boolean.guard", match_state="on")]),
+    )
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+    hass.states.async_set("input_boolean.guard", "on")  # flag MET at enforce decision
+
+    # Responsive target: commits 'off' AND lapses the flag during the shielded await,
+    # so fast-confirm sees reached-desired but flags-unmet in the same tick.
+    async def _turn_off(call):
+        hass.states.async_set("light.bedroom", "off")
+        hass.states.async_set("input_boolean.guard", "off")  # flag lapses mid-await
+
+    hass.services.async_register("light", "turn_off", _turn_off)
+
+    cancelled = []
+    verified = []
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: verified.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")  # AUTOMATIC, not forced
+        await hass.async_block_till_done()
+
+    assert verified == []
+    assert len(cancelled) == 1
+    assert cancelled[0].data["reason"] == "flags_unmet"
+    assert "light.bedroom" not in engine._pending_verifications
+
+
 async def test_corrective_enforce_does_not_touch_bookkeeping(hass: HomeAssistant):
     """A verify-driven corrective re-enforce must not count toward the user-visible
     enforcement counters, the loop-protection rate_limit_window, or STATUS_ERROR
