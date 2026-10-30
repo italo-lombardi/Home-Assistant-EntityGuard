@@ -34,6 +34,7 @@ from custom_components.entity_guard.const import (
     OPERATOR_LT,
     REASON_SERVICE_CALL_FAILED,
     REASON_UNREACHABLE_AFTER_RETRIES,
+    RECENTLY_ENFORCED_WINDOW_SECONDS,
     STATUS_ARMED,
     STATUS_CONDITIONAL,
     STATUS_COOLDOWN,
@@ -4470,6 +4471,18 @@ async def test_cancel_recently_enforced_verified_timer_swallows_exception(
     assert engine._recently_enforced_verified_unsub is None
 
 
+async def test_cancel_recently_enforced_cancelled_timer_swallows_exception(
+    hass: HomeAssistant,
+):
+    """_cancel_recently_enforced_cancelled_timer swallows exceptions from unsub."""
+    engine = _make_engine(hass)
+    engine._recently_enforced_cancelled_unsub = MagicMock(
+        side_effect=RuntimeError("boom")
+    )
+    engine._cancel_recently_enforced_cancelled_timer()  # must not raise
+    assert engine._recently_enforced_cancelled_unsub is None
+
+
 async def test_clear_history_broadcasts_when_recently_enforced_and_status_unchanged(
     hass: HomeAssistant,
 ):
@@ -5697,6 +5710,94 @@ async def test_verify_fire_cancelled_when_disabled(hass: HomeAssistant):
     assert "light.bedroom" not in engine._verify_attempts
 
 
+async def test_verify_fire_cancelled_when_master_off(hass: HomeAssistant):
+    """The master-off deadline drop fires EVENT_CANCELLED (reason master_off).
+
+    Fifth drop reason in _verify_drop_reason: master disabled during the verify
+    window abandons the cycle like disabled/suppressed/flags_unmet — not a device
+    fault. Locks the master_off branch (reason precedence sits above suppressed).
+    """
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    cancelled = []
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        engine._master_enabled_getter = lambda: False  # hub master off mid-window
+        await _run_verify_timer(hass, engine, "light.bedroom")
+
+    assert len(cancelled) == 1
+    assert cancelled[0].data["reason"] == "master_off"
+    assert engine.is_recently_enforced_cancelled() is True
+
+
+async def test_recently_enforced_cancelled_rearm_and_clear(hass: HomeAssistant):
+    """Arm twice (pulse-off re-arm), then let the 30s window reset it.
+
+    Covers the cancelled sensor lifecycle directly, mirroring its verified twin:
+    - second arm while still latched cancels the live timer and pulses the flag
+      off→on so a rising-edge automation re-triggers within the window;
+    - the real reset timer firing past RECENTLY_ENFORCED_WINDOW_SECONDS clears the
+      flag and drops the unsub handle.
+    """
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    engine = _make_engine(hass, _verify_config())
+
+    engine._arm_recently_enforced_cancelled()
+    assert engine.is_recently_enforced_cancelled() is True
+    first_unsub = engine._recently_enforced_cancelled_unsub
+    assert first_unsub is not None
+
+    # Second arm: cancels first timer (live unsub call) + pulses off→on.
+    engine._arm_recently_enforced_cancelled()
+    assert engine.is_recently_enforced_cancelled() is True
+    assert engine._recently_enforced_cancelled_unsub is not first_unsub
+
+    # Drive the real reset timer past the window → _clear runs normally.
+    async_fire_time_changed(
+        hass, dt_util.utcnow() + timedelta(seconds=RECENTLY_ENFORCED_WINDOW_SECONDS + 1)
+    )
+    await hass.async_block_till_done()
+    assert engine.is_recently_enforced_cancelled() is False
+    assert engine._recently_enforced_cancelled_unsub is None
+
+
+async def test_recently_enforced_cancelled_clear_skipped_when_unloaded(
+    hass: HomeAssistant,
+):
+    """The reset callback early-returns when the entry is unloaded.
+
+    _clear nulls its unsub handle, then bails at `if self._is_unloaded` before
+    touching the flag or dispatching — no state churn into a dead entry.
+    """
+    from pytest_homeassistant_custom_component.common import async_fire_time_changed
+
+    engine = _make_engine(hass, _verify_config())
+    engine._arm_recently_enforced_cancelled()
+    assert engine.is_recently_enforced_cancelled() is True
+
+    engine._is_unloaded = True
+    async_fire_time_changed(
+        hass, dt_util.utcnow() + timedelta(seconds=RECENTLY_ENFORCED_WINDOW_SECONDS + 1)
+    )
+    await hass.async_block_till_done()
+
+    # unsub cleared, but the flag stays as-was (callback bailed before resetting).
+    assert engine._recently_enforced_cancelled_unsub is None
+    assert engine.is_recently_enforced_cancelled() is True
+
+
 async def test_verify_fire_no_cancelled_when_unloaded(hass: HomeAssistant):
     """The unloaded drop does NOT fire EVENT_CANCELLED (entry tearing down).
 
@@ -5768,6 +5869,45 @@ async def test_verify_event_no_cancelled_when_unloaded(hass: HomeAssistant):
     assert len(cancelled) == 0, "unloaded event drop must not fire EVENT_CANCELLED"
     assert "light.bedroom" not in engine._pending_verifications
     assert engine.is_recently_enforced_cancelled() is False
+
+
+async def test_verify_event_fire_cancelled_when_master_off(hass: HomeAssistant):
+    """The EVENT path fires EVENT_CANCELLED (reason master_off) at a reached ACK.
+
+    Deadline-path master_off goes through _fire's inline reason; the event path
+    instead routes through _verify_drop_reason, so the master_off branch there is
+    exercised only here: a reached-desired ACK lands while the hub master is off
+    → drop_reason "master_off" → _fire_cancelled on the event side.
+    """
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    cancelled = []
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        assert "light.bedroom" in engine._pending_verifications
+        engine._master_enabled_getter = lambda: False  # hub master off mid-window
+        hass.states.async_set("light.bedroom", "off")
+        reached = MagicMock()
+        reached.data = {"entity_id": "light.bedroom", "new_state": _state("off")}
+        reached.context = MagicMock(id="ctx-ack")
+        engine._handle_state_event(reached)
+        await hass.async_block_till_done()
+
+    assert len(cancelled) == 1
+    assert cancelled[0].data["reason"] == "master_off"
+    assert "light.bedroom" not in engine._pending_verifications
+    assert engine.is_recently_enforced_cancelled() is True
 
 
 def test_cancel_verify_swallows_exception(hass: HomeAssistant):
