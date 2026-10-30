@@ -1142,8 +1142,12 @@ class RuleEngine:
     def _verify_event_dropped(self, entity_id: str) -> bool:
         """True when a pending verify must be DROPPED (not confirmed) because the
         rule went inactive mid-window — shared drop decision for the event-confirm
-        site. Mirrors _fire's disabled/master-off and suppressed early-returns so
-        the event path and the deadline timer stay in lockstep.
+        site. Mirrors _fire's disabled/master-off, suppressed, AND flags-unmet
+        early-returns so the event path and the deadline timer stay in lockstep.
+        Flags are read HERE (event time, when the ACK lands), matching _fire's
+        read at deadline time: both paths decide on the flag state at the instant
+        they resolve, not at arm time, so a flag that flips mid-window drops the
+        cycle identically whichever path confirms first.
         """
         if self._is_unloaded:
             return True
@@ -1153,6 +1157,12 @@ class RuleEngine:
             self._state.suppressed_until
             and self._state.suppressed_until > dt_util.now()
         ):
+            return True
+        # Flags unmet → rule no longer allowed to act; drop without a verified
+        # pulse. Twin of _fire's flags-unmet drop (line ~1202). Without this the
+        # event path fires EVENT_VERIFIED for a cycle the deadline path abandons —
+        # a verified signal that flickers on device-ACK timing alone.
+        if not self._flags_match():
             return True
         return False
 

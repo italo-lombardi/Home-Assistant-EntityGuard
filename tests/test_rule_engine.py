@@ -5551,6 +5551,71 @@ async def test_verify_fire_drops_when_flags_unmet(hass: HomeAssistant):
     assert engine.current_status() == STATUS_CONDITIONAL
 
 
+async def test_verify_event_dropped_when_flags_unmet(hass: HomeAssistant):
+    """_verify_event_dropped returns True when the watched flag is unmet — the
+    event-confirm twin of the timer's flags-unmet drop, keeping both paths in
+    lockstep. Flags read at call (event) time, same instant the timer reads at
+    fire time."""
+    engine = _make_engine(
+        hass,
+        _verify_config(flags=[Flag(entity="input_boolean.guard", match_state="on")]),
+    )
+    hass.states.async_set("input_boolean.guard", "off")  # flags unmet
+    assert engine._verify_event_dropped("light.bedroom") is True
+
+
+async def test_verify_event_confirm_drops_when_flags_unmet(hass: HomeAssistant):
+    """Twin of test_verify_fire_drops_when_flags_unmet for the EVENT path.
+
+    Flags met when the enforce ran (verify armed) on a SILENT target (no same-
+    tick fast-confirm), then the flag flips unmet during the window. The target's
+    reached-desired state event then lands. Because flags are now unmet the rule
+    is not allowed to act, so the event confirm must DROP the cycle: no
+    EVENT_VERIFIED pulse, pending cleared, status CONDITIONAL — identical to the
+    deadline path. Regression for the cross-path gap: the event path fired
+    EVENT_VERIFIED while the deadline path dropped, making the signal flicker on
+    device-ACK timing alone.
+    """
+    engine = _make_engine(
+        hass,
+        _verify_config(flags=[Flag(entity="input_boolean.guard", match_state="on")]),
+    )
+    engine._startup_complete = True
+    # Silent target: service does not move it, so the enforce tail reads not-
+    # reached and arms the verify instead of fast-confirming in-tick.
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("input_boolean.guard", "on")  # flags met → enforce allowed
+    hass.states.async_set("light.bedroom", "on")
+
+    events = []
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: events.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        assert "light.bedroom" in engine._pending_verifications  # armed, silent
+
+        # Flag flips unmet during the window → rule now CONDITIONAL.
+        hass.states.async_set("input_boolean.guard", "off")
+        # The target's delayed ACK (reached desired) lands AFTER the flag flipped.
+        hass.states.async_set("light.bedroom", "off")
+        reached = MagicMock()
+        reached.data = {"entity_id": "light.bedroom", "new_state": _state("off")}
+        reached.context = MagicMock(id="ctx-ack")
+        engine._handle_state_event(reached)
+        await hass.async_block_till_done()
+
+    # Dropped, not confirmed: no verified pulse, pending cleared, CONDITIONAL.
+    assert len(events) == 0, "flags-unmet reached event must not fire EVENT_VERIFIED"
+    assert "light.bedroom" not in engine._pending_verifications
+    assert engine.current_status() == STATUS_CONDITIONAL
+
+
 def test_cancel_verify_swallows_exception(hass: HomeAssistant):
     """A raising cancel handle must not propagate out of _cancel_verify."""
     engine = _make_engine(hass, _verify_config())
