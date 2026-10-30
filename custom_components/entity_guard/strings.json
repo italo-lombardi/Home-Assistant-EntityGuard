@@ -53,7 +53,7 @@
           "add_flags": "Tick to require extra conditions (e.g. only enforce when nobody is home, only after sunset). Leave unticked to enforce every time the trigger fires.",
           "custom_rate_limit": "Loop protection auto-suppresses the rule if it fires more than 10 times per minute (default). Leave unticked to use the default. Tick to set your own number, or to turn loop protection off entirely on a later screen.",
           "add_debounce": "Tick to ignore quick back-and-forth changes. The rule only acts if the trigger stays the same for the time you set on a later screen. Leave unticked to act on every change.",
-          "verify_enabled": "Tick to re-check the target a few seconds after enforcing. If the device accepted the command but never actually changed, the rule keeps re-enforcing until the target reaches the desired state — it does not give up on its own. A target that never recovers is auto-suppressed for a while by loop protection (and flagged unreachable), then retried again. Leave unticked to assume the command worked."
+          "verify_enabled": "Tick to confirm the target actually reached the desired state after enforcing. The rule watches for the device's own state change (usually within a second) and keeps re-enforcing until it lands if the command was accepted but nothing changed; a few seconds' deadline backstops a silent device. A target that never recovers is auto-suppressed by loop protection, then retried. Shown for state-mode rules only."
         }
       },
       "flags": {

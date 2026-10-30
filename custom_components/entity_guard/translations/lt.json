@@ -53,7 +53,7 @@
           "add_flags": "Pažymėkite, kad reikalautumėte papildomų sąlygų (pvz., taikyti tik tada, kai niekas nėra namuose, tik po saulėlydžio). Nepažymėkite, kad taikymas vyktų kaskart, kai suveikia aktyvinimas.",
           "custom_rate_limit": "Ciklo apsauga automatiškai slopina taisyklę, jei ji suveikia daugiau nei 10 kartų per minutę (numatyta). Nepažymėkite, kad naudotumėte numatytą reikšmę. Pažymėkite, kad nustatytumėte savo skaičių arba visiškai išjungtumėte ciklo apsaugą kitame ekrane.",
           "add_debounce": "Pažymėkite, kad ignoruotumėte greitus pirmyn-atgal pokyčius. Taisyklė veikia tik tada, jei aktyvinimas išlieka nepakitęs jūsų nustatytą laiką kitame ekrane. Nepažymėkite, kad veiktų kiekvieno pokyčio metu.",
-          "verify_enabled": "Pažymėkite, kad tikslas būtų pakartotinai patikrintas praėjus kelioms sekundėms po taikymo. Jei įrenginys priėmė komandą, bet iš tikrųjų nepasikeitė, taisyklė kartoja taikymą tol, kol tikslas pasieks norimą būseną — pati nenustoja. Jei tikslas niekaip neatsigauna, ciklo apsauga jį laikinai susislopina (ir pažymi kaip nepasiekiamą), o paskui bando iš naujo. Nepažymėkite, kad būtų laikoma, jog komanda pavyko."
+          "verify_enabled": "Pažymėkite, kad patvirtintumėte, jog tikslas po taikymo tikrai pasiekė norimą būseną. Taisyklė laukia paties įrenginio būsenos pasikeitimo (paprastai per sekundę) ir, jei komanda buvo priimta, bet niekas nepasikeitė, kartoja taikymą tol, kol būsena nusistovi; kelių sekundžių terminas yra tik atsarginė riba tyliam įrenginiui, o ne privalomas laukimas. Tikslą, kuris niekaip neatsigauna, ciklo apsauga automatiškai susislopina, o paskui bando iš naujo. Rodoma tik būsenos režimo taisyklėms."
         }
       },
       "flags": {

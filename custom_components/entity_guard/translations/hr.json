@@ -53,7 +53,7 @@
           "add_flags": "Označite za zahtijevanje dodatnih uvjeta (npr. provedi samo kada nitko nije kod kuće, samo nakon zalaska sunca). Ostavite neoznačeno za provedbu svaki put kada se okidač pokrene.",
           "custom_rate_limit": "Zaštita od petlji automatski potiskuje pravilo ako se pokrene više od 10 puta u minuti (zadano). Ostavite neoznačeno za korištenje zadane vrijednosti. Označite za postavljanje vlastitog broja ili za potpuno isključivanje zaštite od petlji na sljedećem zaslonu.",
           "add_debounce": "Označite za zanemarivanje brzih naprijed-natrag promjena. Pravilo djeluje samo ako okidač ostane isti tijekom vremena koje postavite na sljedećem zaslonu. Ostavite neoznačeno za djelovanje na svaku promjenu.",
-          "verify_enabled": "Označite za ponovnu provjeru cilja nekoliko sekundi nakon provedbe. Ako je uređaj prihvatio naredbu, ali se zapravo nije promijenio, pravilo nastavlja ponavljati provedbu sve dok cilj ne dosegne željeno stanje — ne odustaje samo od sebe. Cilj koji se nikada ne oporavi zaštita od petlji nakratko automatski potisne (i označi kao nedostupan), a zatim ponovno pokušava. Ostavite neoznačeno za pretpostavku da je naredba uspjela."
+          "verify_enabled": "Označite za potvrdu da je cilj doista dosegao željeno stanje nakon provedbe. Pravilo prati vlastitu promjenu stanja uređaja (obično unutar sekunde) i nastavlja ponavljati provedbu dok je ne dosegne ako je naredba prihvaćena, ali se ništa nije promijenilo; rok od nekoliko sekundi služi kao sigurnosna zaštita za uređaj koji šuti. Cilj koji se nikada ne oporavi zaštita od petlji automatski potisne, a zatim ponovno pokušava. Prikazuje se samo za pravila u načinu rada stanja."
         }
       },
       "flags": {

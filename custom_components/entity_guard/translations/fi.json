@@ -53,7 +53,7 @@
           "add_flags": "Valitse vaatiaksesi lisäehtoja (esim. valvo vain kun kukaan ei ole kotona, vain auringonlaskun jälkeen). Jätä valitsematta valvoaksesi joka kerta, kun laukaisu tapahtuu.",
           "custom_rate_limit": "Silmukkasuojaus estää säännön automaattisesti, jos se laukeaa yli 10 kertaa minuutissa (oletus). Jätä valitsematta käyttääksesi oletusta. Valitse asettaaksesi oman arvon tai poistaaksesi silmukkasuojauksen kokonaan myöhemmällä näytöllä.",
           "add_debounce": "Valitse ohittaaksesi nopeat edestakaiset muutokset. Sääntö toimii vain, jos laukaisu pysyy samana myöhemmällä näytöllä asettamasi ajan. Jätä valitsematta toimiaksesi jokaisen muutoksen kohdalla.",
-          "verify_enabled": "Valitse tarkistaaksesi kohteen uudelleen muutama sekunti pakotuksen jälkeen. Jos laite hyväksyi komennon mutta ei todellisuudessa muuttunut, sääntö jatkaa pakottamista uudelleen, kunnes kohde saavuttaa halutun tilan — se ei luovuta itsestään. Jos kohde ei koskaan palaudu, silmukkasuojaus estää säännön automaattisesti hetkeksi (ja kohde merkitään tavoittamattomaksi), minkä jälkeen yritystä jatketaan. Jätä valitsematta olettaaksesi, että komento onnistui."
+          "verify_enabled": "Valitse varmistaaksesi, että kohde todella saavutti halutun tilan pakotuksen jälkeen. Sääntö tarkkailee laitteen omaa tilan muutosta (yleensä sekunnin sisällä) ja jatkaa pakottamista, kunnes kohde saavuttaa tilan, jos laite hyväksyi komennon mutta mikään ei muuttunut; muutaman sekunnin määräaika toimii varmistuksena hiljaiselle laitteelle. Jos kohde ei koskaan palaudu, silmukkasuojaus estää sen automaattisesti, minkä jälkeen yritystä jatketaan. Näytetään vain tilatilan säännöille."
         }
       },
       "flags": {
