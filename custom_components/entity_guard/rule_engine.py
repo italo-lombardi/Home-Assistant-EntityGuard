@@ -2245,10 +2245,22 @@ class RuleEngine:
             # Also cancel any in-flight verify timers: _apply_idle_status below
             # cancels pending ENFORCEMENTS on the DISABLED branch but not verifies,
             # so a stale verify deadline would otherwise survive the disable and
-            # fire later. Its _fire re-derives DISABLED (harmless today) but the
-            # lingering handle is fragile; drop it here at the source.
+            # fire later. This IS the real disabled-drop site: _state.enabled has
+            # one writer (above), so a per-rule disable always lands here BEFORE
+            # the deadline/event paths can fire — fire the cancelled signal and
+            # clear the attempt counter here, or neither ever happens on disable.
             for eid in self._config.target_entities:
+                had_pending = eid in self._pending_verifications
                 self._cancel_verify(eid)
+                # Drop the attempt counter so a quick re-enable + re-enforce starts
+                # a fresh verify cycle instead of reading a stale high count and
+                # latching exhaustion early (false EVENT_UNREACHABLE + a bogus
+                # _consecutive_exhaustions tick). Twin of the deadline/event drops.
+                self._verify_attempts.pop(eid, None)
+                # Abandoned mid-window → the "disabled" cancelled signal. Skip on
+                # unload (entry tearing down, matching the no-fire-on-unload rule).
+                if had_pending and not self._is_unloaded:
+                    self._fire_cancelled(eid, "disabled")
         else:
             self._schedule_suppression_timer()
         self._persist()

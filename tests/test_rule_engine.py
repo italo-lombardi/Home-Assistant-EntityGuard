@@ -5710,6 +5710,70 @@ async def test_verify_fire_cancelled_when_disabled(hass: HomeAssistant):
     assert "light.bedroom" not in engine._verify_attempts
 
 
+async def test_set_enabled_false_fires_cancelled_and_clears_attempts(
+    hass: HomeAssistant,
+):
+    """The REAL per-rule disable path (set_enabled) fires cancelled + clears count.
+
+    _state.enabled has a single writer (set_enabled), so a per-rule switch-off
+    always cancels in-flight verifies HERE, before the deadline/event drop sites
+    can fire. If the cancelled signal + attempt-pop don't happen in this loop they
+    never happen on disable: the deadline timer is unsubscribed (identity guard
+    bails) and the event path's pending entry is already popped. Regression guard
+    for both — the prior tests set _state.enabled directly and bypassed this path,
+    so a counter leak + a dead "disabled" signal hid behind them.
+    """
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)
+    hass.states.async_set("light.bedroom", "on")
+
+    cancelled = []
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        assert "light.bedroom" in engine._pending_verifications
+        engine._verify_attempts["light.bedroom"] = 2  # mid-window, attempts high
+        engine.set_enabled(False)  # real disable via the per-rule switch
+        await hass.async_block_till_done()
+
+    assert len(cancelled) == 1
+    assert cancelled[0].data["reason"] == "disabled"
+    assert engine.is_recently_enforced_cancelled() is True
+    # Counter cleared → a re-enable + re-enforce starts a fresh verify cycle.
+    assert "light.bedroom" not in engine._verify_attempts
+    # Verify timer torn down → no stale deadline survives the disable.
+    assert "light.bedroom" not in engine._pending_verifications
+
+
+async def test_set_enabled_false_no_cancelled_without_pending_verify(
+    hass: HomeAssistant,
+):
+    """Disabling a rule with NO in-flight verify must not fire a cancelled signal.
+
+    The set_enabled loop fires only for targets that had a pending verify — an
+    idle rule being switched off is not an abandoned cycle.
+    """
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+
+    cancelled = []
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+
+    engine.set_enabled(False)
+    await hass.async_block_till_done()
+
+    assert len(cancelled) == 0
+    assert engine.is_recently_enforced_cancelled() is False
+
+
 async def test_verify_fire_cancelled_when_master_off(hass: HomeAssistant):
     """The master-off deadline drop fires EVENT_CANCELLED (reason master_off).
 
