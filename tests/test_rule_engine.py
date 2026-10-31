@@ -4488,13 +4488,26 @@ async def test_cooldown_broadcast_expired_entry_skipped(hass: HomeAssistant):
 
 
 async def test_suppress_when_in_error_skips_apply_idle(hass: HomeAssistant):
-    """async_suppress while STATUS_ERROR must not call _apply_idle_status (754->exit)."""
+    """async_suppress while STATUS_ERROR must not call _apply_idle_status (status
+    genuinely stays ERROR), but it MUST still repaint: it mutates suppressed_until +
+    suppression_reason, and the suppressed_until sensor / status suppression_reason
+    attr would otherwise read stale on a sticky-ERROR rule. Pre-fix the ERROR path
+    fired no dispatch at all (the only repaint was gated off); assert one now."""
+    from unittest.mock import patch
+
     engine = _make_engine(hass)
     engine._startup_complete = True
     engine._current_status = STATUS_ERROR
-    await engine.async_suppress(duration_minutes=1, user_id=None)
-    # Status must stay ERROR — _apply_idle_status not called
+    sent = []
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_dispatcher_send",
+        side_effect=lambda *_a, **_k: sent.append(1),
+    ):
+        await engine.async_suppress(duration_minutes=1, user_id=None)
+    # Status must stay ERROR — _apply_idle_status not called.
     assert engine.current_status() == STATUS_ERROR
+    # But the suppression mutation was repainted (pre-fix: no dispatch on this path).
+    assert sent, "sticky-ERROR suppress must still dispatch a repaint"
     engine._cancel_suppression_timer()  # clean up lingering timer
 
 
@@ -5009,6 +5022,26 @@ def test_fire_skipped_service_call_failed_not_counted(hass: HomeAssistant):
     assert engine.state.target_outcomes["light.bedroom"]["outcome"] == "failed"
 
 
+def test_fire_skipped_dispatches_repaint(hass: HomeAssistant):
+    """Regression: _fire_skipped mutates skip_count_* + target_outcomes, so it must
+    repaint at the source. The reactive caller only follows with
+    _set_or_force_broadcast(ARMED), which dedupes on an already-ARMED rule
+    (_set_status), so pre-fix a steady-state re-skip bumped the counter with NO
+    dispatch — the TOTAL_INCREASING sensor + card froze. Assert exactly one
+    dispatch per skip (pre-fix: 0)."""
+    from unittest.mock import patch
+
+    engine = _make_engine(hass)
+    sent = []
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_dispatcher_send",
+        side_effect=lambda *_a, **_k: sent.append(1),
+    ):
+        engine._fire_skipped("light.bedroom", "no_service_mapping")
+    # One repaint for the skip. (EVENT_SKIPPED is a bus fire, not counted here.)
+    assert sent == [1]
+
+
 async def test_recovered_target_clears_stale_failed_outcome(hass: HomeAssistant):
     """A target that failed while offline and then comes back already at the
     desired state (so the rule no longer triggers) must clear its stale 'failed'
@@ -5027,6 +5060,36 @@ async def test_recovered_target_clears_stale_failed_outcome(hass: HomeAssistant)
     hass.states.async_set("light.bedroom", "off")
     await engine.async_evaluate("light.bedroom", hass.states.get("light.bedroom"))
     assert engine.state.target_outcomes["light.bedroom"]["outcome"] == "ok"
+
+
+async def test_recovered_target_clear_dispatches_repaint(hass: HomeAssistant):
+    """Regression: clearing a recovered target's stale outcome (not-triggered path)
+    must repaint. The caller's _set_or_force_broadcast(ARMED) dedupes on an
+    already-ARMED rule, so pre-fix the outcome flipped failed->ok in state but the
+    'Targets needing attention' card kept listing it. Assert the clear forces a
+    dispatch (pre-fix: 0 from this path)."""
+    from unittest.mock import patch
+
+    engine = _make_engine(hass)  # trigger on "on", target "off"
+    engine._startup_complete = True
+    engine._current_status = STATUS_ARMED  # so the caller derive dedupes
+    engine.state.target_outcomes["light.bedroom"] = {
+        "outcome": "failed",
+        "reason": "service_call_failed",
+        "error": "boom",
+        "at": dt_util.now(),
+    }
+    hass.states.async_set("light.bedroom", "off")  # recovered, compliant, live
+    sent = []
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_dispatcher_send",
+        side_effect=lambda *_a, **_k: sent.append(1),
+    ):
+        await engine.async_evaluate("light.bedroom", hass.states.get("light.bedroom"))
+    assert engine.state.target_outcomes["light.bedroom"]["outcome"] == "ok"
+    # At least one dispatch came from the outcome-cleared repaint (the trailing
+    # _set_or_force_broadcast derived ARMED==ARMED and deduped to nothing).
+    assert sent, "recovered-target clear must force a repaint"
 
 
 async def test_offline_target_keeps_failed_outcome(hass: HomeAssistant):

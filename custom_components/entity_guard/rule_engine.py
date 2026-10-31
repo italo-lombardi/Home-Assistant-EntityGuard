@@ -663,7 +663,15 @@ class RuleEngine:
             # a live state (new_state present and not unavailable/unknown) so an
             # offline target is NOT falsely marked healthy, and only written when
             # an outcome actually needs clearing (avoid broadcast churn).
+            before = self._state.target_outcomes.get(entity_id)
             self._clear_target_outcome_if_live(entity_id, new_state, now)
+            # If the clear actually overwrote the outcome object, repaint — the
+            # _set_or_force_broadcast below derives ARMED and dedupes on an
+            # already-ARMED rule, which would leave the recovered target latched in
+            # "Targets needing attention". Mirrors the suppressed-path precedent
+            # (~:553-559): snapshot before, force one broadcast when it changed.
+            if self._state.target_outcomes.get(entity_id) is not before:
+                self._broadcast_status()
             self._set_or_force_broadcast(self._derive_armed_or_cooldown(now))
             return
 
@@ -2214,6 +2222,15 @@ class RuleEngine:
         # its skip_count_total would reset to 0 on every restart. _persist ->
         # set_rule_state is debounced internally, so a per-skip call is cheap.
         self._persist()
+        # Own the repaint at the mutation source. This bumps skip_count_today/total
+        # and writes target_outcomes above, but the reactive caller (async_evaluate
+        # skip branch) only follows with _set_or_force_broadcast(ARMED), which
+        # dedupes on an already-ARMED rule (_set_status, :2581) — so on a steady-
+        # state re-skip (e.g. a COLOR rule whose target is simply OFF) the counter
+        # sensor + "Targets needing attention" card froze until an unrelated
+        # repaint. Fire one dispatch here so every skip repaints regardless of the
+        # caller's status move. Idempotent with callers that also broadcast.
+        self._broadcast_status()
 
     async def async_test_enforce(self, user_id: str | None = None) -> None:
         """Force an enforcement run against every target entity.
@@ -2348,6 +2365,14 @@ class RuleEngine:
         )
         if self._current_status != STATUS_ERROR:
             self._apply_idle_status()
+        else:
+            # Sticky-ERROR rule: _apply_idle_status is gated off above (status
+            # genuinely stays ERROR), so the only repaint of the suppressed_until +
+            # suppression_reason mutation (:2322-2323) never fires and those sensors
+            # read stale. EVENT_SUPPRESSED is a bus fire, not a dispatcher send, so
+            # sensors don't see it. Force one dispatch — _set_status would dedupe
+            # (status is still ERROR), same as the recently_enforced arms.
+            self._broadcast_status()
 
     async def async_unsuppress(self) -> None:
         """Clear any active suppression."""
