@@ -2249,6 +2249,11 @@ class RuleEngine:
             {
                 "rule_id": self._config.unique_id,
                 "rule_name": self._config.name,
+                # Suppression is rule-level (covers all targets), so entity_id is the
+                # rule's own status sensor, not a target — same as EVENT_ENFORCED /
+                # EVENT_CANCELLED. Lets the integration-level trigger + logbook filter
+                # surface a suppressed event with a non-None entity_id like its siblings.
+                "entity_id": self._get_rule_entity_id(),
                 "suppressed_until": until.isoformat(),
                 "user_id": user_id,
             },
