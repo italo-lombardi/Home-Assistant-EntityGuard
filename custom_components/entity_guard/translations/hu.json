@@ -552,6 +552,10 @@
     }
   },
   "issues": {
+    "unsupported_domain": {
+      "title": "Az Entity Guard még nem tudja vezérelni a(z) \"{domain}\" tartományt",
+      "description": "Egy szabály a(z) \"{domain}\" tartomány egy entitását célozza olyan állapottal, amelyhez az Entity Guardnak nincs szolgáltatás-hozzárendelése, ezért csendben kihagyja annak kényszerítését. Az Entity Guard csak azokat a tartományokat tudja vezérelni, amelyekhez hozzárendelést tartalmaz. Kattintson a \"További információ\" gombra egy rövid GitHub-űrlap megnyitásához (a tartomány előre ki van töltve), hogy a(z) \"{domain}\" támogatása egy jövőbeli kiadásban hozzáadható legyen."
+    },
     "flag_entity_missing": {
       "title": "Hiányzó feltétel entitás a(z) \"{rule_name}\" szabályban",
       "description": "A következő feltétel entitás(ok) már nem léteznek, de a szabály hivatkozik rájuk: {missing_entities}. A szabály nem fog kényszeríteni, amikor ezek a feltételek nem értékelhetők ki. Frissítse vagy távolítsa el a szabályt a probléma megoldásához."

@@ -79,6 +79,7 @@ from .const import (
     signal_master,
     signal_rule_update,
 )
+from .issue_helpers import async_raise_unsupported_domain
 from .models import RuleConfig, RuleRuntimeState
 from .storage import EntityGuardStore
 
@@ -1516,6 +1517,11 @@ class RuleEngine:
             if service_call is None:
                 self._fire_skipped(entity_id, "no_service_mapping")
                 _LOGGER.debug("No service mapping resolved for %s", entity_id)
+                # Surface a repair issue: the user built a rule on a domain Entity
+                # Guard can't drive (a custom non-on/off state on a domain in neither
+                # service map). Per-domain card with a "report this domain" link —
+                # see async_raise_unsupported_domain.
+                async_raise_unsupported_domain(self._hass, entity_id.split(".", 1)[0])
                 self._set_status(self._derive_armed_or_cooldown(now))
                 return
 

@@ -552,6 +552,10 @@
     }
   },
   "issues": {
+    "unsupported_domain": {
+      "title": "Entity Guard ei osaa vielä ohjata toimialuetta \"{domain}\"",
+      "description": "Sääntö kohdistuu toimialueen \"{domain}\" entiteettiin, jonka tilalle Entity Guardilla ei ole palvelumäärittelyä, joten se ohittaa pakottamisen hiljaisesti. Entity Guard osaa ohjata vain niitä toimialueita, joille se toimittaa määrittelyn. Napsauta \"Lue lisää\" avataksesi lyhyen GitHub-lomakkeen (toimialue on esitäytetty), jotta tuki toimialueelle \"{domain}\" voidaan lisätä tulevaan julkaisuun."
+    },
     "flag_entity_missing": {
       "title": "Ehtoentiteetti puuttuu säännöstä \"{rule_name}\"",
       "description": "Seuraava(t) ehtoentiteetti/-entiteetit ei(vät) ole enää olemassa, mutta siihen/niihin viitataan säännössä: {missing_entities}. Sääntö ei valvo, kun näitä ehtoja ei voida arvioida. Päivitä tai poista sääntö ratkaistaksesi tämän ongelman."

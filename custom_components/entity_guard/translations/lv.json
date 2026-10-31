@@ -552,6 +552,10 @@
     }
   },
   "issues": {
+    "unsupported_domain": {
+      "title": "Entity Guard vēl nevar vadīt domēnu “{domain}”",
+      "description": "Noteikums mērķē uz entītiju domēnā “{domain}” ar stāvokli, kuram Entity Guard nav pakalpojuma piesaistes, tāpēc tas klusējot izlaiž tā piemērošanu. Entity Guard prot vadīt tikai tos domēnus, kuriem tam ir piesaiste. Noklikšķiniet uz “Uzzināt vairāk”, lai atvērtu īsu GitHub veidlapu (domēns ir iepriekš aizpildīts), lai atbalstu domēnam “{domain}” varētu pievienot nākamajā laidienā."
+    },
     "flag_entity_missing": {
       "title": "Trūkst nosacījuma entītijas noteikumā “{rule_name}”",
       "description": "Šī(-s) nosacījuma entītija(-s) vairs nepastāv, bet uz to(-ām) atsaucas noteikums: {missing_entities}. Noteikums netiks piemērots, kad šos nosacījumus nevar novērtēt. Atjauniniet vai noņemiet noteikumu, lai atrisinātu šo problēmu."

@@ -552,6 +552,10 @@
     }
   },
   "issues": {
+    "unsupported_domain": {
+      "title": "Entity Guard non può ancora controllare il dominio \"{domain}\"",
+      "description": "Una regola ha come destinazione un'entità del dominio \"{domain}\" con uno stato per cui Entity Guard non ha una mappatura di servizio, quindi la ignora silenziosamente senza applicarla. Entity Guard sa pilotare solo i domini per cui include una mappatura. Fai clic su \"Ulteriori informazioni\" per aprire un breve modulo su GitHub (il dominio è precompilato) in modo da poter aggiungere il supporto per \"{domain}\" in una versione futura."
+    },
     "flag_entity_missing": {
       "title": "Entità della condizione mancante nella regola \"{rule_name}\"",
       "description": "Le seguenti entità delle condizioni non esistono più ma sono referenziate nella regola: {missing_entities}. La regola non verrà applicata quando queste condizioni non possono essere valutate. Aggiorna o rimuovi la regola per risolvere questo problema."

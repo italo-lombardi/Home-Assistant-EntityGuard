@@ -552,6 +552,10 @@
     }
   },
   "issues": {
+    "unsupported_domain": {
+      "title": "Entity Guard zatím neumí ovládat doménu „{domain}“",
+      "description": "Pravidlo cílí na entitu v doméně „{domain}“ se stavem, pro který Entity Guard nemá přiřazenou žádnou službu, takže její vynucení tiše přeskakuje. Entity Guard umí ovládat pouze domény, pro které obsahuje přiřazení služby. Kliknutím na „Zjistit více“ otevřete krátký formulář na GitHubu (doména je již předvyplněna), abyste mohli požádat o doplnění podpory pro doménu „{domain}“ v některé z budoucích verzí."
+    },
     "flag_entity_missing": {
       "title": "Chybějící entita podmínky v pravidle „{rule_name}“",
       "description": "Následující entita/entity podmínky již neexistují, ale jsou odkazovány v pravidle: {missing_entities}. Pravidlo nebude vynuceno, když tyto podmínky nelze vyhodnotit. Pro vyřešení tohoto problému pravidlo aktualizujte nebo odeberte."

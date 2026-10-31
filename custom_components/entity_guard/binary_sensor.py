@@ -283,7 +283,7 @@ class EntityGuardRecentlyEnforcedCancelledSensor(EntityGuardRecentlyEnforcedBase
     sibling of recently_enforced_verified (success) and _unreachable (device
     failure): pulses when an armed verify cycle was dropped because an external
     condition changed — the rule was disabled, master went off, the rule was
-    suppressed, or its conditional flags went unmet. Not a device fault (the
+    suppressed, or its conditions went unmet. Not a device fault (the
     target may already be at desired), not a success — no verdict was reached.
     """
 

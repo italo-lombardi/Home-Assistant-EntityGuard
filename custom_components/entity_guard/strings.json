@@ -552,9 +552,13 @@
     }
   },
   "issues": {
+    "unsupported_domain": {
+      "title": "Entity Guard can't control the \"{domain}\" domain yet",
+      "description": "A rule targets an entity in the \"{domain}\" domain with a state Entity Guard has no service mapping for, so it silently skips enforcing it. Entity Guard only knows how to drive the domains it ships a mapping for. Click \"Learn more\" to open a short GitHub form (the domain is pre-filled) so support for \"{domain}\" can be added in a future release."
+    },
     "flag_entity_missing": {
-      "title": "Flag entity missing in rule \"{rule_name}\"",
-      "description": "The following flag entity/entities no longer exist but are referenced in the rule: {missing_entities}. The rule will not enforce when these flags cannot be evaluated. Update or remove the rule to resolve this issue."
+      "title": "Condition entity missing in rule \"{rule_name}\"",
+      "description": "The following condition entity/entities no longer exist but are referenced in the rule: {missing_entities}. The rule will not enforce when these conditions cannot be evaluated. Update or remove the rule to resolve this issue."
     },
     "target_entity_missing": {
       "title": "Target entity missing in rule \"{rule_name}\"",
@@ -629,7 +633,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: a rule abandoned a verify cycle (a condition changed)",
-      "description": "Fires when a rule abandons an armed verify cycle with no verdict because an external condition changed (the rule was suppressed, disabled, the hub master switched off, or its conditional flags lapsed).",
+      "description": "Fires when a rule abandons an armed verify cycle with no verdict because an external condition changed (the rule was suppressed, disabled, the hub master switched off, or its conditions lapsed).",
       "fields": {
         "config_entry_id": {
           "name": "Rule (leave empty for any rule)",
