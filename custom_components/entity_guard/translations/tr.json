@@ -552,6 +552,10 @@
     }
   },
   "issues": {
+    "unsupported_domain": {
+      "title": "Entity Guard henüz \"{domain}\" alanını kontrol edemiyor",
+      "description": "Bir kural, Entity Guard'ın hizmet eşlemesi bulunmayan bir duruma sahip \"{domain}\" alanındaki bir varlığı hedefliyor; bu nedenle onu sessizce uygulamayı atlıyor. Entity Guard yalnızca eşleme sağladığı alanları yönetmeyi bilir. \"{domain}\" desteğinin gelecekteki bir sürümde eklenebilmesi için kısa bir GitHub formunu (alan önceden doldurulmuş olarak) açmak üzere \"Daha fazla bilgi\" bağlantısına tıklayın."
+    },
     "flag_entity_missing": {
       "title": "\"{rule_name}\" kuralında koşul varlığı eksik",
       "description": "Aşağıdaki koşul varlığı/varlıkları artık mevcut değil ancak kuralda başvuruluyor: {missing_entities}. Bu koşullar değerlendirilemediğinde kural uygulanmayacaktır. Bu sorunu çözmek için kuralı güncelleyin veya kaldırın."

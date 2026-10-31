@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from urllib.parse import quote
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
@@ -11,6 +12,7 @@ from homeassistant.helpers.issue_registry import (
     async_create_issue,
     async_delete_issue,
 )
+from homeassistant.loader import IntegrationNotLoaded, async_get_loaded_integration
 
 from .const import DOMAIN
 from .models import parse_rule_config
@@ -19,6 +21,16 @@ _LOGGER = logging.getLogger(__name__)
 
 ISSUE_FLAG_ENTITY_MISSING = "flag_entity_missing"
 ISSUE_TARGET_ENTITY_MISSING = "target_entity_missing"
+ISSUE_UNSUPPORTED_DOMAIN = "unsupported_domain"
+
+# GitHub issue-form template the "Learn more" link opens (file lives at
+# .github/ISSUE_TEMPLATE/unsupported_domain.yml). Appended to the manifest's
+# issue_tracker so the slug survives a repo rename (single source of truth).
+# &domain= prefills the form's `domain` input (GitHub issue-form query params
+# key on the field `id`) so the user doesn't retype what the card already knows.
+_UNSUPPORTED_DOMAIN_TEMPLATE_QUERY = (
+    "/new?template=unsupported_domain.yml&labels=enhancement,unsupported-domain"
+)
 
 
 def missing_flags_issue_id(entry_id: str) -> str:
@@ -145,3 +157,56 @@ async def async_check_missing_target_entities(
     else:
         _LOGGER.debug("Target validation passed for rule %s", entry_id)
         async_delete_issue(hass, DOMAIN, issue_id)
+
+
+def unsupported_domain_issue_id(domain: str) -> str:
+    """Return the repair-issue ID for a domain Entity Guard cannot control.
+
+    Keyed by DOMAIN, not entry_id (unlike the missing-entity helpers above):
+    the gap is per-domain, not per-rule — expanding the service map fixes every
+    rule targeting that domain at once, so one card per domain is right.
+    """
+    return f"{ISSUE_UNSUPPORTED_DOMAIN}_{domain}"
+
+
+def async_raise_unsupported_domain(hass: HomeAssistant, domain: str) -> None:
+    """Raise a repair issue when a rule targets a domain with no service mapping.
+
+    Fires from the enforce path's no_service_mapping skip: the user built (by
+    typing a custom non-on/off state on a domain absent from DOMAIN_SERVICE_MAP
+    and DOMAIN_MODE_SERVICE_MAP) a rule Entity Guard silently can't drive. The
+    "Learn more" link opens a GitHub issue-form template asking for the domain /
+    desired state / example entity so the service map can be expanded.
+
+    No self-clear: an unmapped domain only becomes mapped via a code update +
+    restart, and a restart clears repair issues anyway (unlike the missing-entity
+    helpers, whose condition can flip at runtime). Add clearing only if it nags.
+    """
+    learn_more_url: str | None = None
+    # ponytail: the enforce path only runs while loaded, so the lookup normally
+    # succeeds; the guard covers the narrow enforce-during-teardown/reload window
+    # where it would raise and crash enforce. Skip the link, keep the card.
+    try:
+        issue_tracker = async_get_loaded_integration(hass, DOMAIN).issue_tracker
+    except IntegrationNotLoaded:
+        issue_tracker = None
+    if issue_tracker:
+        # issue_tracker is ".../issues"; the form template lives at ".../issues/new".
+        # Append &domain= so GitHub prefills the form's `domain` input (quote in
+        # case a domain ever contains a URL-unsafe char).
+        learn_more_url = (
+            issue_tracker
+            + _UNSUPPORTED_DOMAIN_TEMPLATE_QUERY
+            + f"&domain={quote(domain)}"
+        )
+
+    async_create_issue(
+        hass,
+        DOMAIN,
+        unsupported_domain_issue_id(domain),
+        is_fixable=False,
+        severity=IssueSeverity.WARNING,
+        translation_key=ISSUE_UNSUPPORTED_DOMAIN,
+        translation_placeholders={"domain": domain},
+        learn_more_url=learn_more_url,
+    )

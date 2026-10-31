@@ -552,6 +552,10 @@
     }
   },
   "issues": {
+    "unsupported_domain": {
+      "title": "Entity Guard još ne može upravljati domenom \"{domain}\"",
+      "description": "Pravilo cilja entitet u domeni \"{domain}\" sa stanjem za koje Entity Guard nema mapiranje usluge, pa provedbu u tišini preskače. Entity Guard zna upravljati samo domenama za koje isporučuje mapiranje. Kliknite \"Saznajte više\" za otvaranje kratkog GitHub obrasca (domena je već ispunjena) kako bi se podrška za \"{domain}\" mogla dodati u budućem izdanju."
+    },
     "flag_entity_missing": {
       "title": "Entitet uvjeta nedostaje u pravilu \"{rule_name}\"",
       "description": "Sljedeći entitet(i) uvjeta više ne postoje, ali se referenciraju u pravilu: {missing_entities}. Pravilo se neće provoditi kada te uvjete nije moguće procijeniti. Ažurirajte ili uklonite pravilo da biste riješili ovaj problem."

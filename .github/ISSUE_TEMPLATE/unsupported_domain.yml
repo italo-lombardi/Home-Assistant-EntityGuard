@@ -1,0 +1,52 @@
+name: Unsupported domain / state
+description: Ask for Entity Guard to learn how to control a domain or state it currently skips.
+title: "Add service mapping for the \"<domain>\" domain"
+labels: [enhancement, unsupported-domain]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        A rule you created targets a domain or state Entity Guard has no service
+        mapping for, so it silently skips enforcing it. Fill in the details below
+        and the mapping can be added in a future release. The domain is pre-filled
+        from the repair notification — leave it as-is.
+  - type: input
+    id: domain
+    attributes:
+      label: Domain
+      description: The entity domain Entity Guard could not control (the part before the dot in the entity_id).
+      placeholder: e.g. humidifier
+    validations:
+      required: true
+  - type: input
+    id: target_state
+    attributes:
+      label: Desired state or value
+      description: The state (or attribute value) you asked Entity Guard to enforce.
+      placeholder: e.g. "on", "eco", 50
+    validations:
+      required: true
+  - type: input
+    id: example_entity
+    attributes:
+      label: Example target entity_id
+      description: One real entity_id from your rule so the state/service can be reproduced.
+      placeholder: e.g. humidifier.living_room
+    validations:
+      required: true
+  - type: input
+    id: expected_service
+    attributes:
+      label: Expected service to call
+      description: If you know which Home Assistant service should drive this state, name it. Leave blank if unsure.
+      placeholder: e.g. humidifier.turn_on
+    validations:
+      required: false
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      description: Settings → About, or the version shown in Developer Tools.
+      placeholder: e.g. 2026.10.1
+    validations:
+      required: true

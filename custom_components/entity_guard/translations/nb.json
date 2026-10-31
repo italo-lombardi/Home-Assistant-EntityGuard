@@ -552,6 +552,10 @@
     }
   },
   "issues": {
+    "unsupported_domain": {
+      "title": "Entity Guard kan ikke styre domenet \"{domain}\" ennå",
+      "description": "En regel retter seg mot en enhet i domenet \"{domain}\" med en tilstand som Entity Guard ikke har noen tjenestetilknytning for, så den hopper stille over håndhevingen av den. Entity Guard vet bare hvordan den skal styre domenene den leveres med en tilknytning for. Klikk \"Lær mer\" for å åpne et kort GitHub-skjema (domenet er forhåndsutfylt) slik at støtte for \"{domain}\" kan legges til i en fremtidig utgivelse."
+    },
     "flag_entity_missing": {
       "title": "Betingelsesenhet mangler i regel \"{rule_name}\"",
       "description": "Følgende betingelsesenheter eksisterer ikke lenger, men blir referert til i regelen: {missing_entities}. Regelen vil ikke håndheves når disse betingelsene ikke kan evalueres. Oppdater eller fjern regelen for å løse dette problemet."

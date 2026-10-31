@@ -552,6 +552,10 @@
     }
   },
   "issues": {
+    "unsupported_domain": {
+      "title": "Entity Guard encara no pot controlar el domini «{domain}»",
+      "description": "Una regla té com a objectiu una entitat del domini «{domain}» amb un estat per al qual Entity Guard no té cap assignació de servei, de manera que n'omet l'aplicació de manera silenciosa. Entity Guard només sap com governar els dominis per als quals inclou una assignació. Feu clic a «Més informació» per obrir un formulari breu de GitHub (el domini ja hi està emplenat) i així poder afegir la compatibilitat amb «{domain}» en una versió futura."
+    },
     "flag_entity_missing": {
       "title": "Falta l'entitat de la condició a la regla «{rule_name}»",
       "description": "L'entitat o entitats de condició següents ja no existeixen però es referencien a la regla: {missing_entities}. La regla no s'aplicarà quan aquestes condicions no es puguin avaluar. Actualitzeu o elimineu la regla per resoldre aquest problema."

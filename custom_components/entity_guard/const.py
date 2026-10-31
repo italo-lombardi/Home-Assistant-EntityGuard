@@ -385,7 +385,7 @@ EVENT_UNREACHABLE = "entity_guard_enforced_unreachable"
 # failure). Fired only when verify is enabled, when an armed verify cycle is
 # ABANDONED before any verdict because an external condition changed mid-window —
 # the rule was disabled, the master switch went off, the rule was suppressed, or
-# its conditional flags went unmet. NOT a device fault (the target may already be
+# its conditions went unmet. NOT a device fault (the target may already be
 # at desired) and NOT a success. One pulse per abandoned cycle, at drop time.
 # Deliberately NOT fired on integration unload (the entry is tearing down; the
 # 30s pulse timer would be cancelled immediately and listeners are going away).

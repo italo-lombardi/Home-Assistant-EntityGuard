@@ -13,8 +13,11 @@ from custom_components.entity_guard.const import DOMAIN, ENTRY_TYPE_RULE
 from custom_components.entity_guard.issue_helpers import (
     ISSUE_FLAG_ENTITY_MISSING,
     ISSUE_TARGET_ENTITY_MISSING,
+    ISSUE_UNSUPPORTED_DOMAIN,
     async_check_missing_flag_entities,
     async_check_missing_target_entities,
+    async_raise_unsupported_domain,
+    unsupported_domain_issue_id,
 )
 
 
@@ -543,3 +546,93 @@ async def test_target_rename_detected_by_real_check(hass: HomeAssistant) -> None
     assert old_id in kwargs.get("translation_placeholders", {}).get(
         "missing_entities", ""
     ), "the OLD (dead) id must be reported as missing"
+
+
+def test_unsupported_domain_issue_id() -> None:
+    assert unsupported_domain_issue_id("humidifier") == "unsupported_domain_humidifier"
+
+
+async def test_raise_unsupported_domain_creates_issue(hass: HomeAssistant) -> None:
+    integration = type("I", (), {"issue_tracker": "https://example.test/x/issues"})()
+    with (
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_create_issue"
+        ) as mock_create,
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_get_loaded_integration",
+            return_value=integration,
+        ),
+    ):
+        async_raise_unsupported_domain(hass, "humidifier")
+
+    mock_create.assert_called_once()
+    args, kwargs = mock_create.call_args
+    issue_id = kwargs.get("issue_id") or args[2]
+    assert issue_id == "unsupported_domain_humidifier"
+    assert kwargs.get("translation_key") == ISSUE_UNSUPPORTED_DOMAIN
+    assert kwargs.get("translation_placeholders", {}).get("domain") == "humidifier"
+    # Learn-more link = manifest issue_tracker + the issue-form template query,
+    # with &domain= prefilling the form's `domain` input so the claim in the card
+    # copy ("the domain is pre-filled") is actually true.
+    assert kwargs.get("learn_more_url") == (
+        "https://example.test/x/issues"
+        "/new?template=unsupported_domain.yml&labels=enhancement,unsupported-domain"
+        "&domain=humidifier"
+    )
+
+
+async def test_raise_unsupported_domain_prefill_is_url_encoded(
+    hass: HomeAssistant,
+) -> None:
+    # A domain is normally a bare slug, but the prefill value is URL-quoted so a
+    # stray unsafe char can never break the query string.
+    integration = type("I", (), {"issue_tracker": "https://example.test/x/issues"})()
+    with (
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_create_issue"
+        ) as mock_create,
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_get_loaded_integration",
+            return_value=integration,
+        ),
+    ):
+        async_raise_unsupported_domain(hass, "weird domain/x")
+
+    _, kwargs = mock_create.call_args
+    assert kwargs.get("learn_more_url", "").endswith("&domain=weird%20domain/x")
+
+
+async def test_raise_unsupported_domain_no_issue_tracker(hass: HomeAssistant) -> None:
+    # Manifest without issue_tracker → still raise the card, learn_more_url=None.
+    integration = type("I", (), {"issue_tracker": None})()
+    with (
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_create_issue"
+        ) as mock_create,
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_get_loaded_integration",
+            return_value=integration,
+        ),
+    ):
+        async_raise_unsupported_domain(hass, "siren")
+
+    mock_create.assert_called_once()
+    _, kwargs = mock_create.call_args
+    assert kwargs.get("learn_more_url") is None
+
+
+async def test_raise_unsupported_domain_integration_not_loaded(
+    hass: HomeAssistant,
+) -> None:
+    # Enforce-during-teardown window: lookup raises IntegrationNotLoaded. The card
+    # still fires; only the learn_more_url is dropped. (real async_get_loaded_
+    # integration raises because the integration is not set up in this fixture.)
+    with patch(
+        "custom_components.entity_guard.issue_helpers.async_create_issue"
+    ) as mock_create:
+        async_raise_unsupported_domain(hass, "remote")
+
+    mock_create.assert_called_once()
+    _, kwargs = mock_create.call_args
+    assert kwargs.get("learn_more_url") is None
+    assert kwargs.get("translation_placeholders", {}).get("domain") == "remote"

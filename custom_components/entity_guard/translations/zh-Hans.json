@@ -552,6 +552,10 @@
     }
   },
   "issues": {
+    "unsupported_domain": {
+      "title": "Entity Guard 暂不支持控制“{domain}”域",
+      "description": "某条规则的目标是“{domain}”域中的一个实体，但其状态没有对应的 Entity Guard 服务映射，因此会被静默跳过而不执行强制。Entity Guard 只会驱动它自带映射的那些域。点击“了解更多”可打开一个简短的 GitHub 表单（其中已预填该域），以便在未来版本中添加对“{domain}”域的支持。"
+    },
     "flag_entity_missing": {
       "title": "规则“{rule_name}”中缺少条件实体",
       "description": "以下条件实体不再存在但仍被规则引用：{missing_entities}。当这些条件无法评估时，规则将不会强制执行。请更新或移除规则以解决此问题。"

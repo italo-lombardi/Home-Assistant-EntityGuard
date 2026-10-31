@@ -552,6 +552,10 @@
     }
   },
   "issues": {
+    "unsupported_domain": {
+      "title": "Entity Guard ne peut pas encore contrôler le domaine \"{domain}\"",
+      "description": "Une règle cible une entité du domaine \"{domain}\" avec un état pour lequel Entity Guard n'a aucune correspondance de service, il ignore donc silencieusement son application. Entity Guard ne sait piloter que les domaines pour lesquels il fournit une correspondance. Cliquez sur « En savoir plus » pour ouvrir un court formulaire GitHub (le domaine est pré-rempli) afin que la prise en charge de \"{domain}\" puisse être ajoutée dans une prochaine version."
+    },
     "flag_entity_missing": {
       "title": "Entité de condition manquante dans la règle \"{rule_name}\"",
       "description": "Les entités de condition suivantes n'existent plus mais sont référencées dans la règle: {missing_entities}. La règle ne s'appliquera pas tant que ces conditions ne peuvent pas être évaluées. Mettez à jour ou supprimez la règle pour résoudre ce problème."
