@@ -90,6 +90,24 @@ def press(token: str, entity_id: str) -> None:
     sf.api(token, "POST", "/api/services/button/press", {"entity_id": entity_id})
 
 
+def resolve_unique_id(token: str, name: str) -> str | None:
+    """Return the rule's unique_id (the id carried as `rule_id` on every event)
+    by matching the rule NAME via the list_rules service. The create flow returns
+    the config entry_id (a ULID), which is a DIFFERENT id space from the event's
+    rule_id (the unique_id / UUID) — matching on entry_id never hits."""
+    resp = sf.api(
+        token,
+        "POST",
+        "/api/services/entity_guard/list_rules?return_response",
+        {},
+    )
+    rules = (resp.get("service_response") or {}).get("rules", [])
+    for r in rules:
+        if r.get("name") == name:
+            return r.get("rule_id")
+    return None
+
+
 def main() -> int:
     token = sf.mint_token()
     sf.cleanup(token)  # clear orphan EG rules from prior runs
@@ -112,6 +130,15 @@ def main() -> int:
     sf.check("rule armed past startup grace", armed)
     ok = ok and armed
 
+    # Events carry rule_id = the rule's unique_id (UUID), NOT the config entry_id
+    # (ULID) that the create flow returned. Resolve the unique_id by name so the
+    # event match below is in the right id space.
+    rule_id = resolve_unique_id(token, name)
+    sf.check(
+        "resolved rule unique_id via list_rules", bool(rule_id), f"rule_id={rule_id!r}"
+    )
+    ok = ok and bool(rule_id)
+
     # --- AUTOMATIC leg: forcing the target to the trigger state makes the engine
     # enforce on its own; the event's `forced` must be False. -------------------
     sve.force_state(
@@ -119,7 +146,7 @@ def main() -> int:
     )  # seed off-trigger so the drop is a real change
     time.sleep(1)
     auto_forced = asyncio.run(
-        _capture_forced(token, entry, lambda: sve.force_state(token, TARGET, "off"))
+        _capture_forced(token, rule_id, lambda: sve.force_state(token, TARGET, "off"))
     )
     sf.check(
         "automatic enforce → event forced == False",
@@ -136,7 +163,7 @@ def main() -> int:
     time.sleep(1)
     button = f"button.{slug}_test_enforce"
     man_forced = asyncio.run(
-        _capture_forced(token, entry, lambda: press(token, button))
+        _capture_forced(token, rule_id, lambda: press(token, button))
     )
     sf.check(
         "manual test_enforce → event forced == True",

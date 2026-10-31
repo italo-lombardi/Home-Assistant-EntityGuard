@@ -1,6 +1,6 @@
 # Entity Guard — Automation Examples
 
-All examples use `rule_id` (the stable config-entry ID) rather than `rule_name` so renames don't break automations.  
+All examples use `rule_id` (the stable rule ID) rather than `rule_name` so renames don't break automations.  
 To find a rule's ID: enable `sensor.<rule>_rule_id` in the entity registry — its state is the ID to copy.
 
 ---
@@ -16,7 +16,7 @@ automation:
     - platform: event
       event_type: entity_guard_enforced
       event_data:
-        rule_id: "01KSXDM1GN9WGQCSTFAX0Y1HNS"
+        rule_id: "54a6b7be-5da0-43cc-b7f1-2cc5ec03e98e"
   action:
     - service: notify.mobile_app_my_phone
       data:
@@ -118,7 +118,7 @@ automation:
     - platform: event
       event_type: entity_guard_enforced
       event_data:
-        rule_id: "01KSXDM1GN9WGQCSTFAX0Y1HNS"   # replace with your rule_id
+        rule_id: "54a6b7be-5da0-43cc-b7f1-2cc5ec03e98e"   # replace with your rule_id
   action:
     - service: switch.turn_off
       target:
@@ -378,7 +378,7 @@ All `entity_guard_enforced` event fields:
 
 | Field | Example | Notes |
 |-------|---------|-------|
-| `rule_id` | `01KSXDM1GN9WGQCSTFAX0Y1HNS` | Stable config-entry ID. Use this for filtering. |
+| `rule_id` | `54a6b7be-5da0-43cc-b7f1-2cc5ec03e98e` | Stable rule ID (the value of `sensor.<rule>_rule_id`). Use this for filtering. |
 | `rule_name` | `Balcony Light OFF` | Display name — can change if rule is renamed |
 | `entity_id` | `light.balcony_light` | The entity that was enforced |
 | `domain` | `light` | Domain of the enforced entity |

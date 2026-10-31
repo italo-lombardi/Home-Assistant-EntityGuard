@@ -25,9 +25,13 @@ REST/WS-observable surface asserted here (allowed/disposable entities only):
 WHY input_boolean + "gamma":
   input_boolean is an ALLOWED smoke target (memory: smoke_test_entities) and IS
   in DOMAIN_SERVICE_MAP, but its service map is {on, off} only. A target_state
-  of "gamma" (not on/off, no mode mapping) resolves to NO service — the service
-  is never called, no device is touched — so the engine raises Card B keyed
-  unsupported_state_input_boolean_gamma. Deterministic, zero side effect.
+  of "gamma_<run_token>" (not on/off, no mode mapping) resolves to NO service —
+  the service is never called, no device is touched — so the engine raises
+  Card B keyed unsupported_state_input_boolean_gamma_<run_token>. The per-run
+  token makes the card id unique: HA never deletes a non-fixable card (no
+  repairs/delete WS) and re-raising a dismissed one keeps it dismissed, so a
+  static id would collide with a prior run's leftover. Deterministic, zero side
+  effect.
 
 HONEST SCOPE — what this does NOT cover live:
   - The mode-map validity leg (climate target_state not in hvac_modes → Card B):
@@ -60,12 +64,17 @@ import smoke_follow as sf  # shared helpers, resolved inside the container
 
 WS_URL = "ws://localhost:8123/api/websocket"
 
-# input_boolean IS in DOMAIN_SERVICE_MAP ({on, off}) but "gamma" is off-map — the
+# input_boolean IS in DOMAIN_SERVICE_MAP ({on, off}) but an off-map state is the
 # Card B (unsupported_state) path. An allowed smoke target; zero side effect.
 TARGET = "input_boolean.ea_ctrl_kitchen_1"
-OFF_MAP_STATE = "gamma"  # mapped domain, unmapped state
 DOMAIN = TARGET.split(".", 1)[0]  # input_boolean
-EXPECTED_ISSUE_ID = f"unsupported_state_{DOMAIN}_{OFF_MAP_STATE}"
+# The off-map state carries a per-run token (see main()). HA's issue registry
+# keys the repair as unsupported_state_<domain>_<state> and NEVER removes a
+# non-fixable card (no repairs/delete WS; re-raising a dismissed one keeps it
+# dismissed — dataclasses.replace omits dismissed_version). A per-run-unique
+# state gives each run a DISTINCT card id, so the precheck is genuinely clean
+# and the post-raise assert proves THIS run's rule raised it — not a leftover.
+OFF_MAP_BASE = "gamma"  # mapped domain, unmapped state
 
 
 async def _list_issues(token: str) -> list[dict]:
@@ -89,7 +98,11 @@ async def _list_issues(token: str) -> list[dict]:
 
 
 def _issue_by_id(token: str, issue_id: str) -> dict | None:
-    """Return the entity_guard issue with the given id, or None."""
+    """Return the entity_guard issue with the given id, or None.
+
+    No ignored-flag handling: the per-run-unique state (see main()) gives each
+    run a fresh card id, so a hit is always this run's own card — never a
+    dismissed leftover from a prior run."""
     for issue in asyncio.run(_list_issues(token)):
         if issue.get("domain") == "entity_guard" and issue.get("issue_id") == issue_id:
             return issue
@@ -111,23 +124,32 @@ def main() -> int:
     run_token = str(int(time.time()))
     rule_name = f"EG Unsupported State Smoke {run_token}"
 
-    # Clean registry: neither card should pre-exist for this target.
-    pre = _issue_by_id(token, EXPECTED_ISSUE_ID)
+    # Per-run-unique off-map state → a DISTINCT card id each run. HA never
+    # removes a non-fixable repair card (no repairs/delete WS) and re-raising a
+    # dismissed one keeps it dismissed, so a static id would collide with a prior
+    # run's leftover. A tokenized state sidesteps that: the precheck is honestly
+    # clean and the post-raise assert proves THIS run's rule raised the card.
+    off_map_state = f"{OFF_MAP_BASE}_{run_token}"
+    expected_issue_id = f"unsupported_state_{DOMAIN}_{off_map_state}"
+
+    # Clean registry: this run's card must not pre-exist (it can't — the id is
+    # unique to this run — but assert it so a logic slip surfaces loudly).
+    pre = _issue_by_id(token, expected_issue_id)
     sf.check(
-        f"no pre-existing unsupported_state card ({EXPECTED_ISSUE_ID})",
+        f"no pre-existing unsupported_state card ({expected_issue_id})",
         pre is None,
         f"issue={pre}",
     )
 
     print(f"Creating fixed_state rule '{rule_name}' (off-map state on mapped domain)…")
     # trigger_states covers input_boolean's real states so whatever state it is
-    # in, the rule sees a trigger and attempts to enforce "gamma" → mapped
-    # domain, unmapped state → no_service_mapping → Card B.
+    # in, the rule sees a trigger and attempts to enforce the off-map state →
+    # mapped domain, unmapped state → no_service_mapping → Card B.
     entry_id = sf.create_fixed_state_rule(
         token,
         rule_name,
         [TARGET],
-        target_state=OFF_MAP_STATE,
+        target_state=off_map_state,
         trigger_states=["on", "off"],
     )
     print(f"  created entry {entry_id}")
@@ -135,7 +157,7 @@ def main() -> int:
     try:
         # Nudge the target so the rule evaluates + attempts enforcement. Toggling
         # input_boolean is a no-op side-effect on an allowed entity; enforcing
-        # "gamma" resolves to no service and raises the repair.
+        # the off-map state resolves to no service and raises the repair.
         cur = sf.get_state(token, TARGET).get("state", "off")
         flip = "off" if cur == "on" else "on"
         sf.api(
@@ -145,9 +167,9 @@ def main() -> int:
             {"entity_id": TARGET},
         )
 
-        issue = _wait_for_issue(token, EXPECTED_ISSUE_ID)
+        issue = _wait_for_issue(token, expected_issue_id)
         sf.check(
-            f"unsupported_state repair issue raised ({EXPECTED_ISSUE_ID})",
+            f"unsupported_state repair issue raised ({expected_issue_id})",
             issue is not None,
             f"issue={issue}",
         )
@@ -165,7 +187,7 @@ def main() -> int:
             )
             sf.check(
                 "issue placeholder names the off-map state",
-                placeholders.get("state") == OFF_MAP_STATE,
+                placeholders.get("state") == off_map_state,
                 f"placeholders={placeholders}",
             )
             # Learn-more link: the unsupported_state form, prefilling BOTH fields.
@@ -182,7 +204,7 @@ def main() -> int:
             )
             sf.check(
                 "learn_more_url prefills the state field",
-                f"&state={OFF_MAP_STATE}" in learn_more,
+                f"&state={off_map_state}" in learn_more,
                 f"learn_more_url={learn_more}",
             )
 
