@@ -1,34 +1,37 @@
 #!/usr/bin/env python3
-"""Smoke test: unsupported-domain repair issue.
+"""Smoke test: unsupported-DOMAIN repair issue (Card A).
 
-When a rule's enforce path resolves NO service mapping for a target (a custom
-non-on/off target_state on a domain Entity Guard can't drive), the engine both
-records the per-target no_service_mapping outcome AND raises a Home Assistant
-repair issue (translation_key "unsupported_domain", id
-"unsupported_domain_<domain>") with a "Learn more" link to a GitHub issue-form
-asking for that domain's service mapping. One card per domain, keyed by the
-target's domain — not per rule.
+Card A fires when a rule's enforce path targets a domain Entity Guard has NO
+service mapping for AT ALL — the domain is in neither DOMAIN_SERVICE_MAP nor
+DOMAIN_MODE_SERVICE_MAP. The engine records the per-target no_service_mapping
+outcome AND raises a Home Assistant repair issue (translation_key
+"unsupported_domain", id "unsupported_domain_<domain>") with a "Learn more"
+link to a GitHub issue-form asking for that domain's support. One card per
+domain, keyed by the target's domain — not per rule.
+
+(The sibling case — a MAPPED domain with an off-map STATE — now raises Card B,
+"unsupported_state"; that path is covered by smoke_unsupported_state.py.)
 
 REST/WS-observable surface asserted here (allowed/disposable entities only):
-  1. A fixed_state rule whose target_state resolves to no service mapping raises
-     the unsupported_domain_<domain> repair issue, with translation_key
+  1. A fixed_state rule whose target domain is in neither service map raises the
+     unsupported_domain_<domain> repair issue, with translation_key
      "unsupported_domain" and translation_placeholders {"domain": <domain>}.
-  2. The issue carries a learn_more_url pointing at the issue-form template.
+  2. The issue carries a learn_more_url pointing at the issue-form template and
+     prefilling the domain.
+  3. NEGATIVE leg: a mapped domain+state enforce raises NO Card A.
 
-WHY input_boolean (a MAPPED domain) with target_state "gamma":
-  This is the deterministic, ZERO-side-effect trigger for no_service_mapping.
-  input_boolean is an ALLOWED smoke target; its service map is {on, off} only,
-  so a target_state of "gamma" (not on/off, no mode mapping) resolves to NO
-  service — the service is never called, no device is touched. The engine raises
-  the card keyed by the target's domain, so the issue_id is
-  unsupported_domain_input_boolean. The card copy is deliberately domain-level
-  ("Entity Guard can't control the input_boolean domain yet") — honest for the
-  user-facing path, since from the enforce path the only signal is "this domain
-  produced no service for the requested state." Driving the genuinely
-  neither-mapped domains live (humidifier/remote/siren/script/automation) would
-  need a disposable helper the REST collection API can't create reliably in this
-  container (memory: smoke_test_entities); the domain the card names differs, the
-  repair-raise path asserted here is identical.
+WHY automation as the Card A target:
+  automation is a domain Entity Guard cannot drive — it is in NEITHER service
+  map — yet the EG config-flow entity selector ACCEPTS it as a target (sun is
+  rejected at flow validation, so sun.sun can't be used here). The engine
+  resolves no service for an unmapped domain, so nothing is ever called on the
+  automation (zero side effect: it is never triggered or toggled). A fixed_state
+  rule whose target_state is any non-automation string (e.g. "gamma") can never
+  match the live on/off state, so the engine attempts enforcement, hits the
+  domain gap, and raises Card A keyed unsupported_domain_automation.
+  Deterministic, no device touched. (humidifier/remote/siren are the other
+  flow-allowed unmapped domains, but humidifier maps to real diffuser devices —
+  memory smoke_test_entities — so automation is the disposable-safe pick.)
 
 HONEST SCOPE — what this does NOT cover live:
   - The learn_more_url None branch (integration-not-loaded / no issue_tracker):
@@ -61,12 +64,18 @@ import smoke_follow as sf  # shared helpers, resolved inside the container
 
 WS_URL = "ws://localhost:8123/api/websocket"
 
-# input_boolean is an ALLOWED smoke target (memory: smoke_test_entities). Its
-# service map is {on, off} only — a target_state of "gamma" resolves to NO
-# service, the deterministic no_service_mapping path, zero device side effect.
-UNDRIVABLE_TARGET = "input_boolean.ea_ctrl_kitchen_1"
-UNDRIVABLE_STATE = "gamma"  # not on/off, not in any service map
-EXPECTED_DOMAIN = UNDRIVABLE_TARGET.split(".", 1)[0]  # input_boolean
+# automation is in NEITHER service map — the Card A (unsupported_domain) path.
+# The EG config-flow entity selector accepts automation as a target domain (sun
+# is rejected at flow validation), yet the engine has no service mapping for it,
+# so this is a genuinely-unmapped domain the flow will actually let us target.
+# Zero side effect: because the domain is unmapped the engine resolves NO service
+# and never calls anything on the automation — nothing is triggered or toggled.
+# The target_state "gamma" can never match an automation's on/off state, so the
+# rule always attempts enforcement and hits the domain gap → Card A.
+# (ea_demo_* is a disposable EG demo automation; even so, no service is called.)
+UNDRIVABLE_TARGET = "automation.ea_demo_entity_went_offline"
+UNDRIVABLE_STATE = "gamma"  # never a real automation state → enforce always attempted
+EXPECTED_DOMAIN = UNDRIVABLE_TARGET.split(".", 1)[0]  # automation
 EXPECTED_ISSUE_ID = f"unsupported_domain_{EXPECTED_DOMAIN}"
 
 
@@ -159,10 +168,10 @@ def main() -> int:
         if mapped_entry:
             sf.api(token, "DELETE", f"/api/config/config_entries/entry/{mapped_entry}")
 
-    print(f"Creating fixed_state rule '{rule_name}' (undrivable target_state)…")
-    # trigger_states covers the target's real states (on/off) so whatever state
-    # input_boolean is in, the rule sees a trigger and attempts to enforce the
-    # undrivable "gamma" → no_service_mapping → repair issue raised.
+    print(f"Creating fixed_state rule '{rule_name}' (unmapped-domain target)…")
+    # automation's live state is on/off; trigger on both so the rule evaluates
+    # immediately. target_state "gamma" never matches → the engine attempts to
+    # enforce an unmapped domain → no_service_mapping → Card A.
     entry_id = sf.create_fixed_state_rule(
         token,
         rule_name,
@@ -173,18 +182,6 @@ def main() -> int:
     print(f"  created entry {entry_id}")
 
     try:
-        # Nudge the target so the rule evaluates + attempts enforcement. Toggling
-        # input_boolean is a no-op side-effect on an allowed entity; enforcing
-        # "gamma" resolves to no service and raises the repair.
-        cur = sf.get_state(token, UNDRIVABLE_TARGET).get("state", "off")
-        flip = "off" if cur == "on" else "on"
-        sf.api(
-            token,
-            "POST",
-            f"/api/services/input_boolean/turn_{flip}",
-            {"entity_id": UNDRIVABLE_TARGET},
-        )
-
         issue = _wait_for_issue(token)
         sf.check(
             f"unsupported_domain repair issue raised ({EXPECTED_ISSUE_ID})",

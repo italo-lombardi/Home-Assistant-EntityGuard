@@ -66,7 +66,7 @@ import smoke_verify_enforce as sv  # status_sensor_for, force_state, single-enti
 M_DEAD = "light.living_room_under_cabinet_lights"  # forced unavailable
 M_LIVE = "light.living_room_diffuser"  # stays off (live member)
 DOMAIN = "entity_guard"
-LIVE = {"armed", "conditional", "enforcing", "pending", "cooldown"}
+LIVE = {"armed", "conditional", "enforcing", "pending", "cooldown", "verifying"}
 POLL = 0.2
 
 

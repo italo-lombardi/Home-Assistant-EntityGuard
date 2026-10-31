@@ -288,9 +288,25 @@ def resolver_assertions() -> None:
     sys.path.insert(0, "/workspaces/home-assistant-core/config/custom_components")
     from entity_guard.rule_engine import RuleEngine
 
-    # _resolve_state_service is a pure method (no hass/state reads) — call it on a
-    # bare instance via __new__, no engine setup needed.
+    # _resolve_state_service is almost pure, EXCEPT the mode-map validity gate
+    # reads self._hass.states.get(entity_id).attributes.get(valid_attr) to reject
+    # a target_state the device won't accept. These fixtures use fictional ".x"
+    # entities that don't exist in any state machine, so the real engine would see
+    # states.get() -> None and "let through" (valid is None). Reproduce exactly
+    # that with a tiny stub hass whose states.get() always returns None — the
+    # resolver then exercises the full mode-map path (service + kwarg) without a
+    # live HA handle. (A missing/offline target is precisely the let-through case.)
     eng = RuleEngine.__new__(RuleEngine)
+
+    class _NoStates:
+        @staticmethod
+        def get(_entity_id):
+            return None
+
+    class _StubHass:
+        states = _NoStates()
+
+    eng._hass = _StubHass()
 
     def resolve(entity_id: str, state: str):
         domain = entity_id.split(".", 1)[0]
