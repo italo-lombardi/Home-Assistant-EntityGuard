@@ -192,7 +192,7 @@
           "edit_basics": "编辑名称",
           "edit_mode": "编辑模式专属设置",
           "edit_entities": "添加或移除目标实体",
-          "edit_flags": "编辑条件标志",
+          "edit_flags": "编辑条件",
           "edit_advanced": "编辑验证、防抖和速率限制"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "编辑条件标志",
-        "description": "当前标志：{summary}。\n\n{current_state}\n\n选择“添加”以追加，“替换”以替换全部，“清除”以移除全部，或“保存”以保持不变。",
+        "title": "编辑条件",
+        "description": "当前条件：{summary}。\n\n{current_state}\n\n选择“添加”以追加，“替换”以替换全部，“清除”以移除全部，或“保存”以保持不变。",
         "data": {
-          "entity": "标志实体",
+          "entity": "条件实体",
           "match_state": "所需状态",
           "action": "操作"
         }
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "退出且不做更改",
-        "add": "添加标志",
-        "replace": "替换所有标志",
-        "clear": "清除所有标志"
+        "add": "添加条件",
+        "replace": "替换所有条件",
+        "clear": "清除所有条件"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "规则“{rule_name}”中缺少标志实体",
-      "description": "以下标志实体不再存在但仍被规则引用：{missing_entities}。当这些标志无法评估时，规则将不会强制执行。请更新或移除规则以解决此问题。"
+      "title": "规则“{rule_name}”中缺少条件实体",
+      "description": "以下条件实体不再存在但仍被规则引用：{missing_entities}。当这些条件无法评估时，规则将不会强制执行。请更新或移除规则以解决此问题。"
     },
     "migrated_follow_no_source": {
       "title": "迁移的规则“{rule}”需要指定源实体",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard：规则放弃了一次验证检查（条件已变化）",
-      "description": "当外部条件发生变化，规则放弃已开始的验证检查且未得出结论时触发（规则被抑制、被禁用、中枢主开关被关闭，或其条件标志不再满足）。",
+      "description": "当外部条件发生变化，规则放弃已开始的验证检查且未得出结论时触发（规则被抑制、被禁用、中枢主开关被关闭，或其条件不再满足）。",
       "fields": {
         "config_entry_id": {
           "name": "规则（留空表示任意规则）",

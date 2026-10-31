@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Entité drapeau manquante dans la règle \"{rule_name}\"",
-      "description": "Les entités drapeau suivantes n'existent plus mais sont référencées dans la règle: {missing_entities}. La règle ne s'appliquera pas quand ces drapeaux ne peuvent pas être évalués. Mettez à jour ou supprimez la règle pour résoudre ce problème."
+      "title": "Entité de condition manquante dans la règle \"{rule_name}\"",
+      "description": "Les entités de condition suivantes n'existent plus mais sont référencées dans la règle: {missing_entities}. La règle ne s'appliquera pas tant que ces conditions ne peuvent pas être évaluées. Mettez à jour ou supprimez la règle pour résoudre ce problème."
     },
     "migrated_follow_no_source": {
       "title": "La règle migrée \"{rule}\" nécessite une entité source",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard : une règle a abandonné une vérification (une condition a changé)",
-      "description": "Se déclenche lorsqu'une règle abandonne une vérification en cours sans verdict parce qu'une condition externe a changé (la règle a été suspendue, désactivée, l'interrupteur principal a été coupé ou ses indicateurs conditionnels ne sont plus remplis).",
+      "description": "Se déclenche lorsqu'une règle abandonne une vérification en cours sans verdict parce qu'une condition externe a changé (la règle a été suspendue, désactivée, l'interrupteur principal a été coupé ou ses conditions ne sont plus remplies).",
       "fields": {
         "config_entry_id": {
           "name": "Règle (laisser vide pour n'importe quelle règle)",

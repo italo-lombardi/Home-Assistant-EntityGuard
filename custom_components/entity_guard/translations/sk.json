@@ -166,7 +166,7 @@
       "invalid_rate": "Maximálny počet vynútení za minútu musí byť celé číslo od 1 do 600.",
       "target_in_triggers": "Cieľový stav nemôže byť zároveň spúšťacím stavom — vytvorilo by to vynucovaciu slučku.",
       "forbidden_state": "Stavy „unavailable“, „unknown“ a „none“ nemožno použiť ako spúšťače ani ciele.",
-      "incomplete_flag": "Musí byť nastavená entita príznaku aj požadovaný stav.",
+      "incomplete_flag": "Musí byť nastavená entita podmienky aj požadovaný stav.",
       "safety_not_acknowledged": "Na pokračovanie musíte potvrdiť bezpečnostné riziko.",
       "name_already_exists": "Pravidlo s týmto názvom už existuje.",
       "invalid_rgb_color": "Farba RGB musí byť zoznamom troch hodnôt od 0 do 255.",
@@ -192,7 +192,7 @@
           "edit_basics": "Upraviť názov",
           "edit_mode": "Upraviť nastavenia špecifické pre režim",
           "edit_entities": "Pridať alebo odstrániť cieľové entity",
-          "edit_flags": "Upraviť podmienky príznakov",
+          "edit_flags": "Upraviť podmienky",
           "edit_advanced": "Upraviť overenie, potlačenie zákmitov a limit rýchlosti"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "Upraviť podmienky príznakov",
-        "description": "Aktuálne príznaky: {summary}.\n\n{current_state}\n\nVyberte „add“ pre pridanie, „replace“ pre nahradenie všetkých, „clear“ pre odstránenie všetkých alebo „save“ pre ponechanie bez zmeny.",
+        "title": "Upraviť podmienky",
+        "description": "Aktuálne podmienky: {summary}.\n\n{current_state}\n\nVyberte „add“ pre pridanie, „replace“ pre nahradenie všetkých, „clear“ pre odstránenie všetkých alebo „save“ pre ponechanie bez zmeny.",
         "data": {
-          "entity": "Entita príznaku",
+          "entity": "Entita podmienky",
           "match_state": "Požadovaný stav",
           "action": "Akcia"
         }
@@ -321,7 +321,7 @@
       "invalid_rate": "Maximálny počet vynútení za minútu musí byť celé číslo od 1 do 600.",
       "target_in_triggers": "Cieľový stav nemôže byť zároveň spúšťacím stavom — vytvorilo by to vynucovaciu slučku.",
       "forbidden_state": "Stavy „unavailable“, „unknown“ a „none“ nemožno použiť ako spúšťače ani ciele.",
-      "incomplete_flag": "Musí byť nastavená entita príznaku aj požadovaný stav.",
+      "incomplete_flag": "Musí byť nastavená entita podmienky aj požadovaný stav.",
       "safety_not_acknowledged": "Na pokračovanie musíte potvrdiť bezpečnostné riziko.",
       "name_already_exists": "Pravidlo s týmto názvom už existuje.",
       "invalid_rgb_color": "Farba RGB musí byť zoznamom troch hodnôt od 0 do 255.",
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "Ukončiť bez zmien",
-        "add": "Pridať príznak",
-        "replace": "Nahradiť všetky príznaky",
-        "clear": "Vymazať všetky príznaky"
+        "add": "Pridať podmienku",
+        "replace": "Nahradiť všetky podmienky",
+        "clear": "Vymazať všetky podmienky"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Chýbajúca entita príznaku v pravidle „{rule_name}“",
-      "description": "Nasledujúce entity príznakov už neexistujú, ale sú v pravidle uvedené: {missing_entities}. Pravidlo sa nevynúti, keď tieto príznaky nemožno vyhodnotiť. Pre vyriešenie tohto problému aktualizujte alebo odstráňte pravidlo."
+      "title": "Chýbajúca entita podmienky v pravidle „{rule_name}“",
+      "description": "Nasledujúce entity podmienok už neexistujú, ale sú v pravidle uvedené: {missing_entities}. Pravidlo sa nevynúti, keď tieto podmienky nemožno vyhodnotiť. Pre vyriešenie tohto problému aktualizujte alebo odstráňte pravidlo."
     },
     "migrated_follow_no_source": {
       "title": "Migrované pravidlo „{rule}“ potrebuje zdrojovú entitu",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: pravidlo opustilo overovací cyklus (podmienka sa zmenila)",
-      "description": "Spustí sa, keď pravidlo bez výsledku opustí začatý overovací cyklus, pretože sa zmenila vonkajšia podmienka (pravidlo bolo potlačené, zakázané, hlavný prepínač bol vypnutý alebo jeho podmienené príznaky už nie sú splnené).",
+      "description": "Spustí sa, keď pravidlo bez výsledku opustí začatý overovací cyklus, pretože sa zmenila vonkajšia podmienka (pravidlo bolo potlačené, zakázané, hlavný prepínač bol vypnutý alebo jeho podmienky už nie sú splnené).",
       "fields": {
         "config_entry_id": {
           "name": "Pravidlo (ponechajte prázdne pre ľubovoľné pravidlo)",

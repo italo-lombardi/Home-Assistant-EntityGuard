@@ -166,7 +166,7 @@
       "invalid_rate": "Dakika başına maksimum uygulama, 1 ile 600 arasında tam bir sayı olmalıdır.",
       "target_in_triggers": "Hedef durum aynı zamanda bir tetikleme durumu olamaz — bu bir uygulama döngüsü oluşturur.",
       "forbidden_state": "'unavailable', 'unknown' ve 'none' durumları tetikleyici veya hedef olarak kullanılamaz.",
-      "incomplete_flag": "Hem bayrak varlığı hem de gerekli durum ayarlanmalıdır.",
+      "incomplete_flag": "Hem koşul varlığı hem de gerekli durum ayarlanmalıdır.",
       "safety_not_acknowledged": "Devam etmek için güvenlik riskini onaylamanız gerekir.",
       "name_already_exists": "Bu ada sahip bir kural zaten var.",
       "invalid_rgb_color": "RGB rengi, 0 ile 255 arasında üç değerden oluşan bir liste olmalıdır.",
@@ -192,7 +192,7 @@
           "edit_basics": "Adı düzenle",
           "edit_mode": "Moda özel ayarları düzenle",
           "edit_entities": "Hedef varlık ekle veya kaldır",
-          "edit_flags": "Bayrak koşullarını düzenle",
+          "edit_flags": "Koşulları düzenle",
           "edit_advanced": "Doğrulama, debounce ve hız sınırını düzenle"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "Bayrak koşullarını düzenle",
-        "description": "Geçerli bayraklar: {summary}.\n\n{current_state}\n\nEklemek için 'add', tümünü değiştirmek için 'replace', tümünü kaldırmak için 'clear' veya değiştirmeden bırakmak için 'save' seçin.",
+        "title": "Koşulları düzenle",
+        "description": "Geçerli koşullar: {summary}.\n\n{current_state}\n\nEklemek için 'add', tümünü değiştirmek için 'replace', tümünü kaldırmak için 'clear' veya değiştirmeden bırakmak için 'save' seçin.",
         "data": {
-          "entity": "Bayrak varlığı",
+          "entity": "Koşul varlığı",
           "match_state": "Gerekli durum",
           "action": "Eylem"
         }
@@ -321,7 +321,7 @@
       "invalid_rate": "Dakika başına maksimum uygulama, 1 ile 600 arasında tam bir sayı olmalıdır.",
       "target_in_triggers": "Hedef durum aynı zamanda bir tetikleme durumu olamaz — bu bir uygulama döngüsü oluşturur.",
       "forbidden_state": "'unavailable', 'unknown' ve 'none' durumları tetikleyici veya hedef olarak kullanılamaz.",
-      "incomplete_flag": "Hem bayrak varlığı hem de gerekli durum ayarlanmalıdır.",
+      "incomplete_flag": "Hem koşul varlığı hem de gerekli durum ayarlanmalıdır.",
       "safety_not_acknowledged": "Devam etmek için güvenlik riskini onaylamanız gerekir.",
       "name_already_exists": "Bu ada sahip bir kural zaten var.",
       "invalid_rgb_color": "RGB rengi, 0 ile 255 arasında üç değerden oluşan bir liste olmalıdır.",
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "Değişiklik yapmadan çık",
-        "add": "Bayrak ekle",
-        "replace": "Tüm bayrakları değiştir",
-        "clear": "Tüm bayrakları temizle"
+        "add": "Koşul ekle",
+        "replace": "Tüm koşulları değiştir",
+        "clear": "Tüm koşulları temizle"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "\"{rule_name}\" kuralında bayrak varlığı eksik",
-      "description": "Aşağıdaki bayrak varlığı/varlıkları artık mevcut değil ancak kuralda başvuruluyor: {missing_entities}. Bu bayraklar değerlendirilemediğinde kural uygulanmayacaktır. Bu sorunu çözmek için kuralı güncelleyin veya kaldırın."
+      "title": "\"{rule_name}\" kuralında koşul varlığı eksik",
+      "description": "Aşağıdaki koşul varlığı/varlıkları artık mevcut değil ancak kuralda başvuruluyor: {missing_entities}. Bu koşullar değerlendirilemediğinde kural uygulanmayacaktır. Bu sorunu çözmek için kuralı güncelleyin veya kaldırın."
     },
     "migrated_follow_no_source": {
       "title": "Taşınan \"{rule}\" kuralı için bir kaynak varlık gerekiyor",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: bir kural bir doğrulama döngüsünden vazgeçti (bir koşul değişti)",
-      "description": "Bir kural, harici bir koşul değiştiği için başlatılan bir doğrulama döngüsünü sonuç vermeden terk ettiğinde tetiklenir (kural bastırıldı, devre dışı bırakıldı, ana anahtar kapatıldı veya koşullu bayrakları artık karşılanmıyor).",
+      "description": "Bir kural, harici bir koşul değiştiği için başlatılan bir doğrulama döngüsünü sonuç vermeden terk ettiğinde tetiklenir (kural bastırıldı, devre dışı bırakıldı, ana anahtar kapatıldı veya koşulları artık karşılanmıyor).",
       "fields": {
         "config_entry_id": {
           "name": "Kural (herhangi bir kural için boş bırakın)",

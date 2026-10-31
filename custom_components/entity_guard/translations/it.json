@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Entità flag mancante nella regola \"{rule_name}\"",
-      "description": "Le seguenti entità flag non esistono più ma sono referenziate nella regola: {missing_entities}. La regola non verrà applicata quando questi flag non possono essere valutati. Aggiorna o rimuovi la regola per risolvere questo problema."
+      "title": "Entità della condizione mancante nella regola \"{rule_name}\"",
+      "description": "Le seguenti entità delle condizioni non esistono più ma sono referenziate nella regola: {missing_entities}. La regola non verrà applicata quando queste condizioni non possono essere valutate. Aggiorna o rimuovi la regola per risolvere questo problema."
     },
     "migrated_follow_no_source": {
       "title": "Regola migrata \\\"{rule}\\\": necessaria un'entità sorgente",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: una regola ha abbandonato un ciclo di verifica (una condizione è cambiata)",
-      "description": "Si attiva quando una regola abbandona un ciclo di verifica avviato senza verdetto perché una condizione esterna è cambiata (la regola è stata sospesa, disabilitata, l'interruttore principale è stato spento o i suoi flag condizionali non sono più soddisfatti).",
+      "description": "Si attiva quando una regola abbandona un ciclo di verifica avviato senza verdetto perché una condizione esterna è cambiata (la regola è stata sospesa, disabilitata, l'interruttore principale è stato spento o le sue condizioni non sono più soddisfatte).",
       "fields": {
         "config_entry_id": {
           "name": "Regola (lasciare vuoto per qualsiasi regola)",

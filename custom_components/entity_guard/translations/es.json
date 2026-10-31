@@ -192,7 +192,7 @@
           "edit_basics": "Editar nombre",
           "edit_mode": "Editar ajustes específicos del modo",
           "edit_entities": "Añadir o eliminar entidades objetivo",
-          "edit_flags": "Editar condiciones de marca",
+          "edit_flags": "Editar condiciones",
           "edit_advanced": "Editar verificación, antirrebote y límite de tasa"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "Editar condiciones de marca",
-        "description": "Banderas actuales: {summary}\n\n{current_state}. Elige 'anadir' para anadir, 'reemplazar' para reemplazar todas, 'borrar' para quitar todas o 'guardar' para dejar sin cambios.",
+        "title": "Editar condiciones",
+        "description": "Condiciones actuales: {summary}\n\n{current_state}. Elige 'anadir' para anadir, 'reemplazar' para reemplazar todas, 'borrar' para quitar todas o 'guardar' para dejar sin cambios.",
         "data": {
-          "entity": "Entidad de marca",
+          "entity": "Entidad de condición",
           "match_state": "Estado requerido",
           "action": "Acción"
         }
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "Salir sin cambios",
-        "add": "Añadir marca",
-        "replace": "Reemplazar todas las marcas",
-        "clear": "Borrar todas las marcas"
+        "add": "Añadir condición",
+        "replace": "Reemplazar todas las condiciones",
+        "clear": "Borrar todas las condiciones"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Entidad de indicador faltante en la regla \"{rule_name}\"",
-      "description": "Las siguientes entidades de indicador ya no existen pero se hace referencia a ellas en la regla: {missing_entities}. La regla no se aplicará cuando estos indicadores no se puedan evaluar. Actualiza o elimina la regla para resolver este problema."
+      "title": "Entidad de condición faltante en la regla \"{rule_name}\"",
+      "description": "Las siguientes entidades de condición ya no existen pero se hace referencia a ellas en la regla: {missing_entities}. La regla no se aplicará cuando estas condiciones no se puedan evaluar. Actualiza o elimina la regla para resolver este problema."
     },
     "migrated_follow_no_source": {
       "title": "La regla migrada \"{rule}\" necesita una entidad de origen",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: Una regla abandonó un ciclo de verificación (cambió una condición)",
-      "description": "Se activa cuando una regla abandona un ciclo de verificación iniciado sin veredicto porque cambió una condición externa (la regla se suprimió, se desactivó, el interruptor maestro se apagó o sus indicadores condicionales ya no se cumplen).",
+      "description": "Se activa cuando una regla abandona un ciclo de verificación iniciado sin veredicto porque cambió una condición externa (la regla se suprimió, se desactivó, el interruptor maestro se apagó o sus condiciones ya no se cumplen).",
       "fields": {
         "config_entry_id": {
           "name": "Regla (dejar vacío para cualquier regla)",

@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: Sääntö hylkäsi varmistuskierroksen (ehto muuttui)",
-      "description": "Laukeaa, kun sääntö hylkää aloitetun varmistuskierroksen ilman tulosta, koska ulkoinen ehto muuttui (sääntö estettiin, poistettiin käytöstä, pääkytkin sammutettiin tai sen ehdolliset liput eivät enää täyty).",
+      "description": "Laukeaa, kun sääntö hylkää aloitetun varmistuskierroksen ilman tulosta, koska ulkoinen ehto muuttui (sääntö estettiin, poistettiin käytöstä, pääkytkin sammutettiin tai sen ehdot eivät enää täyty).",
       "fields": {
         "config_entry_id": {
           "name": "Sääntö (jätä tyhjäksi mille tahansa säännölle)",

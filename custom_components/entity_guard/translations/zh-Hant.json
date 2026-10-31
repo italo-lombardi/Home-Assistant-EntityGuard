@@ -166,7 +166,7 @@
       "invalid_rate": "每分鐘最大強制執行次數必須是介於 1 到 600 之間的整數。",
       "target_in_triggers": "目標狀態不能同時為觸發狀態 — 這會造成強制執行迴圈。",
       "forbidden_state": "狀態 'unavailable'、'unknown' 和 'none' 不能用作觸發或目標。",
-      "incomplete_flag": "旗標實體與所需狀態皆須設定。",
+      "incomplete_flag": "條件實體與所需狀態皆須設定。",
       "safety_not_acknowledged": "您必須確認安全風險才能繼續。",
       "name_already_exists": "已存在同名的規則。",
       "invalid_rgb_color": "RGB 顏色必須是三個介於 0 到 255 之間的值所組成的清單。",
@@ -192,7 +192,7 @@
           "edit_basics": "編輯名稱",
           "edit_mode": "編輯模式專屬設定",
           "edit_entities": "新增或移除目標實體",
-          "edit_flags": "編輯旗標條件",
+          "edit_flags": "編輯條件",
           "edit_advanced": "編輯驗證、去抖動與速率限制"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "編輯旗標條件",
-        "description": "目前的旗標：{summary}。\n\n{current_state}\n\n選擇「add」以附加、「replace」以取代全部、「clear」以移除全部，或「save」以保持不變。",
+        "title": "編輯條件",
+        "description": "目前的條件：{summary}。\n\n{current_state}\n\n選擇「add」以附加、「replace」以取代全部、「clear」以移除全部，或「save」以保持不變。",
         "data": {
-          "entity": "旗標實體",
+          "entity": "條件實體",
           "match_state": "所需狀態",
           "action": "動作"
         }
@@ -321,7 +321,7 @@
       "invalid_rate": "每分鐘最大強制執行次數必須是介於 1 到 600 之間的整數。",
       "target_in_triggers": "目標狀態不能同時為觸發狀態 — 這會造成強制執行迴圈。",
       "forbidden_state": "狀態 'unavailable'、'unknown' 和 'none' 不能用作觸發或目標。",
-      "incomplete_flag": "旗標實體與所需狀態皆須設定。",
+      "incomplete_flag": "條件實體與所需狀態皆須設定。",
       "safety_not_acknowledged": "您必須確認安全風險才能繼續。",
       "name_already_exists": "已存在同名的規則。",
       "invalid_rgb_color": "RGB 顏色必須是三個介於 0 到 255 之間的值所組成的清單。",
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "不變更並離開",
-        "add": "新增旗標",
-        "replace": "取代所有旗標",
-        "clear": "清除所有旗標"
+        "add": "新增條件",
+        "replace": "取代所有條件",
+        "clear": "清除所有條件"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "規則「{rule_name}」中的旗標實體遺失",
-      "description": "下列旗標實體已不存在，但仍在規則中被參照：{missing_entities}。當這些旗標無法評估時，規則將不會強制執行。請更新或移除規則以解決此問題。"
+      "title": "規則「{rule_name}」中的條件實體遺失",
+      "description": "下列條件實體已不存在，但仍在規則中被參照：{missing_entities}。當這些條件無法評估時，規則將不會強制執行。請更新或移除規則以解決此問題。"
     },
     "migrated_follow_no_source": {
       "title": "已遷移的規則「{rule}」需要一個來源實體",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard：規則放棄了一次驗證循環（條件已變更）",
-      "description": "當外部條件發生變更，規則放棄已開始的驗證循環且未得出結論時觸發（規則被抑制、被停用、中樞主開關被關閉，或其條件標誌不再滿足）。",
+      "description": "當外部條件發生變更，規則放棄已開始的驗證循環且未得出結論時觸發（規則被抑制、被停用、中樞主開關被關閉，或其條件不再滿足）。",
       "fields": {
         "config_entry_id": {
           "name": "規則（留空表示任意規則）",

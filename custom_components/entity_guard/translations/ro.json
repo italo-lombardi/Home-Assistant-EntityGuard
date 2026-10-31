@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: o regulă a abandonat un ciclu de verificare (o condiție s-a schimbat)",
-      "description": "Se declanșează când o regulă abandonează un ciclu de verificare început fără verdict deoarece o condiție externă s-a schimbat (regula a fost suprimată, dezactivată, întrerupătorul principal a fost oprit sau indicatoarele sale condiționale nu mai sunt îndeplinite).",
+      "description": "Se declanșează când o regulă abandonează un ciclu de verificare început fără verdict deoarece o condiție externă s-a schimbat (regula a fost suprimată, dezactivată, întrerupătorul principal a fost oprit sau condițiile sale nu mai sunt îndeplinite).",
       "fields": {
         "config_entry_id": {
           "name": "Regulă (lăsați gol pentru orice regulă)",

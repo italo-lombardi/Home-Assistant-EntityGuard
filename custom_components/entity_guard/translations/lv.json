@@ -166,7 +166,7 @@
       "invalid_rate": "Maks. piemērošanām minūtē jābūt veselam skaitlim no 1 līdz 600.",
       "target_in_triggers": "Mērķa stāvoklis nevar būt arī aktivizējošais stāvoklis — tas radītu piemērošanas cilpu.",
       "forbidden_state": "Stāvokļus 'unavailable', 'unknown' un 'none' nevar izmantot kā aktivizētājus vai mērķus.",
-      "incomplete_flag": "Jāiestata gan karodziņa entītija, gan nepieciešamais stāvoklis.",
+      "incomplete_flag": "Jāiestata gan nosacījuma entītija, gan nepieciešamais stāvoklis.",
       "safety_not_acknowledged": "Lai turpinātu, jums jāapstiprina drošības risks.",
       "name_already_exists": "Noteikums ar šādu nosaukumu jau pastāv.",
       "invalid_rgb_color": "RGB krāsai jābūt sarakstam ar trim vērtībām no 0 līdz 255.",
@@ -192,7 +192,7 @@
           "edit_basics": "Rediģēt nosaukumu",
           "edit_mode": "Rediģēt režīmam specifiskos iestatījumus",
           "edit_entities": "Pievienot vai noņemt mērķa entītijas",
-          "edit_flags": "Rediģēt karodziņu nosacījumus",
+          "edit_flags": "Rediģēt nosacījumus",
           "edit_advanced": "Rediģēt pārbaudi, atsitiena novēršanu un biežuma ierobežojumu"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "Rediģēt karodziņu nosacījumus",
-        "description": "Pašreizējie karodziņi: {summary}.\n\n{current_state}\n\nIzvēlieties “add”, lai pievienotu, “replace”, lai aizstātu visus, “clear”, lai noņemtu visus, vai “save”, lai atstātu nemainītu.",
+        "title": "Rediģēt nosacījumus",
+        "description": "Pašreizējie nosacījumi: {summary}.\n\n{current_state}\n\nIzvēlieties “add”, lai pievienotu, “replace”, lai aizstātu visus, “clear”, lai noņemtu visus, vai “save”, lai atstātu nemainītu.",
         "data": {
-          "entity": "Karodziņa entītija",
+          "entity": "Nosacījuma entītija",
           "match_state": "Nepieciešamais stāvoklis",
           "action": "Darbība"
         }
@@ -321,7 +321,7 @@
       "invalid_rate": "Maks. piemērošanām minūtē jābūt veselam skaitlim no 1 līdz 600.",
       "target_in_triggers": "Mērķa stāvoklis nevar būt arī aktivizējošais stāvoklis — tas radītu piemērošanas cilpu.",
       "forbidden_state": "Stāvokļus 'unavailable', 'unknown' un 'none' nevar izmantot kā aktivizētājus vai mērķus.",
-      "incomplete_flag": "Jāiestata gan karodziņa entītija, gan nepieciešamais stāvoklis.",
+      "incomplete_flag": "Jāiestata gan nosacījuma entītija, gan nepieciešamais stāvoklis.",
       "safety_not_acknowledged": "Lai turpinātu, jums jāapstiprina drošības risks.",
       "name_already_exists": "Noteikums ar šādu nosaukumu jau pastāv.",
       "invalid_rgb_color": "RGB krāsai jābūt sarakstam ar trim vērtībām no 0 līdz 255.",
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "Iziet bez izmaiņām",
-        "add": "Pievienot karodziņu",
-        "replace": "Aizstāt visus karodziņus",
-        "clear": "Notīrīt visus karodziņus"
+        "add": "Pievienot nosacījumu",
+        "replace": "Aizstāt visus nosacījumus",
+        "clear": "Notīrīt visus nosacījumus"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Trūkst karodziņa entītijas noteikumā “{rule_name}”",
-      "description": "Šī(-s) karodziņa entītija(-s) vairs nepastāv, bet uz to(-ām) atsaucas noteikums: {missing_entities}. Noteikums netiks piemērots, kad šos karodziņus nevar novērtēt. Atjauniniet vai noņemiet noteikumu, lai atrisinātu šo problēmu."
+      "title": "Trūkst nosacījuma entītijas noteikumā “{rule_name}”",
+      "description": "Šī(-s) nosacījuma entītija(-s) vairs nepastāv, bet uz to(-ām) atsaucas noteikums: {missing_entities}. Noteikums netiks piemērots, kad šos nosacījumus nevar novērtēt. Atjauniniet vai noņemiet noteikumu, lai atrisinātu šo problēmu."
     },
     "migrated_follow_no_source": {
       "title": "Migrētajam noteikumam „{rule}\" nepieciešama avota entītija",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: noteikums pārtrauca pārbaudes ciklu (nosacījums mainījās)",
-      "description": "Nostrādā, kad noteikums bez rezultāta pārtrauc sākto pārbaudes ciklu, jo mainījās ārējs nosacījums (noteikums tika apturēts, atspējots, galvenais slēdzis tika izslēgts vai tā nosacījuma karodziņi vairs netiek izpildīti).",
+      "description": "Nostrādā, kad noteikums bez rezultāta pārtrauc sākto pārbaudes ciklu, jo mainījās ārējs nosacījums (noteikums tika apturēts, atspējots, galvenais slēdzis tika izslēgts vai tā nosacījumi vairs netiek izpildīti).",
       "fields": {
         "config_entry_id": {
           "name": "Noteikums (atstājiet tukšu jebkuram noteikumam)",

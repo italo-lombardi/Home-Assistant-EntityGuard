@@ -166,7 +166,7 @@
       "invalid_rate": "Die maximale Anzahl an Durchsetzungen pro Minute muss eine ganze Zahl zwischen 1 und 600 sein.",
       "target_in_triggers": "Der Zielstatus darf nicht gleichzeitig ein Auslöser-Status sein — das würde eine Durchsetzungsschleife erzeugen.",
       "forbidden_state": "Die Status „unavailable“, „unknown“ und „none“ können nicht als Auslöser oder Ziel verwendet werden.",
-      "incomplete_flag": "Sowohl die Flag-Entität als auch der erforderliche Status müssen festgelegt sein.",
+      "incomplete_flag": "Sowohl die Bedingungs-Entität als auch der erforderliche Status müssen festgelegt sein.",
       "safety_not_acknowledged": "Du musst das Sicherheitsrisiko bestätigen, um fortzufahren.",
       "name_already_exists": "Eine Regel mit diesem Namen existiert bereits.",
       "invalid_rgb_color": "RGB-Farbe muss eine Liste mit drei Werten zwischen 0 und 255 sein.",
@@ -192,7 +192,7 @@
           "edit_basics": "Name bearbeiten",
           "edit_mode": "Modusspezifische Einstellungen bearbeiten",
           "edit_entities": "Zielentitäten hinzufügen oder entfernen",
-          "edit_flags": "Flag-Bedingungen bearbeiten",
+          "edit_flags": "Bedingungen bearbeiten",
           "edit_advanced": "Überprüfung, Entprellung und Ratenlimit bearbeiten"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "Flag-Bedingungen bearbeiten",
-        "description": "Aktuelle Flags: {summary}\n\n{current_state}. Wähle „add“ zum Anhängen, „clear“ zum Entfernen aller oder „save“, um unverändert zu lassen.",
+        "title": "Bedingungen bearbeiten",
+        "description": "Aktuelle Bedingungen: {summary}\n\n{current_state}. Wähle „add“ zum Anhängen, „clear“ zum Entfernen aller oder „save“, um unverändert zu lassen.",
         "data": {
-          "entity": "Flag-Entität",
+          "entity": "Bedingungs-Entität",
           "match_state": "Erforderlicher Status",
           "action": "Aktion"
         }
@@ -321,7 +321,7 @@
       "invalid_rate": "Die maximale Anzahl an Durchsetzungen pro Minute muss eine ganze Zahl zwischen 1 und 600 sein.",
       "target_in_triggers": "Der Zielstatus darf nicht gleichzeitig ein Auslöser-Status sein — das würde eine Durchsetzungsschleife erzeugen.",
       "forbidden_state": "Die Status „unavailable“, „unknown“ und „none“ können nicht als Auslöser oder Ziel verwendet werden.",
-      "incomplete_flag": "Sowohl die Flag-Entität als auch der erforderliche Status müssen festgelegt sein.",
+      "incomplete_flag": "Sowohl die Bedingungs-Entität als auch der erforderliche Status müssen festgelegt sein.",
       "safety_not_acknowledged": "Du musst das Sicherheitsrisiko bestätigen, um fortzufahren.",
       "name_already_exists": "Eine Regel mit diesem Namen existiert bereits.",
       "invalid_rgb_color": "RGB-Farbe muss eine Liste mit drei Werten zwischen 0 und 255 sein.",
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "Ohne Änderungen speichern",
-        "add": "Flag hinzufügen",
-        "replace": "Alle Flags ersetzen",
-        "clear": "Alle Flags löschen"
+        "add": "Bedingung hinzufügen",
+        "replace": "Alle Bedingungen ersetzen",
+        "clear": "Alle Bedingungen löschen"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Flag-Entität fehlt in Regel \"{rule_name}\"",
-      "description": "Die folgenden Flag-Entitäten existieren nicht mehr, werden aber in der Regel referenziert: {missing_entities}. Die Regel wird nicht durchgesetzt, wenn diese Flags nicht ausgewertet werden können. Aktualisiere oder entferne die Regel, um dieses Problem zu beheben."
+      "title": "Bedingungs-Entität fehlt in Regel \"{rule_name}\"",
+      "description": "Die folgenden Bedingungs-Entitäten existieren nicht mehr, werden aber in der Regel referenziert: {missing_entities}. Die Regel wird nicht durchgesetzt, wenn diese Bedingungen nicht ausgewertet werden können. Aktualisiere oder entferne die Regel, um dieses Problem zu beheben."
     },
     "migrated_follow_no_source": {
       "title": "Migrierte Regel „{rule}\" benötigt eine Quell-Entität",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: Eine Regel hat eine Überprüfung abgebrochen (eine Bedingung hat sich geändert)",
-      "description": "Wird ausgelöst, wenn eine Regel eine begonnene Überprüfung ohne Ergebnis abbricht, weil sich eine externe Bedingung geändert hat (die Regel wurde unterdrückt, deaktiviert, der Hauptschalter wurde ausgeschaltet oder ihre bedingten Flags sind nicht mehr erfüllt).",
+      "description": "Wird ausgelöst, wenn eine Regel eine begonnene Überprüfung ohne Ergebnis abbricht, weil sich eine externe Bedingung geändert hat (die Regel wurde unterdrückt, deaktiviert, der Hauptschalter wurde ausgeschaltet oder ihre Bedingungen sind nicht mehr erfüllt).",
       "fields": {
         "config_entry_id": {
           "name": "Regel (leer lassen für jede Regel)",

@@ -166,7 +166,7 @@
       "invalid_rate": "Max tillämpningar per minut måste vara ett heltal mellan 1 och 600.",
       "target_in_triggers": "Måltillstånd kan inte också vara ett utlösartillstånd — det skulle skapa en tillämpningsloop.",
       "forbidden_state": "Tillstånden 'unavailable', 'unknown' och 'none' kan inte användas som utlösare eller mål.",
-      "incomplete_flag": "Både flaggentitet och krävt tillstånd måste anges.",
+      "incomplete_flag": "Både villkorsentitet och krävt tillstånd måste anges.",
       "safety_not_acknowledged": "Du måste bekräfta säkerhetsrisken för att fortsätta.",
       "name_already_exists": "En regel med detta namn finns redan.",
       "invalid_rgb_color": "RGB-färg måste vara en lista med tre värden mellan 0 och 255.",
@@ -192,7 +192,7 @@
           "edit_basics": "Redigera namn",
           "edit_mode": "Redigera lägesspecifika inställningar",
           "edit_entities": "Lägg till eller ta bort målentiteter",
-          "edit_flags": "Redigera flaggvillkor",
+          "edit_flags": "Redigera villkor",
           "edit_advanced": "Redigera verifiering, avstudsning och hastighetsgräns"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "Redigera flaggvillkor",
-        "description": "Aktuella flaggor: {summary}\n\n{current_state}. Valj 'lagg till' for att lagga till, 'ersatt' for att ersatta alla, 'rensa' for att ta bort alla eller 'spara' for att lamna oforandrat.",
+        "title": "Redigera villkor",
+        "description": "Aktuella villkor: {summary}\n\n{current_state}. Valj 'lagg till' for att lagga till, 'ersatt' for att ersatta alla, 'rensa' for att ta bort alla eller 'spara' for att lamna oforandrat.",
         "data": {
-          "entity": "Flaggentitet",
+          "entity": "Villkorsentitet",
           "match_state": "Krävt tillstånd",
           "action": "Åtgärd"
         }
@@ -321,7 +321,7 @@
       "invalid_rate": "Max tillämpningar per minut måste vara ett heltal mellan 1 och 600.",
       "target_in_triggers": "Måltillstånd kan inte också vara ett utlösartillstånd — det skulle skapa en tillämpningsloop.",
       "forbidden_state": "Tillstånden 'unavailable', 'unknown' och 'none' kan inte användas som utlösare eller mål.",
-      "incomplete_flag": "Både flaggentitet och krävt tillstånd måste anges.",
+      "incomplete_flag": "Både villkorsentitet och krävt tillstånd måste anges.",
       "safety_not_acknowledged": "Du måste bekräfta säkerhetsrisken för att fortsätta.",
       "name_already_exists": "En regel med detta namn finns redan.",
       "invalid_rgb_color": "RGB-färg måste vara en lista med tre värden mellan 0 och 255.",
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "Avsluta utan ändringar",
-        "add": "Lägg till flagga",
-        "replace": "Ersätt alla flaggor",
-        "clear": "Rensa alla flaggor"
+        "add": "Lägg till villkor",
+        "replace": "Ersätt alla villkor",
+        "clear": "Rensa alla villkor"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Flagg-enhet saknas i regeln \"{rule_name}\"",
-      "description": "Följande flagg-enheter existerar inte längre men refereras i regeln: {missing_entities}. Regeln kommer inte att tillämpas när dessa flaggor inte kan utvärderas. Uppdatera eller ta bort regeln för att lösa det här problemet."
+      "title": "Villkorsentitet saknas i regeln \"{rule_name}\"",
+      "description": "Följande villkorsentiteter existerar inte längre men refereras i regeln: {missing_entities}. Regeln kommer inte att tillämpas när dessa villkor inte kan utvärderas. Uppdatera eller ta bort regeln för att lösa det här problemet."
     },
     "migrated_follow_no_source": {
       "title": "Migrerad regel \"{rule}\" behöver en källentitet",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: en regel övergav en verifieringscykel (ett villkor ändrades)",
-      "description": "Utlöses när en regel överger en påbörjad verifieringscykel utan resultat eftersom ett externt villkor ändrades (regeln undertrycktes, inaktiverades, huvudbrytaren stängdes av eller dess villkorsflaggor uppfylls inte längre).",
+      "description": "Utlöses när en regel överger en påbörjad verifieringscykel utan resultat eftersom ett externt villkor ändrades (regeln undertrycktes, inaktiverades, huvudbrytaren stängdes av eller dess villkor uppfylls inte längre).",
       "fields": {
         "config_entry_id": {
           "name": "Regel (lämna tomt för valfri regel)",

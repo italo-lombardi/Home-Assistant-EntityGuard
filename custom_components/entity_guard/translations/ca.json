@@ -192,7 +192,7 @@
           "edit_basics": "Edita el nom",
           "edit_mode": "Edita la configuració específica del mode",
           "edit_entities": "Afegeix o elimina entitats objectiu",
-          "edit_flags": "Edita les condicions de les banderes",
+          "edit_flags": "Edita les condicions",
           "edit_advanced": "Edita la verificació, l'antirebot i el límit de freqüència"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "Edita les condicions de les banderes",
-        "description": "Banderes actuals: {summary}.\n\n{current_state}\n\nTrieu «afegeix» per annexar, «reemplaça» per reemplaçar-les totes, «neteja» per eliminar-les totes, o «desa» per deixar-les sense canvis.",
+        "title": "Edita les condicions",
+        "description": "Condicions actuals: {summary}.\n\n{current_state}\n\nTrieu «afegeix» per annexar, «reemplaça» per reemplaçar-les totes, «neteja» per eliminar-les totes, o «desa» per deixar-les sense canvis.",
         "data": {
-          "entity": "Entitat de la bandera",
+          "entity": "Entitat de la condició",
           "match_state": "Estat requerit",
           "action": "Acció"
         }
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "Surt sense canvis",
-        "add": "Afegeix una bandera",
-        "replace": "Reemplaça totes les banderes",
-        "clear": "Neteja totes les banderes"
+        "add": "Afegeix una condició",
+        "replace": "Reemplaça totes les condicions",
+        "clear": "Neteja totes les condicions"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Falta l'entitat de la bandera a la regla «{rule_name}»",
-      "description": "L'entitat o entitats de bandera següents ja no existeixen però es referencien a la regla: {missing_entities}. La regla no s'aplicarà quan aquestes banderes no es puguin avaluar. Actualitzeu o elimineu la regla per resoldre aquest problema."
+      "title": "Falta l'entitat de la condició a la regla «{rule_name}»",
+      "description": "L'entitat o entitats de condició següents ja no existeixen però es referencien a la regla: {missing_entities}. La regla no s'aplicarà quan aquestes condicions no es puguin avaluar. Actualitzeu o elimineu la regla per resoldre aquest problema."
     },
     "migrated_follow_no_source": {
       "title": "La regla migrada «{rule}» necessita una entitat d'origen",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: una regla ha abandonat un cicle de verificació (ha canviat una condició)",
-      "description": "S'activa quan una regla abandona un cicle de verificació iniciat sense veredicte perquè ha canviat una condició externa (la regla s'ha suprimit, s'ha desactivat, l'interruptor mestre s'ha apagat o els seus indicadors condicionals ja no es compleixen).",
+      "description": "S'activa quan una regla abandona un cicle de verificació iniciat sense veredicte perquè ha canviat una condició externa (la regla s'ha suprimit, s'ha desactivat, l'interruptor mestre s'ha apagat o les seves condicions ja no es compleixen).",
       "fields": {
         "config_entry_id": {
           "name": "Regla (deixeu-ho buit per a qualsevol regla)",

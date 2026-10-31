@@ -166,7 +166,7 @@
       "invalid_rate": "Maks. provedbi u minuti mora biti cijeli broj između 1 i 600.",
       "target_in_triggers": "Ciljno stanje ne može ujedno biti i okidajuće stanje — to bi stvorilo petlju provedbe.",
       "forbidden_state": "Stanja 'unavailable', 'unknown' i 'none' ne mogu se koristiti kao okidači ni kao ciljevi.",
-      "incomplete_flag": "Moraju biti postavljeni i entitet zastavice i traženo stanje.",
+      "incomplete_flag": "Moraju biti postavljeni i entitet uvjeta i traženo stanje.",
       "safety_not_acknowledged": "Morate potvrditi sigurnosni rizik za nastavak.",
       "name_already_exists": "Pravilo s ovim nazivom već postoji.",
       "invalid_rgb_color": "RGB boja mora biti popis od tri vrijednosti između 0 i 255.",
@@ -192,7 +192,7 @@
           "edit_basics": "Uredi naziv",
           "edit_mode": "Uredi postavke specifične za način rada",
           "edit_entities": "Dodaj ili ukloni ciljne entitete",
-          "edit_flags": "Uredi uvjete zastavica",
+          "edit_flags": "Uredi uvjete",
           "edit_advanced": "Uredi provjeru, odgodu ponavljanja i ograničenje učestalosti"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "Uredi uvjete zastavica",
-        "description": "Trenutačne zastavice: {summary}.\n\n{current_state}\n\nOdaberite 'dodaj' za nadodavanje, 'zamijeni' za zamjenu svih, 'očisti' za uklanjanje svih ili 'spremi' za ostavljanje nepromijenjenim.",
+        "title": "Uredi uvjete",
+        "description": "Trenutačni uvjeti: {summary}.\n\n{current_state}\n\nOdaberite 'dodaj' za nadodavanje, 'zamijeni' za zamjenu svih, 'očisti' za uklanjanje svih ili 'spremi' za ostavljanje nepromijenjenim.",
         "data": {
-          "entity": "Entitet zastavice",
+          "entity": "Entitet uvjeta",
           "match_state": "Traženo stanje",
           "action": "Radnja"
         }
@@ -321,7 +321,7 @@
       "invalid_rate": "Maks. provedbi u minuti mora biti cijeli broj između 1 i 600.",
       "target_in_triggers": "Ciljno stanje ne može ujedno biti i okidajuće stanje — to bi stvorilo petlju provedbe.",
       "forbidden_state": "Stanja 'unavailable', 'unknown' i 'none' ne mogu se koristiti kao okidači ni kao ciljevi.",
-      "incomplete_flag": "Moraju biti postavljeni i entitet zastavice i traženo stanje.",
+      "incomplete_flag": "Moraju biti postavljeni i entitet uvjeta i traženo stanje.",
       "safety_not_acknowledged": "Morate potvrditi sigurnosni rizik za nastavak.",
       "name_already_exists": "Pravilo s ovim nazivom već postoji.",
       "invalid_rgb_color": "RGB boja mora biti popis od tri vrijednosti između 0 i 255.",
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "Izađi bez promjena",
-        "add": "Dodaj zastavicu",
-        "replace": "Zamijeni sve zastavice",
-        "clear": "Očisti sve zastavice"
+        "add": "Dodaj uvjet",
+        "replace": "Zamijeni sve uvjete",
+        "clear": "Očisti sve uvjete"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Entitet zastavice nedostaje u pravilu \"{rule_name}\"",
-      "description": "Sljedeći entitet(i) zastavice više ne postoje, ali se referenciraju u pravilu: {missing_entities}. Pravilo se neće provoditi kada te zastavice nije moguće procijeniti. Ažurirajte ili uklonite pravilo da biste riješili ovaj problem."
+      "title": "Entitet uvjeta nedostaje u pravilu \"{rule_name}\"",
+      "description": "Sljedeći entitet(i) uvjeta više ne postoje, ali se referenciraju u pravilu: {missing_entities}. Pravilo se neće provoditi kada te uvjete nije moguće procijeniti. Ažurirajte ili uklonite pravilo da biste riješili ovaj problem."
     },
     "migrated_follow_no_source": {
       "title": "Migriranom pravilu „{rule}” potreban je izvorni entitet",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: pravilo je napustilo ciklus provjere (uvjet se promijenio)",
-      "description": "Aktivira se kada pravilo napusti započeti ciklus provjere bez ishoda jer se promijenio vanjski uvjet (pravilo je potisnuto, onemogućeno, glavni prekidač je isključen ili njegove uvjetne zastavice više nisu ispunjene).",
+      "description": "Aktivira se kada pravilo napusti započeti ciklus provjere bez ishoda jer se promijenio vanjski uvjet (pravilo je potisnuto, onemogućeno, glavni prekidač je isključen ili njegovi uvjeti više nisu ispunjeni).",
       "fields": {
         "config_entry_id": {
           "name": "Pravilo (ostavite prazno za bilo koje pravilo)",
