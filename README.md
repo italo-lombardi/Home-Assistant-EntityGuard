@@ -514,7 +514,27 @@ The card shows:
 
 See **[AUTOMATION_EXAMPLES.md](AUTOMATION_EXAMPLES.md)** for a full library of copy-paste automation examples covering notifications, rule control, enforcement reactions, and dashboard counters.
 
-Quick reference — two most common patterns:
+Quick reference — three most common patterns:
+
+### Trigger picker (Home Assistant 2026.7.0+, recommended)
+
+All seven rule events are pickable from the automation editor — no YAML. Add trigger → Entity Guard → pick an event; leave **Rule** empty for any-rule, or scope to one.
+
+![Trigger picker](assets/16_trigger_picker.png)
+
+```yaml
+automation:
+  alias: Notify on any rule event
+  triggers:
+    - trigger: entity_guard.unreachable      # any rule goes unreachable
+    - trigger: entity_guard.enforced
+  action:
+    - service: notify.mobile_app_my_phone
+      data:
+        message: "{{ trigger.event_type }}: {{ trigger.event_data.rule_name }}"
+```
+
+> Needs HA 2026.7.0+. On older cores use the event-based patterns below.
 
 ### Notify when a rule enforces (event-based, rename-safe)
 
@@ -573,7 +593,7 @@ A: They run independently. The per-rule rate limiter catches any thrash. A warni
 A: Watch for the `entity_guard_loop_detected` event in Logbook -- the rate limiter will auto-suppress the rule and fire it. Either raise `max_enforcements_per_minute`, add a debounce, or fix the conflicting automation.
 
 **Q: How do I get notified when a rule fires?**
-A: Two options — see the [Automations](#automations) section for full YAML examples. Either listen to the `entity_guard_enforced` event (filter by `rule_id` for rename-safe targeting) or use the `binary_sensor.<rule>_recently_enforced` sensor as a state-change trigger. The integration intentionally does not include built-in notifications — you already have a notify service.
+A: Three options — see the [Automations](#automations) section for full YAML examples. On HA 2026.7.0+, pick any rule event straight from the automation editor's trigger list (Entity Guard triggers, any-rule or scoped). On older cores, listen to the `entity_guard_enforced` event (filter by `rule_id` for rename-safe targeting) or use the `binary_sensor.<rule>_recently_enforced` sensor as a state-change trigger. The integration intentionally does not include built-in notifications — you already have a notify service.
 
 **Q: Does the test_enforce button do a dry-run?**
 A: No -- it actually runs the configured enforcement. Use it on test entities or while the rule's `enabled` switch is off (which still allows test_enforce).
