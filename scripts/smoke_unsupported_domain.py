@@ -108,7 +108,11 @@ def _issue_for(token: str, domain: str) -> dict | None:
     return None
 
 
-def _wait_for_issue(token: str, timeout: int = 30) -> dict | None:
+def _wait_for_issue(token: str, timeout: int = 75) -> dict | None:
+    # 75s > the 60s default startup grace: a runtime-created rule whose target
+    # state never changes only evaluates at the grace-done sweep
+    # (_handle_startup_grace_done). If HA runs with EG_STARTUP_GRACE_SECONDS=5
+    # the card lands in seconds; without it, the sweep is at 60s — wait past it.
     deadline = time.time() + timeout
     while time.time() < deadline:
         issue = _issue_for(token, EXPECTED_DOMAIN)
