@@ -7627,3 +7627,197 @@ async def test_enforce_cancel_path_still_arms_cooldown_broadcast(hass: HomeAssis
     )
     # Cancel the armed 60s timer so the HA test harness sees no lingering job.
     engine._cooldown_broadcast_unsubs["switch.bedroom"]()
+
+
+# ---------------------------------------------------------------------------
+# forced-origin marker — every event payload carries a `forced` bool so an
+# automation can tell a manual test-enforce / card press (forced=True) from an
+# automatic trigger (forced=False). Asserts the bit on each of the seven events.
+# ---------------------------------------------------------------------------
+
+
+async def test_forced_true_on_manual_enforced(hass: HomeAssistant):
+    """EVENT_ENFORCED carries forced=True when driven via async_test_enforce."""
+    engine = _make_engine(hass, _make_config(target_state="off"))
+    hass.states.async_set("light.bedroom", "on")
+    hass.services.async_register("light", "turn_off", lambda c: None)
+
+    enforced = []
+    hass.bus.async_listen(EVENT_ENFORCED, lambda e: enforced.append(e))
+
+    await engine.async_test_enforce()
+    await hass.async_block_till_done()
+
+    assert len(enforced) == 1
+    assert enforced[0].data["forced"] is True
+
+
+async def test_forced_false_on_automatic_enforced(hass: HomeAssistant):
+    """EVENT_ENFORCED carries forced=False on an automatic trigger-driven enforce."""
+    engine = _make_engine(hass, _make_config(target_state="off"))
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+    hass.services.async_register("light", "turn_off", lambda c: None)
+
+    enforced = []
+    hass.bus.async_listen(EVENT_ENFORCED, lambda e: enforced.append(e))
+
+    await engine._enforce("light.bedroom")
+    await hass.async_block_till_done()
+
+    assert len(enforced) == 1
+    assert enforced[0].data["forced"] is False
+
+
+async def test_forced_marker_on_skipped(hass: HomeAssistant):
+    """EVENT_SKIPPED carries forced matching the enforce origin.
+
+    An unmapped-domain target skips (no_service_mapping). Manual run → forced=True.
+    """
+    engine = _make_engine(
+        hass, _make_config(target_state="gamma", target_entities=["timer.nap"])
+    )
+    hass.states.async_set("timer.nap", "idle")
+
+    skipped = []
+    hass.bus.async_listen(EVENT_SKIPPED, lambda e: skipped.append(e))
+
+    await engine.async_test_enforce()
+    await hass.async_block_till_done()
+
+    assert len(skipped) == 1
+    assert skipped[0].data["forced"] is True
+
+
+async def test_forced_true_on_verified(hass: HomeAssistant):
+    """EVENT_VERIFIED carries forced=True through the fast-confirm path.
+
+    A responsive target confirms in-tick; the forced bit captured at enforce must
+    survive the _cancel_verify discard (threaded as a param, not re-read).
+    """
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+
+    async def _turn_off(call):
+        hass.states.async_set("light.bedroom", "off")
+
+    hass.services.async_register("light", "turn_off", _turn_off)
+
+    verified = []
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: verified.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom", forced=True)
+        await hass.async_block_till_done()
+
+    assert len(verified) == 1
+    assert verified[0].data["forced"] is True
+
+
+async def test_forced_false_on_verified_automatic(hass: HomeAssistant):
+    """EVENT_VERIFIED carries forced=False on an automatic enforce."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+
+    async def _turn_off(call):
+        hass.states.async_set("light.bedroom", "off")
+
+    hass.services.async_register("light", "turn_off", _turn_off)
+
+    verified = []
+    hass.bus.async_listen(EVENT_VERIFIED, lambda e: verified.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine._enforce("light.bedroom")
+        await hass.async_block_till_done()
+
+    assert len(verified) == 1
+    assert verified[0].data["forced"] is False
+
+
+async def test_forced_true_on_unreachable(hass: HomeAssistant):
+    """EVENT_UNREACHABLE carries forced=True when a manual run exhausts retries."""
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)  # silent
+    hass.states.async_set("light.bedroom", "on")  # never moves
+
+    unreachable = []
+    hass.bus.async_listen(EVENT_UNREACHABLE, lambda e: unreachable.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine.async_test_enforce()
+        for _ in range(VERIFY_MAX_ATTEMPTS + 1):
+            if "light.bedroom" in engine._pending_verifications:
+                await _run_verify_timer(hass, engine, "light.bedroom")
+
+    assert len(unreachable) == 1
+    assert unreachable[0].data["forced"] is True
+
+
+async def test_forced_true_on_cancelled(hass: HomeAssistant):
+    """EVENT_CANCELLED carries forced=True: a manual verify cancelled mid-window.
+
+    set_enabled(False) is the real disabled-drop site — it cancels the in-flight
+    forced verify and fires CANCELLED(disabled) with the captured origin bit.
+    """
+    engine = _make_engine(hass, _verify_config())
+    engine._startup_complete = True
+    hass.services.async_register("light", "turn_off", lambda c: None)  # silent
+    hass.states.async_set("light.bedroom", "on")  # never moves
+
+    cancelled = []
+    hass.bus.async_listen(EVENT_CANCELLED, lambda e: cancelled.append(e))
+
+    def _fake_later(hass_, delay, cb):
+        engine._test_verify_cb = cb
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later", _fake_later
+    ):
+        await engine.async_test_enforce()
+        assert "light.bedroom" in engine._pending_verifications
+        engine.set_enabled(False)
+
+    assert len(cancelled) == 1
+    assert cancelled[0].data["reason"] == "disabled"
+    assert cancelled[0].data["forced"] is True
+
+
+async def test_forced_false_on_suppressed(hass: HomeAssistant):
+    """EVENT_SUPPRESSED always carries forced=False — suppression is a rule-state
+    change (manual/loop), never the manual-force enforce path."""
+    engine = _make_engine(hass, _make_config(target_state="off"))
+
+    suppressed = []
+    hass.bus.async_listen(EVENT_SUPPRESSED, lambda e: suppressed.append(e))
+
+    await engine.async_suppress(30)
+    await hass.async_block_till_done()
+
+    assert len(suppressed) == 1
+    assert suppressed[0].data["forced"] is False
+
+    # Clear the 30-min suppression expiry timer so the HA harness sees no linger.
+    await engine.async_unsuppress()

@@ -324,6 +324,54 @@ automation:
 
 ---
 
+## Telling manual force from automatic enforcement
+
+Every Entity Guard event carries a boolean **`forced`** field: `true` when the action came from a manual test-enforce (the rule card's **Test enforce** button or the `entity_guard.test_enforce` service), `false` when it came from an automatic trigger. Gate on it to react only to real automatic enforcements — or only to your own manual tests.
+
+### Notify only on automatic enforcement (ignore manual tests)
+
+```yaml
+automation:
+  alias: EG — notify on automatic enforcement only
+  trigger:
+    - platform: event
+      event_type: entity_guard_enforced
+  condition:
+    - condition: template
+      value_template: "{{ not trigger.event.data.forced }}"
+  action:
+    - service: notify.mobile_app_my_phone
+      data:
+        message: >
+          [auto] {{ trigger.event.data.rule_name }}
+          enforced {{ trigger.event.data.entity_id }}
+```
+
+### Confirm a manual test actually verified
+
+Pair `forced` with the verify events: fire a confirmation only when a button-press enforcement is later verified as reaching its target.
+
+```yaml
+automation:
+  alias: EG — confirm manual test verified
+  trigger:
+    - platform: event
+      event_type: entity_guard_verified
+      event_data:
+        forced: true
+  action:
+    - service: notify.mobile_app_my_phone
+      data:
+        title: "Entity Guard test passed"
+        message: >
+          Manual test of {{ trigger.event.data.rule_name }} verified
+          {{ trigger.event.data.entity_id }}.
+```
+
+> `forced` is present on all seven events — `enforced`, `verified`, `unreachable`, `cancelled`, `skipped`, `loop_detected`, `suppressed`. On `loop_detected` and `suppressed` it is always `false` (neither is an enforce action).
+
+---
+
 ## Event payload reference
 
 All `entity_guard_enforced` event fields:
@@ -338,3 +386,4 @@ All `entity_guard_enforced` event fields:
 | `target` | `off` | Target state or attribute value that was set |
 | `reason` | `rule_match` | Always `rule_match` for normal enforcement |
 | `user_id` | `abc123` or `null` | HA user who triggered the change (if identifiable) |
+| `forced` | `false` | `true` = manual test-enforce (button/service); `false` = automatic trigger. On every event. |

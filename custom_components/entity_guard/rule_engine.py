@@ -336,6 +336,10 @@ class RuleEngine:
                 and not self._trigger_decision(entity_id, new_state)[0]
             )
             pending = entity_id in self._pending_verifications
+            # Capture forced-origin NOW: every teardown below routes through
+            # _cancel_verify, which discards _forced_verifications — so membership
+            # is gone before the confirm/cancelled fire. Read it while it holds.
+            forced = entity_id in self._forced_verifications
             offline = new_state is None or new_state.state in (
                 STATE_UNAVAILABLE,
                 STATE_UNKNOWN,
@@ -373,7 +377,7 @@ class RuleEngine:
                 #      pending map, leaving VERIFYING for ARMED/COOLDOWN. Cancel MUST
                 #      precede confirm, else the derive still sees pending → stuck.
                 self._cancel_verify(entity_id)
-                self._confirm_verified(entity_id)
+                self._confirm_verified(entity_id, forced)
             else:
                 # No confirm (not reached, no pending, or dropped for disabled/
                 # suppressed): abandon the superseded cycle's attempt count. Re-derive
@@ -404,7 +408,7 @@ class RuleEngine:
                         reason = self._verify_drop_reason(entity_id)
                         self._cancel_verify(entity_id)
                         if reason is not None and reason != "unloaded":
-                            self._fire_cancelled(entity_id, reason)
+                            self._fire_cancelled(entity_id, reason, forced)
                     self._apply_idle_status()
         trigger_context_id: str | None = getattr(event.context, "id", None)
         self._schedule_eval_task(entity_id, new_state, trigger_context_id)
@@ -1152,7 +1156,7 @@ class RuleEngine:
                 dead.append(name or member)
         return dead
 
-    def _confirm_verified(self, entity_id: str) -> None:
+    def _confirm_verified(self, entity_id: str, forced: bool = False) -> None:
         """Resolve a reached-desired verify cycle: fire EVENT_VERIFIED, go idle.
 
         Shared by the event-driven happy-path confirm (_handle_state_event, the
@@ -1165,6 +1169,10 @@ class RuleEngine:
         event site via _cancel_verify) so the _apply_idle_status below sees an
         empty pending map and leaves VERIFYING for the real idle status.
 
+        `forced` is passed by the caller because the same _cancel_verify that pops
+        the pending handle also discards _forced_verifications, so membership is
+        already gone by the time we fire — the caller captures it first.
+
         attempts = corrective re-enforces done + 1 (the original enforce). First
         clean read (no corrective) -> 1; after N correctives -> N+1.
         """
@@ -1173,7 +1181,7 @@ class RuleEngine:
         # Confirmed success — the one clean signal automations gate on. verify-on
         # by construction, success-only (reached desired), one pulse per cycle.
         # Arms the recently_enforced_verified sensor too.
-        self._fire_verified(entity_id, attempts)
+        self._fire_verified(entity_id, attempts, forced)
         # Verify cycle closed and target compliant: re-derive so the card leaves
         # VERIFYING for the real idle status (ARMED / COOLDOWN).
         self._apply_idle_status()
@@ -1299,7 +1307,7 @@ class RuleEngine:
                 reason = "disabled" if not self._state.enabled else "master_off"
                 self._verify_attempts.pop(entity_id, None)
                 self._forced_verifications.discard(entity_id)
-                self._fire_cancelled(entity_id, reason)
+                self._fire_cancelled(entity_id, reason, is_forced)
                 self._apply_idle_status()
                 return
             # Suppressed → do not correct; drop the cycle (a real event re-arms it).
@@ -1315,7 +1323,7 @@ class RuleEngine:
                 self._verify_attempts.pop(entity_id, None)
                 # Our handle was cleared by the identity-guarded pop above; re-derive
                 # so VERIFYING resolves to the real idle status (SUPPRESSED here).
-                self._fire_cancelled(entity_id, "suppressed")
+                self._fire_cancelled(entity_id, "suppressed", is_forced)
                 self._apply_idle_status()
                 return
             # Conditional flags went unmet during the verify window → the rule is no
@@ -1327,7 +1335,7 @@ class RuleEngine:
             # Bypassed when forced (manual force judges the device — see CONTRACT).
             if not is_forced and not self._flags_match():
                 self._verify_attempts.pop(entity_id, None)
-                self._fire_cancelled(entity_id, "flags_unmet")
+                self._fire_cancelled(entity_id, "flags_unmet", is_forced)
                 self._apply_idle_status()
                 return
             if self._verify_reached(entity_id):
@@ -1339,7 +1347,7 @@ class RuleEngine:
                 # popped by the identity guard above, so _confirm_verified's
                 # _apply_idle_status leaves VERIFYING.
                 self._forced_verifications.discard(entity_id)
-                self._confirm_verified(entity_id)
+                self._confirm_verified(entity_id, is_forced)
                 return
             attempts = self._verify_attempts.get(entity_id, 0)
             if attempts >= VERIFY_MAX_ATTEMPTS:
@@ -1378,12 +1386,13 @@ class RuleEngine:
                             "rule_name": self._config.name,
                             "entity_id": entity_id,
                             "reason": REASON_UNREACHABLE_AFTER_RETRIES,
+                            "forced": is_forced,
                         },
                     )
                     # Dedicated failure signal (EVENT_UNREACHABLE + its 30s pulse
                     # sensor) — the verify-only twin of _fire_verified. Same count==1
                     # gate so it fires once per streak alongside the skipped event.
-                    self._fire_unreachable(entity_id)
+                    self._fire_unreachable(entity_id, is_forced)
                 if count >= CONSECUTIVE_EXHAUSTION_LIMIT:
                     # Dead-device kill-switch floor: trip loop protection directly.
                     # The direct call bypasses the rate-limit gate (only its caller
@@ -1491,7 +1500,7 @@ class RuleEngine:
             ):
                 _triggered, skip_reason = self._color_trigger_decision(current_state)
                 if skip_reason is not None:
-                    self._fire_skipped(entity_id, skip_reason)
+                    self._fire_skipped(entity_id, skip_reason, forced=forced)
                     self._set_status(self._derive_armed_or_cooldown(now))
                     return
 
@@ -1503,14 +1512,16 @@ class RuleEngine:
             if self._config.mode == MODE_DYNAMIC_STATE:
                 desired_on = self._follow_desired_on()
                 if desired_on is None:
-                    self._fire_skipped(entity_id, "source_offline")
+                    self._fire_skipped(entity_id, "source_offline", forced=forced)
                     self._set_status(self._derive_armed_or_cooldown(now))
                     return
                 state_override = "on" if desired_on else "off"
             elif self._config.mode == MODE_DYNAMIC_ATTRIBUTE:
                 value_override = self._dynamic_source_value()
                 if value_override is None:
-                    self._fire_skipped(entity_id, "source_value_unavailable")
+                    self._fire_skipped(
+                        entity_id, "source_value_unavailable", forced=forced
+                    )
                     self._set_status(self._derive_armed_or_cooldown(now))
                     return
 
@@ -1518,7 +1529,7 @@ class RuleEngine:
                 entity_id, state_override=state_override, value_override=value_override
             )
             if service_call is None:
-                self._fire_skipped(entity_id, "no_service_mapping")
+                self._fire_skipped(entity_id, "no_service_mapping", forced=forced)
                 _LOGGER.debug("No service mapping resolved for %s", entity_id)
                 # Surface a repair issue. Two honest cards:
                 #   Card A (unsupported_domain) — the domain is in NEITHER service
@@ -1583,10 +1594,16 @@ class RuleEngine:
                         "member_unavailable",
                         error=err_str,
                         members=dead,
+                        forced=forced,
                     )
                     self._set_status(self._derive_armed_or_cooldown(now))
                     return
-                self._fire_skipped(entity_id, REASON_SERVICE_CALL_FAILED, error=err_str)
+                self._fire_skipped(
+                    entity_id,
+                    REASON_SERVICE_CALL_FAILED,
+                    error=err_str,
+                    forced=forced,
+                )
                 self._state.consecutive_errors += 1
                 self._state.last_error = err_str
                 # Reset recovery counter on any failure (EG-6).
@@ -1726,6 +1743,7 @@ class RuleEngine:
                     ),
                     "reason": "rule_match",
                     "user_id": user_id,
+                    "forced": forced,
                 },
                 context=ctx,
             )
@@ -1817,11 +1835,11 @@ class RuleEngine:
                     self._verify_attempts.pop(entity_id, None)
                     if reason is None:
                         self._cancel_verify(entity_id)
-                        self._confirm_verified(entity_id)
+                        self._confirm_verified(entity_id, forced)
                     else:
                         self._cancel_verify(entity_id)
                         if reason != "unloaded":
-                            self._fire_cancelled(entity_id, reason)
+                            self._fire_cancelled(entity_id, reason, forced)
 
         # Pick the post-enforce status once and emit a single _set_status so the
         # dispatcher fires exactly one update — avoids ENFORCING→ARMED→ERROR
@@ -1945,6 +1963,9 @@ class RuleEngine:
                 "suppressed_until": suppress_until.isoformat(),
                 "limit": self._config.max_enforcements_per_minute,
                 "cause": cause,
+                # Loop detection is engine-driven rate-limiting, never a manual
+                # force — forced is always False here (payload parity with siblings).
+                "forced": False,
             },
         )
         persistent_notification.async_create(
@@ -2134,18 +2155,21 @@ class RuleEngine:
         *,
         error: str | None = None,
         members: list[str] | None = None,
+        forced: bool = False,
     ) -> None:
         """Emit a skipped-enforcement event.
 
         members: friendly-names of the group members behind a member_unavailable
         skip. Stored on the outcome (capped) so the card can list which members
         failed without re-deriving them.
+        forced: this skip happened during a manual force (async_test_enforce).
         """
         data: dict[str, Any] = {
             "rule_id": self._config.unique_id,
             "rule_name": self._config.name,
             "entity_id": entity_id,
             "reason": reason,
+            "forced": forced,
         }
         if error is not None:
             data["error"] = error
@@ -2308,6 +2332,9 @@ class RuleEngine:
                 "entity_id": self._get_rule_entity_id(),
                 "suppressed_until": until.isoformat(),
                 "user_id": user_id,
+                # Suppression is a manual/loop rule-state change, not an enforce —
+                # forced (manual force of the enforce path) is always False.
+                "forced": False,
             },
         )
         if self._current_status != STATUS_ERROR:
@@ -2424,6 +2451,10 @@ class RuleEngine:
             # clear the attempt counter here, or neither ever happens on disable.
             for eid in self._config.target_entities:
                 had_pending = eid in self._pending_verifications
+                # Capture forced-origin before _cancel_verify discards it (same
+                # reason as the event path): a manual force cycle disabled
+                # mid-verify still reports forced=true on its cancelled signal.
+                was_forced = eid in self._forced_verifications
                 self._cancel_verify(eid)
                 # Drop the attempt counter so a quick re-enable + re-enforce starts
                 # a fresh verify cycle instead of reading a stale high count and
@@ -2433,7 +2464,7 @@ class RuleEngine:
                 # Abandoned mid-window → the "disabled" cancelled signal. Skip on
                 # unload (entry tearing down, matching the no-fire-on-unload rule).
                 if had_pending and not self._is_unloaded:
-                    self._fire_cancelled(eid, "disabled")
+                    self._fire_cancelled(eid, "disabled", was_forced)
         else:
             self._schedule_suppression_timer()
         self._persist()
@@ -2762,12 +2793,17 @@ class RuleEngine:
                 self._hass, signal_rule_update(self._config.unique_id)
             )
 
-    def _fire_verified(self, target_entity_id: str, attempts: int) -> None:
+    def _fire_verified(
+        self, target_entity_id: str, attempts: int, forced: bool = False
+    ) -> None:
         """Emit the confirmed-success event + arm the verified sensor.
 
         Called only from the verify-confirm branch (verify-on, reached desired).
         Payload mirrors EVENT_ENFORCED minus the provisional-only fields, plus
         `attempts` (1 = verified first read; N+1 = after N corrective retries).
+        `forced` = this verify cycle was a manual force (async_test_enforce) —
+        threaded in because the caller already discarded _forced_verifications
+        membership by fire time (see _cancel_verify).
         """
         self._hass.bus.async_fire(
             EVENT_VERIFIED,
@@ -2780,6 +2816,7 @@ class RuleEngine:
                 "trigger": self._config.mode,
                 "target": self._event_target(),
                 "attempts": attempts,
+                "forced": forced,
             },
         )
         self._arm_recently_enforced_verified()
@@ -2838,13 +2875,14 @@ class RuleEngine:
                 self._hass, signal_rule_update(self._config.unique_id)
             )
 
-    def _fire_unreachable(self, target_entity_id: str) -> None:
+    def _fire_unreachable(self, target_entity_id: str, forced: bool = False) -> None:
         """Emit the unreachable-failure event + arm the unreachable sensor.
 
         Failure twin of _fire_verified. Called once per fresh exhaustion streak
         (the count==1 boundary in _arm_verify), only under verify-on when the
         target never reached desired after the corrective retries. Payload
         mirrors EVENT_VERIFIED minus `attempts`, plus the failure `reason`.
+        `forced` = manual force cycle (see _fire_verified).
         """
         self._hass.bus.async_fire(
             EVENT_UNREACHABLE,
@@ -2857,6 +2895,7 @@ class RuleEngine:
                 "trigger": self._config.mode,
                 "target": self._event_target(),
                 "reason": REASON_UNREACHABLE_AFTER_RETRIES,
+                "forced": forced,
             },
         )
         self._arm_recently_enforced_unreachable()
@@ -2915,7 +2954,9 @@ class RuleEngine:
                 self._hass, signal_rule_update(self._config.unique_id)
             )
 
-    def _fire_cancelled(self, target_entity_id: str, reason: str) -> None:
+    def _fire_cancelled(
+        self, target_entity_id: str, reason: str, forced: bool = False
+    ) -> None:
         """Emit the abandoned-cycle event + arm the cancelled sensor.
 
         Neutral sibling of _fire_verified / _fire_unreachable. Called at a verify
@@ -2924,6 +2965,7 @@ class RuleEngine:
         — reason ∈ {disabled, master_off, suppressed, flags_unmet}. NOT fired on
         integration unload (the entry is tearing down). Payload mirrors
         EVENT_UNREACHABLE with the abandonment `reason` in place of the failure one.
+        `forced` = manual force cycle (see _fire_verified).
         """
         self._hass.bus.async_fire(
             EVENT_CANCELLED,
@@ -2936,6 +2978,7 @@ class RuleEngine:
                 "trigger": self._config.mode,
                 "target": self._event_target(),
                 "reason": reason,
+                "forced": forced,
             },
         )
         self._arm_recently_enforced_cancelled()
