@@ -663,7 +663,15 @@ class RuleEngine:
             # a live state (new_state present and not unavailable/unknown) so an
             # offline target is NOT falsely marked healthy, and only written when
             # an outcome actually needs clearing (avoid broadcast churn).
+            before = self._state.target_outcomes.get(entity_id)
             self._clear_target_outcome_if_live(entity_id, new_state, now)
+            # If the clear actually overwrote the outcome object, repaint — the
+            # _set_or_force_broadcast below derives ARMED and dedupes on an
+            # already-ARMED rule, which would leave the recovered target latched in
+            # "Targets needing attention". Mirrors the suppressed-path precedent
+            # (~:553-559): snapshot before, force one broadcast when it changed.
+            if self._state.target_outcomes.get(entity_id) is not before:
+                self._broadcast_status()
             self._set_or_force_broadcast(self._derive_armed_or_cooldown(now))
             return
 
@@ -2214,6 +2222,15 @@ class RuleEngine:
         # its skip_count_total would reset to 0 on every restart. _persist ->
         # set_rule_state is debounced internally, so a per-skip call is cheap.
         self._persist()
+        # Own the repaint at the mutation source. This bumps skip_count_today/total
+        # and writes target_outcomes above, but the reactive caller (async_evaluate
+        # skip branch) only follows with _set_or_force_broadcast(ARMED), which
+        # dedupes on an already-ARMED rule (_set_status, :2581) — so on a steady-
+        # state re-skip (e.g. a COLOR rule whose target is simply OFF) the counter
+        # sensor + "Targets needing attention" card froze until an unrelated
+        # repaint. Fire one dispatch here so every skip repaints regardless of the
+        # caller's status move. Idempotent with callers that also broadcast.
+        self._broadcast_status()
 
     async def async_test_enforce(self, user_id: str | None = None) -> None:
         """Force an enforcement run against every target entity.
@@ -2348,6 +2365,14 @@ class RuleEngine:
         )
         if self._current_status != STATUS_ERROR:
             self._apply_idle_status()
+        else:
+            # Sticky-ERROR rule: _apply_idle_status is gated off above (status
+            # genuinely stays ERROR), so the only repaint of the suppressed_until +
+            # suppression_reason mutation (:2322-2323) never fires and those sensors
+            # read stale. EVENT_SUPPRESSED is a bus fire, not a dispatcher send, so
+            # sensors don't see it. Force one dispatch — _set_status would dedupe
+            # (status is still ERROR), same as the recently_enforced arms.
+            self._broadcast_status()
 
     async def async_unsuppress(self) -> None:
         """Clear any active suppression."""
@@ -2704,6 +2729,12 @@ class RuleEngine:
             )
 
         self._recently_enforced = True
+        # Own the rising-edge repaint. Earlier this relied on a coincidental
+        # _broadcast_status (same signal) landing after the flag went True — but
+        # _set_status dedupes (:2581), so an enforce whose post-status didn't move
+        # left the off→on edge silent: the sensor never re-read, no `on` row. Fire
+        # it here so arm never depends on a parasitic status broadcast.
+        async_dispatcher_send(self._hass, signal_rule_update(self._config.unique_id))
 
         @callback
         def _clear(_now: datetime) -> None:
@@ -2733,26 +2764,24 @@ class RuleEngine:
             pass
         self._recently_enforced_verified_unsub = None
 
-    def _clear_other_verdicts(self, keep: str) -> bool:
+    def _clear_other_verdicts(self, keep: str) -> None:
         """Force the two verdict flags other than `keep` OFF (mutual exclusion).
 
         The three verdict sensors — verified / unreachable / cancelled — are
         mutually exclusive: a cycle resolves to exactly one. For each sibling
         verdict whose flag is currently True, cancel its reset timer and drop its
-        flag. Returns True if any sibling was dropped (the caller then forces one
-        repaint — see the arm methods). No dispatch here; the base
-        `recently_enforced` (command-sent axis) is deliberately NOT in the group.
+        flag. No dispatch here: the caller's unconditional rising-edge repaint
+        (see the arm methods) turns any dropped sibling's sensor off, since all
+        three subscribe the same signal. The base `recently_enforced`
+        (command-sent axis) is deliberately NOT in the group.
         """
         verdicts = ("verified", "unreachable", "cancelled")
-        dropped = False
         for name in verdicts:
             if name == keep:
                 continue
             if getattr(self, f"_recently_enforced_{name}"):
                 getattr(self, f"_cancel_recently_enforced_{name}_timer")()
                 setattr(self, f"_recently_enforced_{name}", False)
-                dropped = True
-        return dropped
 
     def _arm_recently_enforced_verified(self) -> None:
         """Set recently_enforced_verified flag and schedule a 30s reset.
@@ -2761,7 +2790,7 @@ class RuleEngine:
         first so an automation gating on the rising edge re-triggers on a second
         confirm within the window.
         """
-        dropped_sibling = self._clear_other_verdicts("verified")
+        self._clear_other_verdicts("verified")
         self._cancel_recently_enforced_verified_timer()
 
         if self._recently_enforced_verified:
@@ -2771,6 +2800,12 @@ class RuleEngine:
             )
 
         self._recently_enforced_verified = True
+        # Own the rising-edge repaint (see _arm_recently_enforced). This single
+        # unconditional dispatch also covers the cold-verdict-switch case the old
+        # trailing `if dropped_sibling:` handled — when a sibling verdict was
+        # dropped above, this repaint turns its sensor off too (all three subscribe
+        # the same signal). So no separate dropped_sibling dispatch is needed.
+        async_dispatcher_send(self._hass, signal_rule_update(self._config.unique_id))
 
         @callback
         def _clear(_now: datetime) -> None:
@@ -2791,16 +2826,6 @@ class RuleEngine:
                 cancel_on_shutdown=True,
             ),
         )
-
-        # A cold verdict switch (a sibling was on, this arm did not hit its warm
-        # self-pulse branch) silently dropped the sibling flag; the trailing
-        # idle-status derive swallows the broadcast when status is unchanged
-        # (verdicts all sit ARMED/COOLDOWN). Force one repaint so the sibling
-        # sensor turns off — mirrors the bulk-reset precedent (~2345).
-        if dropped_sibling:
-            async_dispatcher_send(
-                self._hass, signal_rule_update(self._config.unique_id)
-            )
 
     def _fire_verified(
         self, target_entity_id: str, attempts: int, forced: bool = False
@@ -2847,7 +2872,7 @@ class RuleEngine:
         automation gating on the rising edge re-triggers on a second failure
         within the window.
         """
-        dropped_sibling = self._clear_other_verdicts("unreachable")
+        self._clear_other_verdicts("unreachable")
         self._cancel_recently_enforced_unreachable_timer()
 
         if self._recently_enforced_unreachable:
@@ -2857,6 +2882,8 @@ class RuleEngine:
             )
 
         self._recently_enforced_unreachable = True
+        # Own the rising-edge repaint (see _arm_recently_enforced_verified).
+        async_dispatcher_send(self._hass, signal_rule_update(self._config.unique_id))
 
         @callback
         def _clear(_now: datetime) -> None:
@@ -2877,12 +2904,6 @@ class RuleEngine:
                 cancel_on_shutdown=True,
             ),
         )
-
-        # Cold verdict switch repaint — see _arm_recently_enforced_verified.
-        if dropped_sibling:
-            async_dispatcher_send(
-                self._hass, signal_rule_update(self._config.unique_id)
-            )
 
     def _fire_unreachable(self, target_entity_id: str, forced: bool = False) -> None:
         """Emit the unreachable-failure event + arm the unreachable sensor.
@@ -2926,7 +2947,7 @@ class RuleEngine:
         so an automation gating on the rising edge re-triggers on a second
         abandonment within the window.
         """
-        dropped_sibling = self._clear_other_verdicts("cancelled")
+        self._clear_other_verdicts("cancelled")
         self._cancel_recently_enforced_cancelled_timer()
 
         if self._recently_enforced_cancelled:
@@ -2936,6 +2957,8 @@ class RuleEngine:
             )
 
         self._recently_enforced_cancelled = True
+        # Own the rising-edge repaint (see _arm_recently_enforced_verified).
+        async_dispatcher_send(self._hass, signal_rule_update(self._config.unique_id))
 
         @callback
         def _clear(_now: datetime) -> None:
@@ -2956,12 +2979,6 @@ class RuleEngine:
                 cancel_on_shutdown=True,
             ),
         )
-
-        # Cold verdict switch repaint — see _arm_recently_enforced_verified.
-        if dropped_sibling:
-            async_dispatcher_send(
-                self._hass, signal_rule_update(self._config.unique_id)
-            )
 
     def _fire_cancelled(
         self, target_entity_id: str, reason: str, forced: bool = False
