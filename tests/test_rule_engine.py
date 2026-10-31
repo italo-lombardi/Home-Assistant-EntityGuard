@@ -23,6 +23,7 @@ from custom_components.entity_guard.const import (
     EVENT_ENFORCED,
     EVENT_LOOP_DETECTED,
     EVENT_SKIPPED,
+    EVENT_SUPPRESSED,
     EVENT_UNREACHABLE,
     EVENT_VERIFIED,
     MODE_DYNAMIC_STATE,
@@ -1322,6 +1323,20 @@ async def test_async_suppress(hass: HomeAssistant):
     assert engine.state.suppressed_until is not None
     assert engine.state.suppression_reason == "manual"
     assert engine.current_status() == STATUS_SUPPRESSED
+    engine._cancel_suppression_timer()
+
+
+async def test_async_suppress_event_carries_rule_entity_id(hass: HomeAssistant):
+    """EVENT_SUPPRESSED payload carries entity_id (the rule's status sensor), so
+    the integration-level trigger + logbook filter surface it like its siblings."""
+    engine = _make_engine(hass)
+    engine._rule_entity_id = "sensor.test_rule_status"  # cached → skip registry
+    events: list = []
+    hass.bus.async_listen(EVENT_SUPPRESSED, lambda e: events.append(e))
+    await engine.async_suppress(5)
+    await hass.async_block_till_done()
+    assert len(events) == 1
+    assert events[0].data["entity_id"] == "sensor.test_rule_status"
     engine._cancel_suppression_timer()
 
 
