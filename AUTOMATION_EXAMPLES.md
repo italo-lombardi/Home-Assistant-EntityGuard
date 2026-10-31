@@ -1,7 +1,58 @@
 # Entity Guard — Automation Examples
 
-All examples use `rule_id` (the stable rule ID) rather than `rule_name` so renames don't break automations.  
+Two ways to react to rule events:
+
+1. **Trigger picker (recommended, HA 2026.7.0+)** — pick events straight from the automation editor, no YAML, no `rule_id` lookup. See below.
+2. **Event triggers (`platform: event`)** — works on every HA version; filter by `rule_id` by hand. Used by every example from [Notifications](#notifications) down.
+
+Event examples use `rule_id` (the stable rule ID) rather than `rule_name` so renames don't break automations.  
 To find a rule's ID: enable `sensor.<rule>_rule_id` in the entity registry — its state is the ID to copy.
+
+---
+
+## Trigger picker (Home Assistant 2026.7.0+)
+
+> **Newer HA only.** The trigger picker needs **Home Assistant 2026.7.0+**. On older cores, use the event-based examples further down (`platform: event`) — they work on every version.
+
+Entity Guard registers all seven rule events as native triggers, pickable straight from the automation editor (Settings → Automations → Add trigger → Entity Guard) — no hand-typed YAML, no `rule_id` lookup. Each trigger has an optional **Rule** field: pick one rule, or leave it empty to fire for **any** rule.
+
+![Trigger picker](assets/16_trigger_picker.png)
+
+### Notify on any rule event (any-rule)
+
+```yaml
+automation:
+  alias: Entity Guard — notify on any rule event
+  triggers:
+    - trigger: entity_guard.enforced
+    - trigger: entity_guard.skipped
+    - trigger: entity_guard.loop_detected
+    - trigger: entity_guard.suppressed
+    - trigger: entity_guard.verified
+    - trigger: entity_guard.unreachable
+    - trigger: entity_guard.cancelled
+  actions:
+    - action: notify.notify
+      data:
+        title: "Entity Guard: {{ trigger.event_type }}"
+        message: >-
+          {{ trigger.event_data.rule_name | default('(unknown rule)') }} —
+          {{ trigger.event_data.entity_id }}
+  mode: queued
+  max: 25
+```
+
+### Scope a trigger to one rule
+
+Add `config_entry_id` (the rule's config entry id) to any trigger:
+
+```yaml
+  triggers:
+    - trigger: entity_guard.unreachable
+      config_entry_id: 01abc...   # this rule only
+```
+
+Trigger template variables: `trigger.event_type` (bare, e.g. `enforced`), `trigger.rule_id`, `trigger.rule_name`, `trigger.entity_id`, `trigger.event_data` (full event payload — fields in the [reference](#event-payload-reference) at the bottom).
 
 ---
 
