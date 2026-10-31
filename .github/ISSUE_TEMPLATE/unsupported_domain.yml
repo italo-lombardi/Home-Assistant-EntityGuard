@@ -49,4 +49,4 @@ body:
       description: Settings → About, or the version shown in Developer Tools.
       placeholder: e.g. 2026.10.1
     validations:
-      required: true
+      required: false
