@@ -27,9 +27,19 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          body: ${{ steps.changelog.outputs.notes }}
-          prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') || contains(github.ref_name, '-rc') }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES: ${{ steps.changelog.outputs.notes }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          # Skip if a release already exists at this tag (e.g. pre-created with curated notes) — don't clobber its body.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists — leaving its body untouched."
+            exit 0
+          fi
+          PRERELEASE=""
+          case "$TAG" in
+            *-beta*|*-alpha*|*-rc*) PRERELEASE="--prerelease" ;;
+          esac
+          printf '%s\n' "$NOTES" > /tmp/notes.md
+          gh release create "$TAG" --title "$TAG" --notes-file /tmp/notes.md $PRERELEASE
