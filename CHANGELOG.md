@@ -1,11 +1,5 @@
 # Changelog
 
-## [Unreleased]
-
-### Fixed
-
-- **`suppressed` event now carries `entity_id`** like the other six rule events. It was the only one firing without it, so an integration-level trigger or logbook filter on a suppressed event got `entity_id: None`. Suppression is rule-level, so the value is the rule's own status sensor (matching `enforced` / `cancelled`). Closes the known gap noted in the v0.5.0-beta1 release notes.
-
 ## [0.5.0] — 2026-10-31
 
 ### Added
@@ -15,6 +9,10 @@
 ### Changed
 
 - **BREAKING: minimum Home Assistant raised to 2026.7.0** (HACS floor was `2024.1.0`). Required for the single-generation integration-trigger API with no version shims. HACS will not offer the update on cores older than 2026.7.0 until Home Assistant is upgraded.
+
+### Fixed
+
+- **`suppressed` event now carries `entity_id`** like the other six rule events. It was the only one firing without it, so an integration-level trigger or logbook filter on a suppressed event got `entity_id: None`. Suppression is rule-level, so the value is the rule's own status sensor (matching `enforced` / `cancelled`). Closes the known gap noted in the v0.5.0-beta1 release notes.
 
 ## [0.4.2] — 2026-10-30
 
