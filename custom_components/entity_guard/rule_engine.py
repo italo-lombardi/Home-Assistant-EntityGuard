@@ -2647,6 +2647,27 @@ class RuleEngine:
             pass
         self._recently_enforced_verified_unsub = None
 
+    def _clear_other_verdicts(self, keep: str) -> bool:
+        """Force the two verdict flags other than `keep` OFF (mutual exclusion).
+
+        The three verdict sensors — verified / unreachable / cancelled — are
+        mutually exclusive: a cycle resolves to exactly one. For each sibling
+        verdict whose flag is currently True, cancel its reset timer and drop its
+        flag. Returns True if any sibling was dropped (the caller then forces one
+        repaint — see the arm methods). No dispatch here; the base
+        `recently_enforced` (command-sent axis) is deliberately NOT in the group.
+        """
+        verdicts = ("verified", "unreachable", "cancelled")
+        dropped = False
+        for name in verdicts:
+            if name == keep:
+                continue
+            if getattr(self, f"_recently_enforced_{name}"):
+                getattr(self, f"_cancel_recently_enforced_{name}_timer")()
+                setattr(self, f"_recently_enforced_{name}", False)
+                dropped = True
+        return dropped
+
     def _arm_recently_enforced_verified(self) -> None:
         """Set recently_enforced_verified flag and schedule a 30s reset.
 
@@ -2654,6 +2675,7 @@ class RuleEngine:
         first so an automation gating on the rising edge re-triggers on a second
         confirm within the window.
         """
+        dropped_sibling = self._clear_other_verdicts("verified")
         self._cancel_recently_enforced_verified_timer()
 
         if self._recently_enforced_verified:
@@ -2683,6 +2705,16 @@ class RuleEngine:
                 cancel_on_shutdown=True,
             ),
         )
+
+        # A cold verdict switch (a sibling was on, this arm did not hit its warm
+        # self-pulse branch) silently dropped the sibling flag; the trailing
+        # idle-status derive swallows the broadcast when status is unchanged
+        # (verdicts all sit ARMED/COOLDOWN). Force one repaint so the sibling
+        # sensor turns off — mirrors the bulk-reset precedent (~2345).
+        if dropped_sibling:
+            async_dispatcher_send(
+                self._hass, signal_rule_update(self._config.unique_id)
+            )
 
     def _fire_verified(self, target_entity_id: str, attempts: int) -> None:
         """Emit the confirmed-success event + arm the verified sensor.
@@ -2723,6 +2755,7 @@ class RuleEngine:
         automation gating on the rising edge re-triggers on a second failure
         within the window.
         """
+        dropped_sibling = self._clear_other_verdicts("unreachable")
         self._cancel_recently_enforced_unreachable_timer()
 
         if self._recently_enforced_unreachable:
@@ -2752,6 +2785,12 @@ class RuleEngine:
                 cancel_on_shutdown=True,
             ),
         )
+
+        # Cold verdict switch repaint — see _arm_recently_enforced_verified.
+        if dropped_sibling:
+            async_dispatcher_send(
+                self._hass, signal_rule_update(self._config.unique_id)
+            )
 
     def _fire_unreachable(self, target_entity_id: str) -> None:
         """Emit the unreachable-failure event + arm the unreachable sensor.
@@ -2793,6 +2832,7 @@ class RuleEngine:
         so an automation gating on the rising edge re-triggers on a second
         abandonment within the window.
         """
+        dropped_sibling = self._clear_other_verdicts("cancelled")
         self._cancel_recently_enforced_cancelled_timer()
 
         if self._recently_enforced_cancelled:
@@ -2822,6 +2862,12 @@ class RuleEngine:
                 cancel_on_shutdown=True,
             ),
         )
+
+        # Cold verdict switch repaint — see _arm_recently_enforced_verified.
+        if dropped_sibling:
+            async_dispatcher_send(
+                self._hass, signal_rule_update(self._config.unique_id)
+            )
 
     def _fire_cancelled(self, target_entity_id: str, reason: str) -> None:
         """Emit the abandoned-cycle event + arm the cancelled sensor.

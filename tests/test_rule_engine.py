@@ -6960,6 +6960,102 @@ async def test_arm_recently_enforced_unreachable_timer_clears_flag(
     captured_cb[0].target(dt_util.now())
     await hass.async_block_till_done()
 
+
+async def test_verdict_sensors_mutually_exclusive(hass: HomeAssistant):
+    """Arming one verdict forces the other two verdict flags OFF.
+
+    The three verdict sensors (verified/unreachable/cancelled) are mutually
+    exclusive — a cycle resolves to exactly one. Arming a verdict clears any
+    sibling verdict that is still within its 30s window.
+    """
+    from unittest.mock import patch
+
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=lambda *_a, **_k: MagicMock(),
+    ):
+        engine._arm_recently_enforced_verified()
+        assert engine._recently_enforced_verified is True
+        assert engine._recently_enforced_unreachable is False
+        assert engine._recently_enforced_cancelled is False
+
+        engine._arm_recently_enforced_unreachable()
+        assert engine._recently_enforced_unreachable is True
+        assert engine._recently_enforced_verified is False
+        assert engine._recently_enforced_cancelled is False
+
+        engine._arm_recently_enforced_cancelled()
+        assert engine._recently_enforced_cancelled is True
+        assert engine._recently_enforced_verified is False
+        assert engine._recently_enforced_unreachable is False
+
+
+async def test_verdict_arm_does_not_clear_base_recently_enforced(hass: HomeAssistant):
+    """Scope guard: the base recently_enforced (command-sent axis) is NOT in the
+    verdict group — arming a verdict must leave it untouched."""
+    from unittest.mock import patch
+
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._recently_enforced = True
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=lambda *_a, **_k: MagicMock(),
+    ):
+        engine._arm_recently_enforced_verified()
+
+    assert engine._recently_enforced is True
+
+
+async def test_verdict_switch_forces_repaint_all_three_arms(hass: HomeAssistant):
+    """Each of the 3 verdict arms forces the repaint on a cold switch — covers the
+    dropped_sibling dispatch branch in every arm (verified/unreachable/cancelled)."""
+    from unittest.mock import patch
+
+    # (arm method, sibling flag to pre-set on, this arm's own flag)
+    cases = [
+        (
+            "_arm_recently_enforced_verified",
+            "_recently_enforced_unreachable",
+            "_recently_enforced_verified",
+        ),
+        (
+            "_arm_recently_enforced_unreachable",
+            "_recently_enforced_cancelled",
+            "_recently_enforced_unreachable",
+        ),
+        (
+            "_arm_recently_enforced_cancelled",
+            "_recently_enforced_verified",
+            "_recently_enforced_cancelled",
+        ),
+    ]
+    for arm, sibling_flag, own_flag in cases:
+        engine = _make_engine(hass)
+        engine._startup_complete = True
+        setattr(engine, sibling_flag, True)  # a cold sibling to drop
+
+        sent = []
+        with (
+            patch(
+                "custom_components.entity_guard.rule_engine.async_call_later",
+                side_effect=lambda *_a, **_k: MagicMock(),
+            ),
+            patch(
+                "custom_components.entity_guard.rule_engine.async_dispatcher_send",
+                side_effect=lambda *_a, **_k: sent.append(1),
+            ),
+        ):
+            getattr(engine, arm)()
+
+        assert getattr(engine, own_flag) is True
+        assert getattr(engine, sibling_flag) is False
+        assert len(sent) == 1, f"{arm} cold switch should force exactly one repaint"
+
     assert engine._recently_enforced_unreachable is False
 
 
