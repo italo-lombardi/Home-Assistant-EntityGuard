@@ -90,13 +90,11 @@ async def _list_issues(token: str) -> list[dict]:
                     return msg["result"]["issues"]
 
 
-def _unsupported_domain_issue(token: str) -> dict | None:
+def _issue_for(token: str, domain: str) -> dict | None:
     """Return the entity_guard unsupported_domain_<domain> issue, or None."""
+    want = f"unsupported_domain_{domain}"
     for issue in asyncio.run(_list_issues(token)):
-        if (
-            issue.get("domain") == "entity_guard"
-            and issue.get("issue_id") == EXPECTED_ISSUE_ID
-        ):
+        if issue.get("domain") == "entity_guard" and issue.get("issue_id") == want:
             return issue
     return None
 
@@ -104,17 +102,62 @@ def _unsupported_domain_issue(token: str) -> dict | None:
 def _wait_for_issue(token: str, timeout: int = 30) -> dict | None:
     deadline = time.time() + timeout
     while time.time() < deadline:
-        issue = _unsupported_domain_issue(token)
+        issue = _issue_for(token, EXPECTED_DOMAIN)
         if issue:
             return issue
         time.sleep(2)
     return None
 
 
+# A fully-mapped target for the NEGATIVE leg: light is in DOMAIN_SERVICE_MAP and
+# "on" is a mapped state, so enforcing it resolves a real service → NO card. An
+# allowed smoke target (memory: smoke_test_entities).
+MAPPED_TARGET = "light.living_room_under_cabinet_lights"
+MAPPED_STATE = "on"
+MAPPED_DOMAIN = MAPPED_TARGET.split(".", 1)[0]  # light
+
+
 def main() -> int:
     token = sf.mint_token()
     run_token = str(int(time.time()))
     rule_name = f"EG Unsupported Domain Smoke {run_token}"
+
+    # NEGATIVE leg first (clean registry): a mapped domain+state must NOT raise a
+    # card. Guards the regression where the card fires on every enforce. Assert
+    # the light card is absent both before and after a mapped rule enforces.
+    neg_pre = _issue_for(token, MAPPED_DOMAIN)
+    sf.check(
+        f"no pre-existing card for mapped domain ({MAPPED_DOMAIN})",
+        neg_pre is None,
+        f"issue={neg_pre}",
+    )
+    mapped_name = f"EG Mapped Domain Smoke {run_token}"
+    mapped_entry = sf.create_fixed_state_rule(
+        token,
+        mapped_name,
+        [MAPPED_TARGET],
+        target_state=MAPPED_STATE,
+        trigger_states=["off"],  # must exclude target_state (target_in_triggers)
+    )
+    try:
+        # Drive the target OFF so the rule triggers and enforces "on" (a mapped
+        # service call) — the path that would wrongly raise a card if mapped
+        # domains leaked into the no_service_mapping branch.
+        sf.api(
+            token,
+            "POST",
+            "/api/services/light/turn_off",
+            {"entity_id": MAPPED_TARGET},
+        )
+        time.sleep(6)  # let the enforce + any (wrong) raise settle
+        sf.check(
+            f"mapped domain+state raises NO unsupported_domain card ({MAPPED_DOMAIN})",
+            _issue_for(token, MAPPED_DOMAIN) is None,
+            f"issue={_issue_for(token, MAPPED_DOMAIN)}",
+        )
+    finally:
+        if mapped_entry:
+            sf.api(token, "DELETE", f"/api/config/config_entries/entry/{mapped_entry}")
 
     print(f"Creating fixed_state rule '{rule_name}' (undrivable target_state)…")
     # trigger_states covers the target's real states (on/off) so whatever state
@@ -161,11 +204,17 @@ def main() -> int:
                 f"placeholders={placeholders}",
             )
             # The Learn-more link is the whole point of the card (report the
-            # domain). Assert it points at the issue-form template.
+            # domain). Assert it points at the issue-form template AND prefills
+            # the domain (so the card's "the domain is pre-filled" copy is true).
             learn_more = issue.get("learn_more_url") or ""
             sf.check(
                 "learn_more_url points at the unsupported_domain issue form",
                 "template=unsupported_domain.yml" in learn_more,
+                f"learn_more_url={learn_more}",
+            )
+            sf.check(
+                "learn_more_url prefills the domain field",
+                f"&domain={EXPECTED_DOMAIN}" in learn_more,
                 f"learn_more_url={learn_more}",
             )
 

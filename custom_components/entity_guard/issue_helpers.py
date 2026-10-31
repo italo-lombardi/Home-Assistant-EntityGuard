@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from urllib.parse import quote
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
@@ -25,6 +26,8 @@ ISSUE_UNSUPPORTED_DOMAIN = "unsupported_domain"
 # GitHub issue-form template the "Learn more" link opens (file lives at
 # .github/ISSUE_TEMPLATE/unsupported_domain.yml). Appended to the manifest's
 # issue_tracker so the slug survives a repo rename (single source of truth).
+# &domain= prefills the form's `domain` input (GitHub issue-form query params
+# key on the field `id`) so the user doesn't retype what the card already knows.
 _UNSUPPORTED_DOMAIN_TEMPLATE_QUERY = (
     "/new?template=unsupported_domain.yml&labels=enhancement,unsupported-domain"
 )
@@ -189,7 +192,13 @@ def async_raise_unsupported_domain(hass: HomeAssistant, domain: str) -> None:
         issue_tracker = None
     if issue_tracker:
         # issue_tracker is ".../issues"; the form template lives at ".../issues/new".
-        learn_more_url = issue_tracker + _UNSUPPORTED_DOMAIN_TEMPLATE_QUERY
+        # Append &domain= so GitHub prefills the form's `domain` input (quote in
+        # case a domain ever contains a URL-unsafe char).
+        learn_more_url = (
+            issue_tracker
+            + _UNSUPPORTED_DOMAIN_TEMPLATE_QUERY
+            + f"&domain={quote(domain)}"
+        )
 
     async_create_issue(
         hass,

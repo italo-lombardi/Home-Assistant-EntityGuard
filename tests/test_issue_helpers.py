@@ -571,11 +571,35 @@ async def test_raise_unsupported_domain_creates_issue(hass: HomeAssistant) -> No
     assert issue_id == "unsupported_domain_humidifier"
     assert kwargs.get("translation_key") == ISSUE_UNSUPPORTED_DOMAIN
     assert kwargs.get("translation_placeholders", {}).get("domain") == "humidifier"
-    # Learn-more link = manifest issue_tracker + the issue-form template query.
+    # Learn-more link = manifest issue_tracker + the issue-form template query,
+    # with &domain= prefilling the form's `domain` input so the claim in the card
+    # copy ("the domain is pre-filled") is actually true.
     assert kwargs.get("learn_more_url") == (
         "https://example.test/x/issues"
         "/new?template=unsupported_domain.yml&labels=enhancement,unsupported-domain"
+        "&domain=humidifier"
     )
+
+
+async def test_raise_unsupported_domain_prefill_is_url_encoded(
+    hass: HomeAssistant,
+) -> None:
+    # A domain is normally a bare slug, but the prefill value is URL-quoted so a
+    # stray unsafe char can never break the query string.
+    integration = type("I", (), {"issue_tracker": "https://example.test/x/issues"})()
+    with (
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_create_issue"
+        ) as mock_create,
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_get_loaded_integration",
+            return_value=integration,
+        ),
+    ):
+        async_raise_unsupported_domain(hass, "weird domain/x")
+
+    _, kwargs = mock_create.call_args
+    assert kwargs.get("learn_more_url", "").endswith("&domain=weird%20domain/x")
 
 
 async def test_raise_unsupported_domain_no_issue_tracker(hass: HomeAssistant) -> None:
