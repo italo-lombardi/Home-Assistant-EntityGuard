@@ -575,5 +575,77 @@
       "cancelled": "La règle a abandonné une vérification (une condition a changé)",
       "suppressed": "La règle a suspendu l'application (protection anti-boucle)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard : une règle a appliqué une cible",
+      "description": "Se déclenche lorsqu'une règle applique une cible (la met à l'état souhaité).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Règle (laisser vide pour n'importe quelle règle)",
+          "description": "Limiter ce déclencheur à une seule règle. Laisser vide pour déclencher pour n'importe quelle règle."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard : une règle a ignoré l'application",
+      "description": "Se déclenche lorsqu'une règle ignore l'application d'une cible.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Règle (laisser vide pour n'importe quelle règle)",
+          "description": "Limiter ce déclencheur à une seule règle. Laisser vide pour déclencher pour n'importe quelle règle."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard : une règle a détecté une boucle d'application",
+      "description": "Se déclenche lorsqu'une règle détecte une boucle d'application.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Règle (laisser vide pour n'importe quelle règle)",
+          "description": "Limiter ce déclencheur à une seule règle. Laisser vide pour déclencher pour n'importe quelle règle."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard : une règle a confirmé qu'une cible a atteint l'état souhaité",
+      "description": "Se déclenche lorsqu'une règle confirme qu'une cible a atteint l'état souhaité après l'application.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Règle (laisser vide pour n'importe quelle règle)",
+          "description": "Limiter ce déclencheur à une seule règle. Laisser vide pour déclencher pour n'importe quelle règle."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard : une règle n'a pas pu faire atteindre l'état souhaité à une cible",
+      "description": "Se déclenche lorsqu'une règle n'a pas pu faire atteindre l'état souhaité à une cible.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Règle (laisser vide pour n'importe quelle règle)",
+          "description": "Limiter ce déclencheur à une seule règle. Laisser vide pour déclencher pour n'importe quelle règle."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard : une règle a abandonné une vérification (une condition a changé)",
+      "description": "Se déclenche lorsqu'une règle abandonne une vérification en cours sans verdict parce qu'une condition externe a changé (la règle a été suspendue, désactivée, l'interrupteur principal a été coupé ou ses indicateurs conditionnels ne sont plus remplis).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Règle (laisser vide pour n'importe quelle règle)",
+          "description": "Limiter ce déclencheur à une seule règle. Laisser vide pour déclencher pour n'importe quelle règle."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard : une règle a suspendu l'application (protection anti-boucle)",
+      "description": "Se déclenche lorsqu'une règle suspend l'application pour se protéger contre une boucle.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Règle (laisser vide pour n'importe quelle règle)",
+          "description": "Limiter ce déclencheur à une seule règle. Laisser vide pour déclencher pour n'importe quelle règle."
+        }
+      }
+    }
   }
 }

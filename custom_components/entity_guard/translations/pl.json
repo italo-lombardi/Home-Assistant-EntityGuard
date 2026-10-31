@@ -575,5 +575,77 @@
       "cancelled": "Reguła porzuciła cykl weryfikacji (zmienił się warunek)",
       "suppressed": "Reguła wstrzymała wymuszanie (ochrona przed pętlami)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: reguła wymusiła cel",
+      "description": "Wyzwalane, gdy reguła wymusza cel (ustawia go w żądany stan).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Reguła (pozostaw puste dla dowolnej reguły)",
+          "description": "Ogranicz ten wyzwalacz do jednej reguły. Pozostaw puste, aby wyzwalać dla dowolnej reguły."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: reguła pominęła wymuszenie",
+      "description": "Wyzwalane, gdy reguła pomija wymuszenie celu.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Reguła (pozostaw puste dla dowolnej reguły)",
+          "description": "Ogranicz ten wyzwalacz do jednej reguły. Pozostaw puste, aby wyzwalać dla dowolnej reguły."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: reguła wykryła pętlę wymuszania",
+      "description": "Wyzwalane, gdy reguła wykryje pętlę wymuszania.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Reguła (pozostaw puste dla dowolnej reguły)",
+          "description": "Ogranicz ten wyzwalacz do jednej reguły. Pozostaw puste, aby wyzwalać dla dowolnej reguły."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: reguła potwierdziła, że cel osiągnął żądany stan",
+      "description": "Wyzwalane, gdy reguła potwierdzi, że cel osiągnął żądany stan po wymuszeniu.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Reguła (pozostaw puste dla dowolnej reguły)",
+          "description": "Ogranicz ten wyzwalacz do jednej reguły. Pozostaw puste, aby wyzwalać dla dowolnej reguły."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: reguła nie zdołała doprowadzić celu do żądanego stanu",
+      "description": "Wyzwalane, gdy reguła nie zdołała doprowadzić celu do żądanego stanu.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Reguła (pozostaw puste dla dowolnej reguły)",
+          "description": "Ogranicz ten wyzwalacz do jednej reguły. Pozostaw puste, aby wyzwalać dla dowolnej reguły."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: reguła porzuciła cykl weryfikacji (zmienił się warunek)",
+      "description": "Wyzwalane, gdy reguła porzuca rozpoczęty cykl weryfikacji bez wyniku, ponieważ zmienił się warunek zewnętrzny (reguła została wstrzymana, wyłączona, przełącznik główny został wyłączony lub jej flagi warunkowe nie są już spełnione).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Reguła (pozostaw puste dla dowolnej reguły)",
+          "description": "Ogranicz ten wyzwalacz do jednej reguły. Pozostaw puste, aby wyzwalać dla dowolnej reguły."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: reguła wstrzymała wymuszanie (ochrona przed pętlami)",
+      "description": "Wyzwalane, gdy reguła wstrzymuje wymuszanie, aby chronić przed pętlą.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Reguła (pozostaw puste dla dowolnej reguły)",
+          "description": "Ogranicz ten wyzwalacz do jednej reguły. Pozostaw puste, aby wyzwalać dla dowolnej reguły."
+        }
+      }
+    }
   }
 }

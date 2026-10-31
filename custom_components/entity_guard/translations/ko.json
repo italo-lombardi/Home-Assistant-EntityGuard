@@ -575,5 +575,77 @@
       "cancelled": "규칙이 조건 변경으로 검증 주기를 중단함",
       "suppressed": "규칙이 적용을 억제함(루프 보호)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: 규칙이 대상을 적용함",
+      "description": "규칙이 대상을 적용(원하는 상태로 설정)할 때 실행됩니다.",
+      "fields": {
+        "config_entry_id": {
+          "name": "규칙(모든 규칙에 적용하려면 비워 두기)",
+          "description": "이 트리거를 하나의 규칙으로 제한합니다. 모든 규칙에서 트리거하려면 비워 두세요."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: 규칙이 적용을 건너뜀",
+      "description": "규칙이 대상 적용을 건너뛸 때 실행됩니다.",
+      "fields": {
+        "config_entry_id": {
+          "name": "규칙(모든 규칙에 적용하려면 비워 두기)",
+          "description": "이 트리거를 하나의 규칙으로 제한합니다. 모든 규칙에서 트리거하려면 비워 두세요."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: 규칙이 적용 루프를 감지함",
+      "description": "규칙이 적용 루프를 감지할 때 실행됩니다.",
+      "fields": {
+        "config_entry_id": {
+          "name": "규칙(모든 규칙에 적용하려면 비워 두기)",
+          "description": "이 트리거를 하나의 규칙으로 제한합니다. 모든 규칙에서 트리거하려면 비워 두세요."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: 규칙이 대상이 원하는 상태에 도달했음을 확인함",
+      "description": "적용 후 규칙이 대상이 원하는 상태에 도달했음을 확인할 때 실행됩니다.",
+      "fields": {
+        "config_entry_id": {
+          "name": "규칙(모든 규칙에 적용하려면 비워 두기)",
+          "description": "이 트리거를 하나의 규칙으로 제한합니다. 모든 규칙에서 트리거하려면 비워 두세요."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: 규칙이 대상을 원하는 상태로 만들지 못함",
+      "description": "규칙이 대상을 원하는 상태로 만들지 못할 때 실행됩니다.",
+      "fields": {
+        "config_entry_id": {
+          "name": "규칙(모든 규칙에 적용하려면 비워 두기)",
+          "description": "이 트리거를 하나의 규칙으로 제한합니다. 모든 규칙에서 트리거하려면 비워 두세요."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: 규칙이 검증 주기를 중단함(조건이 변경됨)",
+      "description": "외부 조건이 변경되어 규칙이 시작된 검증 주기를 판정 없이 중단할 때 실행됩니다(규칙이 억제되거나 비활성화되거나 허브 마스터 스위치가 꺼지거나 조건부 플래그가 더 이상 충족되지 않는 경우).",
+      "fields": {
+        "config_entry_id": {
+          "name": "규칙(모든 규칙에 적용하려면 비워 두기)",
+          "description": "이 트리거를 하나의 규칙으로 제한합니다. 모든 규칙에서 트리거하려면 비워 두세요."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: 규칙이 적용을 억제함(루프 보호)",
+      "description": "규칙이 루프로부터 보호하기 위해 적용을 억제할 때 실행됩니다.",
+      "fields": {
+        "config_entry_id": {
+          "name": "규칙(모든 규칙에 적용하려면 비워 두기)",
+          "description": "이 트리거를 하나의 규칙으로 제한합니다. 모든 규칙에서 트리거하려면 비워 두세요."
+        }
+      }
+    }
   }
 }

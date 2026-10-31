@@ -575,5 +575,77 @@
       "cancelled": "Noteikums pārtrauca pārbaudes ciklu (nosacījums mainījās)",
       "suppressed": "Noteikums apturēja piemērošanu (cilpu aizsardzība)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: noteikums piemēroja mērķi",
+      "description": "Nostrādā, kad noteikums piemēro mērķi (iestata to vēlamajā stāvoklī).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Noteikums (atstājiet tukšu jebkuram noteikumam)",
+          "description": "Ierobežot šo trigeri līdz vienam noteikumam. Atstājiet tukšu, lai nostrādātu jebkuram noteikumam."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: noteikums izlaida piemērošanu",
+      "description": "Nostrādā, kad noteikums izlaiž mērķa piemērošanu.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Noteikums (atstājiet tukšu jebkuram noteikumam)",
+          "description": "Ierobežot šo trigeri līdz vienam noteikumam. Atstājiet tukšu, lai nostrādātu jebkuram noteikumam."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: noteikums konstatēja piemērošanas cilpu",
+      "description": "Nostrādā, kad noteikums konstatē piemērošanas cilpu.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Noteikums (atstājiet tukšu jebkuram noteikumam)",
+          "description": "Ierobežot šo trigeri līdz vienam noteikumam. Atstājiet tukšu, lai nostrādātu jebkuram noteikumam."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: noteikums pārbaudīja, ka mērķis sasniedza vēlamo stāvokli",
+      "description": "Nostrādā, kad noteikums pēc piemērošanas apstiprina, ka mērķis sasniedza vēlamo stāvokli.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Noteikums (atstājiet tukšu jebkuram noteikumam)",
+          "description": "Ierobežot šo trigeri līdz vienam noteikumam. Atstājiet tukšu, lai nostrādātu jebkuram noteikumam."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: noteikums nevarēja panākt, ka mērķis sasniedz vēlamo stāvokli",
+      "description": "Nostrādā, kad noteikums nevar panākt, ka mērķis sasniedz vēlamo stāvokli.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Noteikums (atstājiet tukšu jebkuram noteikumam)",
+          "description": "Ierobežot šo trigeri līdz vienam noteikumam. Atstājiet tukšu, lai nostrādātu jebkuram noteikumam."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: noteikums pārtrauca pārbaudes ciklu (nosacījums mainījās)",
+      "description": "Nostrādā, kad noteikums bez rezultāta pārtrauc sākto pārbaudes ciklu, jo mainījās ārējs nosacījums (noteikums tika apturēts, atspējots, galvenais slēdzis tika izslēgts vai tā nosacījuma karodziņi vairs netiek izpildīti).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Noteikums (atstājiet tukšu jebkuram noteikumam)",
+          "description": "Ierobežot šo trigeri līdz vienam noteikumam. Atstājiet tukšu, lai nostrādātu jebkuram noteikumam."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: noteikums apturēja piemērošanu (cilpu aizsardzība)",
+      "description": "Nostrādā, kad noteikums aptur piemērošanu, lai aizsargātu pret cilpu.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Noteikums (atstājiet tukšu jebkuram noteikumam)",
+          "description": "Ierobežot šo trigeri līdz vienam noteikumam. Atstājiet tukšu, lai nostrādātu jebkuram noteikumam."
+        }
+      }
+    }
   }
 }

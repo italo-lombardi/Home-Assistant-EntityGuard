@@ -575,5 +575,77 @@
       "cancelled": "Rule abandoned a verify cycle (condition changed)",
       "suppressed": "Rule suppressed enforcement (loop protection)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: a rule enforced a target",
+      "description": "Fires when a rule enforces a target (sets it to the desired state).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Rule (leave empty for any rule)",
+          "description": "Limit this trigger to one rule. Leave empty to trigger for any rule."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: a rule skipped enforcement",
+      "description": "Fires when a rule skips enforcing a target.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Rule (leave empty for any rule)",
+          "description": "Limit this trigger to one rule. Leave empty to trigger for any rule."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: a rule detected an enforcement loop",
+      "description": "Fires when a rule detects an enforcement loop.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Rule (leave empty for any rule)",
+          "description": "Limit this trigger to one rule. Leave empty to trigger for any rule."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: a rule verified a target reached the desired state",
+      "description": "Fires when a rule confirms a target reached the desired state after enforcing.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Rule (leave empty for any rule)",
+          "description": "Limit this trigger to one rule. Leave empty to trigger for any rule."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: a rule could not make a target reach the desired state",
+      "description": "Fires when a rule could not make a target reach the desired state.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Rule (leave empty for any rule)",
+          "description": "Limit this trigger to one rule. Leave empty to trigger for any rule."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: a rule abandoned a verify cycle (a condition changed)",
+      "description": "Fires when a rule abandons an armed verify cycle with no verdict because an external condition changed (the rule was suppressed, disabled, the hub master switched off, or its conditional flags lapsed).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Rule (leave empty for any rule)",
+          "description": "Limit this trigger to one rule. Leave empty to trigger for any rule."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: a rule suppressed enforcement (loop protection)",
+      "description": "Fires when a rule suppresses enforcement to protect against a loop.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Rule (leave empty for any rule)",
+          "description": "Limit this trigger to one rule. Leave empty to trigger for any rule."
+        }
+      }
+    }
   }
 }

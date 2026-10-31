@@ -575,5 +575,77 @@
       "cancelled": "Regel heeft een verificatiecyclus afgebroken (voorwaarde gewijzigd)",
       "suppressed": "Regel heeft afdwinging onderdrukt (lusbeveiliging)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: een regel heeft een doel afgedwongen",
+      "description": "Wordt geactiveerd wanneer een regel een doel afdwingt (instelt op de gewenste toestand).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (laat leeg voor elke regel)",
+          "description": "Beperk deze trigger tot één regel. Laat leeg om voor elke regel te triggeren."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: een regel heeft afdwinging overgeslagen",
+      "description": "Wordt geactiveerd wanneer een regel het afdwingen van een doel overslaat.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (laat leeg voor elke regel)",
+          "description": "Beperk deze trigger tot één regel. Laat leeg om voor elke regel te triggeren."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: een regel heeft een afdwingingslus gedetecteerd",
+      "description": "Wordt geactiveerd wanneer een regel een afdwingingslus detecteert.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (laat leeg voor elke regel)",
+          "description": "Beperk deze trigger tot één regel. Laat leeg om voor elke regel te triggeren."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: een regel heeft bevestigd dat een doel de gewenste toestand heeft bereikt",
+      "description": "Wordt geactiveerd wanneer een regel bevestigt dat een doel de gewenste toestand heeft bereikt na het afdwingen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (laat leeg voor elke regel)",
+          "description": "Beperk deze trigger tot één regel. Laat leeg om voor elke regel te triggeren."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: een regel kon een doel de gewenste toestand niet laten bereiken",
+      "description": "Wordt geactiveerd wanneer een regel een doel de gewenste toestand niet kon laten bereiken.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (laat leeg voor elke regel)",
+          "description": "Beperk deze trigger tot één regel. Laat leeg om voor elke regel te triggeren."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: een regel heeft een verificatiecyclus afgebroken (een voorwaarde is gewijzigd)",
+      "description": "Wordt geactiveerd wanneer een regel een begonnen verificatiecyclus zonder uitkomst afbreekt omdat een externe voorwaarde is gewijzigd (de regel is onderdrukt, uitgeschakeld, de hoofdschakelaar is uitgezet of aan de voorwaardelijke vlaggen wordt niet langer voldaan).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (laat leeg voor elke regel)",
+          "description": "Beperk deze trigger tot één regel. Laat leeg om voor elke regel te triggeren."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: een regel heeft afdwinging onderdrukt (lusbeveiliging)",
+      "description": "Wordt geactiveerd wanneer een regel het afdwingen onderdrukt om tegen een lus te beschermen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (laat leeg voor elke regel)",
+          "description": "Beperk deze trigger tot één regel. Laat leeg om voor elke regel te triggeren."
+        }
+      }
+    }
   }
 }

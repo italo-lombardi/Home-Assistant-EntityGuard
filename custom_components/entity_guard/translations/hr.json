@@ -575,5 +575,77 @@
       "cancelled": "Pravilo je napustilo ciklus provjere (uvjet se promijenio)",
       "suppressed": "Pravilo je potisnulo provedbu (zaštita od petlji)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: pravilo je provelo nad ciljem",
+      "description": "Aktivira se kada pravilo provede nad ciljem (postavi ga u željeno stanje).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravilo (ostavite prazno za bilo koje pravilo)",
+          "description": "Ograničite ovaj okidač na jedno pravilo. Ostavite prazno za okidanje za bilo koje pravilo."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: pravilo je preskočilo provedbu",
+      "description": "Aktivira se kada pravilo preskoči provedbu nad ciljem.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravilo (ostavite prazno za bilo koje pravilo)",
+          "description": "Ograničite ovaj okidač na jedno pravilo. Ostavite prazno za okidanje za bilo koje pravilo."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: pravilo je otkrilo petlju provedbe",
+      "description": "Aktivira se kada pravilo otkrije petlju provedbe.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravilo (ostavite prazno za bilo koje pravilo)",
+          "description": "Ograničite ovaj okidač na jedno pravilo. Ostavite prazno za okidanje za bilo koje pravilo."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: pravilo je potvrdilo da je cilj dosegao željeno stanje",
+      "description": "Aktivira se kada pravilo potvrdi da je cilj dosegao željeno stanje nakon provedbe.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravilo (ostavite prazno za bilo koje pravilo)",
+          "description": "Ograničite ovaj okidač na jedno pravilo. Ostavite prazno za okidanje za bilo koje pravilo."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: pravilo nije uspjelo dovesti cilj do željenog stanja",
+      "description": "Aktivira se kada pravilo nije uspjelo dovesti cilj do željenog stanja.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravilo (ostavite prazno za bilo koje pravilo)",
+          "description": "Ograničite ovaj okidač na jedno pravilo. Ostavite prazno za okidanje za bilo koje pravilo."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: pravilo je napustilo ciklus provjere (uvjet se promijenio)",
+      "description": "Aktivira se kada pravilo napusti započeti ciklus provjere bez ishoda jer se promijenio vanjski uvjet (pravilo je potisnuto, onemogućeno, glavni prekidač je isključen ili njegove uvjetne zastavice više nisu ispunjene).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravilo (ostavite prazno za bilo koje pravilo)",
+          "description": "Ograničite ovaj okidač na jedno pravilo. Ostavite prazno za okidanje za bilo koje pravilo."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: pravilo je potisnulo provedbu (zaštita od petlji)",
+      "description": "Aktivira se kada pravilo potisne provedbu radi zaštite od petlje.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravilo (ostavite prazno za bilo koje pravilo)",
+          "description": "Ograničite ovaj okidač na jedno pravilo. Ostavite prazno za okidanje za bilo koje pravilo."
+        }
+      }
+    }
   }
 }

@@ -575,5 +575,77 @@
       "cancelled": "Regel hat eine Überprüfung verworfen (Bedingung geändert)",
       "suppressed": "Regel hat die Durchsetzung unterdrückt (Schleifenschutz)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: Eine Regel hat ein Ziel durchgesetzt",
+      "description": "Wird ausgelöst, wenn eine Regel ein Ziel durchsetzt (es in den gewünschten Zustand versetzt).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (leer lassen für jede Regel)",
+          "description": "Diesen Auslöser auf eine Regel beschränken. Leer lassen, um bei jeder Regel auszulösen."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: Eine Regel hat die Durchsetzung übersprungen",
+      "description": "Wird ausgelöst, wenn eine Regel die Durchsetzung eines Ziels überspringt.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (leer lassen für jede Regel)",
+          "description": "Diesen Auslöser auf eine Regel beschränken. Leer lassen, um bei jeder Regel auszulösen."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: Eine Regel hat eine Durchsetzungsschleife erkannt",
+      "description": "Wird ausgelöst, wenn eine Regel eine Durchsetzungsschleife erkennt.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (leer lassen für jede Regel)",
+          "description": "Diesen Auslöser auf eine Regel beschränken. Leer lassen, um bei jeder Regel auszulösen."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: Eine Regel hat bestätigt, dass ein Ziel den gewünschten Zustand erreicht hat",
+      "description": "Wird ausgelöst, wenn eine Regel bestätigt, dass ein Ziel nach der Durchsetzung den gewünschten Zustand erreicht hat.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (leer lassen für jede Regel)",
+          "description": "Diesen Auslöser auf eine Regel beschränken. Leer lassen, um bei jeder Regel auszulösen."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: Eine Regel konnte ein Ziel nicht in den gewünschten Zustand bringen",
+      "description": "Wird ausgelöst, wenn eine Regel ein Ziel nicht in den gewünschten Zustand bringen konnte.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (leer lassen für jede Regel)",
+          "description": "Diesen Auslöser auf eine Regel beschränken. Leer lassen, um bei jeder Regel auszulösen."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: Eine Regel hat eine Überprüfung abgebrochen (eine Bedingung hat sich geändert)",
+      "description": "Wird ausgelöst, wenn eine Regel eine begonnene Überprüfung ohne Ergebnis abbricht, weil sich eine externe Bedingung geändert hat (die Regel wurde unterdrückt, deaktiviert, der Hauptschalter wurde ausgeschaltet oder ihre bedingten Flags sind nicht mehr erfüllt).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (leer lassen für jede Regel)",
+          "description": "Diesen Auslöser auf eine Regel beschränken. Leer lassen, um bei jeder Regel auszulösen."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: Eine Regel hat die Durchsetzung unterdrückt (Schleifenschutz)",
+      "description": "Wird ausgelöst, wenn eine Regel die Durchsetzung unterdrückt, um vor einer Schleife zu schützen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (leer lassen für jede Regel)",
+          "description": "Diesen Auslöser auf eine Regel beschränken. Leer lassen, um bei jeder Regel auszulösen."
+        }
+      }
+    }
   }
 }

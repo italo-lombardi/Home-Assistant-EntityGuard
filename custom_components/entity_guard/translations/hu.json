@@ -575,5 +575,77 @@
       "cancelled": "A szabály elvetett egy ellenőrzési ciklust (megváltozott egy feltétel)",
       "suppressed": "A szabály elnyomta a kényszerítést (hurokvédelem)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: egy szabály kényszerített egy célt",
+      "description": "Akkor aktiválódik, amikor egy szabály kényszerít egy célt (a kívánt állapotba állítja).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Szabály (hagyja üresen bármely szabályhoz)",
+          "description": "Korlátozza ezt a triggert egy szabályra. Hagyja üresen, hogy bármely szabály esetén aktiválódjon."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: egy szabály kihagyta a kényszerítést",
+      "description": "Akkor aktiválódik, amikor egy szabály kihagyja egy cél kényszerítését.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Szabály (hagyja üresen bármely szabályhoz)",
+          "description": "Korlátozza ezt a triggert egy szabályra. Hagyja üresen, hogy bármely szabály esetén aktiválódjon."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: egy szabály kényszerítési hurkot észlelt",
+      "description": "Akkor aktiválódik, amikor egy szabály kényszerítési hurkot észlel.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Szabály (hagyja üresen bármely szabályhoz)",
+          "description": "Korlátozza ezt a triggert egy szabályra. Hagyja üresen, hogy bármely szabály esetén aktiválódjon."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: egy szabály ellenőrizte, hogy egy cél elérte a kívánt állapotot",
+      "description": "Akkor aktiválódik, amikor egy szabály megerősíti, hogy egy cél a kényszerítés után elérte a kívánt állapotot.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Szabály (hagyja üresen bármely szabályhoz)",
+          "description": "Korlátozza ezt a triggert egy szabályra. Hagyja üresen, hogy bármely szabály esetén aktiválódjon."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: egy szabály nem tudta a célt a kívánt állapotba kényszeríteni",
+      "description": "Akkor aktiválódik, amikor egy szabály nem tudta a célt a kívánt állapotba kényszeríteni.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Szabály (hagyja üresen bármely szabályhoz)",
+          "description": "Korlátozza ezt a triggert egy szabályra. Hagyja üresen, hogy bármely szabály esetén aktiválódjon."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: egy szabály elvetett egy ellenőrzési ciklust (megváltozott egy feltétel)",
+      "description": "Akkor aktiválódik, amikor egy szabály eredmény nélkül elvet egy megkezdett ellenőrzési ciklust, mert egy külső feltétel megváltozott (a szabályt elnyomták, letiltották, a főkapcsolót kikapcsolták, vagy a feltételes jelzői már nem teljesülnek).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Szabály (hagyja üresen bármely szabályhoz)",
+          "description": "Korlátozza ezt a triggert egy szabályra. Hagyja üresen, hogy bármely szabály esetén aktiválódjon."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: egy szabály elnyomta a kényszerítést (hurokvédelem)",
+      "description": "Akkor aktiválódik, amikor egy szabály elnyomja a kényszerítést a hurok elleni védelem érdekében.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Szabály (hagyja üresen bármely szabályhoz)",
+          "description": "Korlátozza ezt a triggert egy szabályra. Hagyja üresen, hogy bármely szabály esetén aktiválódjon."
+        }
+      }
+    }
   }
 }

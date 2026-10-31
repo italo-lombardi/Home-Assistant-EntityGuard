@@ -575,5 +575,77 @@
       "cancelled": "Regra abandonou um ciclo de verificação (a condição mudou)",
       "suppressed": "Regra suprimiu a aplicação (proteção contra ciclos)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: uma regra aplicou a um alvo",
+      "description": "Dispara quando uma regra aplica a um alvo (define-o para o estado pretendido).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regra (deixe vazio para qualquer regra)",
+          "description": "Limite este acionador a uma regra. Deixe vazio para acionar para qualquer regra."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: uma regra ignorou a aplicação",
+      "description": "Dispara quando uma regra ignora a aplicação a um alvo.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regra (deixe vazio para qualquer regra)",
+          "description": "Limite este acionador a uma regra. Deixe vazio para acionar para qualquer regra."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: uma regra detetou um ciclo de aplicação",
+      "description": "Dispara quando uma regra deteta um ciclo de aplicação.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regra (deixe vazio para qualquer regra)",
+          "description": "Limite este acionador a uma regra. Deixe vazio para acionar para qualquer regra."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: uma regra verificou que um alvo atingiu o estado pretendido",
+      "description": "Dispara quando uma regra confirma que um alvo atingiu o estado pretendido após a aplicação.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regra (deixe vazio para qualquer regra)",
+          "description": "Limite este acionador a uma regra. Deixe vazio para acionar para qualquer regra."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: uma regra não conseguiu que um alvo atingisse o estado pretendido",
+      "description": "Dispara quando uma regra não conseguiu que um alvo atingisse o estado pretendido.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regra (deixe vazio para qualquer regra)",
+          "description": "Limite este acionador a uma regra. Deixe vazio para acionar para qualquer regra."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: uma regra abandonou um ciclo de verificação (uma condição mudou)",
+      "description": "Dispara quando uma regra abandona um ciclo de verificação iniciado sem veredicto porque uma condição externa mudou (a regra foi suprimida, desativada, o interruptor principal foi desligado ou os seus sinalizadores condicionais já não são cumpridos).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regra (deixe vazio para qualquer regra)",
+          "description": "Limite este acionador a uma regra. Deixe vazio para acionar para qualquer regra."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: uma regra suprimiu a aplicação (proteção contra ciclos)",
+      "description": "Dispara quando uma regra suprime a aplicação para proteger contra um ciclo.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regra (deixe vazio para qualquer regra)",
+          "description": "Limite este acionador a uma regra. Deixe vazio para acionar para qualquer regra."
+        }
+      }
+    }
   }
 }

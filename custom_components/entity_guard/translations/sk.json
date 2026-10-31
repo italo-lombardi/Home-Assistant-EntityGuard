@@ -575,5 +575,77 @@
       "cancelled": "Pravidlo opustilo overovací cyklus (podmienka sa zmenila)",
       "suppressed": "Pravidlo potlačilo vynucovanie (ochrana proti slučkám)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: pravidlo vynútilo cieľ",
+      "description": "Spustí sa, keď pravidlo vynúti cieľ (nastaví ho do požadovaného stavu).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravidlo (ponechajte prázdne pre ľubovoľné pravidlo)",
+          "description": "Obmedziť tento spúšťač na jedno pravidlo. Ponechajte prázdne, aby sa spúšťal pre ľubovoľné pravidlo."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: pravidlo preskočilo vynútenie",
+      "description": "Spustí sa, keď pravidlo preskočí vynútenie cieľa.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravidlo (ponechajte prázdne pre ľubovoľné pravidlo)",
+          "description": "Obmedziť tento spúšťač na jedno pravidlo. Ponechajte prázdne, aby sa spúšťal pre ľubovoľné pravidlo."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: pravidlo zistilo slučku vynucovania",
+      "description": "Spustí sa, keď pravidlo zistí slučku vynucovania.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravidlo (ponechajte prázdne pre ľubovoľné pravidlo)",
+          "description": "Obmedziť tento spúšťač na jedno pravidlo. Ponechajte prázdne, aby sa spúšťal pre ľubovoľné pravidlo."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: pravidlo overilo, že cieľ dosiahol požadovaný stav",
+      "description": "Spustí sa, keď pravidlo overí, že cieľ dosiahol požadovaný stav po vynútení.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravidlo (ponechajte prázdne pre ľubovoľné pravidlo)",
+          "description": "Obmedziť tento spúšťač na jedno pravidlo. Ponechajte prázdne, aby sa spúšťal pre ľubovoľné pravidlo."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: pravidlo nedokázalo dosiahnuť požadovaný stav cieľa",
+      "description": "Spustí sa, keď pravidlo nedokázalo dosiahnuť požadovaný stav cieľa.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravidlo (ponechajte prázdne pre ľubovoľné pravidlo)",
+          "description": "Obmedziť tento spúšťač na jedno pravidlo. Ponechajte prázdne, aby sa spúšťal pre ľubovoľné pravidlo."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: pravidlo opustilo overovací cyklus (podmienka sa zmenila)",
+      "description": "Spustí sa, keď pravidlo bez výsledku opustí začatý overovací cyklus, pretože sa zmenila vonkajšia podmienka (pravidlo bolo potlačené, zakázané, hlavný prepínač bol vypnutý alebo jeho podmienené príznaky už nie sú splnené).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravidlo (ponechajte prázdne pre ľubovoľné pravidlo)",
+          "description": "Obmedziť tento spúšťač na jedno pravidlo. Ponechajte prázdne, aby sa spúšťal pre ľubovoľné pravidlo."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: pravidlo potlačilo vynucovanie (ochrana proti slučkám)",
+      "description": "Spustí sa, keď pravidlo potlačí vynucovanie na ochranu proti slučke.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Pravidlo (ponechajte prázdne pre ľubovoľné pravidlo)",
+          "description": "Obmedziť tento spúšťač na jedno pravidlo. Ponechajte prázdne, aby sa spúšťal pre ľubovoľné pravidlo."
+        }
+      }
+    }
   }
 }

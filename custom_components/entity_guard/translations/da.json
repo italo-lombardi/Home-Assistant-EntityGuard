@@ -575,5 +575,77 @@
       "cancelled": "Reglen afbrød en verificeringscyklus (betingelse ændret)",
       "suppressed": "Reglen undertrykte håndhævelse (løkkebeskyttelse)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: en regel håndhævede et mål",
+      "description": "Udløses, når en regel håndhæver et mål (sætter det til den ønskede tilstand).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (lad stå tom for enhver regel)",
+          "description": "Begræns denne udløser til én regel. Lad stå tom for at udløse for enhver regel."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: en regel sprang håndhævelse over",
+      "description": "Udløses, når en regel springer håndhævelse af et mål over.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (lad stå tom for enhver regel)",
+          "description": "Begræns denne udløser til én regel. Lad stå tom for at udløse for enhver regel."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: en regel registrerede en håndhævelsesløkke",
+      "description": "Udløses, når en regel registrerer en håndhævelsesløkke.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (lad stå tom for enhver regel)",
+          "description": "Begræns denne udløser til én regel. Lad stå tom for at udløse for enhver regel."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: en regel bekræftede, at et mål nåede den ønskede tilstand",
+      "description": "Udløses, når en regel bekræfter, at et mål nåede den ønskede tilstand efter håndhævelse.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (lad stå tom for enhver regel)",
+          "description": "Begræns denne udløser til én regel. Lad stå tom for at udløse for enhver regel."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: en regel kunne ikke få et mål til at nå den ønskede tilstand",
+      "description": "Udløses, når en regel ikke kunne få et mål til at nå den ønskede tilstand.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (lad stå tom for enhver regel)",
+          "description": "Begræns denne udløser til én regel. Lad stå tom for at udløse for enhver regel."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: en regel opgav en verificeringscyklus (en betingelse ændrede sig)",
+      "description": "Udløses, når en regel opgiver en påbegyndt verificeringscyklus uden resultat, fordi en ekstern betingelse ændrede sig (reglen blev undertrykt, deaktiveret, hovedkontakten blev slukket, eller dens betingede flag ikke længere er opfyldt).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (lad stå tom for enhver regel)",
+          "description": "Begræns denne udløser til én regel. Lad stå tom for at udløse for enhver regel."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: en regel undertrykte håndhævelse (løkkebeskyttelse)",
+      "description": "Udløses, når en regel undertrykker håndhævelse for at beskytte mod en løkke.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regel (lad stå tom for enhver regel)",
+          "description": "Begræns denne udløser til én regel. Lad stå tom for at udløse for enhver regel."
+        }
+      }
+    }
   }
 }

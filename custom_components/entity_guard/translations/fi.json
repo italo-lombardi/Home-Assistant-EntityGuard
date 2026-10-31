@@ -575,5 +575,77 @@
       "cancelled": "Varmistus raukesi (ehto muuttui)",
       "suppressed": "Sääntö esti pakotuksen (silmukkasuojaus)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: Sääntö pakotti kohteen",
+      "description": "Laukeaa, kun sääntö pakottaa kohteen (asettaa sen haluttuun tilaan).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Sääntö (jätä tyhjäksi mille tahansa säännölle)",
+          "description": "Rajaa tämä liipaisin yhteen sääntöön. Jätä tyhjäksi laukaistaksesi minkä tahansa säännön kohdalla."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: Sääntö ohitti pakotuksen",
+      "description": "Laukeaa, kun sääntö ohittaa kohteen pakotuksen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Sääntö (jätä tyhjäksi mille tahansa säännölle)",
+          "description": "Rajaa tämä liipaisin yhteen sääntöön. Jätä tyhjäksi laukaistaksesi minkä tahansa säännön kohdalla."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: Sääntö havaitsi valvontasilmukan",
+      "description": "Laukeaa, kun sääntö havaitsee valvontasilmukan.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Sääntö (jätä tyhjäksi mille tahansa säännölle)",
+          "description": "Rajaa tämä liipaisin yhteen sääntöön. Jätä tyhjäksi laukaistaksesi minkä tahansa säännön kohdalla."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: Sääntö varmisti, että kohde saavutti halutun tilan",
+      "description": "Laukeaa, kun sääntö vahvistaa, että kohde saavutti halutun tilan pakotuksen jälkeen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Sääntö (jätä tyhjäksi mille tahansa säännölle)",
+          "description": "Rajaa tämä liipaisin yhteen sääntöön. Jätä tyhjäksi laukaistaksesi minkä tahansa säännön kohdalla."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: Sääntö ei saanut kohdetta saavuttamaan haluttua tilaa",
+      "description": "Laukeaa, kun sääntö ei saanut kohdetta saavuttamaan haluttua tilaa.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Sääntö (jätä tyhjäksi mille tahansa säännölle)",
+          "description": "Rajaa tämä liipaisin yhteen sääntöön. Jätä tyhjäksi laukaistaksesi minkä tahansa säännön kohdalla."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: Sääntö hylkäsi varmistuskierroksen (ehto muuttui)",
+      "description": "Laukeaa, kun sääntö hylkää aloitetun varmistuskierroksen ilman tulosta, koska ulkoinen ehto muuttui (sääntö estettiin, poistettiin käytöstä, pääkytkin sammutettiin tai sen ehdolliset liput eivät enää täyty).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Sääntö (jätä tyhjäksi mille tahansa säännölle)",
+          "description": "Rajaa tämä liipaisin yhteen sääntöön. Jätä tyhjäksi laukaistaksesi minkä tahansa säännön kohdalla."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: Sääntö esti pakotuksen (silmukkasuojaus)",
+      "description": "Laukeaa, kun sääntö estää pakotuksen suojatakseen silmukalta.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Sääntö (jätä tyhjäksi mille tahansa säännölle)",
+          "description": "Rajaa tämä liipaisin yhteen sääntöön. Jätä tyhjäksi laukaistaksesi minkä tahansa säännön kohdalla."
+        }
+      }
+    }
   }
 }

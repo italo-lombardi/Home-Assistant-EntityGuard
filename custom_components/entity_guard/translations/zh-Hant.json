@@ -575,5 +575,77 @@
       "cancelled": "規則已放棄一次驗證循環（條件已改變）",
       "suppressed": "規則已抑制強制執行（迴圈保護）"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard：規則已強制執行目標",
+      "description": "當規則對目標強制執行（將其設定為所需狀態）時觸發。",
+      "fields": {
+        "config_entry_id": {
+          "name": "規則（留空表示任意規則）",
+          "description": "將此觸發器限定為某一條規則。留空則對任意規則觸發。"
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard：規則已略過強制執行",
+      "description": "當規則略過對目標的強制執行時觸發。",
+      "fields": {
+        "config_entry_id": {
+          "name": "規則（留空表示任意規則）",
+          "description": "將此觸發器限定為某一條規則。留空則對任意規則觸發。"
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard：規則偵測到強制執行迴圈",
+      "description": "當規則偵測到強制執行迴圈時觸發。",
+      "fields": {
+        "config_entry_id": {
+          "name": "規則（留空表示任意規則）",
+          "description": "將此觸發器限定為某一條規則。留空則對任意規則觸發。"
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard：規則已確認目標達到所需狀態",
+      "description": "當規則在強制執行後確認目標達到所需狀態時觸發。",
+      "fields": {
+        "config_entry_id": {
+          "name": "規則（留空表示任意規則）",
+          "description": "將此觸發器限定為某一條規則。留空則對任意規則觸發。"
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard：規則無法使目標達到所需狀態",
+      "description": "當規則無法使目標達到所需狀態時觸發。",
+      "fields": {
+        "config_entry_id": {
+          "name": "規則（留空表示任意規則）",
+          "description": "將此觸發器限定為某一條規則。留空則對任意規則觸發。"
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard：規則放棄了一次驗證循環（條件已變更）",
+      "description": "當外部條件發生變更，規則放棄已開始的驗證循環且未得出結論時觸發（規則被抑制、被停用、中樞主開關被關閉，或其條件標誌不再滿足）。",
+      "fields": {
+        "config_entry_id": {
+          "name": "規則（留空表示任意規則）",
+          "description": "將此觸發器限定為某一條規則。留空則對任意規則觸發。"
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard：規則已抑制強制執行（迴圈保護）",
+      "description": "當規則為防止迴圈而抑制強制執行時觸發。",
+      "fields": {
+        "config_entry_id": {
+          "name": "規則（留空表示任意規則）",
+          "description": "將此觸發器限定為某一條規則。留空則對任意規則觸發。"
+        }
+      }
+    }
   }
 }

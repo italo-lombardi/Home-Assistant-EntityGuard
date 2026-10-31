@@ -1,4 +1,27 @@
 {
+  "triggers": {
+    "enforced": {
+      "trigger": "mdi:shield-check"
+    },
+    "skipped": {
+      "trigger": "mdi:shield-off-outline"
+    },
+    "loop_detected": {
+      "trigger": "mdi:sync-alert"
+    },
+    "verified": {
+      "trigger": "mdi:check-decagram"
+    },
+    "unreachable": {
+      "trigger": "mdi:shield-alert"
+    },
+    "cancelled": {
+      "trigger": "mdi:cancel"
+    },
+    "suppressed": {
+      "trigger": "mdi:shield-lock"
+    }
+  },
   "entity": {
     "binary_sensor": {
       "armed": {

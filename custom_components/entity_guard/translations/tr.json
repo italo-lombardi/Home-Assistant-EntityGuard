@@ -575,5 +575,77 @@
       "cancelled": "Kural bir doğrulama döngüsünden vazgeçti (koşul değişti)",
       "suppressed": "Kural uygulamayı bastırdı (döngü koruması)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: bir kural bir hedefte durumu uyguladı",
+      "description": "Bir kural bir hedefte durumu uyguladığında (onu istenen duruma ayarladığında) tetiklenir.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Kural (herhangi bir kural için boş bırakın)",
+          "description": "Bu tetikleyiciyi tek bir kuralla sınırlayın. Herhangi bir kural için tetiklenmesini istiyorsanız boş bırakın."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: bir kural uygulamayı atladı",
+      "description": "Bir kural bir hedefte uygulamayı atladığında tetiklenir.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Kural (herhangi bir kural için boş bırakın)",
+          "description": "Bu tetikleyiciyi tek bir kuralla sınırlayın. Herhangi bir kural için tetiklenmesini istiyorsanız boş bırakın."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: bir kural bir uygulama döngüsü algıladı",
+      "description": "Bir kural bir uygulama döngüsü algıladığında tetiklenir.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Kural (herhangi bir kural için boş bırakın)",
+          "description": "Bu tetikleyiciyi tek bir kuralla sınırlayın. Herhangi bir kural için tetiklenmesini istiyorsanız boş bırakın."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: bir kural bir hedefin istenen duruma ulaştığını doğruladı",
+      "description": "Bir kural uyguladıktan sonra bir hedefin istenen duruma ulaştığını doğruladığında tetiklenir.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Kural (herhangi bir kural için boş bırakın)",
+          "description": "Bu tetikleyiciyi tek bir kuralla sınırlayın. Herhangi bir kural için tetiklenmesini istiyorsanız boş bırakın."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: bir kural bir hedefi istenen duruma ulaştıramadı",
+      "description": "Bir kural bir hedefi istenen duruma ulaştıramadığında tetiklenir.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Kural (herhangi bir kural için boş bırakın)",
+          "description": "Bu tetikleyiciyi tek bir kuralla sınırlayın. Herhangi bir kural için tetiklenmesini istiyorsanız boş bırakın."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: bir kural bir doğrulama döngüsünden vazgeçti (bir koşul değişti)",
+      "description": "Bir kural, harici bir koşul değiştiği için başlatılan bir doğrulama döngüsünü sonuç vermeden terk ettiğinde tetiklenir (kural bastırıldı, devre dışı bırakıldı, ana anahtar kapatıldı veya koşullu bayrakları artık karşılanmıyor).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Kural (herhangi bir kural için boş bırakın)",
+          "description": "Bu tetikleyiciyi tek bir kuralla sınırlayın. Herhangi bir kural için tetiklenmesini istiyorsanız boş bırakın."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: bir kural uygulamayı bastırdı (döngü koruması)",
+      "description": "Bir kural bir döngüye karşı korumak için uygulamayı bastırdığında tetiklenir.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Kural (herhangi bir kural için boş bırakın)",
+          "description": "Bu tetikleyiciyi tek bir kuralla sınırlayın. Herhangi bir kural için tetiklenmesini istiyorsanız boş bırakın."
+        }
+      }
+    }
   }
 }

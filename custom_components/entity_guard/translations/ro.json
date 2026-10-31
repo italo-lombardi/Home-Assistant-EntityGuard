@@ -575,5 +575,77 @@
       "cancelled": "Regula a abandonat o verificare (condiția s-a schimbat)",
       "suppressed": "Regula a suprimat impunerea (protecție împotriva buclelor)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: o regulă a impus o țintă",
+      "description": "Se declanșează când o regulă impune o țintă (o setează la starea dorită).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regulă (lăsați gol pentru orice regulă)",
+          "description": "Limitați acest declanșator la o singură regulă. Lăsați gol pentru a declanșa pentru orice regulă."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: o regulă a omis impunerea",
+      "description": "Se declanșează când o regulă omite impunerea unei ținte.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regulă (lăsați gol pentru orice regulă)",
+          "description": "Limitați acest declanșator la o singură regulă. Lăsați gol pentru a declanșa pentru orice regulă."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: o regulă a detectat o buclă de impunere",
+      "description": "Se declanșează când o regulă detectează o buclă de impunere.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regulă (lăsați gol pentru orice regulă)",
+          "description": "Limitați acest declanșator la o singură regulă. Lăsați gol pentru a declanșa pentru orice regulă."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: o regulă a confirmat că o țintă a ajuns la starea dorită",
+      "description": "Se declanșează când o regulă confirmă că o țintă a ajuns la starea dorită după impunere.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regulă (lăsați gol pentru orice regulă)",
+          "description": "Limitați acest declanșator la o singură regulă. Lăsați gol pentru a declanșa pentru orice regulă."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: o regulă nu a putut aduce o țintă la starea dorită",
+      "description": "Se declanșează când o regulă nu a putut aduce o țintă la starea dorită.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regulă (lăsați gol pentru orice regulă)",
+          "description": "Limitați acest declanșator la o singură regulă. Lăsați gol pentru a declanșa pentru orice regulă."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: o regulă a abandonat un ciclu de verificare (o condiție s-a schimbat)",
+      "description": "Se declanșează când o regulă abandonează un ciclu de verificare început fără verdict deoarece o condiție externă s-a schimbat (regula a fost suprimată, dezactivată, întrerupătorul principal a fost oprit sau indicatoarele sale condiționale nu mai sunt îndeplinite).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regulă (lăsați gol pentru orice regulă)",
+          "description": "Limitați acest declanșator la o singură regulă. Lăsați gol pentru a declanșa pentru orice regulă."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: o regulă a suprimat impunerea (protecție împotriva buclelor)",
+      "description": "Se declanșează când o regulă suprimă impunerea pentru a proteja împotriva unei bucle.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regulă (lăsați gol pentru orice regulă)",
+          "description": "Limitați acest declanșator la o singură regulă. Lăsați gol pentru a declanșa pentru orice regulă."
+        }
+      }
+    }
   }
 }

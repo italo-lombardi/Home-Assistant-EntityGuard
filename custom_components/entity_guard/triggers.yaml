@@ -1,0 +1,26 @@
+# Integration-level triggers for Entity Guard. hassfest descriptor: one
+# underscore_slug key per rule event, each with an optional config_entry_id
+# field that scopes the trigger to a single rule (omit = any rule). Names /
+# descriptions / the field label live in translations/en.json (custom
+# integrations supply strings there, not inline here); icons in icons.json.
+.field_defaults: &config_entry_field
+  config_entry_id:
+    required: false
+    selector:
+      config_entry:
+        integration: entity_guard
+
+enforced:
+  fields: *config_entry_field
+skipped:
+  fields: *config_entry_field
+loop_detected:
+  fields: *config_entry_field
+verified:
+  fields: *config_entry_field
+unreachable:
+  fields: *config_entry_field
+cancelled:
+  fields: *config_entry_field
+suppressed:
+  fields: *config_entry_field

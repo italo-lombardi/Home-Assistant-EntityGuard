@@ -575,5 +575,77 @@
       "cancelled": "La regola ha abbandonato un ciclo di verifica (condizione cambiata)",
       "suppressed": "La regola ha sospeso l'applicazione (protezione anti-loop)"
     }
+  },
+  "triggers": {
+    "enforced": {
+      "name": "Entity Guard: una regola ha applicato una destinazione",
+      "description": "Si attiva quando una regola applica una destinazione (la imposta sullo stato desiderato).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regola (lasciare vuoto per qualsiasi regola)",
+          "description": "Limita questo trigger a una sola regola. Lasciare vuoto per attivare per qualsiasi regola."
+        }
+      }
+    },
+    "skipped": {
+      "name": "Entity Guard: una regola ha saltato l'applicazione",
+      "description": "Si attiva quando una regola salta l'applicazione di una destinazione.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regola (lasciare vuoto per qualsiasi regola)",
+          "description": "Limita questo trigger a una sola regola. Lasciare vuoto per attivare per qualsiasi regola."
+        }
+      }
+    },
+    "loop_detected": {
+      "name": "Entity Guard: una regola ha rilevato un loop di applicazione",
+      "description": "Si attiva quando una regola rileva un loop di applicazione.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regola (lasciare vuoto per qualsiasi regola)",
+          "description": "Limita questo trigger a una sola regola. Lasciare vuoto per attivare per qualsiasi regola."
+        }
+      }
+    },
+    "verified": {
+      "name": "Entity Guard: una regola ha verificato che una destinazione ha raggiunto lo stato desiderato",
+      "description": "Si attiva quando una regola conferma che una destinazione ha raggiunto lo stato desiderato dopo l'applicazione.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regola (lasciare vuoto per qualsiasi regola)",
+          "description": "Limita questo trigger a una sola regola. Lasciare vuoto per attivare per qualsiasi regola."
+        }
+      }
+    },
+    "unreachable": {
+      "name": "Entity Guard: una regola non è riuscita a far raggiungere lo stato desiderato a una destinazione",
+      "description": "Si attiva quando una regola non è riuscita a far raggiungere lo stato desiderato a una destinazione.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regola (lasciare vuoto per qualsiasi regola)",
+          "description": "Limita questo trigger a una sola regola. Lasciare vuoto per attivare per qualsiasi regola."
+        }
+      }
+    },
+    "cancelled": {
+      "name": "Entity Guard: una regola ha abbandonato un ciclo di verifica (una condizione è cambiata)",
+      "description": "Si attiva quando una regola abbandona un ciclo di verifica avviato senza verdetto perché una condizione esterna è cambiata (la regola è stata sospesa, disabilitata, l'interruttore principale è stato spento o i suoi flag condizionali non sono più soddisfatti).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regola (lasciare vuoto per qualsiasi regola)",
+          "description": "Limita questo trigger a una sola regola. Lasciare vuoto per attivare per qualsiasi regola."
+        }
+      }
+    },
+    "suppressed": {
+      "name": "Entity Guard: una regola ha sospeso l'applicazione (protezione anti-loop)",
+      "description": "Si attiva quando una regola sospende l'applicazione per proteggersi da un loop.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Regola (lasciare vuoto per qualsiasi regola)",
+          "description": "Limita questo trigger a una sola regola. Lasciare vuoto per attivare per qualsiasi regola."
+        }
+      }
+    }
   }
 }
