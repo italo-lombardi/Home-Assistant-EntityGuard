@@ -268,15 +268,23 @@ DOMAIN_SERVICE_MAP: dict[str, dict[str, str]] = {
 
 # Mode-style domains: ONE service for the whole domain, the target_state is passed
 # as a DATA KWARG value (e.g. climate heat/cool/auto → climate.set_hvac_mode
-# hvac_mode=<state>). Shape: {domain: (service, kwarg)}. Resolved AFTER
-# DOMAIN_SERVICE_MAP, so a domain can keep a parameterless entry there (climate
-# "off" → climate.turn_off) and fall through to its mode service for every other
-# state. The kwarg value is always the runtime target_state, which is why these
-# can't be baked into the static-payload DOMAIN_SERVICE_MAP.
-DOMAIN_MODE_SERVICE_MAP: dict[str, tuple[str, str]] = {
-    "climate": ("climate.set_hvac_mode", "hvac_mode"),
-    "water_heater": ("water_heater.set_operation_mode", "operation_mode"),
-    "input_select": ("input_select.select_option", "option"),
+# hvac_mode=<state>). Shape: {domain: (service, kwarg, valid_states_attr)}. The
+# 3rd element names the entity-state attribute that lists the states the device
+# will actually accept (climate exposes hvac_modes, water_heater operation_list,
+# input_select options) — the resolver rejects a target_state absent from that
+# list so a doomed set_*_mode call becomes an unsupported_state repair instead of
+# a loud service failure. Resolved AFTER DOMAIN_SERVICE_MAP, so a domain can keep
+# a parameterless entry there (climate "off" → climate.turn_off) and fall through
+# to its mode service for every other state. The kwarg value is always the runtime
+# target_state, which is why these can't be baked into the static DOMAIN_SERVICE_MAP.
+DOMAIN_MODE_SERVICE_MAP: dict[str, tuple[str, str, str]] = {
+    "climate": ("climate.set_hvac_mode", "hvac_mode", "hvac_modes"),
+    "water_heater": (
+        "water_heater.set_operation_mode",
+        "operation_mode",
+        "operation_list",
+    ),
+    "input_select": ("input_select.select_option", "option", "options"),
 }
 
 # Per-domain ACTIONABLE target state values for trigger/target dropdowns. Only

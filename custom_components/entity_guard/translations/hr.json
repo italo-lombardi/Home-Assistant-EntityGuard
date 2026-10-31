@@ -556,6 +556,10 @@
       "title": "Entity Guard još ne može upravljati domenom \"{domain}\"",
       "description": "Pravilo cilja entitet u domeni \"{domain}\" sa stanjem za koje Entity Guard nema mapiranje usluge, pa provedbu u tišini preskače. Entity Guard zna upravljati samo domenama za koje isporučuje mapiranje. Kliknite \"Saznajte više\" za otvaranje kratkog GitHub obrasca (domena je već ispunjena) kako bi se podrška za \"{domain}\" mogla dodati u budućem izdanju."
     },
+    "unsupported_state": {
+      "title": "Entity Guard ne može postaviti \"{domain}\" na \"{state}\"",
+      "description": "Pravilo želi dovesti entitet u domeni \"{domain}\" u stanje \"{state}\", ali Entity Guard nema mapiranje usluge za to stanje — pa provedbu u tišini preskače. Entity Guard može upravljati domenom \"{domain}\" za svoja poznata stanja, samo ne i za \"{state}\". Možda je riječ o stanju koje bi Entity Guard mogao podržati u budućnosti ili o stanju koje se ne može postaviti izravno (primjerice, stanje samo za čitanje koje uređaj samo dojavljuje). Kliknite \"Saznajte više\" za otvaranje kratkog GitHub obrasca (domena i stanje već su ispunjeni) kako bi se to moglo razmotriti."
+    },
     "flag_entity_missing": {
       "title": "Entitet uvjeta nedostaje u pravilu \"{rule_name}\"",
       "description": "Sljedeći entitet(i) uvjeta više ne postoje, ali se referenciraju u pravilu: {missing_entities}. Pravilo se neće provoditi kada te uvjete nije moguće procijeniti. Ažurirajte ili uklonite pravilo da biste riješili ovaj problem."

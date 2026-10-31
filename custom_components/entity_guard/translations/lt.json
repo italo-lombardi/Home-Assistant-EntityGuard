@@ -556,6 +556,10 @@
       "title": "Entity Guard dar negali valdyti srities „{domain}“",
       "description": "Taisyklė taikoma esybei, esančiai srityje „{domain}“, kurios būsenai Entity Guard neturi paslaugų priskyrimo, todėl ją tyliai praleidžia ir netaiko. Entity Guard moka valdyti tik tas sritis, kurioms pristatomas priskyrimas. Spustelėkite „Sužinoti daugiau“, kad atvertumėte trumpą GitHub formą (sritis jau įrašyta), kad srities „{domain}“ palaikymą būtų galima pridėti būsimoje laidoje."
     },
+    "unsupported_state": {
+      "title": "Entity Guard negali nustatyti srities „{domain}“ būsenos į „{state}“",
+      "description": "Taisyklė nori perjungti srities „{domain}“ esybę į būseną „{state}“, tačiau Entity Guard neturi tai būsenai skirto paslaugų priskyrimo, todėl ją tyliai praleidžia ir netaiko. Entity Guard moka valdyti sritį „{domain}“ jos žinomoms būsenoms, tik ne būsenai „{state}“. Tai gali būti būsena, kurią Entity Guard galėtų palaikyti ateityje, arba tokia, kurios negalima nustatyti tiesiogiai (pavyzdžiui, tik skaitymo būsena, kurią įrenginys vien praneša). Spustelėkite „Sužinoti daugiau“, kad atvertumėte trumpą GitHub formą (sritis ir būsena jau įrašytos), kad ją būtų galima peržiūrėti."
+    },
     "flag_entity_missing": {
       "title": "Sąlygos esybė trūksta taisyklėje „{rule_name}“",
       "description": "Šios sąlygos esybės (-ių) nebeegzistuoja, tačiau į jas nurodoma taisyklėje: {missing_entities}. Taisyklė netaikys, kai šių sąlygų nebus galima įvertinti. Atnaujinkite arba pašalinkite taisyklę, kad išspręstumėte šią problemą."

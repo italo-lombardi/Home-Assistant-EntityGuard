@@ -556,6 +556,10 @@
       "title": "Entity Guard kan endnu ikke styre domænet \"{domain}\"",
       "description": "En regel er rettet mod en entitet i domænet \"{domain}\" med en tilstand, som Entity Guard ikke har nogen tjenestetilknytning til, så den springer stille håndhævelsen over. Entity Guard ved kun, hvordan man styrer de domæner, den leveres med en tilknytning til. Klik på \"Lær mere\" for at åbne en kort GitHub-formular (domænet er udfyldt på forhånd), så understøttelse af \"{domain}\" kan tilføjes i en fremtidig udgivelse."
     },
+    "unsupported_state": {
+      "title": "Entity Guard kan ikke sætte \"{domain}\" til \"{state}\"",
+      "description": "En regel vil bringe en entitet i domænet \"{domain}\" til tilstanden \"{state}\", men Entity Guard har ingen tjenestetilknytning til den tilstand — så den springer stille håndhævelsen over. Entity Guard kan styre \"{domain}\" for sine kendte tilstande, bare ikke \"{state}\". Dette kan være en tilstand, som Entity Guard kunne understøtte i fremtiden, eller en, der ikke kan sættes direkte (for eksempel en skrivebeskyttet tilstand, som enheden kun rapporterer). Klik på \"Lær mere\" for at åbne en kort GitHub-formular (domænet og tilstanden er udfyldt på forhånd), så den kan blive gennemgået."
+    },
     "flag_entity_missing": {
       "title": "Betingelsesentitet mangler i regel \"{rule_name}\"",
       "description": "Følgende betingelsesentitet(er) eksisterer ikke længere, men refereres i reglen: {missing_entities}. Reglen vil ikke gennemtvinges, når disse betingelser ikke kan evalueres. Opdater eller fjern reglen for at løse dette problem."

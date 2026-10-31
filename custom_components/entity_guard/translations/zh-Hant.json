@@ -556,6 +556,10 @@
       "title": "Entity Guard 尚無法控制「{domain}」網域",
       "description": "某條規則以「{domain}」網域中的某個實體為目標，但其狀態在 Entity Guard 中沒有對應的服務映射，因此會在不提示的情況下略過對它的強制執行。Entity Guard 只懂得驅動它內建映射的網域。請按一下「瞭解詳情」以開啟一份簡短的 GitHub 表單（網域已預先填入），以便在未來的版本中新增對「{domain}」的支援。"
     },
+    "unsupported_state": {
+      "title": "Entity Guard 無法將「{domain}」設定為「{state}」",
+      "description": "某條規則想將「{domain}」網域中的某個實體驅動至「{state}」狀態，但 Entity Guard 對該狀態沒有對應的服務映射，因此會在不提示的情況下略過對它的強制執行。Entity Guard 能控制「{domain}」已知的狀態，只是不包含「{state}」。這或許是 Entity Guard 未來可以支援的狀態，也可能是一種無法直接設定的狀態（例如裝置只會回報的唯讀狀態）。請按一下「瞭解詳情」以開啟一份簡短的 GitHub 表單（網域與狀態皆已預先填入），以供審閱。"
+    },
     "flag_entity_missing": {
       "title": "規則「{rule_name}」中的條件實體遺失",
       "description": "下列條件實體已不存在，但仍在規則中被參照：{missing_entities}。當這些條件無法評估時，規則將不會強制執行。請更新或移除規則以解決此問題。"

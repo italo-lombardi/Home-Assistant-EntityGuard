@@ -556,6 +556,10 @@
       "title": "Entity Guard aún no puede controlar el dominio \"{domain}\"",
       "description": "Una regla apunta a una entidad del dominio \"{domain}\" con un estado para el que Entity Guard no tiene asignación de servicio, así que omite su aplicación de forma silenciosa. Entity Guard solo sabe gobernar los dominios para los que incluye una asignación. Haz clic en \"Más información\" para abrir un breve formulario de GitHub (el dominio viene precargado) y así poder añadir compatibilidad con \"{domain}\" en una versión futura."
     },
+    "unsupported_state": {
+      "title": "Entity Guard no puede establecer \"{domain}\" en \"{state}\"",
+      "description": "Una regla quiere llevar una entidad del dominio \"{domain}\" al estado \"{state}\", pero Entity Guard no tiene asignación de servicio para ese estado, así que omite su aplicación de forma silenciosa. Entity Guard sí sabe controlar \"{domain}\" para sus estados conocidos, pero no \"{state}\". Puede que sea un estado que Entity Guard pueda admitir en el futuro, o uno que no se puede establecer directamente (por ejemplo, un estado de solo lectura que el dispositivo únicamente informa). Haz clic en \"Más información\" para abrir un breve formulario de GitHub (el dominio y el estado vienen precargados) y así poder revisarlo."
+    },
     "flag_entity_missing": {
       "title": "Entidad de condición faltante en la regla \"{rule_name}\"",
       "description": "Las siguientes entidades de condición ya no existen pero se hace referencia a ellas en la regla: {missing_entities}. La regla no se aplicará cuando estas condiciones no se puedan evaluar. Actualiza o elimina la regla para resolver este problema."

@@ -725,11 +725,6 @@ class EntityGuardCard extends LitElement {
     const statusEntity = refs.status ? this.hass.states[refs.status] : null;
 
     let label = STATUS_LABELS[status] || status;
-    if (statusEntity && this.hass.formatEntityState) {
-      try {
-        label = this.hass.formatEntityState(statusEntity) || label;
-      } catch (e) {}
-    }
     const enabled = this.hass.states[refs.enabled]?.state === "on";
     const lastError = statusEntity?.attributes?.last_error;
     const consecutiveErrors = statusEntity?.attributes?.consecutive_errors;

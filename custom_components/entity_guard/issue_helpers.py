@@ -22,6 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 ISSUE_FLAG_ENTITY_MISSING = "flag_entity_missing"
 ISSUE_TARGET_ENTITY_MISSING = "target_entity_missing"
 ISSUE_UNSUPPORTED_DOMAIN = "unsupported_domain"
+ISSUE_UNSUPPORTED_STATE = "unsupported_state"
 
 # GitHub issue-form template the "Learn more" link opens (file lives at
 # .github/ISSUE_TEMPLATE/unsupported_domain.yml). Appended to the manifest's
@@ -30,6 +31,12 @@ ISSUE_UNSUPPORTED_DOMAIN = "unsupported_domain"
 # key on the field `id`) so the user doesn't retype what the card already knows.
 _UNSUPPORTED_DOMAIN_TEMPLATE_QUERY = (
     "/new?template=unsupported_domain.yml&labels=enhancement,unsupported-domain"
+)
+
+# Sibling template for the state-level gap (.github/ISSUE_TEMPLATE/unsupported_state.yml).
+# &domain= and &state= prefill the form's `domain` and `state` inputs.
+_UNSUPPORTED_STATE_TEMPLATE_QUERY = (
+    "/new?template=unsupported_state.yml&labels=enhancement,unsupported-state"
 )
 
 
@@ -208,5 +215,57 @@ def async_raise_unsupported_domain(hass: HomeAssistant, domain: str) -> None:
         severity=IssueSeverity.WARNING,
         translation_key=ISSUE_UNSUPPORTED_DOMAIN,
         translation_placeholders={"domain": domain},
+        learn_more_url=learn_more_url,
+    )
+
+
+def unsupported_state_issue_id(domain: str, state: str) -> str:
+    """Return the repair-issue ID for a state Entity Guard cannot drive a domain to.
+
+    Keyed by (domain, state): the domain IS controllable, but this one state has
+    no service mapping (or is absent from the device's valid-state list). One card
+    per (domain, state) pair — expanding support for that state fixes every rule
+    requesting it at once.
+    """
+    return f"{ISSUE_UNSUPPORTED_STATE}_{domain}_{state}"
+
+
+def async_raise_unsupported_state(hass: HomeAssistant, domain: str, state: str) -> None:
+    """Raise a repair issue when a rule wants a state the domain can't be set to.
+
+    Fires from the enforce path's no_service_mapping skip when the domain IS in a
+    service map but this specific state resolves to no service — either a non-on/off
+    state on a plain DOMAIN_SERVICE_MAP domain, or a mode-domain state absent from
+    the device's valid-state attribute (climate hvac_modes etc.). Distinct from
+    async_raise_unsupported_domain: the domain is controllable, only the state is
+    the gap. The "Learn more" link opens a GitHub issue-form prefilled with the
+    domain and the state.
+
+    No self-clear: the same rationale as async_raise_unsupported_domain — a new
+    state mapping lands via a code update + restart, which clears repair issues.
+    """
+    learn_more_url: str | None = None
+    # ponytail: the enforce path only runs while loaded; the guard covers the narrow
+    # enforce-during-teardown/reload window where the lookup would raise. Skip the
+    # link, keep the card.
+    try:
+        issue_tracker = async_get_loaded_integration(hass, DOMAIN).issue_tracker
+    except IntegrationNotLoaded:
+        issue_tracker = None
+    if issue_tracker:
+        learn_more_url = (
+            issue_tracker
+            + _UNSUPPORTED_STATE_TEMPLATE_QUERY
+            + f"&domain={quote(domain)}&state={quote(state)}"
+        )
+
+    async_create_issue(
+        hass,
+        DOMAIN,
+        unsupported_state_issue_id(domain, state),
+        is_fixable=False,
+        severity=IssueSeverity.WARNING,
+        translation_key=ISSUE_UNSUPPORTED_STATE,
+        translation_placeholders={"domain": domain, "state": state},
         learn_more_url=learn_more_url,
     )

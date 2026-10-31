@@ -79,7 +79,10 @@ from .const import (
     signal_master,
     signal_rule_update,
 )
-from .issue_helpers import async_raise_unsupported_domain
+from .issue_helpers import (
+    async_raise_unsupported_domain,
+    async_raise_unsupported_state,
+)
 from .models import RuleConfig, RuleRuntimeState
 from .storage import EntityGuardStore
 
@@ -1517,11 +1520,29 @@ class RuleEngine:
             if service_call is None:
                 self._fire_skipped(entity_id, "no_service_mapping")
                 _LOGGER.debug("No service mapping resolved for %s", entity_id)
-                # Surface a repair issue: the user built a rule on a domain Entity
-                # Guard can't drive (a custom non-on/off state on a domain in neither
-                # service map). Per-domain card with a "report this domain" link —
-                # see async_raise_unsupported_domain.
-                async_raise_unsupported_domain(self._hass, entity_id.split(".", 1)[0])
+                # Surface a repair issue. Two honest cards:
+                #   Card A (unsupported_domain) — the domain is in NEITHER service
+                #     map, so Entity Guard can't drive it at all.
+                #   Card B (unsupported_state) — the domain IS mapped, but this
+                #     specific state has no mapping / isn't in the device's valid
+                #     set (climate→"banana"). Entity Guard controls the domain, just
+                #     not this state.
+                # Only the state modes can produce a state-level miss; attribute
+                # modes resolve via _resolve_attribute_service (dead-defensive) and
+                # carry no meaningful state string → always Card A.
+                domain = entity_id.split(".", 1)[0]
+                if self._config.mode == MODE_FIXED_STATE:
+                    bad_state: str | None = self._config.target_state
+                elif self._config.mode == MODE_DYNAMIC_STATE:
+                    bad_state = state_override
+                else:
+                    bad_state = None
+                if bad_state is not None and (
+                    domain in DOMAIN_SERVICE_MAP or domain in DOMAIN_MODE_SERVICE_MAP
+                ):
+                    async_raise_unsupported_state(self._hass, domain, bad_state)
+                else:
+                    async_raise_unsupported_domain(self._hass, domain)
                 self._set_status(self._derive_armed_or_cooldown(now))
                 return
 
@@ -2027,10 +2048,19 @@ class RuleEngine:
 
         # Mode-style domain (climate/water_heater/input_select): one service for the
         # whole domain, the non-on/off target_state passed as a data kwarg
-        # (climate heat/cool/… → climate.set_hvac_mode hvac_mode=<state>).
+        # (climate heat/cool/… → climate.set_hvac_mode hvac_mode=<state>). Reject a
+        # state the device won't accept (absent from its valid-states attribute, e.g.
+        # climate hvac_modes) so a doomed set_*_mode call becomes an unsupported_state
+        # repair (return None → no_service_mapping → Card B) instead of a loud failure.
         mode_service = DOMAIN_MODE_SERVICE_MAP.get(domain)
         if mode_service is not None:
-            full, kwarg = mode_service
+            full, kwarg, valid_attr = mode_service
+            st = self._hass.states.get(entity_id)
+            valid = st.attributes.get(valid_attr) if st else None
+            # ponytail: reject ONLY when the valid set is known; a missing attr
+            # (offline/unavailable target) → let through, the device/HA judges.
+            if valid is not None and target_state not in valid:
+                return None
             svc_domain, svc_name = full.split(".", 1)
             return svc_domain, svc_name, {"entity_id": entity_id, kwarg: target_state}
 
@@ -2170,7 +2200,20 @@ class RuleEngine:
             user_id,
             disabled,
         )
+        # Restart semantics (latest-wins): bump the generation and capture it. A
+        # second press over a multi-target rule would otherwise interleave with this
+        # pass at the per-rule reentrance_lock (two loop coroutines, double commands,
+        # status flicker). The loop-top check below bails this pass as soon as a newer
+        # press supersedes it. Cooperative, NOT Task.cancel — avoids the enforce
+        # cancel-race (PR #70).
+        self._state.force_generation += 1
+        my_gen = self._state.force_generation
         for entity_id in self._config.target_entities:
+            # Superseded by a newer press → abandon the rest of this pass. Must sit
+            # BEFORE _enforce: _enforce acquires the per-rule reentrance_lock and
+            # would block here behind the winning pass otherwise.
+            if self._state.force_generation != my_gen:
+                return
             await self._enforce(
                 entity_id, user_id=user_id, bypass_rate_limit=True, forced=True
             )
@@ -2179,8 +2222,11 @@ class RuleEngine:
                 # intermediate ENFORCING/ARMED/COOLDOWN transitions never
                 # appear in HA history for a rule that should be inactive.
                 self._apply_idle_status()
-        # _schedule_suppression_timer self-cancels any prior handle before arming.
-        self._schedule_suppression_timer()
+        # Only the winning pass re-arms the suppression timer; a superseded pass must
+        # not stomp the winner's handle. _schedule_suppression_timer self-cancels any
+        # prior handle before arming.
+        if self._state.force_generation == my_gen:
+            self._schedule_suppression_timer()
 
     async def async_reset_cooldowns(self) -> None:
         """Clear all per-entity cooldowns immediately.

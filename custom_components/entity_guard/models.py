@@ -169,6 +169,11 @@ class RuleRuntimeState:
     # Successful enforcements since entering STATUS_ERROR. Transient: not persisted —
     # ERROR is sticky until recovery, and after a restart the rule re-enters fresh state.
     consecutive_success_count: int = 0
+    # Manual test-enforce generation counter (restart semantics). Each test-enforce
+    # press bumps it; a running test-enforce pass captures the value at entry and bails
+    # at the next loop iteration once a newer press has superseded it (latest-wins).
+    # Transient: resets to 0 on reload, which tears down any in-flight pass anyway.
+    force_generation: int = 0
     # Who/what triggered the last enforcement. user_id is set when a UI user caused the
     # triggering state change; None means an automation, script, or integration did it.
     # last_triggered_entity is the target entity that was enforced last.

@@ -556,6 +556,10 @@
       "title": "Entity Guard can't control the \"{domain}\" domain yet",
       "description": "A rule targets an entity in the \"{domain}\" domain with a state Entity Guard has no service mapping for, so it silently skips enforcing it. Entity Guard only knows how to drive the domains it ships a mapping for. Click \"Learn more\" to open a short GitHub form (the domain is pre-filled) so support for \"{domain}\" can be added in a future release."
     },
+    "unsupported_state": {
+      "title": "Entity Guard can't set \"{domain}\" to \"{state}\"",
+      "description": "A rule wants to drive an entity in the \"{domain}\" domain to the state \"{state}\", but Entity Guard has no service mapping for that state — so it silently skips enforcing it. Entity Guard can control \"{domain}\" for its known states, just not \"{state}\". This may be a state Entity Guard could support in future, or one that can't be set directly (for example, a read-only state the device only reports). Click \"Learn more\" to open a short GitHub form (the domain and state are pre-filled) so it can be reviewed."
+    },
     "flag_entity_missing": {
       "title": "Condition entity missing in rule \"{rule_name}\"",
       "description": "The following condition entity/entities no longer exist but are referenced in the rule: {missing_entities}. The rule will not enforce when these conditions cannot be evaluated. Update or remove the rule to resolve this issue."

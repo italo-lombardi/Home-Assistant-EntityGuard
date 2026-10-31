@@ -556,6 +556,10 @@
       "title": "Entity Guard kann die Domain \"{domain}\" noch nicht steuern",
       "description": "Eine Regel zielt auf eine Entität in der Domain \"{domain}\" mit einem Status, für den Entity Guard keine Service-Zuordnung hat, sodass die Durchsetzung stillschweigend übersprungen wird. Entity Guard kann nur die Domains steuern, für die eine Zuordnung mitgeliefert wird. Klicke auf \"Mehr erfahren\", um ein kurzes GitHub-Formular zu öffnen (die Domain ist bereits vorausgefüllt), damit die Unterstützung für \"{domain}\" in einer künftigen Version hinzugefügt werden kann."
     },
+    "unsupported_state": {
+      "title": "Entity Guard kann \"{domain}\" nicht auf \"{state}\" setzen",
+      "description": "Eine Regel möchte eine Entität in der Domain \"{domain}\" in den Status \"{state}\" versetzen, aber Entity Guard hat für diesen Status keine Service-Zuordnung – daher wird die Durchsetzung stillschweigend übersprungen. Entity Guard kann \"{domain}\" für seine bekannten Status steuern, nur eben nicht \"{state}\". Dies ist möglicherweise ein Status, den Entity Guard künftig unterstützen könnte, oder einer, der sich nicht direkt setzen lässt (zum Beispiel ein schreibgeschützter Status, den das Gerät nur meldet). Klicke auf \"Mehr erfahren\", um ein kurzes GitHub-Formular zu öffnen (Domain und Status sind bereits vorausgefüllt), damit es geprüft werden kann."
+    },
     "flag_entity_missing": {
       "title": "Bedingungs-Entität fehlt in Regel \"{rule_name}\"",
       "description": "Die folgenden Bedingungs-Entitäten existieren nicht mehr, werden aber in der Regel referenziert: {missing_entities}. Die Regel wird nicht durchgesetzt, wenn diese Bedingungen nicht ausgewertet werden können. Aktualisiere oder entferne die Regel, um dieses Problem zu beheben."

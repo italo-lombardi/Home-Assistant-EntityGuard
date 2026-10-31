@@ -1621,6 +1621,56 @@ async def test_async_test_enforce(hass: HomeAssistant):
     assert len(called) == 1
 
 
+async def test_async_test_enforce_restart_supersedes_in_flight(hass: HomeAssistant):
+    """A newer test-enforce press supersedes an in-flight pass (latest-wins).
+
+    Multi-target rule: once the generation is bumped by a second press, the
+    running pass bails at its next loop-top check instead of enforcing the rest
+    of its targets.
+    """
+    config = _make_config(
+        target_state="off",
+        target_entities=["light.a", "light.b", "light.c"],
+    )
+    engine = _make_engine(hass, config)
+    hass.states.async_set("light.a", "on")
+    hass.states.async_set("light.b", "on")
+    hass.states.async_set("light.c", "on")
+
+    enforced: list[str] = []
+
+    async def _fake_enforce(entity_id, **_kwargs):
+        enforced.append(entity_id)
+        # Simulate a second button press landing while the first target is being
+        # enforced: bump the generation so this pass is now superseded.
+        engine.state.force_generation += 1
+
+    with patch.object(engine, "_enforce", side_effect=_fake_enforce):
+        await engine.async_test_enforce()
+
+    # Only the first target ran; the loop-top supersede check bailed before b/c.
+    assert enforced == ["light.a"]
+
+
+async def test_async_test_enforce_full_pass_when_not_superseded(hass: HomeAssistant):
+    """With no superseding press, a pass enforces every target."""
+    config = _make_config(
+        target_state="off",
+        target_entities=["light.a", "light.b", "light.c"],
+    )
+    engine = _make_engine(hass, config)
+
+    enforced: list[str] = []
+
+    async def _fake_enforce(entity_id, **_kwargs):
+        enforced.append(entity_id)
+
+    with patch.object(engine, "_enforce", side_effect=_fake_enforce):
+        await engine.async_test_enforce()
+
+    assert enforced == ["light.a", "light.b", "light.c"]
+
+
 # ---------------------------------------------------------------------------
 # loop protection
 # ---------------------------------------------------------------------------
@@ -2128,7 +2178,11 @@ async def test_enforce_service_call_failure_skips(hass: HomeAssistant):
 
 async def test_enforce_no_service_mapping_fires_skipped(hass: HomeAssistant):
     config = _make_config(
-        target_state="cooking",  # unmapped state on unmapped domain
+        # vacuum IS in DOMAIN_SERVICE_MAP, "cooking" is not one of its mapped
+        # states → a state-level miss (Card B), not a domain miss. We only assert
+        # the enforcement was skipped here; the card discrimination is covered by
+        # the dedicated Card A / Card B tests below.
+        target_state="cooking",
         target_entities=["vacuum.robo"],
         trigger_states=["on"],
     )
@@ -2140,6 +2194,196 @@ async def test_enforce_no_service_mapping_fires_skipped(hass: HomeAssistant):
     hass.bus.async_listen("entity_guard_skipped", lambda e: events_fired.append(e))
     await engine.async_evaluate("vacuum.robo", st)
     assert engine.state.enforcement_count_total == 0
+
+
+# ---------------------------------------------------------------------------
+# _enforce: no service mapping raises the right repair card (A=domain, B=state)
+# ---------------------------------------------------------------------------
+
+
+async def test_no_service_mapping_raises_card_a_for_unmapped_domain(
+    hass: HomeAssistant,
+):
+    """A domain in NEITHER service map → Card A (unsupported_domain), keyed by slug."""
+    from homeassistant.helpers import issue_registry as ir
+
+    # timer is in neither DOMAIN_SERVICE_MAP nor DOMAIN_MODE_SERVICE_MAP.
+    config = _make_config(
+        target_state="paused",
+        target_entities=["timer.kitchen"],
+        trigger_states=["active"],
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("timer.kitchen", "active")
+    st = hass.states.get("timer.kitchen")
+    await engine.async_evaluate("timer.kitchen", st)
+
+    issues = ir.async_get(hass).issues
+    # Card A keyed by the bare domain slug, not the full entity_id.
+    assert ("entity_guard", "unsupported_domain_timer") in issues
+    assert ("entity_guard", "unsupported_state_timer_paused") not in issues
+    assert engine.state.enforcement_count_total == 0
+
+
+async def test_no_service_mapping_raises_card_b_for_mapped_domain_bad_state(
+    hass: HomeAssistant,
+):
+    """A mapped domain + off-map state → Card B (unsupported_state), NOT Card A."""
+    from homeassistant.helpers import issue_registry as ir
+
+    # light IS in DOMAIN_SERVICE_MAP; "sparkle" is not a drivable state for it.
+    config = _make_config(
+        target_state="sparkle",
+        target_entities=["light.bedroom"],
+        trigger_states=["on"],
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("light.bedroom", "on")
+    st = hass.states.get("light.bedroom")
+    await engine.async_evaluate("light.bedroom", st)
+
+    issues = ir.async_get(hass).issues
+    assert ("entity_guard", "unsupported_state_light_sparkle") in issues
+    assert ("entity_guard", "unsupported_domain_light") not in issues
+    assert engine.state.enforcement_count_total == 0
+
+
+async def test_mode_map_rejects_state_absent_from_valid_list_card_b(
+    hass: HomeAssistant,
+):
+    """climate + a state not in hvac_modes → Card B (unsupported_state)."""
+    from homeassistant.helpers import issue_registry as ir
+
+    config = _make_config(
+        target_state="cool",
+        target_entities=["climate.living"],
+        trigger_states=["idle"],
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("climate.living", "idle", {"hvac_modes": ["off", "heat"]})
+    st = hass.states.get("climate.living")
+    await engine.async_evaluate("climate.living", st)
+
+    issues = ir.async_get(hass).issues
+    assert ("entity_guard", "unsupported_state_climate_cool") in issues
+    assert ("entity_guard", "unsupported_domain_climate") not in issues
+    assert engine.state.enforcement_count_total == 0
+
+
+async def test_mode_map_passthrough_state_in_valid_list_no_card(
+    hass: HomeAssistant,
+):
+    """climate + a state IN hvac_modes resolves a service → no repair card."""
+    from homeassistant.helpers import issue_registry as ir
+
+    config = _make_config(
+        target_state="heat",
+        target_entities=["climate.living"],
+        trigger_states=["idle"],
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("climate.living", "idle", {"hvac_modes": ["off", "heat"]})
+    st = hass.states.get("climate.living")
+
+    calls = []
+    hass.services.async_register("climate", "set_hvac_mode", lambda c: calls.append(c))
+    await engine.async_evaluate("climate.living", st)
+
+    issues = ir.async_get(hass).issues
+    assert ("entity_guard", "unsupported_state_climate_heat") not in issues
+    assert ("entity_guard", "unsupported_domain_climate") not in issues
+    # The resolver produced climate.set_hvac_mode hvac_mode=heat.
+    assert len(calls) == 1
+    assert calls[0].data["hvac_mode"] == "heat"
+
+
+async def test_mode_map_missing_valid_attr_lets_through_no_card(
+    hass: HomeAssistant,
+):
+    """climate with no hvac_modes attr (offline) → let through, no card."""
+    from homeassistant.helpers import issue_registry as ir
+
+    config = _make_config(
+        target_state="cool",
+        target_entities=["climate.living"],
+        trigger_states=["idle"],
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    # No hvac_modes attribute at all → valid is None → resolver lets it through.
+    hass.states.async_set("climate.living", "idle")
+    st = hass.states.get("climate.living")
+
+    calls = []
+    hass.services.async_register("climate", "set_hvac_mode", lambda c: calls.append(c))
+    await engine.async_evaluate("climate.living", st)
+
+    issues = ir.async_get(hass).issues
+    assert ("entity_guard", "unsupported_state_climate_cool") not in issues
+    assert ("entity_guard", "unsupported_domain_climate") not in issues
+    # Let-through produced the service call (device/HA judges validity).
+    assert len(calls) == 1
+    assert calls[0].data["hvac_mode"] == "cool"
+
+
+async def test_no_service_mapping_card_b_uses_dynamic_state_override(
+    hass: HomeAssistant,
+):
+    """In dynamic_state the raised card's state comes from state_override, not config.
+
+    state_override is "on"/"off" at runtime and a mapped domain always resolves those
+    via the homeassistant on/off fallback, so this miss can't occur live — the branch
+    is exercised by forcing the resolver to miss, pinning that the dynamic path reads
+    state_override (not config.target_state) when choosing the card's state.
+    """
+    from homeassistant.helpers import issue_registry as ir
+
+    config = _make_config(
+        mode=MODE_DYNAMIC_STATE,
+        source_entity="input_boolean.src",
+        target_entities=["light.bedroom"],
+        delay_seconds=0,
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("input_boolean.src", "on")  # desired_on True → override "on"
+    hass.states.async_set("light.bedroom", "off")
+
+    with patch.object(engine, "_resolve_service", return_value=None):
+        await engine._enforce("light.bedroom")
+
+    issues = ir.async_get(hass).issues
+    # Mapped domain (light) + dynamic override "on" → Card B keyed by the override.
+    assert ("entity_guard", "unsupported_state_light_on") in issues
+    assert ("entity_guard", "unsupported_domain_light") not in issues
+
+
+async def test_no_service_mapping_attribute_mode_is_card_a(hass: HomeAssistant):
+    """Attribute modes carry no state string → always Card A (domain), bad_state None."""
+    from homeassistant.helpers import issue_registry as ir
+
+    from custom_components.entity_guard.const import MODE_FIXED_ATTRIBUTE
+
+    # Unmapped attribute on an unmapped domain → _resolve_attribute_service None.
+    config = _make_config(
+        mode=MODE_FIXED_ATTRIBUTE,
+        attribute="bogus_attr",
+        target_value=5,
+        target_entities=["timer.kitchen"],
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("timer.kitchen", "active")
+
+    await engine._enforce("timer.kitchen")
+
+    issues = ir.async_get(hass).issues
+    assert ("entity_guard", "unsupported_domain_timer") in issues
+    assert ("entity_guard", "unsupported_state_timer_5") not in issues
 
 
 # ---------------------------------------------------------------------------
@@ -6880,7 +7124,9 @@ async def test_recently_enforced_verified_pulses_off_on_re_confirm(
 
     await hass.async_block_till_done()
     assert engine.is_recently_enforced_verified() is True
-    # The pulse-off edge (False) appeared between the two confirms.
+    # The re-confirm pulsed the flag off→on: a False edge appeared between the two
+    # confirms (the rule-update signal fires several times per cycle, so we assert
+    # the pulse-off happened, not an exact dispatch count).
     assert False in edges
 
 
@@ -6959,6 +7205,72 @@ async def test_arm_recently_enforced_unreachable_timer_clears_flag(
     assert captured_cb
     captured_cb[0].target(dt_util.now())
     await hass.async_block_till_done()
+
+
+# ---------------------------------------------------------------------------
+# EVENT_CANCELLED + recently_enforced_cancelled (abandoned-cycle twin)
+# ---------------------------------------------------------------------------
+
+
+async def test_arm_recently_enforced_cancelled_pulse_when_already_on(
+    hass: HomeAssistant,
+):
+    """Re-arming cancelled while already on pulses off→on for rising-edge re-fire."""
+    from unittest.mock import patch
+
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._recently_enforced_cancelled = True
+
+    flag_values = []
+
+    def _capture_send(_hass, _signal):
+        flag_values.append(engine._recently_enforced_cancelled)
+
+    with (
+        patch(
+            "custom_components.entity_guard.rule_engine.async_call_later",
+            side_effect=lambda *_a, **_k: MagicMock(),
+        ),
+        patch(
+            "custom_components.entity_guard.rule_engine.async_dispatcher_send",
+            side_effect=_capture_send,
+        ),
+    ):
+        engine._arm_recently_enforced_cancelled()
+
+    # First dispatch is the pulse-off (flag momentarily False), final state True.
+    assert len(flag_values) >= 1
+    assert flag_values[0] is False
+    assert engine._recently_enforced_cancelled is True
+
+
+async def test_arm_recently_enforced_cancelled_timer_clears_flag(
+    hass: HomeAssistant,
+):
+    """Cancelled timer callback sets the flag False and dispatches."""
+    from unittest.mock import patch
+
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+
+    captured_cb = []
+
+    def _capture_later(_hass, _delay, job):
+        captured_cb.append(job)
+        return MagicMock()
+
+    with patch(
+        "custom_components.entity_guard.rule_engine.async_call_later",
+        side_effect=_capture_later,
+    ):
+        engine._arm_recently_enforced_cancelled()
+        assert engine._recently_enforced_cancelled is True
+
+    assert captured_cb
+    captured_cb[0].target(dt_util.now())
+    await hass.async_block_till_done()
+    assert engine._recently_enforced_cancelled is False
 
 
 async def test_verdict_sensors_mutually_exclusive(hass: HomeAssistant):

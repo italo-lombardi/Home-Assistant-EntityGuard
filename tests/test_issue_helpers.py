@@ -14,10 +14,13 @@ from custom_components.entity_guard.issue_helpers import (
     ISSUE_FLAG_ENTITY_MISSING,
     ISSUE_TARGET_ENTITY_MISSING,
     ISSUE_UNSUPPORTED_DOMAIN,
+    ISSUE_UNSUPPORTED_STATE,
     async_check_missing_flag_entities,
     async_check_missing_target_entities,
     async_raise_unsupported_domain,
+    async_raise_unsupported_state,
     unsupported_domain_issue_id,
+    unsupported_state_issue_id,
 )
 
 
@@ -636,3 +639,95 @@ async def test_raise_unsupported_domain_integration_not_loaded(
     _, kwargs = mock_create.call_args
     assert kwargs.get("learn_more_url") is None
     assert kwargs.get("translation_placeholders", {}).get("domain") == "remote"
+
+
+def test_unsupported_state_issue_id() -> None:
+    assert (
+        unsupported_state_issue_id("climate", "cool")
+        == "unsupported_state_climate_cool"
+    )
+
+
+async def test_raise_unsupported_state_creates_issue(hass: HomeAssistant) -> None:
+    integration = type("I", (), {"issue_tracker": "https://example.test/x/issues"})()
+    with (
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_create_issue"
+        ) as mock_create,
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_get_loaded_integration",
+            return_value=integration,
+        ),
+    ):
+        async_raise_unsupported_state(hass, "climate", "cool")
+
+    mock_create.assert_called_once()
+    args, kwargs = mock_create.call_args
+    issue_id = kwargs.get("issue_id") or args[2]
+    assert issue_id == "unsupported_state_climate_cool"
+    assert kwargs.get("translation_key") == ISSUE_UNSUPPORTED_STATE
+    placeholders = kwargs.get("translation_placeholders", {})
+    assert placeholders.get("domain") == "climate"
+    assert placeholders.get("state") == "cool"
+    # Learn-more link prefills BOTH the domain and the state inputs.
+    assert kwargs.get("learn_more_url") == (
+        "https://example.test/x/issues"
+        "/new?template=unsupported_state.yml&labels=enhancement,unsupported-state"
+        "&domain=climate&state=cool"
+    )
+
+
+async def test_raise_unsupported_state_prefill_is_url_encoded(
+    hass: HomeAssistant,
+) -> None:
+    # Both prefill values are URL-quoted so an unsafe char can't break the query.
+    integration = type("I", (), {"issue_tracker": "https://example.test/x/issues"})()
+    with (
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_create_issue"
+        ) as mock_create,
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_get_loaded_integration",
+            return_value=integration,
+        ),
+    ):
+        async_raise_unsupported_state(hass, "climate", "a b/c")
+
+    _, kwargs = mock_create.call_args
+    assert kwargs.get("learn_more_url", "").endswith("&domain=climate&state=a%20b/c")
+
+
+async def test_raise_unsupported_state_no_issue_tracker(hass: HomeAssistant) -> None:
+    integration = type("I", (), {"issue_tracker": None})()
+    with (
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_create_issue"
+        ) as mock_create,
+        patch(
+            "custom_components.entity_guard.issue_helpers.async_get_loaded_integration",
+            return_value=integration,
+        ),
+    ):
+        async_raise_unsupported_state(hass, "climate", "cool")
+
+    mock_create.assert_called_once()
+    _, kwargs = mock_create.call_args
+    assert kwargs.get("learn_more_url") is None
+
+
+async def test_raise_unsupported_state_integration_not_loaded(
+    hass: HomeAssistant,
+) -> None:
+    # Enforce-during-teardown: lookup raises IntegrationNotLoaded. Card still fires,
+    # learn_more_url dropped.
+    with patch(
+        "custom_components.entity_guard.issue_helpers.async_create_issue"
+    ) as mock_create:
+        async_raise_unsupported_state(hass, "climate", "cool")
+
+    mock_create.assert_called_once()
+    _, kwargs = mock_create.call_args
+    assert kwargs.get("learn_more_url") is None
+    placeholders = kwargs.get("translation_placeholders", {})
+    assert placeholders.get("domain") == "climate"
+    assert placeholders.get("state") == "cool"
