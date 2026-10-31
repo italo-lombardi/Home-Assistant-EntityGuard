@@ -166,7 +166,7 @@
       "invalid_rate": "Maks. håndhævelser i minuttet skal være et helt tal mellem 1 og 600.",
       "target_in_triggers": "Måltilstand kan ikke også være en udløsertilstand — det ville skabe en håndhævelsesløkke.",
       "forbidden_state": "Tilstandene 'unavailable', 'unknown' og 'none' kan ikke bruges som udløsere eller mål.",
-      "incomplete_flag": "Både flag-entitet og krævet tilstand skal angives.",
+      "incomplete_flag": "Både betingelsesentitet og krævet tilstand skal angives.",
       "safety_not_acknowledged": "Du skal anerkende sikkerhedsrisikoen for at fortsætte.",
       "name_already_exists": "Der findes allerede en regel med dette navn.",
       "invalid_rgb_color": "RGB-farve skal være en liste med tre værdier mellem 0 og 255.",
@@ -192,7 +192,7 @@
           "edit_basics": "Rediger navn",
           "edit_mode": "Rediger mode-specifikke indstillinger",
           "edit_entities": "Tilføj eller fjern målentiteter",
-          "edit_flags": "Rediger flag-betingelser",
+          "edit_flags": "Rediger betingelser",
           "edit_advanced": "Rediger verificering, debounce og hastighedsgrænse"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "Rediger flag-betingelser",
-        "description": "Aktuelle flag: {summary}\n\n{current_state}. Vælg 'tilføj' for at tilføje, 'erstat' for at erstattet alle, 'ryd' for at fjerne alle eller 'gem' for at lade være uændret.",
+        "title": "Rediger betingelser",
+        "description": "Aktuelle betingelser: {summary}\n\n{current_state}. Vælg 'tilføj' for at tilføje, 'erstat' for at erstattet alle, 'ryd' for at fjerne alle eller 'gem' for at lade være uændret.",
         "data": {
-          "entity": "Flag-entitet",
+          "entity": "Betingelsesentitet",
           "match_state": "Krævet tilstand",
           "action": "Handling"
         }
@@ -321,7 +321,7 @@
       "invalid_rate": "Maks. håndhævelser i minuttet skal være et helt tal mellem 1 og 600.",
       "target_in_triggers": "Måltilstand kan ikke også være en udløsertilstand — det ville skabe en håndhævelsesløkke.",
       "forbidden_state": "Tilstandene 'unavailable', 'unknown' og 'none' kan ikke bruges som udløsere eller mål.",
-      "incomplete_flag": "Både flag-entitet og krævet tilstand skal angives.",
+      "incomplete_flag": "Både betingelsesentitet og krævet tilstand skal angives.",
       "safety_not_acknowledged": "Du skal anerkende sikkerhedsrisikoen for at fortsætte.",
       "name_already_exists": "Der findes allerede en regel med dette navn.",
       "invalid_rgb_color": "RGB-farve skal være en liste med tre værdier mellem 0 og 255.",
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "Afslut uden ændringer",
-        "add": "Tilføj flag",
-        "replace": "Erstat alle flag",
-        "clear": "Ryd alle flag"
+        "add": "Tilføj betingelse",
+        "replace": "Erstat alle betingelser",
+        "clear": "Ryd alle betingelser"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Flag-entitet mangler i regel \"{rule_name}\"",
-      "description": "Følgende flag-entitet/enheder eksisterer ikke længere, men refereres i reglen: {missing_entities}. Reglen vil ikke gennemtvinges, når disse flag ikke kan evalueres. Opdater eller fjern reglen for at løse dette problem."
+      "title": "Betingelsesentitet mangler i regel \"{rule_name}\"",
+      "description": "Følgende betingelsesentitet(er) eksisterer ikke længere, men refereres i reglen: {missing_entities}. Reglen vil ikke gennemtvinges, når disse betingelser ikke kan evalueres. Opdater eller fjern reglen for at løse dette problem."
     },
     "migrated_follow_no_source": {
       "title": "Migreret regel \"{rule}\" mangler en kildeentitet",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: en regel opgav en verificeringscyklus (en betingelse ændrede sig)",
-      "description": "Udløses, når en regel opgiver en påbegyndt verificeringscyklus uden resultat, fordi en ekstern betingelse ændrede sig (reglen blev undertrykt, deaktiveret, hovedkontakten blev slukket, eller dens betingede flag ikke længere er opfyldt).",
+      "description": "Udløses, når en regel opgiver en påbegyndt verificeringscyklus uden resultat, fordi en ekstern betingelse ændrede sig (reglen blev undertrykt, deaktiveret, hovedkontakten blev slukket, eller dens betingelser ikke længere er opfyldt).",
       "fields": {
         "config_entry_id": {
           "name": "Regel (lad stå tom for enhver regel)",

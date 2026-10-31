@@ -9,6 +9,7 @@
 ### Changed
 
 - **BREAKING: minimum Home Assistant raised to 2026.7.0** (HACS floor was `2024.1.0`). Required for the single-generation integration-trigger API with no version shims. HACS will not offer the update on cores older than 2026.7.0 until Home Assistant is upgraded.
+- **Unified the "conditions" wording across the UI.** The optional per-rule gate was shown under two names — the config-flow entry called it "Conditions" while the edit menu, flag-action options, missing-entity issue, and cancelled-trigger description leaked the internal term "flag"/"flags" ("Edit flag conditions", "Add flag", "Flag entity missing"). Every user-facing occurrence now reads "conditions", in English and all 28 translated locales (each aligned to its own native term — de *Bedingungen*, fr *conditions*, ja *条件*, …). Strings only; no code or behavior change.
 
 ### Fixed
 

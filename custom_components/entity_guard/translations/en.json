@@ -166,7 +166,7 @@
       "invalid_rate": "Max enforcements per minute must be a whole number between 1 and 600.",
       "target_in_triggers": "Target state cannot also be a trigger state — that would create an enforcement loop.",
       "forbidden_state": "States 'unavailable', 'unknown', and 'none' cannot be used as triggers or targets.",
-      "incomplete_flag": "Both flag entity and required state must be set.",
+      "incomplete_flag": "Both condition entity and required state must be set.",
       "safety_not_acknowledged": "You must acknowledge the safety risk to continue.",
       "name_already_exists": "A rule with this name already exists.",
       "invalid_rgb_color": "RGB color must be a list of three values between 0 and 255.",
@@ -192,7 +192,7 @@
           "edit_basics": "Edit name",
           "edit_mode": "Edit mode-specific settings",
           "edit_entities": "Add or remove target entities",
-          "edit_flags": "Edit flag conditions",
+          "edit_flags": "Edit conditions",
           "edit_advanced": "Edit verify, debounce and rate limit"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "Edit flag conditions",
-        "description": "Current flags: {summary}.\n\n{current_state}\n\nChoose 'add' to append, 'replace' to replace all, 'clear' to remove all, or 'save' to leave unchanged.",
+        "title": "Edit conditions",
+        "description": "Current conditions: {summary}.\n\n{current_state}\n\nChoose 'add' to append, 'replace' to replace all, 'clear' to remove all, or 'save' to leave unchanged.",
         "data": {
-          "entity": "Flag entity",
+          "entity": "Condition entity",
           "match_state": "Required state",
           "action": "Action"
         }
@@ -321,7 +321,7 @@
       "invalid_rate": "Max enforcements per minute must be a whole number between 1 and 600.",
       "target_in_triggers": "Target state cannot also be a trigger state — that would create an enforcement loop.",
       "forbidden_state": "States 'unavailable', 'unknown', and 'none' cannot be used as triggers or targets.",
-      "incomplete_flag": "Both flag entity and required state must be set.",
+      "incomplete_flag": "Both condition entity and required state must be set.",
       "safety_not_acknowledged": "You must acknowledge the safety risk to continue.",
       "name_already_exists": "A rule with this name already exists.",
       "invalid_rgb_color": "RGB color must be a list of three values between 0 and 255.",
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "Exit without changes",
-        "add": "Add flag",
-        "replace": "Replace all flags",
-        "clear": "Clear all flags"
+        "add": "Add condition",
+        "replace": "Replace all conditions",
+        "clear": "Clear all conditions"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Flag entity missing in rule \"{rule_name}\"",
-      "description": "The following flag entity/entities no longer exist but are referenced in the rule: {missing_entities}. The rule will not enforce when these flags cannot be evaluated. Update or remove the rule to resolve this issue."
+      "title": "Condition entity missing in rule \"{rule_name}\"",
+      "description": "The following condition entity/entities no longer exist but are referenced in the rule: {missing_entities}. The rule will not enforce when these conditions cannot be evaluated. Update or remove the rule to resolve this issue."
     },
     "target_entity_missing": {
       "title": "Target entity missing in rule \"{rule_name}\"",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: a rule abandoned a verify cycle (a condition changed)",
-      "description": "Fires when a rule abandons an armed verify cycle with no verdict because an external condition changed (the rule was suppressed, disabled, the hub master switched off, or its conditional flags lapsed).",
+      "description": "Fires when a rule abandons an armed verify cycle with no verdict because an external condition changed (the rule was suppressed, disabled, the hub master switched off, or its conditions lapsed).",
       "fields": {
         "config_entry_id": {
           "name": "Rule (leave empty for any rule)",

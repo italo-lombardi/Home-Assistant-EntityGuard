@@ -166,7 +166,7 @@
       "invalid_rate": "A percenkénti maximális kényszerítésnek 1 és 600 közötti egész számnak kell lennie.",
       "target_in_triggers": "A cél állapot nem lehet egyben trigger állapot is — ez kényszerítési hurkot hozna létre.",
       "forbidden_state": "Az 'unavailable', 'unknown' és 'none' állapotok nem használhatók triggerként vagy célként.",
-      "incomplete_flag": "A flag entitást és a szükséges állapotot is be kell állítani.",
+      "incomplete_flag": "A feltétel entitást és a szükséges állapotot is be kell állítani.",
       "safety_not_acknowledged": "A folytatáshoz nyugtáznia kell a biztonsági kockázatot.",
       "name_already_exists": "Már létezik ilyen nevű szabály.",
       "invalid_rgb_color": "Az RGB színnek három, 0 és 255 közötti értékből álló listának kell lennie.",
@@ -192,7 +192,7 @@
           "edit_basics": "Név szerkesztése",
           "edit_mode": "Mód-specifikus beállítások szerkesztése",
           "edit_entities": "Cél entitások hozzáadása vagy eltávolítása",
-          "edit_flags": "Flag feltételek szerkesztése",
+          "edit_flags": "Feltételek szerkesztése",
           "edit_advanced": "Ellenőrzés, debounce és sebességkorlát szerkesztése"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "Flag feltételek szerkesztése",
-        "description": "Jelenlegi flagek: {summary}.\n\n{current_state}\n\nVálassza az 'add' lehetőséget a hozzáfűzéshez, a 'replace' opciót az összes cseréjéhez, a 'clear' opciót az összes eltávolításához, vagy a 'save' opciót a változatlanul hagyáshoz.",
+        "title": "Feltételek szerkesztése",
+        "description": "Jelenlegi feltételek: {summary}.\n\n{current_state}\n\nVálassza az 'add' lehetőséget a hozzáfűzéshez, a 'replace' opciót az összes cseréjéhez, a 'clear' opciót az összes eltávolításához, vagy a 'save' opciót a változatlanul hagyáshoz.",
         "data": {
-          "entity": "Flag entitás",
+          "entity": "Feltétel entitás",
           "match_state": "Szükséges állapot",
           "action": "Művelet"
         }
@@ -321,7 +321,7 @@
       "invalid_rate": "A percenkénti maximális kényszerítésnek 1 és 600 közötti egész számnak kell lennie.",
       "target_in_triggers": "A cél állapot nem lehet egyben trigger állapot is — ez kényszerítési hurkot hozna létre.",
       "forbidden_state": "Az 'unavailable', 'unknown' és 'none' állapotok nem használhatók triggerként vagy célként.",
-      "incomplete_flag": "A flag entitást és a szükséges állapotot is be kell állítani.",
+      "incomplete_flag": "A feltétel entitást és a szükséges állapotot is be kell állítani.",
       "safety_not_acknowledged": "A folytatáshoz nyugtáznia kell a biztonsági kockázatot.",
       "name_already_exists": "Már létezik ilyen nevű szabály.",
       "invalid_rgb_color": "Az RGB színnek három, 0 és 255 közötti értékből álló listának kell lennie.",
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "Kilépés módosítás nélkül",
-        "add": "Flag hozzáadása",
-        "replace": "Összes flag cseréje",
-        "clear": "Összes flag törlése"
+        "add": "Feltétel hozzáadása",
+        "replace": "Összes feltétel cseréje",
+        "clear": "Összes feltétel törlése"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Hiányzó flag entitás a(z) \"{rule_name}\" szabályban",
-      "description": "A következő flag entitás(ok) már nem léteznek, de a szabály hivatkozik rájuk: {missing_entities}. A szabály nem fog kényszeríteni, amikor ezek a flagek nem értékelhetők ki. Frissítse vagy távolítsa el a szabályt a probléma megoldásához."
+      "title": "Hiányzó feltétel entitás a(z) \"{rule_name}\" szabályban",
+      "description": "A következő feltétel entitás(ok) már nem léteznek, de a szabály hivatkozik rájuk: {missing_entities}. A szabály nem fog kényszeríteni, amikor ezek a feltételek nem értékelhetők ki. Frissítse vagy távolítsa el a szabályt a probléma megoldásához."
     },
     "migrated_follow_no_source": {
       "title": "A migrált „{rule}” szabályhoz forrás entitás szükséges",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: egy szabály elvetett egy ellenőrzési ciklust (megváltozott egy feltétel)",
-      "description": "Akkor aktiválódik, amikor egy szabály eredmény nélkül elvet egy megkezdett ellenőrzési ciklust, mert egy külső feltétel megváltozott (a szabályt elnyomták, letiltották, a főkapcsolót kikapcsolták, vagy a feltételes jelzői már nem teljesülnek).",
+      "description": "Akkor aktiválódik, amikor egy szabály eredmény nélkül elvet egy megkezdett ellenőrzési ciklust, mert egy külső feltétel megváltozott (a szabályt elnyomták, letiltották, a főkapcsolót kikapcsolták, vagy a feltételei már nem teljesülnek).",
       "fields": {
         "config_entry_id": {
           "name": "Szabály (hagyja üresen bármely szabályhoz)",

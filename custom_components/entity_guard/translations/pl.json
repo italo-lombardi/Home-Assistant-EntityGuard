@@ -166,7 +166,7 @@
       "invalid_rate": "Maks. wymuszeń na minutę musi być liczbą całkowitą z zakresu od 1 do 600.",
       "target_in_triggers": "Stan docelowy nie może być jednocześnie stanem wyzwalającym — utworzyłoby to pętlę wymuszania.",
       "forbidden_state": "Stany „unavailable”, „unknown” i „none” nie mogą być używane jako wyzwalacze ani cele.",
-      "incomplete_flag": "Należy ustawić zarówno encję flagi, jak i wymagany stan.",
+      "incomplete_flag": "Należy ustawić zarówno encję warunku, jak i wymagany stan.",
       "safety_not_acknowledged": "Aby kontynuować, musisz potwierdzić ryzyko związane z bezpieczeństwem.",
       "name_already_exists": "Reguła o tej nazwie już istnieje.",
       "invalid_rgb_color": "Kolor RGB musi być listą trzech wartości z zakresu od 0 do 255.",
@@ -192,7 +192,7 @@
           "edit_basics": "Edytuj nazwę",
           "edit_mode": "Edytuj ustawienia trybu",
           "edit_entities": "Dodaj lub usuń encje docelowe",
-          "edit_flags": "Edytuj warunki flag",
+          "edit_flags": "Edytuj warunki",
           "edit_advanced": "Edytuj weryfikację, debouncing i limit"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "Edytuj warunki flag",
-        "description": "Obecne flagi: {summary}\n\n{current_state}. Wybierz 'dodaj' aby dodac, 'zastap' aby zastapic wszystkie, 'wyczysc' aby usunac wszystkie lub 'zapisz' aby pozostawic bez zmian.",
+        "title": "Edytuj warunki",
+        "description": "Obecne warunki: {summary}\n\n{current_state}. Wybierz 'dodaj' aby dodac, 'zastap' aby zastapic wszystkie, 'wyczysc' aby usunac wszystkie lub 'zapisz' aby pozostawic bez zmian.",
         "data": {
-          "entity": "Encja flagi",
+          "entity": "Encja warunku",
           "match_state": "Wymagany stan",
           "action": "Akcja"
         }
@@ -321,7 +321,7 @@
       "invalid_rate": "Maks. wymuszeń na minutę musi być liczbą całkowitą z zakresu od 1 do 600.",
       "target_in_triggers": "Stan docelowy nie może być jednocześnie stanem wyzwalającym — utworzyłoby to pętlę wymuszania.",
       "forbidden_state": "Stany „unavailable”, „unknown” i „none” nie mogą być używane jako wyzwalacze ani cele.",
-      "incomplete_flag": "Należy ustawić zarówno encję flagi, jak i wymagany stan.",
+      "incomplete_flag": "Należy ustawić zarówno encję warunku, jak i wymagany stan.",
       "safety_not_acknowledged": "Aby kontynuować, musisz potwierdzić ryzyko związane z bezpieczeństwem.",
       "name_already_exists": "Reguła o tej nazwie już istnieje.",
       "invalid_rgb_color": "Kolor RGB musi być listą trzech wartości z zakresu od 0 do 255.",
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "Wyjdź bez zmian",
-        "add": "Dodaj flagę",
-        "replace": "Zastąp wszystkie flagi",
-        "clear": "Wyczyść wszystkie flagi"
+        "add": "Dodaj warunek",
+        "replace": "Zastąp wszystkie warunki",
+        "clear": "Wyczyść wszystkie warunki"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Brakuje jednostki flagi w regule \"{rule_name}\"",
-      "description": "Następujące jednostki flag już nie istnieją, ale są odwołania w regule: {missing_entities}. Reguła nie będzie egzekwowana, gdy te flagi nie mogą być oceniane. Zaktualizuj lub usuń regułę, aby rozwiązać ten problem."
+      "title": "Brakuje encji warunku w regule \"{rule_name}\"",
+      "description": "Następujące encje warunków już nie istnieją, ale są odwołania w regule: {missing_entities}. Reguła nie będzie egzekwowana, gdy te warunki nie mogą być oceniane. Zaktualizuj lub usuń regułę, aby rozwiązać ten problem."
     },
     "migrated_follow_no_source": {
       "title": "Zmigrowana reguła \"{rule}\" wymaga encji źródłowej",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: reguła porzuciła cykl weryfikacji (zmienił się warunek)",
-      "description": "Wyzwalane, gdy reguła porzuca rozpoczęty cykl weryfikacji bez wyniku, ponieważ zmienił się warunek zewnętrzny (reguła została wstrzymana, wyłączona, przełącznik główny został wyłączony lub jej flagi warunkowe nie są już spełnione).",
+      "description": "Wyzwalane, gdy reguła porzuca rozpoczęty cykl weryfikacji bez wyniku, ponieważ zmienił się warunek zewnętrzny (reguła została wstrzymana, wyłączona, przełącznik główny został wyłączony lub jej warunki nie są już spełnione).",
       "fields": {
         "config_entry_id": {
           "name": "Reguła (pozostaw puste dla dowolnej reguły)",

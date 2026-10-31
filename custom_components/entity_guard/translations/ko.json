@@ -166,7 +166,7 @@
       "invalid_rate": "분당 최대 적용 횟수는 1에서 600 사이의 정수여야 합니다.",
       "target_in_triggers": "대상 상태는 트리거 상태가 될 수 없습니다 — 적용 루프가 발생합니다.",
       "forbidden_state": "'unavailable', 'unknown', 'none' 상태는 트리거나 대상으로 사용할 수 없습니다.",
-      "incomplete_flag": "플래그 엔터티와 필요한 상태를 모두 설정해야 합니다.",
+      "incomplete_flag": "조건 엔터티와 필요한 상태를 모두 설정해야 합니다.",
       "safety_not_acknowledged": "계속하려면 안전 위험을 확인해야 합니다.",
       "name_already_exists": "이 이름의 규칙이 이미 존재합니다.",
       "invalid_rgb_color": "RGB 색상은 0에서 255 사이의 값 세 개로 구성된 목록이어야 합니다.",
@@ -192,7 +192,7 @@
           "edit_basics": "이름 편집",
           "edit_mode": "모드별 설정 편집",
           "edit_entities": "대상 엔터티 추가 또는 제거",
-          "edit_flags": "플래그 조건 편집",
+          "edit_flags": "조건 편집",
           "edit_advanced": "검증, 디바운스 및 속도 제한 편집"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "플래그 조건 편집",
-        "description": "현재 플래그: {summary}.\n\n{current_state}\n\n추가하려면 'add', 모두 교체하려면 'replace', 모두 제거하려면 'clear', 변경하지 않으려면 'save'를 선택하세요.",
+        "title": "조건 편집",
+        "description": "현재 조건: {summary}.\n\n{current_state}\n\n추가하려면 'add', 모두 교체하려면 'replace', 모두 제거하려면 'clear', 변경하지 않으려면 'save'를 선택하세요.",
         "data": {
-          "entity": "플래그 엔터티",
+          "entity": "조건 엔터티",
           "match_state": "필요한 상태",
           "action": "동작"
         }
@@ -321,7 +321,7 @@
       "invalid_rate": "분당 최대 적용 횟수는 1에서 600 사이의 정수여야 합니다.",
       "target_in_triggers": "대상 상태는 트리거 상태가 될 수 없습니다 — 적용 루프가 발생합니다.",
       "forbidden_state": "'unavailable', 'unknown', 'none' 상태는 트리거나 대상으로 사용할 수 없습니다.",
-      "incomplete_flag": "플래그 엔터티와 필요한 상태를 모두 설정해야 합니다.",
+      "incomplete_flag": "조건 엔터티와 필요한 상태를 모두 설정해야 합니다.",
       "safety_not_acknowledged": "계속하려면 안전 위험을 확인해야 합니다.",
       "name_already_exists": "이 이름의 규칙이 이미 존재합니다.",
       "invalid_rgb_color": "RGB 색상은 0에서 255 사이의 값 세 개로 구성된 목록이어야 합니다.",
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "변경 없이 종료",
-        "add": "플래그 추가",
-        "replace": "모든 플래그 교체",
-        "clear": "모든 플래그 지우기"
+        "add": "조건 추가",
+        "replace": "모든 조건 교체",
+        "clear": "모든 조건 지우기"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "규칙 \"{rule_name}\"에 플래그 엔터티 누락",
-      "description": "다음 플래그 엔터티가 더 이상 존재하지 않지만 규칙에서 참조되고 있습니다: {missing_entities}. 이러한 플래그를 평가할 수 없으므로 규칙이 적용되지 않습니다. 이 문제를 해결하려면 규칙을 업데이트하거나 제거하세요."
+      "title": "규칙 \"{rule_name}\"에 조건 엔터티 누락",
+      "description": "다음 조건 엔터티가 더 이상 존재하지 않지만 규칙에서 참조되고 있습니다: {missing_entities}. 이러한 조건을 평가할 수 없으므로 규칙이 적용되지 않습니다. 이 문제를 해결하려면 규칙을 업데이트하거나 제거하세요."
     },
     "migrated_follow_no_source": {
       "title": "마이그레이션된 규칙 \"{rule}\"에 소스 엔터티가 필요합니다",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: 규칙이 검증 주기를 중단함(조건이 변경됨)",
-      "description": "외부 조건이 변경되어 규칙이 시작된 검증 주기를 판정 없이 중단할 때 실행됩니다(규칙이 억제되거나 비활성화되거나 허브 마스터 스위치가 꺼지거나 조건부 플래그가 더 이상 충족되지 않는 경우).",
+      "description": "외부 조건이 변경되어 규칙이 시작된 검증 주기를 판정 없이 중단할 때 실행됩니다(규칙이 억제되거나 비활성화되거나 허브 마스터 스위치가 꺼지거나 조건이 더 이상 충족되지 않는 경우).",
       "fields": {
         "config_entry_id": {
           "name": "규칙(모든 규칙에 적용하려면 비워 두기)",

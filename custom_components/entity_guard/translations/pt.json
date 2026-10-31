@@ -232,7 +232,7 @@
       },
       "edit_flags": {
         "title": "Editar condições",
-        "description": "Condicoes atuais: {summary}\n\n{current_state}. Escolha 'adicionar' para adicionar, 'substituir' para substituir todas, 'limpar' para remover todas ou 'guardar' para deixar inalterado.",
+        "description": "Condições atuais: {summary}\n\n{current_state}. Escolha 'adicionar' para adicionar, 'substituir' para substituir todas, 'limpar' para remover todas ou 'guardar' para deixar inalterado.",
         "data": {
           "entity": "Entidade da condição",
           "match_state": "Estado requerido",
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Entidade de sinalizador ausente na regra \"{rule_name}\"",
-      "description": "As seguintes entidades de sinalizador não existem mais, mas são referenciadas na regra: {missing_entities}. A regra não será aplicada quando esses sinalizadores não puderem ser avaliados. Atualize ou remova a regra para resolver este problema."
+      "title": "Entidade da condição ausente na regra \"{rule_name}\"",
+      "description": "As seguintes entidades de condição já não existem, mas são referenciadas na regra: {missing_entities}. A regra não será aplicada quando essas condições não puderem ser avaliadas. Atualize ou remova a regra para resolver este problema."
     },
     "migrated_follow_no_source": {
       "title": "A regra migrada \"{rule}\" precisa de uma entidade de origem",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: uma regra abandonou um ciclo de verificação (uma condição mudou)",
-      "description": "Dispara quando uma regra abandona um ciclo de verificação iniciado sem veredicto porque uma condição externa mudou (a regra foi suprimida, desativada, o interruptor principal foi desligado ou os seus sinalizadores condicionais já não são cumpridos).",
+      "description": "Dispara quando uma regra abandona um ciclo de verificação iniciado sem veredicto porque uma condição externa mudou (a regra foi suprimida, desativada, o interruptor principal foi desligado ou as suas condições já não são cumpridas).",
       "fields": {
         "config_entry_id": {
           "name": "Regra (deixe vazio para qualquer regra)",

@@ -166,7 +166,7 @@
       "invalid_rate": "Daugiausia taikymų per minutę turi būti sveikasis skaičius nuo 1 iki 600.",
       "target_in_triggers": "Tikslinė būsena negali būti ir aktyvinimo būsena — tai sukurtų taikymo ciklą.",
       "forbidden_state": "Būsenos „unavailable“, „unknown“ ir „none“ negali būti naudojamos kaip aktyvinimo ar tikslinės būsenos.",
-      "incomplete_flag": "Turi būti nustatyta ir vėliavos esybė, ir reikalaujama būsena.",
+      "incomplete_flag": "Turi būti nustatyta ir sąlygos esybė, ir reikalaujama būsena.",
       "safety_not_acknowledged": "Kad tęstumėte, turite patvirtinti saugos riziką.",
       "name_already_exists": "Taisyklė tokiu pavadinimu jau egzistuoja.",
       "invalid_rgb_color": "RGB spalva turi būti trijų reikšmių nuo 0 iki 255 sąrašas.",
@@ -192,7 +192,7 @@
           "edit_basics": "Redaguoti pavadinimą",
           "edit_mode": "Redaguoti režimui būdingus nustatymus",
           "edit_entities": "Pridėti arba pašalinti tikslines esybes",
-          "edit_flags": "Redaguoti vėliavų sąlygas",
+          "edit_flags": "Redaguoti sąlygas",
           "edit_advanced": "Redaguoti patikrą, nutildymą ir dažnio ribą"
         }
       },
@@ -231,10 +231,10 @@
         }
       },
       "edit_flags": {
-        "title": "Redaguoti vėliavų sąlygas",
-        "description": "Dabartinės vėliavos: {summary}.\n\n{current_state}\n\nPasirinkite „pridėti“, kad pridurtumėte, „pakeisti“, kad pakeistumėte visas, „išvalyti“, kad pašalintumėte visas, arba „išsaugoti“, kad paliktumėte nepakeistas.",
+        "title": "Redaguoti sąlygas",
+        "description": "Dabartinės sąlygos: {summary}.\n\n{current_state}\n\nPasirinkite „pridėti“, kad pridurtumėte, „pakeisti“, kad pakeistumėte visas, „išvalyti“, kad pašalintumėte visas, arba „išsaugoti“, kad paliktumėte nepakeistas.",
         "data": {
-          "entity": "Vėliavos esybė",
+          "entity": "Sąlygos esybė",
           "match_state": "Reikalaujama būsena",
           "action": "Veiksmas"
         }
@@ -321,7 +321,7 @@
       "invalid_rate": "Daugiausia taikymų per minutę turi būti sveikasis skaičius nuo 1 iki 600.",
       "target_in_triggers": "Tikslinė būsena negali būti ir aktyvinimo būsena — tai sukurtų taikymo ciklą.",
       "forbidden_state": "Būsenos „unavailable“, „unknown“ ir „none“ negali būti naudojamos kaip aktyvinimo ar tikslinės būsenos.",
-      "incomplete_flag": "Turi būti nustatyta ir vėliavos esybė, ir reikalaujama būsena.",
+      "incomplete_flag": "Turi būti nustatyta ir sąlygos esybė, ir reikalaujama būsena.",
       "safety_not_acknowledged": "Kad tęstumėte, turite patvirtinti saugos riziką.",
       "name_already_exists": "Taisyklė tokiu pavadinimu jau egzistuoja.",
       "invalid_rgb_color": "RGB spalva turi būti trijų reikšmių nuo 0 iki 255 sąrašas.",
@@ -434,9 +434,9 @@
     "flag_action": {
       "options": {
         "save": "Išeiti be pakeitimų",
-        "add": "Pridėti vėliavą",
-        "replace": "Pakeisti visas vėliavas",
-        "clear": "Išvalyti visas vėliavas"
+        "add": "Pridėti sąlygą",
+        "replace": "Pakeisti visas sąlygas",
+        "clear": "Išvalyti visas sąlygas"
       }
     },
     "source_value_from": {
@@ -553,8 +553,8 @@
   },
   "issues": {
     "flag_entity_missing": {
-      "title": "Vėliavos esybė trūksta taisyklėje „{rule_name}“",
-      "description": "Šios vėliavos esybės (-ių) nebeegzistuoja, tačiau į jas nurodoma taisyklėje: {missing_entities}. Taisyklė netaikys, kai šių vėliavų nebus galima įvertinti. Atnaujinkite arba pašalinkite taisyklę, kad išspręstumėte šią problemą."
+      "title": "Sąlygos esybė trūksta taisyklėje „{rule_name}“",
+      "description": "Šios sąlygos esybės (-ių) nebeegzistuoja, tačiau į jas nurodoma taisyklėje: {missing_entities}. Taisyklė netaikys, kai šių sąlygų nebus galima įvertinti. Atnaujinkite arba pašalinkite taisyklę, kad išspręstumėte šią problemą."
     },
     "migrated_follow_no_source": {
       "title": "Migruotai taisyklei „{rule}“ reikia šaltinio esybės",
@@ -629,7 +629,7 @@
     },
     "cancelled": {
       "name": "Entity Guard: taisyklė atmetė patikros ciklą (pasikeitė sąlyga)",
-      "description": "Suveikia, kai taisyklė be rezultato atmeta pradėtą patikros ciklą, nes pasikeitė išorinė sąlyga (taisyklė buvo sustabdyta, išjungta, pagrindinis jungiklis buvo išjungtas arba jos sąlyginės vėliavėlės nebetenkinamos).",
+      "description": "Suveikia, kai taisyklė be rezultato atmeta pradėtą patikros ciklą, nes pasikeitė išorinė sąlyga (taisyklė buvo sustabdyta, išjungta, pagrindinis jungiklis buvo išjungtas arba jos sąlygos nebetenkinamos).",
       "fields": {
         "config_entry_id": {
           "name": "Taisyklė (palikite tuščią bet kuriai taisyklei)",
