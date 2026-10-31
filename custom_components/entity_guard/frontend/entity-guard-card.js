@@ -8,7 +8,7 @@
  *   title: <optional override>
  */
 
-const CARD_VERSION = "0.4.0";
+const CARD_VERSION = "0.5.0";
 
 console.info(
   `%c ENTITY-GUARD-CARD %c v${CARD_VERSION} %c — github.com/italo-lombardi `,
@@ -725,11 +725,6 @@ class EntityGuardCard extends LitElement {
     const statusEntity = refs.status ? this.hass.states[refs.status] : null;
 
     let label = STATUS_LABELS[status] || status;
-    if (statusEntity && this.hass.formatEntityState) {
-      try {
-        label = this.hass.formatEntityState(statusEntity) || label;
-      } catch (e) {}
-    }
     const enabled = this.hass.states[refs.enabled]?.state === "on";
     const lastError = statusEntity?.attributes?.last_error;
     const consecutiveErrors = statusEntity?.attributes?.consecutive_errors;

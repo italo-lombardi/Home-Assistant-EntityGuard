@@ -556,6 +556,10 @@
       "title": "Entity Guard kan het domein \"{domain}\" nog niet aansturen",
       "description": "Een regel is gericht op een entiteit in het domein \"{domain}\" met een status waarvoor Entity Guard geen service-koppeling heeft, waardoor de afdwinging er stilzwijgend voor wordt overgeslagen. Entity Guard weet alleen hoe de domeinen aan te sturen waarvoor het een koppeling meelevert. Klik op \"Meer informatie\" om een kort GitHub-formulier te openen (het domein is al ingevuld), zodat ondersteuning voor \"{domain}\" in een toekomstige release kan worden toegevoegd."
     },
+    "unsupported_state": {
+      "title": "Entity Guard kan \"{domain}\" niet op \"{state}\" zetten",
+      "description": "Een regel wil een entiteit in het domein \"{domain}\" naar de status \"{state}\" sturen, maar Entity Guard heeft voor die status geen service-koppeling — waardoor de afdwinging er stilzwijgend voor wordt overgeslagen. Entity Guard kan \"{domain}\" aansturen voor de statussen die het kent, alleen \"{state}\" niet. Dit is mogelijk een status die Entity Guard in de toekomst zou kunnen ondersteunen, of een status die niet rechtstreeks kan worden ingesteld (bijvoorbeeld een alleen-lezen status die het apparaat enkel rapporteert). Klik op \"Meer informatie\" om een kort GitHub-formulier te openen (het domein en de status zijn al ingevuld), zodat het kan worden beoordeeld."
+    },
     "flag_entity_missing": {
       "title": "Voorwaarde-entiteit ontbreekt in regel \"{rule_name}\"",
       "description": "De volgende voorwaarde-entiteiten bestaan niet meer, maar worden in de regel verwezen: {missing_entities}. De regel wordt niet afgedwongen wanneer deze voorwaarden niet kunnen worden geëvalueerd. Werk de regel bij of verwijder deze om dit probleem op te lossen."

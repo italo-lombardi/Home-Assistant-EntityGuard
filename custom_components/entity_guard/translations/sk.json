@@ -556,6 +556,10 @@
       "title": "Entity Guard zatiaľ nedokáže ovládať doménu „{domain}“",
       "description": "Pravidlo cieli na entitu v doméne „{domain}“ so stavom, pre ktorý Entity Guard nemá priradenú žiadnu službu, takže jej vynútenie potichu preskakuje. Entity Guard vie ovládať iba domény, pre ktoré dodáva priradenie. Kliknutím na „Zistiť viac“ otvoríte krátky formulár na GitHube (doména je predvyplnená), aby bolo možné podporu pre doménu „{domain}“ pridať v niektorom z budúcich vydaní."
     },
+    "unsupported_state": {
+      "title": "Entity Guard nedokáže nastaviť doménu „{domain}“ na stav „{state}“",
+      "description": "Pravidlo chce priviesť entitu v doméne „{domain}“ do stavu „{state}“, no Entity Guard nemá pre tento stav priradenú žiadnu službu – jeho vynútenie preto potichu preskakuje. Entity Guard vie doménu „{domain}“ ovládať pre jej známe stavy, len nie pre stav „{state}“. Môže ísť o stav, ktorý by Entity Guard dokázal podporiť v budúcnosti, alebo o stav, ktorý sa nedá nastaviť priamo (napríklad stav len na čítanie, ktorý zariadenie iba hlási). Kliknutím na „Zistiť viac“ otvoríte krátky formulár na GitHube (doména aj stav sú predvyplnené), aby bolo možné to posúdiť."
+    },
     "flag_entity_missing": {
       "title": "Chýbajúca entita podmienky v pravidle „{rule_name}“",
       "description": "Nasledujúce entity podmienok už neexistujú, ale sú v pravidle uvedené: {missing_entities}. Pravidlo sa nevynúti, keď tieto podmienky nemožno vyhodnotiť. Pre vyriešenie tohto problému aktualizujte alebo odstráňte pravidlo."

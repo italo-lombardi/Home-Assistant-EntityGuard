@@ -353,7 +353,7 @@ class EntityGuardSuppressedUntilSensor(EntityGuardSensor):
 
 
 class EntityGuardRuleIdSensor(EntityGuardSensor):
-    """Diagnostic sensor exposing the rule's config entry ID."""
+    """Diagnostic sensor exposing the rule's stable rule ID."""
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_entity_registry_enabled_default = False
@@ -364,5 +364,7 @@ class EntityGuardRuleIdSensor(EntityGuardSensor):
 
     @property
     def native_value(self) -> str:
-        """Return the config entry ID (stable rule identifier)."""
-        return self._entry.entry_id
+        """Return the stable rule ID (unique_id) — the same value carried as
+        rule_id on every entity_guard_* event and by list_rules, so copying
+        this sensor's state filters those events correctly."""
+        return self._engine.config.unique_id

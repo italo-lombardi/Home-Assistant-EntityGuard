@@ -1,0 +1,53 @@
+name: Unsupported state
+description: Ask for Entity Guard to learn how to drive a domain to a state it currently skips.
+title: "Add service mapping for \"<domain>\" state \"<state>\""
+labels: [enhancement, unsupported-state]
+body:
+  - type: markdown
+    attributes:
+      value: >
+        A rule you created asks Entity Guard to drive an entity to a state it has
+        no service mapping for, so it silently skips enforcing it. Entity Guard can
+        control the domain for its known states — just not this one. Fill in the
+        details below so it can be reviewed. The domain and state are pre-filled
+        from the repair notification — leave them as-is.
+  - type: input
+    id: domain
+    attributes:
+      label: Domain
+      description: The entity domain (the part before the dot in the entity_id).
+      placeholder: e.g. climate
+    validations:
+      required: true
+  - type: input
+    id: state
+    attributes:
+      label: Desired state
+      description: The state you asked Entity Guard to enforce but which it could not map to a service.
+      placeholder: e.g. dry
+    validations:
+      required: true
+  - type: input
+    id: example_entity
+    attributes:
+      label: Example target entity_id
+      description: One real entity_id from your rule so the state/service can be reproduced.
+      placeholder: e.g. climate.living_room
+    validations:
+      required: true
+  - type: input
+    id: expected_service
+    attributes:
+      label: Expected service to call
+      description: If you know which Home Assistant service should drive this state, name it. Leave blank if unsure.
+      placeholder: e.g. climate.set_hvac_mode
+    validations:
+      required: false
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      description: Settings → About, or the version shown in Developer Tools.
+      placeholder: e.g. 2026.10.1
+    validations:
+      required: true

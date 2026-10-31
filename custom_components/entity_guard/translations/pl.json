@@ -556,6 +556,10 @@
       "title": "Entity Guard nie potrafi jeszcze sterować domeną \"{domain}\"",
       "description": "Reguła obejmuje encję w domenie \"{domain}\" w stanie, dla którego Entity Guard nie ma przypisanej usługi, więc po cichu pomija jej egzekwowanie. Entity Guard potrafi sterować tylko domenami, dla których dostarcza przypisanie. Kliknij „Dowiedz się więcej”, aby otworzyć krótki formularz w serwisie GitHub (domena jest wstępnie wypełniona), dzięki czemu obsługa domeny \"{domain}\" będzie mogła zostać dodana w przyszłym wydaniu."
     },
+    "unsupported_state": {
+      "title": "Entity Guard nie potrafi ustawić domeny \"{domain}\" na stan \"{state}\"",
+      "description": "Reguła chce ustawić encję w domenie \"{domain}\" na stan \"{state}\", ale Entity Guard nie ma przypisanej usługi dla tego stanu — więc po cichu pomija jego egzekwowanie. Entity Guard potrafi sterować domeną \"{domain}\" dla znanych mu stanów, ale nie dla stanu \"{state}\". Może to być stan, który Entity Guard mógłby obsłużyć w przyszłości, albo taki, którego nie da się ustawić bezpośrednio (na przykład stan tylko do odczytu, który urządzenie jedynie zgłasza). Kliknij „Dowiedz się więcej”, aby otworzyć krótki formularz w serwisie GitHub (domena i stan są wstępnie wypełnione), dzięki czemu będzie można go rozpatrzyć."
+    },
     "flag_entity_missing": {
       "title": "Brakuje encji warunku w regule \"{rule_name}\"",
       "description": "Następujące encje warunków już nie istnieją, ale są odwołania w regule: {missing_entities}. Reguła nie będzie egzekwowana, gdy te warunki nie mogą być oceniane. Zaktualizuj lub usuń regułę, aby rozwiązać ten problem."

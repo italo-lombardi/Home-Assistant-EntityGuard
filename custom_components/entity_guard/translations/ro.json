@@ -556,6 +556,10 @@
       "title": "Entity Guard nu poate controla încă domeniul „{domain}”",
       "description": "O regulă vizează o entitate din domeniul „{domain}” cu o stare pentru care Entity Guard nu are o corespondență de serviciu, așa că omite în tăcere aplicarea acesteia. Entity Guard știe să acționeze doar domeniile pentru care livrează o corespondență. Faceți clic pe „Aflați mai multe” pentru a deschide un scurt formular GitHub (domeniul este precompletat), astfel încât suportul pentru „{domain}” să poată fi adăugat într-o versiune viitoare."
     },
+    "unsupported_state": {
+      "title": "Entity Guard nu poate seta „{domain}” la „{state}”",
+      "description": "O regulă dorește să aducă o entitate din domeniul „{domain}” la starea „{state}”, dar Entity Guard nu are o corespondență de serviciu pentru acea stare — așa că omite în tăcere aplicarea acesteia. Entity Guard poate controla „{domain}” pentru stările sale cunoscute, doar nu și „{state}”. Aceasta poate fi o stare pe care Entity Guard ar putea să o suporte în viitor sau una care nu poate fi setată direct (de exemplu, o stare numai pentru citire pe care dispozitivul doar o raportează). Faceți clic pe „Aflați mai multe” pentru a deschide un scurt formular GitHub (domeniul și starea sunt precompletate), astfel încât să poată fi analizată."
+    },
     "flag_entity_missing": {
       "title": "Entitate de condiție lipsă în regula „{rule_name}”",
       "description": "Următoarea entitate/entitățile de condiție nu mai există, dar sunt referite în regulă: {missing_entities}. Regula nu va impune când aceste condiții nu pot fi evaluate. Actualizați sau eliminați regula pentru a rezolva această problemă."

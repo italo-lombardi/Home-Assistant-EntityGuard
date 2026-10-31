@@ -556,6 +556,10 @@
       "title": "Entity Guard kan inte styra domänen \"{domain}\" än",
       "description": "En regel riktar sig mot en entitet i domänen \"{domain}\" med ett tillstånd som Entity Guard saknar tjänstemappning för, så den hoppar tyst över att tillämpa det. Entity Guard vet bara hur domänerna som den levererar en mappning för ska styras. Klicka på \"Läs mer\" för att öppna ett kort GitHub-formulär (domänen är förifylld) så att stöd för \"{domain}\" kan läggas till i en framtida version."
     },
+    "unsupported_state": {
+      "title": "Entity Guard kan inte ställa in \"{domain}\" på \"{state}\"",
+      "description": "En regel vill driva en entitet i domänen \"{domain}\" till tillståndet \"{state}\", men Entity Guard saknar tjänstemappning för det tillståndet – så den hoppar tyst över att tillämpa det. Entity Guard kan styra \"{domain}\" för dess kända tillstånd, bara inte \"{state}\". Detta kan vara ett tillstånd som Entity Guard skulle kunna stödja i framtiden, eller ett som inte kan ställas in direkt (till exempel ett skrivskyddat tillstånd som enheten bara rapporterar). Klicka på \"Läs mer\" för att öppna ett kort GitHub-formulär (domänen och tillståndet är förifyllda) så att det kan granskas."
+    },
     "flag_entity_missing": {
       "title": "Villkorsentitet saknas i regeln \"{rule_name}\"",
       "description": "Följande villkorsentiteter existerar inte längre men refereras i regeln: {missing_entities}. Regeln kommer inte att tillämpas när dessa villkor inte kan utvärderas. Uppdatera eller ta bort regeln för att lösa det här problemet."

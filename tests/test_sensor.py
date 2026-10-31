@@ -405,7 +405,9 @@ def test_rule_id_sensor_native_value():
     engine = MagicMock()
     engine.config.unique_id = "uid"
     sensor = EntityGuardRuleIdSensor(entry, engine)
-    assert sensor.native_value == "abc123"
+    # Returns the stable rule ID (unique_id), NOT the config entry_id — this is
+    # the value carried as rule_id on events / list_rules, so the sensor agrees.
+    assert sensor.native_value == "uid"
 
 
 # ---------------------------------------------------------------------------
