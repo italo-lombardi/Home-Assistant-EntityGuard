@@ -2967,6 +2967,9 @@ async def test_group_dead_member_raise_is_skip_not_error(hass: HomeAssistant):
         {"light.a": "off", "light.b": "off", "light.dead": "unavailable"},
     )
 
+    skipped_events: list = []
+    hass.bus.async_listen(EVENT_SKIPPED, lambda e: skipped_events.append(e))
+
     # Drive _enforce directly: the real case trips while the group reads 'on'
     # then the aggregate settles to 'off' before the dead member's exception
     # surfaces — in a zero-delay unit test trigger+enforce read the same state,
@@ -2982,6 +2985,14 @@ async def test_group_dead_member_raise_is_skip_not_error(hass: HomeAssistant):
     assert outcome["outcome"] == "skipped"
     assert outcome["reason"] == "member_unavailable"
     assert outcome["members"] == ["dead"]
+    # The dead members also ride the event payload (same capped shape as the
+    # card) so automations can read which members died.
+    await hass.async_block_till_done()
+    member_events = [
+        e for e in skipped_events if e.data["reason"] == "member_unavailable"
+    ]
+    assert member_events
+    assert member_events[-1].data["members"] == ["dead"]
 
 
 async def test_group_dead_member_many_members_capped(hass: HomeAssistant):
@@ -2998,11 +3009,22 @@ async def test_group_dead_member_many_members_capped(hass: HomeAssistant):
     members = {f"light.d{i}": "unavailable" for i in range(5)}
     members["light.live"] = "off"
     _set_group(hass, gid, "off", members)
+
+    skipped_events: list = []
+    hass.bus.async_listen(EVENT_SKIPPED, lambda e: skipped_events.append(e))
+
     await engine._enforce(gid, bypass_rate_limit=True)
 
     shown = engine.state.target_outcomes[gid]["members"]
     assert len(shown) == 4  # 3 names + tail
     assert shown[-1] == "+2 more"
+    # Same capped list on the event payload — not the raw uncapped 5.
+    await hass.async_block_till_done()
+    member_events = [
+        e for e in skipped_events if e.data["reason"] == "member_unavailable"
+    ]
+    assert member_events
+    assert member_events[-1].data["members"] == shown
 
 
 async def test_group_not_reached_still_errors(hass: HomeAssistant):

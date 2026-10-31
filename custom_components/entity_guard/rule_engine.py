@@ -2173,6 +2173,18 @@ class RuleEngine:
         }
         if error is not None:
             data["error"] = error
+        # member_unavailable carries the failing group members. Cap at 3 names +
+        # a "+N more" tail so a group with many dead members stays one short line.
+        # Computed BEFORE the fire so the SAME capped shape lands on both the
+        # event payload (automations read which members died) and the card
+        # outcome below — one `shown`, never a raw-vs-capped mismatch.
+        shown: list[str] | None = None
+        if members:
+            cap = 3
+            shown = members[:cap]
+            if len(members) > cap:
+                shown = [*shown, f"+{len(members) - cap} more"]
+            data["members"] = shown
         self._hass.bus.async_fire(EVENT_SKIPPED, data)
         # Skip counters: count only genuine "did-not-act" skips, NOT a failed
         # service call (REASON_SERVICE_CALL_FAILED has its own error path —
@@ -2191,14 +2203,11 @@ class RuleEngine:
             "error": error,
             "at": dt_util.now(),
         }
-        # member_unavailable carries the failing group members for the card. Cap at
-        # 3 names + a "+N more" tail so a group with many dead members stays one
-        # short line. Only set when present so other outcomes keep their old shape.
-        if members:
-            cap = 3
-            shown = members[:cap]
-            if len(members) > cap:
-                shown = [*shown, f"+{len(members) - cap} more"]
+        # member_unavailable: record the (already-capped) members on the outcome
+        # so the card lists which members failed without re-deriving them. Same
+        # `shown` the event payload carries. Only set when present so other
+        # outcomes keep their old shape.
+        if shown is not None:
             self._state.target_outcomes[entity_id]["members"] = shown
         # Persist so skip counts survive a restart like the enforcement counters.
         # A skip-only rule never hits the enforce-success persist, so without this
