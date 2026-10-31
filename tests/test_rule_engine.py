@@ -1922,6 +1922,87 @@ def test_reenable_sweep_skipped_when_master_off(hass: HomeAssistant):
     assert len(tasks_created) == 0
 
 
+async def test_reenable_rearms_cooldown_expiry_timer(hass: HomeAssistant):
+    """Re-enable over a live cooldown must re-arm the expiry repaint timer.
+
+    Disable cancels the timer but keeps _state.cooldowns; without the re-arm the
+    rule repaints COOLDOWN on re-enable but no timer flips it to ARMED at expiry,
+    so it sticks until an unrelated evaluate prunes. Assert on the TIMER (the
+    thing the fix adds), not a status flip — a flip could come from _sweep_targets
+    pruning instead, which passes pre-fix (false green). Sweep is suppressed here.
+    """
+    config = _make_config(debounce_enabled=True, debounce_seconds=60)
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    now = dt_util.now()
+    engine._state.cooldowns["light.bedroom"] = now + timedelta(seconds=60)
+
+    # Disable: cancels + clears the broadcast timers, keeps the cooldown end.
+    engine.set_enabled(False)
+    assert engine._cooldown_broadcast_unsubs == {}
+    assert "light.bedroom" in engine._state.cooldowns
+
+    # Re-enable with sweep suppressed so any flip is the timer's doing, not an
+    # eval task pruning. Fix: a timer is re-armed and status stays COOLDOWN.
+    # async_call_later mocked so the stored unsub is a stub (no lingering timer);
+    # we assert the arm happened, not that a real HA timer fires.
+    hass.states.async_set("light.bedroom", "on")
+    with (
+        patch.object(engine, "_sweep_targets"),
+        patch(
+            "custom_components.entity_guard.rule_engine.async_call_later",
+            return_value=MagicMock(),
+        ),
+    ):
+        engine._state.enabled = False
+        engine.set_enabled(True)
+    assert engine.current_status() == STATUS_COOLDOWN
+    assert engine._cooldown_broadcast_unsubs, "re-enable must re-arm the expiry timer"
+
+    # Re-derive past the cooldown end (what the re-armed timer's callback does) →
+    # COOLDOWN flips ARMED on its own, no eval task needed.
+    engine._apply_idle_status(now + timedelta(seconds=61))
+    assert engine.current_status() == STATUS_ARMED
+
+
+async def test_master_reenable_rearms_cooldown_expiry_timer(hass: HomeAssistant):
+    """Master off→on over a live cooldown re-arms the expiry timer (twin of
+    the per-rule re-enable gap — master toggle also cancels timers, no enforce)."""
+    config = _make_config(debounce_enabled=True, debounce_seconds=60)
+    master_on = True
+    engine = _make_engine(hass, config)
+    engine._master_enabled_getter = lambda: master_on
+    engine._startup_complete = True
+    engine._state.enabled = True
+    now = dt_util.now()
+    engine._state.cooldowns["light.bedroom"] = now + timedelta(seconds=60)
+
+    # Master OFF: _apply_idle_status disabled branch cancels the timers.
+    master_on = False
+    engine._handle_master_changed()
+    assert engine._cooldown_broadcast_unsubs == {}
+    assert "light.bedroom" in engine._state.cooldowns
+
+    # Master ON again, sweep suppressed → the re-arm is the only timer source.
+    # async_call_later mocked so the stored unsub is a stub (no lingering timer).
+    master_on = True
+    hass.states.async_set("light.bedroom", "on")
+    with (
+        patch.object(engine, "_sweep_targets"),
+        patch(
+            "custom_components.entity_guard.rule_engine.async_call_later",
+            return_value=MagicMock(),
+        ),
+    ):
+        engine._handle_master_changed()
+    assert engine.current_status() == STATUS_COOLDOWN
+    assert engine._cooldown_broadcast_unsubs, "master re-enable must re-arm the timer"
+
+    # Re-derive past the cooldown end → COOLDOWN flips ARMED on its own.
+    engine._apply_idle_status(now + timedelta(seconds=61))
+    assert engine.current_status() == STATUS_ARMED
+
+
 # ---------------------------------------------------------------------------
 # async_unload: exception paths
 # ---------------------------------------------------------------------------

@@ -998,6 +998,55 @@ class RuleEngine:
         for eid in expired:
             del self._state.cooldowns[eid]
 
+    def _arm_cooldown_broadcast(self, entity_id: str, now: datetime) -> None:
+        """Schedule the cooldown-expiry repaint for one entity.
+
+        The status sensor reads COOLDOWN while a cooldown end is still future
+        (_derive_armed_or_cooldown). Nothing re-derives when the end passes
+        unless an async_evaluate happens to run, so without this timer the card
+        stays stuck on COOLDOWN (and cooldown_remaining counts to 0) until an
+        unrelated event prunes + re-derives. Fire one broadcast at expiry so
+        COOLDOWN flips to ARMED on its own. Called from the enforce tail and
+        re-armed on re-enable (set_enabled / master toggle) — a disable cancels
+        this timer but keeps _state.cooldowns, and re-enable does not enforce,
+        so the timer must be re-armed there or the flip never happens.
+        """
+        cooldown_end = self._state.cooldowns.get(entity_id)
+        if cooldown_end is None:
+            return
+        remaining = (cooldown_end - now).total_seconds()
+        if remaining <= 0:
+            return
+        old_unsub = self._cooldown_broadcast_unsubs.pop(entity_id, None)
+        if old_unsub is not None:
+            try:
+                old_unsub()
+            except Exception:
+                pass
+
+        _eid = entity_id
+
+        @callback
+        def _broadcast_after_cooldown(_now: datetime) -> None:
+            self._cooldown_broadcast_unsubs.pop(_eid, None)
+            if self._is_unloaded:
+                return
+            self._apply_idle_status()
+
+        unsub = async_call_later(self._hass, remaining, _broadcast_after_cooldown)
+        self._cooldown_broadcast_unsubs[entity_id] = unsub
+
+    def _rearm_cooldown_broadcasts(self, now: datetime) -> None:
+        """Re-arm expiry timers for every still-live cooldown.
+
+        Used on re-enable: a disable cancelled the timers but left the cooldown
+        ends in place, so each future cooldown needs its repaint re-scheduled.
+        Idempotent — _arm_cooldown_broadcast cancels any existing timer first.
+        """
+        for entity_id, end in list(self._state.cooldowns.items()):
+            if end > now:
+                self._arm_cooldown_broadcast(entity_id, now)
+
     def _schedule_delayed_enforcement(
         self,
         entity_id: str,
@@ -1876,30 +1925,7 @@ class RuleEngine:
         # scheduled cooldown repaint on the cancel path (a debounced enforce
         # cancelled mid-ACK still set a cooldown above).
         if self._config.debounce_enabled and self._config.debounce_seconds > 0:
-            cooldown_end = self._state.cooldowns.get(entity_id)
-            if cooldown_end is not None:
-                remaining = (cooldown_end - now).total_seconds()
-                if remaining > 0:
-                    old_unsub = self._cooldown_broadcast_unsubs.pop(entity_id, None)
-                    if old_unsub is not None:
-                        try:
-                            old_unsub()
-                        except Exception:
-                            pass
-
-                    _eid = entity_id
-
-                    @callback
-                    def _broadcast_after_cooldown(_now: datetime) -> None:
-                        self._cooldown_broadcast_unsubs.pop(_eid, None)
-                        if self._is_unloaded:
-                            return
-                        self._apply_idle_status()
-
-                    unsub = async_call_later(
-                        self._hass, remaining, _broadcast_after_cooldown
-                    )
-                    self._cooldown_broadcast_unsubs[entity_id] = unsub
+            self._arm_cooldown_broadcast(entity_id, now)
 
         # Bookkeeping committed, status painted, cooldown broadcast armed — now
         # honour the cancel the per-entity replace delivered mid service-ACK.
@@ -2503,6 +2529,11 @@ class RuleEngine:
             self._schedule_suppression_timer()
         self._persist()
         self._apply_idle_status()
+        if enabled and self._current_status == STATUS_COOLDOWN:
+            # Disable cancelled the expiry timers but kept _state.cooldowns; the
+            # re-derive above repainted COOLDOWN but armed no timer, so re-arm
+            # here or the rule stays stuck COOLDOWN past the real end.
+            self._rearm_cooldown_broadcasts(dt_util.now())
         if enabled and self._startup_complete and self._master_enabled_getter():
             self._sweep_targets()
 
@@ -2510,6 +2541,10 @@ class RuleEngine:
     def _handle_master_changed(self) -> None:
         """Re-derive status when the master switch toggles."""
         self._apply_idle_status()
+        if self._master_enabled_getter() and self._current_status == STATUS_COOLDOWN:
+            # Master off cancelled the expiry timers but kept _state.cooldowns;
+            # same stuck-COOLDOWN gap as per-rule re-enable (set_enabled). Re-arm.
+            self._rearm_cooldown_broadcasts(dt_util.now())
         if (
             self._master_enabled_getter()
             and self._state.enabled
