@@ -4566,6 +4566,77 @@ async def test_arm_recently_enforced_pulse_when_already_on(hass: HomeAssistant):
     assert engine._recently_enforced is True
 
 
+async def test_arm_recently_enforced_cold_dispatches_rising_edge(hass: HomeAssistant):
+    """Regression: a COLD arm (flag previously False) must dispatch its own
+    rising-edge repaint. Before the fix, _arm_recently_enforced only dispatched
+    in the already-on pulse-off branch and in the 30s _clear — a fresh arm set
+    the flag True and returned with NO dispatch, so the sensor never re-read and
+    the off->on edge was invisible unless a coincidental _broadcast_status (same
+    signal, but deduped by _set_status) happened to land. Assert exactly one
+    dispatch, fired while the flag is True."""
+    from unittest.mock import patch
+
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    assert engine._recently_enforced is False  # cold
+
+    flag_at_send = []
+    with (
+        patch(
+            "custom_components.entity_guard.rule_engine.async_call_later",
+            side_effect=lambda *_a, **_k: MagicMock(),
+        ),
+        patch(
+            "custom_components.entity_guard.rule_engine.async_dispatcher_send",
+            side_effect=lambda _h, _s: flag_at_send.append(engine._recently_enforced),
+        ),
+    ):
+        engine._arm_recently_enforced()
+
+    # Exactly one dispatch (no warm pulse-off on a cold arm), fired with flag True.
+    assert flag_at_send == [True]
+    assert engine._recently_enforced is True
+
+
+async def test_arm_verdict_cold_first_dispatches_rising_edge(hass: HomeAssistant):
+    """Regression twin: a verdict arm whose cycle is the FIRST verdict (no sibling
+    on to drop) must still dispatch its rising edge. Before the fix the verdict
+    arms only dispatched on a verdict SWITCH (the dropped_sibling tail); a cold
+    first verdict set the flag True and returned silently — so e.g.
+    recently_enforced_verified never painted on a fast-confirm with no prior
+    verdict. One dispatch per arm, flag True, no sibling pre-set."""
+    from unittest.mock import patch
+
+    cases = [
+        ("_arm_recently_enforced_verified", "_recently_enforced_verified"),
+        ("_arm_recently_enforced_unreachable", "_recently_enforced_unreachable"),
+        ("_arm_recently_enforced_cancelled", "_recently_enforced_cancelled"),
+    ]
+    for arm, own_flag in cases:
+        engine = _make_engine(hass)
+        engine._startup_complete = True
+        # No sibling verdict on → old dropped_sibling tail would NOT fire.
+        assert getattr(engine, own_flag) is False
+
+        flag_at_send = []
+        with (
+            patch(
+                "custom_components.entity_guard.rule_engine.async_call_later",
+                side_effect=lambda *_a, **_k: MagicMock(),
+            ),
+            patch(
+                "custom_components.entity_guard.rule_engine.async_dispatcher_send",
+                side_effect=lambda _h, _s, _f=own_flag: flag_at_send.append(
+                    getattr(engine, _f)
+                ),
+            ),
+        ):
+            getattr(engine, arm)()
+
+        assert flag_at_send == [True], f"{arm} cold first verdict must dispatch once"
+        assert getattr(engine, own_flag) is True
+
+
 async def test_arm_recently_enforced_timer_clears_flag(hass: HomeAssistant):
     """Timer callback sets recently_enforced=False and dispatches."""
     from unittest.mock import patch
@@ -7346,8 +7417,10 @@ async def test_verdict_arm_does_not_clear_base_recently_enforced(hass: HomeAssis
 
 
 async def test_verdict_switch_forces_repaint_all_three_arms(hass: HomeAssistant):
-    """Each of the 3 verdict arms forces the repaint on a cold switch — covers the
-    dropped_sibling dispatch branch in every arm (verified/unreachable/cancelled)."""
+    """Each of the 3 verdict arms repaints on a cold switch so the dropped sibling
+    sensor turns off. Exactly one dispatch — the arm's unconditional rising-edge
+    repaint, which subsumes the old dropped_sibling tail (sibling shares the
+    signal, so the one dispatch turns it off too)."""
     from unittest.mock import patch
 
     # (arm method, sibling flag to pre-set on, this arm's own flag)
@@ -7374,6 +7447,18 @@ async def test_verdict_switch_forces_repaint_all_three_arms(hass: HomeAssistant)
         setattr(engine, sibling_flag, True)  # a cold sibling to drop
 
         sent = []
+        # Record the dropped sibling's flag AT dispatch time, not after the call.
+        # The subsumption is load-bearing on clear-BEFORE-dispatch: the one shared
+        # signal only turns the sibling sensor off if its flag already reads False
+        # when the dispatch fires. A post-call assert can't see that ordering — a
+        # refactor moving _clear_other_verdicts after the dispatch leaves final
+        # state + count identical yet latches the sibling sensor stale-True live.
+        sibling_at_send = []
+
+        def _capture(*_a, _sib=sibling_flag, **_k):
+            sent.append(1)
+            sibling_at_send.append(getattr(engine, _sib))
+
         with (
             patch(
                 "custom_components.entity_guard.rule_engine.async_call_later",
@@ -7381,7 +7466,7 @@ async def test_verdict_switch_forces_repaint_all_three_arms(hass: HomeAssistant)
             ),
             patch(
                 "custom_components.entity_guard.rule_engine.async_dispatcher_send",
-                side_effect=lambda *_a, **_k: sent.append(1),
+                side_effect=_capture,
             ),
         ):
             getattr(engine, arm)()
@@ -7389,6 +7474,10 @@ async def test_verdict_switch_forces_repaint_all_three_arms(hass: HomeAssistant)
         assert getattr(engine, own_flag) is True
         assert getattr(engine, sibling_flag) is False
         assert len(sent) == 1, f"{arm} cold switch should force exactly one repaint"
+        assert sibling_at_send == [False], (
+            f"{arm}: dropped sibling must read False AT dispatch time "
+            f"(clear-before-dispatch), got {sibling_at_send}"
+        )
 
     assert engine._recently_enforced_unreachable is False
 
