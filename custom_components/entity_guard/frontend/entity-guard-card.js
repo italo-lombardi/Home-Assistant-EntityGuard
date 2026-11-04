@@ -758,9 +758,7 @@ class EntityGuardCard extends LitElement {
         ${this._config.show_entities !== false
           ? this._renderBound(refs)
           : nothing}
-        ${this._config.show_conditions || status === "conditional"
-          ? this._renderConditions(refs)
-          : nothing}
+        ${this._config.show_conditions ? this._renderConditions(refs) : nothing}
         ${this._renderTargetOutcomes(refs)}
         ${this._config.show_actions ? this._renderActions(refs) : nothing}
       </ha-card>
