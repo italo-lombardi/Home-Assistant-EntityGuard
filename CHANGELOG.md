@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.5.1] — 2026-11-04
+
+### Fixed
+
+- **Card "Show conditions" toggle was bypassed when a rule was CONDITIONAL.** The conditions block rendered whenever `show_conditions` was on **or** the rule's status was `conditional` (`show_conditions || status === "conditional"`), so a user who left the toggle off still saw the conditions list any time the rule's flags were unmet. The toggle now fully gates the block — conditions render only when `show_conditions` is enabled, matching the toggle's off-by-default behaviour and the other five card toggles (each guard's semantics now line up with its checkbox default: `!== false` for the default-on toggles, truthy for the default-off ones). Card display only; no integration or behaviour change.
+
 ## [0.5.0] — 2026-10-31
 
 ### Added
