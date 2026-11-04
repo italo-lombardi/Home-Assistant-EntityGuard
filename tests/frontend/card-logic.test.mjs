@@ -546,23 +546,84 @@ test("_renderReason: no status entity → nothing", () => {
   assert.equal(out, "");
 });
 
-// --- Feature B: conditional auto-show gate ---
-// The render() gate is `show_conditions || status === "conditional"`. We can't
-// drive full render() (needs the whole hass shape), so assert the boolean gate
-// logic directly — the exact expression used at the call site.
-test("conditions auto-show: conditional forces on even when show_conditions is false", () => {
-  const gate = (cfg, status) => cfg.show_conditions || status === "conditional";
-  assert.equal(gate({ show_conditions: false }, "conditional"), true);
-  assert.equal(gate({}, "conditional"), true);
-  // other states stay governed by the flag → default off unaffected
-  assert.equal(gate({ show_conditions: false }, "armed"), false);
-  assert.equal(gate({}, "cooldown"), false);
-  assert.equal(gate({ show_conditions: true }, "armed"), true);
+// --- conditions gate (v0.5.1) ---
+// The render() gate is `show_conditions` alone — the toggle fully governs the
+// block. Prior to v0.5.1 it was `show_conditions || status === "conditional"`,
+// which leaked the conditions block whenever the rule was CONDITIONAL even with
+// the toggle off; that override was the bug. The full render() can't be driven
+// (needs the whole hass shape), so these lock the real call site in the SOURCE
+// rather than a hand-copy that can drift from it.
+
+test("conditions gate: the status-override that leaked the block is gone from source", () => {
+  // The exact buggy expression, in any spacing, must not reappear at the call site.
+  const override = /show_conditions\s*\|\|\s*status\s*===\s*["']conditional["']/;
+  assert.equal(
+    override.test(cardJs),
+    false,
+    "render() must gate conditions on show_conditions alone, not re-add the status override",
+  );
 });
 
-// auto-show still yields nothing when flags empty: _renderConditions returns
-// `nothing` on an empty/absent flags array, so even a forced call renders blank.
-test("conditions auto-show: empty flags still render nothing", () => {
+test("conditions gate: render() call site gates _renderConditions on show_conditions alone", () => {
+  // Grab the ternary that decides _renderConditions and assert its condition is
+  // the bare flag — `this._config.show_conditions ? this._renderConditions...`.
+  const m = cardJs.match(
+    /\$\{\s*([^?]*?)\s*\?\s*this\._renderConditions\(refs\)\s*:\s*nothing\s*\}/,
+  );
+  assert.ok(m, "could not find the _renderConditions render gate in the card source");
+  assert.equal(m[1].trim(), "this._config.show_conditions");
+});
+
+// All six card section toggles: each render-gate's truthiness semantics must
+// match its editor checkbox default, else a toggle lies about its own state.
+// `!== false` = default-ON (shown unless explicitly turned off); plain truthy
+// = default-OFF (hidden unless turned on). This is the audit that caught the
+// show_conditions override — lock every toggle so none drifts the same way.
+test("toggle audit: every section gate's default matches its editor checkbox", () => {
+  // name → expected default: "on" (!== false guard) or "off" (plain truthy guard)
+  const toggles = {
+    show_stats: "on",
+    show_last_enforced: "on",
+    show_entities: "on",
+    show_config: "off",
+    show_conditions: "off",
+    show_actions: "off",
+  };
+  for (const [name, def] of Object.entries(toggles)) {
+    // Render-gate guard: default-ON reads `this._config.<name> !== false`;
+    // default-OFF reads `this._config.<name>` with NO `!== false`.
+    const onGuard = new RegExp(`this\\._config\\.${name}\\s*!==\\s*false`);
+    const hasOnGuard = onGuard.test(cardJs);
+    if (def === "on") {
+      assert.ok(hasOnGuard, `${name}: expected default-ON guard (!== false) in render()`);
+    } else {
+      assert.equal(
+        hasOnGuard,
+        false,
+        `${name}: default-OFF toggle must not use a !== false guard (would flip it ON by default)`,
+      );
+      // and it must still be referenced as a plain-truthy gate somewhere
+      assert.ok(
+        new RegExp(`this\\._config\\.${name}\\b`).test(cardJs),
+        `${name}: referenced as a render gate`,
+      );
+    }
+    // Editor checkbox default must agree: default-ON binds `.checked=${...!== false}`,
+    // default-OFF binds `.checked=${!!this._config.<name>}`.
+    const onCheckbox = new RegExp(`\\.checked=\\$\\{[^}]*${name}[^}]*!==\\s*false`);
+    const offCheckbox = new RegExp(`\\.checked=\\$\\{\\s*!!this\\._config\\.${name}`);
+    if (def === "on") {
+      assert.ok(onCheckbox.test(cardJs), `${name}: editor checkbox must default ON (!== false)`);
+    } else {
+      assert.ok(offCheckbox.test(cardJs), `${name}: editor checkbox must default OFF (!!)`);
+    }
+  }
+});
+
+// _renderConditions still yields nothing when flags empty: it returns
+// `nothing` on an empty/absent flags array, so even when the toggle is on the
+// block renders blank rather than an empty "Conditions (0)" header.
+test("conditions: empty flags still render nothing", () => {
   const ctx = {
     _applyStateFormat: Card.prototype._applyStateFormat,
     _formatStateDisplay: Card.prototype._formatStateDisplay,
