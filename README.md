@@ -1,7 +1,7 @@
 # Entity Guard for Home Assistant
 
 <a href="https://github.com/italo-lombardi/Home-Assistant-EntityGuard/releases"><img src="https://img.shields.io/github/v/release/italo-lombardi/Home-Assistant-EntityGuard" alt="GitHub Release"></a>
-<a href="https://github.com/hacs/integration"><img src="https://img.shields.io/badge/HACS-Custom-41BDF5.svg" alt="HACS Custom"></a>
+<a href="https://www.home-assistant.io/integrations/#marketplace"><img src="https://img.shields.io/badge/Marketplace-Integration-41BDF5.svg" alt="Home Assistant Marketplace"></a>
 <a href="https://github.com/italo-lombardi/Home-Assistant-EntityGuard"><img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fanalytics.home-assistant.io%2Fcustom_integrations.json&query=%24.entity_guard.total&label=installs&color=41BDF5" alt="HACS Installs"></a>
 <a href="https://www.home-assistant.io/"><img src="https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg" alt="Home Assistant"></a>
 <a href="https://github.com/italo-lombardi/Home-Assistant-EntityGuard/blob/main/LICENSE"><img src="https://img.shields.io/github/license/italo-lombardi/Home-Assistant-EntityGuard?logo=gnu&logoColor=white" alt="License"></a>
@@ -9,7 +9,7 @@
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-ffdd00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/italolombardi)
 [![PayPal](https://img.shields.io/badge/PayPal-00457C?style=flat&logo=paypal&logoColor=white)](https://paypal.me/ItaloLombardi)
 
-[![Add to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=italo-lombardi&repository=Home-Assistant-EntityGuard&category=integration)
+[![Open in Home Assistant](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=italo-lombardi&repository=Home-Assistant-EntityGuard&category=integration)
 [![Add to Home Assistant](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=entity_guard)
 
 Enforce desired entity state in Home Assistant via declarative rules. Replaces N hand-written auto-off / auto-lock / kill-switch automations with a single rule each, with built-in cooldowns, rate limiting, persistence, and a custom dashboard card.
@@ -49,15 +49,17 @@ Enforce desired entity state in Home Assistant via declarative rules. Replaces N
 
 ## Installation
 
-> **Requirements:** Home Assistant **2026.7.0 or newer** (as of 0.5.0). HACS will not offer the update on older cores; upgrade Home Assistant first.
+> **Requirements:** Home Assistant **2026.7.0 or newer** (as of 0.5.0). The Marketplace will not offer the update on older cores; upgrade Home Assistant first.
 
-### HACS (Recommended)
+### Marketplace (Recommended)
 
-1. Open HACS in your Home Assistant instance.
-2. Go to **Integrations** and click the three-dot menu.
-3. Select **Custom repositories**.
-4. Add `https://github.com/italo-lombardi/Home-Assistant-EntityGuard` with category **Integration**.
-5. Click **Install** and restart Home Assistant.
+Entity Guard is in the official Home Assistant Marketplace — no need to add a repository URL.
+
+1. Open **Settings → Marketplace** in Home Assistant.
+2. Search for **Entity Guard**.
+3. Click **Install**, then restart Home Assistant.
+
+> On Home Assistant older than 2026.11 (no built-in Marketplace), install via HACS instead — search for **Entity Guard** in HACS; it is a default repository, so no custom-repository URL is needed.
 
 ### Manual
 
