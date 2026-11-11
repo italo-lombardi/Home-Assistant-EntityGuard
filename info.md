@@ -2,6 +2,11 @@
 
 Declarative state-enforcement rules. Bind one or more entities to a rule that defines a trigger condition and a desired target state — Entity Guard enforces it automatically, with cooldowns, suppression, rate limiting, and a custom dashboard card.
 
+## What's new in 0.5.0
+
+- **Any-rule automation triggers** -- all seven rule events (enforced, skipped, loop detected, suppressed, verified, unreachable, cancelled) are pickable straight from the automation editor. Leave the **Rule** field empty to fire for *any* rule, or scope to one -- no hand-typed `event` trigger, no `rule_id` lookup.
+- **BREAKING: minimum Home Assistant is now 2026.7.0** (was 2024.1.0) -- required for the single-generation trigger platform. On older cores, stay on 0.4.x or use the event-based automation patterns.
+
 ## What's new in 0.4.0
 
 - **Dynamic rule modes (Follow mode)** -- a rule's target value can be read live from a source entity instead of typed; "light follows motion" is now one rule, not two. Fixed and Dynamic variants of both state and attribute modes.
@@ -26,7 +31,7 @@ Declarative state-enforcement rules. Bind one or more entities to a rule that de
 
 - **Multi-entity rules** — one rule binds 1+ target entities, each evaluated independently
 - **Four modes** — Fixed state (force an entity to a target state, including non-on/off targets like climate HVAC modes, vacuum, media transport, input_select options, water_heater modes), Fixed attribute (clamp brightness/volume/temperature/percentage or match a color), and the Dynamic (Follow mode) counterparts that read the target value live from a source entity
-- **Flag conditions** — optional `(entity, match_state)` AND-list; rule arms only when all flags match
+- **Conditions** — optional `(entity, match_state)` AND-list; rule arms only when all conditions match
 - **Cooldown / debounce** — per-entity cooldown after enforcement to avoid loop fights
 - **Rate limiting** — per-rule cap on enforcements per minute; exceeding it auto-suppresses the rule
 - **Suppression** — temporary pause via service call or card button; permanent disable via the `enabled` switch

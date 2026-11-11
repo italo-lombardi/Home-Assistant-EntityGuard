@@ -6,7 +6,7 @@ For ready-made automations that consume these events see
 [`AUTOMATION_EXAMPLES.md`](AUTOMATION_EXAMPLES.md).
 
 Source of truth: `custom_components/entity_guard/rule_engine.py`. Event names:
-`const.py` (`EVENT_*`, lines 368-392).
+`const.py` (the `EVENT_*` constants).
 
 ---
 

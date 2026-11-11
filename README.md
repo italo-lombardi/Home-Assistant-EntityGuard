@@ -143,13 +143,13 @@ Dynamic state binds the target's **on/off** to a live value read from a **source
 | Read value from | **State** (default) — use the source's on/off state. **Attribute** — use one of the source's attributes instead. |
 | Source attribute | *(only when reading from an attribute)* Name of the source attribute to read. Its value is reduced to on/off: a non-zero number, or an on-ish state string, is **on**; `0`, an off-ish word, or empty is **off**. |
 | Invert | Off (default) = *mirror* (source on → target on). On = *invert* (source on → target off). |
-| Delay (seconds) | Wait this long before enforcing (0-86400) |
+| Delay when turning on (seconds) | Wait before driving a target on (0-86400) |
+| Delay when turning off (seconds) | Wait before driving a target off (0-86400) |
 
 Source on/off (when reading the **state**) is derived from a documented set of "on-ish" states (`on`, `home`, `open`, `unlocked`, `playing`, `active`, `cleaning`, `mowing`, `true`, `1`); any other live state is treated as off. When the source is `unavailable`/`unknown` (or a chosen source attribute is missing), the rule holds — no enforcement, no error. Enforcement is idempotent: the target changes only when its current on/off differs from the source-derived value.
 
 > **Tip — bind to a template.** Any entity can be a source, including a [Template helper](https://www.home-assistant.io/integrations/template/). Create a Template binary sensor whose `state` is any Jinja expression (combine several sensors, add time windows, whatever), then point a dynamic rule's source at that helper — the target now follows your template's result, with all of Entity Guard's debounce / delay / conditions / rate-limiting on top.
 
-<!-- SCREENSHOT PLACEHOLDER: replace with latest UX. -->
 ![Step 2c: Dynamic State Mode](assets/03d_dynamic_state.png)
 
 ### Step 2d: Dynamic Attribute Mode (Follow mode)
@@ -166,7 +166,6 @@ Dynamic attribute binds a target **attribute** to a live value read from a **sou
 
 The read value is copied to the target attribute as-is (v1: raw copy, no range scaling — make sure the source value's type and range suit the target attribute, e.g. a 0–255 brightness). The rule acts only while the target is on; a source that is unavailable/unknown, or a missing source attribute, holds the rule. Enforcement is idempotent: the target changes only when its current attribute value differs from the live source value (color within tolerance).
 
-<!-- SCREENSHOT PLACEHOLDER: replace with latest UX. -->
 ![Step 2d: Dynamic Attribute Mode](assets/03e_dynamic_attribute.png)
 
 ### Step 2e: Optional Features
@@ -481,7 +480,7 @@ The card shows:
 - Bound entities with compliance state (✓ compliant / ⚠ violation); state values show translated labels where HA's device_class provides one — `Clear (off)`, `Detected (on)` — or label-only when the label is just a capitalised raw value (`Off`); non-compliant rows translate both sides: `Detected (on) → Clear (off) ⚠`. **Clicking any entity row opens the HA more-info dialog for that entity.** When status is `pending`, a live countdown row appears under each entity that is awaiting enforcement — e.g. `⏱ Enforcing in 14 s` — ticking every second and disappearing once the rule fires or conditions clear.
 - Optional **Conditions** section (`show_conditions: true`) — lists each flag with current vs required state translated the same way; useful when status is `conditional`. **Each condition row is also clickable** (opens more-info for the flag entity). The Conditions section also **auto-shows whenever status is `conditional`** (even with `show_conditions: false`), so a blocked rule always explains itself; `show_conditions: true` still forces it on for every state.
 - A **"Targets needing attention"** panel appears automatically when a bound target's last enforcement **failed** (service error) or hit a **misconfiguration** (`no_service_mapping` — a target whose state can't be driven). Each row shows the target, the outcome, and the reason/error on hover. Benign/transient waits (target off, source offline) are not listed, and the panel self-hides once every target is healthy.
-- Optional **Configuration** section (`show_config: true`) — shows Delay, Debounce ("Disabled" when off), and Loop protection ("auto-suppress for 15 min above N/min" when on) for the rule.
+- Optional **Configuration** section (`show_config: true`) — shows Mode, Delay (split into on/off for dynamic state rules), Debounce ("Disabled" when off), Verify, and Loop protection ("auto-suppress for 15 min above N/min" when on) for the rule.
 - Optional action buttons (Test Enforce, Reset Cooldowns when active, Clear History, Suppress 1h)
 
 **Normal state — rule idle**
@@ -547,7 +546,7 @@ automation:
     - platform: event
       event_type: entity_guard_enforced
       event_data:
-        rule_id: "01KSXDM1GN9WGQCSTFAX0Y1HNS"
+        rule_id: "54a6b7be-5da0-43cc-b7f1-2cc5ec03e98e"
   action:
     - service: notify.mobile_app_my_phone
       data:
