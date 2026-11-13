@@ -237,7 +237,11 @@ class RuleEngine:
             async_call_later(
                 self._hass,
                 STARTUP_GRACE_PERIOD_SECONDS,
-                self._handle_startup_grace_done,
+                HassJob(
+                    self._handle_startup_grace_done,
+                    "entity_guard_startup_grace",
+                    cancel_on_shutdown=True,
+                ),
             )
         )
 
@@ -1033,7 +1037,17 @@ class RuleEngine:
                 return
             self._apply_idle_status()
 
-        unsub = async_call_later(self._hass, remaining, _broadcast_after_cooldown)
+        # cancel_on_shutdown: see _schedule_delayed_enforcement. Benign fire path
+        # (dispatcher send only) but wrapped for symmetry with the other timers.
+        unsub = async_call_later(
+            self._hass,
+            remaining,
+            HassJob(
+                _broadcast_after_cooldown,
+                "entity_guard_cooldown_broadcast",
+                cancel_on_shutdown=True,
+            ),
+        )
         self._cooldown_broadcast_unsubs[entity_id] = unsub
 
     def _rearm_cooldown_broadcasts(self, now: datetime) -> None:
@@ -1131,7 +1145,18 @@ class RuleEngine:
             # async_call_later expects a sync callback; bridge to the coroutine.
             self._hass.async_create_task(_fire(now))
 
-        cancel = async_call_later(self._hass, delay_seconds, _fire_cb)
+        # cancel_on_shutdown so a core-shutdown teardown (which does not call
+        # async_unload) cannot fire _fire during HA shutdown — matches the
+        # pulse-reset timers.
+        cancel = async_call_later(
+            self._hass,
+            delay_seconds,
+            HassJob(
+                _fire_cb,
+                "entity_guard_delayed_enforce",
+                cancel_on_shutdown=True,
+            ),
+        )
         my_cancel = cancel
         self._pending_enforcements[entity_id] = cancel
         self._pending_enforcement_due[entity_id] = dt_util.now() + timedelta(
@@ -1502,7 +1527,16 @@ class RuleEngine:
         def _fire_cb(now: datetime) -> None:
             self._hass.async_create_task(_fire(now))
 
-        cancel = async_call_later(self._hass, VERIFY_DELAY_SECONDS, _fire_cb)
+        # cancel_on_shutdown: see _schedule_delayed_enforcement.
+        cancel = async_call_later(
+            self._hass,
+            VERIFY_DELAY_SECONDS,
+            HassJob(
+                _fire_cb,
+                "entity_guard_verify",
+                cancel_on_shutdown=True,
+            ),
+        )
         my_cancel = cancel
         self._pending_verifications[entity_id] = cancel
 
