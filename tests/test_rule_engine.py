@@ -4754,7 +4754,7 @@ async def test_arm_recently_enforced_timer_clears_flag(hass: HomeAssistant):
 
     assert captured_cb
     # Invoke the HassJob target directly to simulate timer fire
-    captured_cb[0].target(dt_util.now())
+    getattr(captured_cb[0], "target", captured_cb[0])(dt_util.now())
     await hass.async_block_till_done()
 
     assert engine._recently_enforced is False
@@ -4841,7 +4841,7 @@ async def test_arm_recently_enforced_timer_noop_when_unloaded(hass: HomeAssistan
 
     engine._is_unloaded = True
     engine._recently_enforced = True  # set it so we can verify it's NOT cleared
-    captured_cb[0].target(dt_util.now())
+    getattr(captured_cb[0], "target", captured_cb[0])(dt_util.now())
     await hass.async_block_till_done()
 
     # Unloaded: _clear returned early, flag unchanged
@@ -4869,7 +4869,7 @@ async def test_arm_recently_enforced_verified_timer_clears_flag(hass: HomeAssist
         assert engine._recently_enforced_verified is True
 
     assert captured_cb
-    captured_cb[0].target(dt_util.now())
+    getattr(captured_cb[0], "target", captured_cb[0])(dt_util.now())
     await hass.async_block_till_done()
 
     assert engine._recently_enforced_verified is False
@@ -4899,7 +4899,7 @@ async def test_arm_recently_enforced_verified_timer_noop_when_unloaded(
 
     engine._is_unloaded = True
     engine._recently_enforced_verified = True  # set so we can verify it's NOT cleared
-    captured_cb[0].target(dt_util.now())
+    getattr(captured_cb[0], "target", captured_cb[0])(dt_util.now())
     await hass.async_block_till_done()
 
     assert engine._recently_enforced_verified is True
@@ -7442,7 +7442,7 @@ async def test_arm_recently_enforced_unreachable_timer_clears_flag(
         assert engine._recently_enforced_unreachable is True
 
     assert captured_cb
-    captured_cb[0].target(dt_util.now())
+    getattr(captured_cb[0], "target", captured_cb[0])(dt_util.now())
     await hass.async_block_till_done()
 
 
@@ -7507,7 +7507,7 @@ async def test_arm_recently_enforced_cancelled_timer_clears_flag(
         assert engine._recently_enforced_cancelled is True
 
     assert captured_cb
-    captured_cb[0].target(dt_util.now())
+    getattr(captured_cb[0], "target", captured_cb[0])(dt_util.now())
     await hass.async_block_till_done()
     assert engine._recently_enforced_cancelled is False
 
@@ -7652,7 +7652,7 @@ async def test_arm_recently_enforced_unreachable_timer_noop_when_unloaded(
 
     engine._is_unloaded = True
     engine._recently_enforced_unreachable = True  # set so we see it's NOT cleared
-    captured_cb[0].target(dt_util.now())
+    getattr(captured_cb[0], "target", captured_cb[0])(dt_util.now())
     await hass.async_block_till_done()
 
     assert engine._recently_enforced_unreachable is True

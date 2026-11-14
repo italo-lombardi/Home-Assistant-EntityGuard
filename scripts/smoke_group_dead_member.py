@@ -64,7 +64,6 @@ import smoke_verify_enforce as sv  # status_sensor_for, force_state, single-enti
 # list-valued `entity_id` attr), so a switch group behaves like a light group.
 M_DEAD = "switch.eg_smoke_unavailable"  # genuinely unavailable
 M_RAISER = "switch.eg_smoke_raiser"  # raises on turn_off
-DOMAIN = "entity_guard"
 LIVE = {"armed", "conditional", "enforcing", "pending", "cooldown", "verifying"}
 POLL = 0.2
 

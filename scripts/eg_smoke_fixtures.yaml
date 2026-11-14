@@ -87,6 +87,13 @@ template:
       # turn_off calls a nonexistent service so a blocking group turn_off RAISES,
       # driving _record_failure. State pinned 'off' so the group any-on aggregate
       # still reads desired.
+      #
+      # DEPENDENCY (pinned): this relies on HA raising ServiceNotFound for an
+      # unknown service under a blocking call. If a future HA ever softens an
+      # unknown-service call to a non-raising failure, the group turn_off would
+      # stop raising and smoke_group_dead_member's reclassify leg would PASS
+      # without exercising the member_unavailable path (silent fake-green). If
+      # that smoke starts asserting reclassify without a raise, re-check this.
       - name: EG Smoke Raiser
         unique_id: eg_smoke_raiser
         state: "off"

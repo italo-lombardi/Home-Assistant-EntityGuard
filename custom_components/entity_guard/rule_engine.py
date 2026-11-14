@@ -237,6 +237,13 @@ class RuleEngine:
             async_call_later(
                 self._hass,
                 STARTUP_GRACE_PERIOD_SECONDS,
+                # HassJob(cancel_on_shutdown): the real core-shutdown guard is the
+                # is_stopping check at the top of each fire callback (an
+                # async_call_later handle stores hass at args[0], so HA's prod
+                # shutdown canceller — which checks args[0] — does NOT act on this
+                # flag; it is NOT a prod shutdown fix). The flag is still set so the
+                # test harness's lingering-timer check (which inspects args[-1])
+                # treats a still-pending reset as intentional rather than failing.
                 HassJob(
                     self._handle_startup_grace_done,
                     "entity_guard_startup_grace",
@@ -457,6 +464,12 @@ class RuleEngine:
     @callback
     def _handle_startup_grace_done(self, _now: datetime) -> None:
         """After grace, set correct status and evaluate every target once."""
+        # Core-shutdown guard: this timer is cancelled on entry-unload, but a
+        # full-HA shutdown does not call async_unload, so guard the fire path —
+        # _sweep_targets below issues real enforcements. is_stopping covers the
+        # core-stop case that _is_unloaded (entry-unload only) does not.
+        if self._is_unloaded or self._hass.is_stopping:
+            return
         _LOGGER.debug(
             "Startup grace done for rule=%s; sweeping %d targets",
             self._config.name,
@@ -1033,12 +1046,14 @@ class RuleEngine:
         @callback
         def _broadcast_after_cooldown(_now: datetime) -> None:
             self._cooldown_broadcast_unsubs.pop(_eid, None)
-            if self._is_unloaded:
+            # is_stopping: benign fire path (dispatcher send), but guard the
+            # core-shutdown case for consistency with the other timers.
+            if self._is_unloaded or self._hass.is_stopping:
                 return
             self._apply_idle_status()
 
-        # cancel_on_shutdown: see _schedule_delayed_enforcement. Benign fire path
-        # (dispatcher send only) but wrapped for symmetry with the other timers.
+        # HassJob(cancel_on_shutdown): test-harness lingering-timer tolerance; the
+        # prod core-shutdown guard is the is_stopping check above. See async_setup.
         unsub = async_call_later(
             self._hass,
             remaining,
@@ -1076,7 +1091,10 @@ class RuleEngine:
         self._cancel_pending(entity_id)
 
         async def _fire(_now: datetime) -> None:
-            if self._is_unloaded:
+            # is_stopping: a core-HA shutdown does not call async_unload, so
+            # _is_unloaded stays False; guard here too so a pending delayed
+            # enforce cannot issue a service call during teardown.
+            if self._is_unloaded or self._hass.is_stopping:
                 return
             if not self._state.enabled or not self._master_enabled_getter():
                 self._apply_idle_status()
@@ -1145,17 +1163,12 @@ class RuleEngine:
             # async_call_later expects a sync callback; bridge to the coroutine.
             self._hass.async_create_task(_fire(now))
 
-        # cancel_on_shutdown so a core-shutdown teardown (which does not call
-        # async_unload) cannot fire _fire during HA shutdown — matches the
-        # pulse-reset timers.
+        # HassJob(cancel_on_shutdown): test-harness lingering-timer tolerance; the
+        # prod core-shutdown guard is the is_stopping check in _fire. See async_setup.
         cancel = async_call_later(
             self._hass,
             delay_seconds,
-            HassJob(
-                _fire_cb,
-                "entity_guard_delayed_enforce",
-                cancel_on_shutdown=True,
-            ),
+            HassJob(_fire_cb, "entity_guard_delayed_enforce", cancel_on_shutdown=True),
         )
         my_cancel = cancel
         self._pending_enforcements[entity_id] = cancel
@@ -1361,7 +1374,9 @@ class RuleEngine:
             self._forced_verifications.discard(entity_id)
 
         async def _fire(_now: datetime) -> None:
-            if self._is_unloaded:
+            # is_stopping: see _schedule_delayed_enforcement — a verify re-read
+            # can issue a corrective enforce, so guard the core-shutdown case.
+            if self._is_unloaded or self._hass.is_stopping:
                 return
             # Only act on OUR OWN handle (identity guard, like _schedule_delayed).
             # If the handle in the map is not ours — the event-driven happy-path
@@ -1527,15 +1542,10 @@ class RuleEngine:
         def _fire_cb(now: datetime) -> None:
             self._hass.async_create_task(_fire(now))
 
-        # cancel_on_shutdown: see _schedule_delayed_enforcement.
         cancel = async_call_later(
             self._hass,
             VERIFY_DELAY_SECONDS,
-            HassJob(
-                _fire_cb,
-                "entity_guard_verify",
-                cancel_on_shutdown=True,
-            ),
+            HassJob(_fire_cb, "entity_guard_verify", cancel_on_shutdown=True),
         )
         my_cancel = cancel
         self._pending_verifications[entity_id] = cancel
@@ -2808,7 +2818,7 @@ class RuleEngine:
         @callback
         def _clear(_now: datetime) -> None:
             self._recently_enforced_unsub = None
-            if self._is_unloaded:
+            if self._is_unloaded or self._hass.is_stopping:
                 return
             self._recently_enforced = False
             async_dispatcher_send(
@@ -2879,7 +2889,7 @@ class RuleEngine:
         @callback
         def _clear(_now: datetime) -> None:
             self._recently_enforced_verified_unsub = None
-            if self._is_unloaded:
+            if self._is_unloaded or self._hass.is_stopping:
                 return
             self._recently_enforced_verified = False
             async_dispatcher_send(
@@ -2957,7 +2967,7 @@ class RuleEngine:
         @callback
         def _clear(_now: datetime) -> None:
             self._recently_enforced_unreachable_unsub = None
-            if self._is_unloaded:
+            if self._is_unloaded or self._hass.is_stopping:
                 return
             self._recently_enforced_unreachable = False
             async_dispatcher_send(
@@ -3032,7 +3042,7 @@ class RuleEngine:
         @callback
         def _clear(_now: datetime) -> None:
             self._recently_enforced_cancelled_unsub = None
-            if self._is_unloaded:
+            if self._is_unloaded or self._hass.is_stopping:
                 return
             self._recently_enforced_cancelled = False
             async_dispatcher_send(

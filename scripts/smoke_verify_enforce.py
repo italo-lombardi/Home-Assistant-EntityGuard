@@ -64,11 +64,11 @@ import time
 sys.path.insert(0, "/workspaces/home-assistant-core/config")
 import smoke_follow as sf  # shared helpers, resolved inside the container
 
-# Allowed smoke target: a real light the engine drives via light.turn_on/off
-# (memory: smoke_test_entities). We force it OFF the desired state to simulate
-# a non-complying device.
+# Allowed smoke target: a real COMPLIANT light the engine drives via
+# light.turn_on/off (memory: smoke_test_entities). Used for the baseline leg
+# (a complying target records no unreachable outcome) and by sibling smokes'
+# VERIFIED legs. Exhaustion legs use SILENT_TARGET below instead.
 TARGET = "light.living_room_under_cabinet_lights"
-TRIGGER = "input_boolean.ea_ctrl_kitchen_1"  # allowed trigger/source
 
 # Deterministic silent-ignore fixture (scripts/eg_smoke_fixtures.yaml): a
 # template switch that ACKs turn_on/turn_off but never reaches the desired state,
