@@ -14,42 +14,36 @@ failing target is a group whose aggregate reached desired AND a member is
 unavailable, fire a `member_unavailable` SKIP instead of service_call_failed —
 no consecutive_errors bump, no STATUS_ERROR.
 
-WHAT IS LIVE-FORCEABLE vs UNIT-LOCKED (honest scope):
+WHAT IS LIVE-FORCEABLE (deterministic via fixtures):
 
-  The reclassify branch (_record_failure) only runs when the group service call
-  ACTUALLY RAISES or times out. On serene_booth the two allowed lights are
-  demo/template lights — light.turn_off on a group of them does NOT raise even
-  with a member forced 'unavailable' (no real integration throws). So the
-  `member_unavailable` outcome CANNOT be forced live here; that exact branch is
-  unit-locked by test_group_dead_member_raise_is_skip_not_error. We still probe
-  for it and report member_unavailable if it ever appears (SKIP otherwise, same
-  honesty as smoke_unreachable_signal / smoke_verify_enforce).
-
-  The FORCEABLE, user-visible symptom — and the HARD assertion here — is the
-  NEGATIVE: a verify-ON group rule with a dead member and the aggregate at
-  desired does NOT go sticky STATUS_ERROR and does NOT climb consecutive_errors.
-  (No raise -> normal path -> verify sees the aggregate at desired -> confirms
-  clean. That is exactly what the user wanted: no false error loop.)
+  Both legs are HARD and deterministic. Two fixtures (scripts/eg_smoke_fixtures
+  .yaml): switch.eg_smoke_unavailable (availability template false) is
+  PERMANENTLY unavailable — no /api/states paint race — and switch.eg_smoke_raiser
+  raises on turn_off. The reclassify is forced WITHOUT any state-paint timing race
+  by pressing the rule's test_enforce button: a manual force issues turn_off on a
+  group that ALREADY reads the desired 'off' (so _verify_reached is True) while
+  the raiser makes the fan-out turn_off RAISE — exactly the condition
+  _record_failure reclassifies to member_unavailable. The reclassify is also
+  unit-locked by test_group_dead_member_raise_is_skip_not_error.
 
 SCENARIOS:
-  (a) GROUP + verify-ON off-rule over a DISPOSABLE light group (built live via
-      the native `group` light-helper config-entry flow over the two allowed
-      lights — memory: smoke_test_entities; real groups are never touched).
-      Force one member 'unavailable', aggregate reads 'off', trip the rule.
-      HARD: status is NOT 'error' and consecutive_errors stays 0.
-      BEST-EFFORT: if the group call happened to raise and reclassify, assert
-      target_outcomes[group].reason == 'member_unavailable' with the dead
-      member's friendly-name in `members`; else SKIP (unit-locked).
+  (a) GROUP + verify-ON off-rule over a DISPOSABLE switch group (built live via
+      the native `group` switch-helper config-entry flow over the eg_smoke_*
+      fixtures; real groups/devices are never touched). The group rests at 'off'
+      (== desired); force-enforce via the test_enforce button.
+      HARD: status is NOT 'error', consecutive_errors stays 0, AND
+      target_outcomes[group].reason == 'member_unavailable' (reclassify, skip
+      outcome, dead member named).
   (b) REGRESSION HARD: a single-entity (non-group) verify rule is unaffected by
       the group code path — created and armed clean, status live not error.
 
 Group helper teardown uses DELETE /api/config/config_entries/entry/<id>
 (verified: plain /api/config/config_entries/<id> 404s; the /entry/ path works
-and returns require_restart False for a light-group helper).
+and returns require_restart False for a group helper).
 
 Run INSIDE the container:
   /home/vscode/.local/ha-venv/bin/python -I scripts/smoke_group_dead_member.py
-Exit 0 = HARD assertions green (best-effort may SKIP), 1 = a HARD failure.
+Exit 0 = all HARD assertions green, 1 = a failure.
 """
 
 from __future__ import annotations
@@ -61,21 +55,25 @@ sys.path.insert(0, "/workspaces/home-assistant-core/config")
 import smoke_follow as sf  # token/api/waits/cleanup/check/CREATED
 import smoke_verify_enforce as sv  # status_sensor_for, force_state, single-entity TARGET
 
-# Two allowed smoke lights (memory: smoke_test_entities). The disposable group
-# is built over these; one is forced unavailable as the "dead member".
-M_DEAD = "light.living_room_under_cabinet_lights"  # forced unavailable
-M_LIVE = "light.living_room_diffuser"  # stays off (live member)
+# Switch group over deterministic fixtures (scripts/eg_smoke_fixtures.yaml):
+#  - eg_smoke_unavailable: availability=false -> genuinely 'unavailable' (dead
+#    member; no /api/states paint race).
+#  - eg_smoke_raiser: turn_off calls a nonexistent service -> the group turn_off
+#    RAISES, driving the member_unavailable reclassify path.
+# EG group handling is domain-agnostic (_dead_group_members keys only on a
+# list-valued `entity_id` attr), so a switch group behaves like a light group.
+M_DEAD = "switch.eg_smoke_unavailable"  # genuinely unavailable
+M_RAISER = "switch.eg_smoke_raiser"  # raises on turn_off
 DOMAIN = "entity_guard"
 LIVE = {"armed", "conditional", "enforcing", "pending", "cooldown", "verifying"}
 POLL = 0.2
 
 
-def make_light_group(token: str, name: str, members: list[str]) -> tuple[str, str]:
-    """Create a disposable light-group helper over `members`.
+def make_switch_group(token: str, name: str, members: list[str]) -> tuple[str, str]:
+    """Create a disposable switch-group helper over `members`.
 
-    Returns (config_entry_id, group_entity_id). The group integration has no
-    `group.set` service on serene_booth (returns 400), but the native group
-    light-helper CONFIG-ENTRY flow works. Caller must tear down the entry.
+    Returns (config_entry_id, group_entity_id). Uses the native group
+    config-entry flow (switch sub-flow). Caller must tear down the entry.
     """
     flow = sf.api(
         token, "POST", "/api/config/config_entries/flow", {"handler": "group"}
@@ -85,7 +83,7 @@ def make_light_group(token: str, name: str, members: list[str]) -> tuple[str, st
         token,
         "POST",
         f"/api/config/config_entries/flow/{fid}",
-        {"next_step_id": "light"},
+        {"next_step_id": "switch"},
     )
     result = sf.api(
         token,
@@ -96,13 +94,13 @@ def make_light_group(token: str, name: str, members: list[str]) -> tuple[str, st
     if result.get("type") != "create_entry":
         raise RuntimeError(f"group helper flow did not finish: {result}")
     entry_id = result["result"]["entry_id"]
-    # Resolve the group's light entity_id by its member-list attribute matching.
+    # Resolve the group's switch entity_id by its member-list attribute matching.
     gid = None
     deadline = time.time() + 15
     while time.time() < deadline and gid is None:
         for st in sf.api(token, "GET", "/api/states"):
             eid = st["entity_id"]
-            if eid.startswith("light.") and isinstance(
+            if eid.startswith("switch.") and isinstance(
                 st.get("attributes", {}).get("entity_id"), list
             ):
                 if sorted(st["attributes"]["entity_id"]) == sorted(members):
@@ -113,7 +111,7 @@ def make_light_group(token: str, name: str, members: list[str]) -> tuple[str, st
     if gid is None:
         # Clean the orphan entry before bailing.
         sf.api(token, "DELETE", f"/api/config/config_entries/entry/{entry_id}")
-        raise RuntimeError("group light entity never appeared after helper create")
+        raise RuntimeError("group switch entity never appeared after helper create")
     return entry_id, gid
 
 
@@ -166,36 +164,28 @@ def main() -> int:
     group_entry = None
     try:
         # === (a) GROUP + verify + dead member ==============================
-        # Build the disposable group and drive both members OFF so the aggregate
-        # reads 'off' (desired for an off-rule). Then force one member
-        # unavailable — the aggregate stays 'off' (HA any-on) with a dead member.
-        group_entry, gid = make_light_group(token, "ea_smoke_grp", [M_DEAD, M_LIVE])
-        sf.check("disposable light group created", bool(gid), f"gid={gid}")
+        # Build the disposable switch group over fixtures. eg_smoke_unavailable
+        # is PERMANENTLY unavailable (availability=false); eg_smoke_raiser raises
+        # on turn_off. Both rest at 'off', so the any-on aggregate reads 'off'
+        # (== desired for an off-rule) with a genuinely dead member present.
+        group_entry, gid = make_switch_group(token, "ea_smoke_grp", [M_DEAD, M_RAISER])
+        sf.check("disposable switch group created", bool(gid), f"gid={gid}")
 
-        # Precondition: members available before we start (else force_state and
-        # the aggregate behave unpredictably and we'd false-FAIL blaming the fix).
-        # Mirrors smoke_fast_verify's availability guard.
-        # Seed both members 'off' via raw /api/states, THEN assert the live
-        # member holds at off. M_LIVE may be a real device reporting
-        # 'unavailable' at rest (e.g. a Tuya light offline between polls); what
-        # the test needs is a live-off member so the any-on group aggregate
-        # reads 'off', and force_state provides exactly that. Checking the
-        # device's pre-seed state here was a false FAIL — it gated on the device
-        # being awake rather than on the forced seed sticking.
-        sv.force_state(token, M_DEAD, "off")
-        sv.force_state(token, M_LIVE, "off")
         time.sleep(1.0)
-        pre_live = sf.get_state(token, M_LIVE)
-        pre_ok = pre_live and pre_live.get("state") == "off"
+        pre_dead = sf.get_state(token, M_DEAD)
         sf.check(
-            "live member seeds to 'off' before trip (else false FAIL unrelated to fix)",
-            pre_ok,
-            f"{M_LIVE} state={pre_live.get('state') if pre_live else None}",
+            "dead-member fixture is genuinely unavailable",
+            pre_dead and pre_dead.get("state") == "unavailable",
+            f"{M_DEAD} state={pre_dead.get('state') if pre_dead else None}",
         )
-        if not pre_ok:
-            return 1  # precondition miss, not a fix regression
-        # Rule: trigger when group reads 'on', enforce 'off'. (target_state must
-        # differ from trigger_states — target_in_triggers guard.)
+
+        # Rule: trigger when group reads 'on', enforce 'off'. The group rests at
+        # 'off' (== the DESIRED state), so a manual force-enforce (test_enforce
+        # button) issues turn_off on an ALREADY-at-desired group — exactly the
+        # real scenario: _verify_reached(group)=True while a dead member makes
+        # the fan-out turn_off RAISE. That drives _record_failure's reclassify to
+        # member_unavailable deterministically (no state-paint timing race —
+        # force-enforce bypasses the trigger check).
         entry = create_verify_rule_on(token, "ea_smoke_grp_rule", [gid], ["on"], "off")
         sf.check("verify-ON group rule created", bool(entry))
         slug = "ea_smoke_grp_rule"
@@ -203,30 +193,21 @@ def main() -> int:
         armed = sf.wait_for_armed(token, "fixed_state", [gid])
         sf.check("group rule left startup grace (armed)", armed)
 
-        # Kill one member; aggregate must still read 'off' (dead member dragged
-        # to unavailable, live member off -> any-on aggregate 'off' = desired).
-        # Inject WITH a friendly_name (raw /api/states, not sv.force_state which
-        # posts no attributes): the best-effort member_unavailable reclassify
-        # branch below matches the dead member by friendly-name, so an attribute
-        # strip would make that match silently fall back to the entity_id. Branch
-        # is unit-locked, but keep the live probe honest if it ever fires.
-        sf.api(
-            token,
-            "POST",
-            f"/api/states/{M_DEAD}",
-            {"state": "unavailable", "attributes": {"friendly_name": "Dead Member"}},
-        )
-        time.sleep(1.0)
         agg = sf.get_state(token, gid)
         sf.check(
-            "group aggregate still reads 'off' with a dead member",
+            "group aggregate reads 'off' (desired) with a dead member",
             agg and agg.get("state") == "off",
             f"agg={agg.get('state') if agg else None}",
         )
 
-        # Trip: paint the group 'on' so the rule enforces 'off' on a group that
-        # has a dead member. Post-fix this must NOT loop into a sticky error.
-        sv.force_state(token, gid, "on")
+        # Force-enforce via the test_enforce button: issues turn_off on the
+        # at-desired group → the raiser member makes it RAISE → reclassify.
+        sf.api(
+            token,
+            "POST",
+            "/api/services/button/press",
+            {"entity_id": f"button.{slug}_test_enforce"},
+        )
 
         saw_reclassify = False
         went_error = False
@@ -258,36 +239,26 @@ def main() -> int:
             f"consecutive_errors peaked at {max_consec}",
         )
 
-        # BEST-EFFORT: member_unavailable reclassify (only if the group call
-        # actually raised — not forceable with demo lights, unit-locked).
-        if saw_reclassify:
-            tgt = (
-                (sf.get_state(token, status_eid).get("attributes") or {})
-                .get("target_outcomes", {})
-                .get(gid, {})
-            )
-            dead_name = (
-                sf.get_state(token, M_DEAD)
-                .get("attributes", {})
-                .get("friendly_name", M_DEAD)
-            )
-            members = tgt.get("members") or []
-            sf.check(
-                "reclassified skip outcome == 'skipped'",
-                tgt.get("outcome") == "skipped",
-            )
-            sf.check(
-                "dead member named in target_outcomes.members",
-                any(dead_name in m for m in members),
-                f"members={members}",
-            )
-        else:
-            sf.check(
-                "SKIP: member_unavailable reclassify not forced "
-                "(demo-light group turn_off doesn't raise; branch unit-locked by "
-                "test_group_dead_member_raise_is_skip_not_error)",
-                True,
-            )
+        # HARD: member_unavailable reclassify. Forced deterministically by the
+        # test_enforce button on an at-desired group with a raise-on-turn_off
+        # member — _verify_reached(group)=True + the fan-out raises → reclassify.
+        sf.check("member_unavailable reclassify observed", saw_reclassify)
+        tgt = (
+            (sf.get_state(token, status_eid).get("attributes") or {})
+            .get("target_outcomes", {})
+            .get(gid, {})
+        )
+        members = tgt.get("members") or []
+        sf.check(
+            "reclassified skip outcome == 'skipped'",
+            tgt.get("outcome") == "skipped",
+            f"outcome={tgt.get('outcome')}",
+        )
+        sf.check(
+            "dead member named in target_outcomes.members",
+            bool(members),
+            f"members={members}",
+        )
 
         # === (b) REGRESSION: single-entity verify unaffected ===============
         # A non-group verify rule must arm clean — the group code path (dead-
@@ -308,8 +279,9 @@ def main() -> int:
     finally:
         sf.cleanup(token)  # EG rules
         if group_entry:
-            # Reset the forced member + remove the disposable group helper.
-            sv.force_state(token, M_DEAD, "off")
+            # Remove the disposable group helper. M_DEAD is a permanent template
+            # fixture (availability=false) — never paint it; a raw /api/states
+            # write would override its template state until the next HA re-eval.
             try:
                 sf.api(
                     token, "DELETE", f"/api/config/config_entries/entry/{group_entry}"

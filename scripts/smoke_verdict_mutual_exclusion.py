@@ -9,37 +9,31 @@ arming one must force the other two OFF (even inside their shared 30s window).
 The base binary_sensor.<rule>_recently_enforced (command-sent axis) is NOT in
 the group and is deliberately left alone.
 
-Twin conventions of smoke_verified_signal / smoke_cancelled_signal: allowed
-target light.living_room_under_cabinet_lights (sv.TARGET), master flipped ON up
-front and restored in finally, force_state injects a virtual state over the
-TARGET (no real device command) and is undone in finally, cleanup() drops only
-this run's own rule.
+Twin conventions of smoke_verified_signal / smoke_cancelled_signal: compliant
+light.living_room_under_cabinet_lights (sv.TARGET) for the real VERIFIED pulse,
+the silent-ignore fixture (sv.SILENT_TARGET) for the deterministic verdict
+switch, master flipped ON up front and restored in finally, force_state injects
+a virtual state and is undone in finally, cleanup() drops only this run's rules.
 
-Assertions, split HARD (deterministic over REST) vs BEST-EFFORT (SKIP on a
-compliant device, like the verified/cancelled twins):
+Assertions, all HARD (deterministic):
 
-  HARD
-  1. verify-ON rule → force a genuine success → the VERIFIED sensor pulses ON
-     (deterministic: compliant device confirms the re-read → _fire_verified).
+  1. verify-ON rule on the compliant light → force a genuine success → the
+     VERIFIED sensor pulses ON (compliant device confirms the re-read →
+     _fire_verified).
   2. with VERIFIED ON, the other two verdict sensors (unreachable, cancelled)
-     read OFF in the SAME window — the baseline exclusion invariant (only one
-     verdict is ever on at once).
-
-  BEST-EFFORT (SKIP-tolerant)
-  3. force a SECOND, DIFFERENT verdict inside the window and assert the switch is
-     exclusive: trip the rule again and immediately `entity_guard.suppress`,
-     racing the ~10ms event-driven confirm. If suppress wins, the reached ACK
-     lands on the reached-but-dropped path → _fire_cancelled → CANCELLED arms ON
-     AND VERIFIED must now read OFF (the arm cleared its sibling). On a compliant
-     device the confirm usually wins (stays verified) → SKIP. The clear-sibling
-     mechanism is unit-locked (test_verdict_sensors_mutually_exclusive).
+     read OFF in the SAME window — the baseline exclusion invariant.
+  3. on a SEPARATE silent-ignore rule, force a verdict SWITCH between two
+     verdicts it can deterministically produce: exhaust → UNREACHABLE arms ON,
+     then suppress a fresh cycle mid-window → CANCELLED arms ON and must clear
+     the UNREACHABLE sibling (mutual exclusion). A silent target can never
+     verify, so the VERIFIED-pulse legs stay on the compliant light.
 
 Run inside the container:
   docker cp scripts/smoke_verdict_mutual_exclusion.py \
     serene_booth:/workspaces/home-assistant-core/config/smoke_verdict_mutual_exclusion.py
   docker exec serene_booth /home/vscode/.local/ha-venv/bin/python \
     /workspaces/home-assistant-core/config/smoke_verdict_mutual_exclusion.py
-Exit 0 = all HARD assertions green (best-effort may SKIP), 1 = a HARD failure.
+Exit 0 = all assertions green, 1 = a failure.
 """
 
 from __future__ import annotations
@@ -51,7 +45,8 @@ sys.path.insert(0, "/workspaces/home-assistant-core/config")
 import smoke_follow as sf  # shared helpers, resolved inside the container
 import smoke_verify_enforce as sv  # reuse create_verify_rule + force_state + status
 
-TARGET = sv.TARGET
+TARGET = sv.TARGET  # compliant light — for the real VERIFIED pulse (legs 1/2)
+SILENT = sv.SILENT_TARGET  # silent-ignore fixture — for the verdict switch (leg 3)
 DOMAIN = "entity_guard"
 MASTER = "switch.entity_guard_hub_master_enabled"
 
@@ -121,41 +116,63 @@ def main() -> int:
                 f"cancelled={sf.get_state(token, cancelled_eid).get('state')}",
             )
 
-        # --- BEST-EFFORT (3): force a SECOND verdict → exclusive switch ---------
-        # Re-trip the rule and immediately suppress, racing the ~10ms confirm. A
-        # suppress win lands _fire_cancelled → CANCELLED arms ON; the arm must have
-        # cleared its sibling, so VERIFIED now reads OFF in the same window. A
-        # confirm win (common on a compliant device) stays verified → SKIP.
-        sv.force_state(token, TARGET, "off")
+        # --- HARD (3): force a verdict SWITCH on a silent rule → exclusive ------
+        # Legs 1/2 proved VERIFIED excludes its siblings on a compliant target.
+        # Leg 3 proves the switch is live between two verdicts a SILENT-IGNORE
+        # rule can deterministically produce: first UNREACHABLE (verify exhausts
+        # because the fixture never reaches desired), then CANCELLED (suppress a
+        # fresh cycle mid-window). Arming CANCELLED must clear the UNREACHABLE
+        # sibling in the same window. Separate rule so legs 1/2 keep a real
+        # VERIFIED pulse (a silent target can never verify).
+        s_name = "ea_smoke_verdict_mutex_silent"
+        s_slug = s_name
+        s_verified = f"binary_sensor.{s_slug}_recently_enforced_verified"
+        s_unreachable = f"binary_sensor.{s_slug}_recently_enforced_unreachable"
+        s_cancelled = f"binary_sensor.{s_slug}_recently_enforced_cancelled"
+        s_entry = sv.create_verify_rule_on(
+            token, s_name, [SILENT], ["off"], "on", verify=True
+        )
+        sf.check("silent verdict rule created", bool(s_entry))
+        sv.status_sensor_for(token, s_slug)
+        sf.check(
+            "silent verdict rule armed",
+            sf.wait_for_armed(token, "fixed_state", [SILENT]),
+        )
+
+        # (3a) exhaust → UNREACHABLE arms ON.
+        sv.force_state(token, SILENT, "off")
+        unreachable_on = _wait_state(token, s_unreachable, "on", timeout=35)
+        sf.check(
+            "silent rule: unreachable sensor armed ON after exhaustion", unreachable_on
+        )
+
+        # (3b) force CANCELLED on a fresh cycle → it must clear the UNREACHABLE
+        # sibling (mutual exclusion). The fixture holds verify pending the full
+        # window so suppress deterministically lands on the dropped path.
+        sv.force_state(token, SILENT, "off")
         sf.api(
             token,
             "POST",
             f"/api/services/{DOMAIN}/suppress",
-            {"rule_id": entry_id, "duration_minutes": 10},
+            {"rule_id": s_entry, "duration_minutes": 10},
         )
-        cancelled_on = _wait_state(token, cancelled_eid, "on", timeout=20)
-        if cancelled_on:
-            sf.check("cancelled sensor armed ON after a forced drop", True)
-            # The whole point: arming cancelled cleared the verified sibling.
-            sf.check(
-                "verified sensor forced OFF when cancelled armed (mutual exclusion)",
-                sf.get_state(token, verified_eid).get("state") == "off",
-                f"verified={sf.get_state(token, verified_eid).get('state')}",
-            )
-            sf.check(
-                "unreachable sensor still OFF (never armed)",
-                sf.get_state(token, unreachable_eid).get("state") == "off",
-            )
-        else:
-            print(
-                "SKIP: second-verdict switch not forced live (compliant device "
-                "confirmed in ~10ms before suppress → stayed verified, no cancelled "
-                "to switch to) — the clear-sibling mechanism is unit-locked "
-                "(test_verdict_sensors_mutually_exclusive)"
-            )
+        cancelled_on = _wait_state(token, s_cancelled, "on", timeout=20)
+        sf.check(
+            "silent rule: cancelled sensor armed ON after a forced drop", cancelled_on
+        )
+        sf.check(
+            "unreachable forced OFF when cancelled armed (mutual exclusion)",
+            sf.get_state(token, s_unreachable).get("state") == "off",
+            f"unreachable={sf.get_state(token, s_unreachable).get('state')}",
+        )
+        sf.check(
+            "verified still OFF on silent rule (never armed)",
+            sf.get_state(token, s_verified).get("state") == "off",
+        )
         sf.api(
-            token, "POST", f"/api/services/{DOMAIN}/unsuppress", {"rule_id": entry_id}
+            token, "POST", f"/api/services/{DOMAIN}/unsuppress", {"rule_id": s_entry}
         )
+        sv.force_state(token, SILENT, "off")  # reset fixture for later smokes
     finally:
         sf.cleanup(token)
         if target_pre not in (None, "unavailable", "unknown"):

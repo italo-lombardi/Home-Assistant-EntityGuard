@@ -1,0 +1,112 @@
+# EntityGuard smoke fixtures. Inert, deterministic targets so the live smokes
+# need no race against a real device. Namespaced eg_smoke_* so they never collide
+# with seeded rules or sibling packages. Loaded via the existing
+# `packages: !include_dir_named packages` include in configuration.yaml.
+
+input_boolean:
+  # Heater switch backing the generic_thermostat climate fixture.
+  eg_smoke_heater:
+    name: EG Smoke Heater
+  # Harness-driven confirm edge for the delayed-confirm switch below. The test
+  # flips this ON at a controlled instant (after it has suppressed the rule) so
+  # the reached-but-dropped verify path is exercised with explicit ordering, not
+  # a wall-clock race.
+  eg_smoke_confirm:
+    name: EG Smoke Confirm
+
+input_number:
+  # Current-temperature source for the generic_thermostat.
+  eg_smoke_temp:
+    name: EG Smoke Temp
+    min: 5
+    max: 35
+    step: 0.5
+    unit_of_measurement: "°C"
+
+template:
+  - sensor:
+      # generic_thermostat requires a sensor entity for current temperature.
+      - name: EG Smoke Current Temp
+        unique_id: eg_smoke_current_temp
+        unit_of_measurement: "°C"
+        state: "{{ states('input_number.eg_smoke_temp') }}"
+        availability: "{{ true }}"
+
+  - switch:
+      # DETERMINISTIC SILENT-IGNORE TARGET.
+      # turn_on/turn_off run a harmless no-op (logbook.log) that does NOT touch
+      # this switch's own state, so the service call ACKs (engine enters the
+      # verify window) but the reported state is pinned 'off' and NEVER reaches
+      # the desired 'on'. Not optimistic. -> verify exhausts ->
+      # target_outcomes[...].reason == 'unreachable_after_retries', every run.
+      - name: EG Smoke Silent Ignore
+        unique_id: eg_smoke_silent_ignore
+        state: "off"
+        availability: "{{ true }}"
+        turn_on:
+          - service: logbook.log
+            data:
+              name: eg_smoke
+              message: silent-ignore turn_on acked (no state change)
+        turn_off:
+          - service: logbook.log
+            data:
+              name: eg_smoke
+              message: silent-ignore turn_off acked (no state change)
+
+      # UNAVAILABLE FIXTURE for the group dead-member leg: availability template
+      # is literally false, so the entity always reports 'unavailable'.
+      - name: EG Smoke Unavailable
+        unique_id: eg_smoke_unavailable
+        state: "off"
+        availability: "{{ false }}"
+
+      # DELAYED/CONTROLLED-CONFIRM TARGET for the verify-suppress-drop leg.
+      # Its state MIRRORS input_boolean.eg_smoke_confirm (value_template), so the
+      # harness controls exactly WHEN it reaches the desired 'on' — AFTER it has
+      # suppressed the rule mid-verify. turn_on/turn_off are no-ops (the engine's
+      # enforce ACKs but does NOT move the state; only the harness-driven helper
+      # edge does). This exercises the reached-but-dropped stale-handle path with
+      # explicit ordering instead of a ~10ms race.
+      - name: EG Smoke Delayed Confirm
+        unique_id: eg_smoke_delayed_confirm
+        state: "{{ 'on' if is_state('input_boolean.eg_smoke_confirm', 'on') else 'off' }}"
+        availability: "{{ true }}"
+        turn_on:
+          - service: logbook.log
+            data:
+              name: eg_smoke
+              message: delayed-confirm turn_on acked (state follows helper)
+        turn_off:
+          - service: logbook.log
+            data:
+              name: eg_smoke
+              message: delayed-confirm turn_off acked (state follows helper)
+
+      # RAISE-ON-COMMAND fixture for the member_unavailable reclassify leg:
+      # turn_off calls a nonexistent service so a blocking group turn_off RAISES,
+      # driving _record_failure. State pinned 'off' so the group any-on aggregate
+      # still reads desired.
+      - name: EG Smoke Raiser
+        unique_id: eg_smoke_raiser
+        state: "off"
+        availability: "{{ true }}"
+        turn_on:
+          - service: logbook.log
+            data:
+              name: eg_smoke
+              message: raiser turn_on acked
+        turn_off:
+          - service: entity_guard.nonexistent_service_to_force_raise
+            data: {}
+
+climate:
+  # generic_thermostat: a disposable climate entity we MAY actuate (unlike the
+  # user's off-limits smart_thermostat_*). hvac_modes = [off, heat].
+  - platform: generic_thermostat
+    name: EG Smoke Thermostat
+    heater: input_boolean.eg_smoke_heater
+    target_sensor: sensor.eg_smoke_current_temp
+    min_temp: 5
+    max_temp: 35
+    ac_mode: false

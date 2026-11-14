@@ -9,22 +9,18 @@ FIRES when that rule produces the event. That exercises `async_attach_trigger`'s
 event_trigger delegation + the rule_id filter over a live HA — the path a unit
 test mocks.
 
-Two of the three are forceable against a compliant device, so they fire live:
+All three NEW triggers fire live:
 
   1. VERIFIED — verify-ON rule + a genuine enforce → the verify re-read confirms
-     → EVENT_VERIFIED. Forced by painting the target to the non-desired state
-     (engine enforces the desired state via a real service → confirm).
+     → EVENT_VERIFIED. Forced by painting the compliant target to the non-desired
+     state (engine enforces the desired state via a real service → confirm).
   2. SUPPRESSED — the `entity_guard.suppress` service fires EVENT_SUPPRESSED
      directly. Forced by calling that service on the rule.
-
-  unreachable — EVENT_UNREACHABLE needs verify EXHAUSTION on a device that
-     ignores the command. The container's targets are compliant (they obey
-     light.turn_on), so exhaustion can't be forced without a fake non-compliant
-     device. That attach path is identical to the other two (same generic
-     TRIGGER_TYPE_EVENT lookup → event_trigger) and is unit-locked in
-     tests/test_device_trigger.py::test_attach_trigger_fires_on_new_event_types.
-     This smoke SKIPS it rather than fake a pass. (Same rationale as
-     smoke_unreachable_signal: the signal twin is also unit-locked, not live.)
+  3. UNREACHABLE — a second verify-ON rule on the silent-ignore fixture
+     (switch.eg_smoke_silent_ignore): it ACKs turn_on but never reaches desired,
+     so verify EXHAUSTS deterministically → EVENT_UNREACHABLE. No non-compliant
+     real device needed. Same generic TRIGGER_TYPE_EVENT attach path as the
+     other two (unit-locked in tests/test_device_trigger.py).
 
 Run inside the container:
   docker cp scripts/smoke_device_triggers.py \
@@ -193,12 +189,39 @@ def main() -> int:
     except Exception as e:
         print(f"  [WARN] unsuppress failed: {e}")
 
-    # --- unreachable: SKIPPED (see module docstring) ---------------------------
-    print(
-        "  [SKIP] unreachable device trigger — live verify-exhaustion needs a "
-        "non-compliant device; attach path is unit-locked "
-        "(test_attach_trigger_fires_on_new_event_types)."
+    # --- (3) UNREACHABLE device trigger fires live -----------------------------
+    # A SECOND verify rule on the silent-ignore fixture (switch.eg_smoke_silent_
+    # ignore): it ACKs turn_on but never reaches "on", so verify exhausts every
+    # run → EVENT_UNREACHABLE → the unreachable device trigger → SINK on. No
+    # non-compliant real device needed.
+    u_name = "ea_smoke_devtrig_unreach"
+    u_entry = sv.create_verify_rule_on(
+        token, u_name, [sv.SILENT_TARGET], ["off"], "on", verify=True
     )
+    sf.check("silent-ignore verify rule created (unreachable leg)", bool(u_entry))
+    sv.status_sensor_for(token, u_name)  # wait past startup grace
+    sf.check(
+        "unreachable rule left startup grace (armed)",
+        sf.wait_for_armed(token, "fixed_state", [sv.SILENT_TARGET]),
+    )
+    u_device_id = rule_device_id(token, u_name)
+    sf.check("resolved unreachable rule device_id", bool(u_device_id))
+    reset_sink(token)
+    aid_u = "eg_smoke_devtrig_unreachable"
+    autos.append(aid_u)
+    install_device_trigger_automation(token, aid_u, u_device_id, "unreachable")
+    sf.check(
+        "unreachable automation installed (type accepted by device_trigger schema)",
+        sf.get_state(token, f"automation.{aid_u}").get("state") == "on",
+    )
+    # Trip the off->on rule; the silent fixture never reaches "on" → verify
+    # exhausts after VERIFY_MAX_ATTEMPTS correctives → EVENT_UNREACHABLE.
+    sv.force_state(token, sv.SILENT_TARGET, "off")
+    sf.check(
+        "unreachable device trigger fired its automation",
+        sink_turned_on(token, timeout=40),
+    )
+    sv.force_state(token, sv.SILENT_TARGET, "off")  # reset fixture for later smokes
 
     for aid in autos:
         delete_automation(token, aid)

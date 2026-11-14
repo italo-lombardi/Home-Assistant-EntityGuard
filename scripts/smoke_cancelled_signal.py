@@ -8,44 +8,37 @@ smoke_unreachable_signal (device failure). `cancelled` means a verify cycle was
 ARMED then ABANDONED mid-window with no verdict (external condition changed:
 suppressed / flags-unmet / rule disabled / master off) — not a device fault.
 
-Five assertions, split HARD (deterministic over REST) vs BEST-EFFORT (SKIP on a
-compliant device, exactly like the verified/unreachable/suppress-drop twins):
+Five assertions, all HARD (deterministic via the silent-ignore fixture):
 
-  HARD
   1. verify-ON → all three verify twins EXIST alongside recently_enforced
      (verified, unreachable, cancelled). Regression guard for the lifecycle
      wiring — the cancelled sensor is verify-gated like its siblings.
   2. the cancelled DEVICE TRIGGER is schema-valid and ATTACHES: an automation
      built with `platform: device, type: cancelled` on the rule device installs
      and reports state 'on' (async_attach_trigger accepted the type → generic
-     TRIGGER_TYPE_EVENT lookup). The FIRE leg is best-effort below.
+     TRIGGER_TYPE_EVENT lookup).
   3. verify ON→OFF via the options flow → the cancelled sensor's registry row is
      DISABLED (state leaves the state machine). recently_enforced survives.
+  4. a real forced drop → the cancelled sensor pulses ON. The target is the
+     silent-ignore fixture (switch.eg_smoke_silent_ignore): it ACKs turn_on but
+     never reaches "on", so the verify cycle stays PENDING the full ~5s window
+     and the event confirm can never win. `entity_guard.suppress` mid-window
+     therefore lands on the reached-but-dropped path deterministically →
+     _fire_cancelled → the cancelled sensor arms ON for 30s. We assert on the
+     SENSOR PULSE (the public contract), not the internal drop reason.
+  5. the cancelled device-trigger automation flipped SINK on (EVENT_CANCELLED
+     reached async_attach_trigger live).
 
-  BEST-EFFORT (SKIP-tolerant)
-  4. a real forced drop → the cancelled sensor pulses ON. We arm a verify cycle
-     (trip the off→on rule so the engine enforces) and immediately call
-     `entity_guard.suppress`, racing the ~10ms event-driven confirm. If suppress
-     wins the race it lands on the reached-but-dropped path → _fire_cancelled
-     (reason "suppressed") → sensor arms ON for 30s. On a compliant device the
-     confirm almost always wins (verified, not cancelled), so a miss is SKIPPED,
-     not failed — the drop→EVENT_CANCELLED→arm chain is unit-locked by
-     tests/test_rule_engine.py (test_verify_fire_cancelled_when_suppressed et al).
-  5. if (4) landed, the cancelled device-trigger automation flipped SINK on
-     (EVENT_CANCELLED reached async_attach_trigger live). Also SKIP-tolerant,
-     gated on (4).
-
-Target is the allowed light.living_room_under_cabinet_lights (sv.TARGET);
-trigger the allowed input_boolean (sv.TRIGGER); action sink SINK — memory:
-smoke_test_entities. Raw /api/states injection trips the trigger without
-commanding the physical device; cleanup drops the rule + automations.
+Target is the silent-ignore fixture (sv.SILENT_TARGET); action sink SINK —
+memory: smoke_test_entities. Raw /api/states injection trips the trigger;
+cleanup drops the rule + automations.
 
 Run inside the container:
   docker cp scripts/smoke_cancelled_signal.py \
     serene_booth:/workspaces/home-assistant-core/config/smoke_cancelled_signal.py
   docker exec serene_booth /home/vscode/.local/ha-venv/bin/python \
     /workspaces/home-assistant-core/config/smoke_cancelled_signal.py
-Exit 0 = all HARD assertions green (best-effort may SKIP), 1 = a HARD failure.
+Exit 0 = all assertions green, 1 = a failure.
 """
 
 from __future__ import annotations
@@ -59,7 +52,7 @@ import smoke_follow as sf  # shared helpers, resolved inside the container
 import smoke_verified_signal as svs  # reuse set_verify_via_options
 import smoke_verify_enforce as sv  # reuse create_verify_rule + force_state + status
 
-TARGET = sv.TARGET
+TARGET = sv.SILENT_TARGET
 DOMAIN = "entity_guard"
 MASTER = "switch.entity_guard_hub_master_enabled"
 
@@ -97,7 +90,9 @@ def main() -> int:
     set_master(token, True)
     time.sleep(2)
 
-    entry_id = sv.create_verify_rule(token, name, verify=True)
+    entry_id = sv.create_verify_rule_on(
+        token, name, [TARGET], ["off"], "on", verify=True
+    )
     sf.check("verify-enabled rule created", bool(entry_id))
     try:
         sv.status_sensor_for(token, slug)  # wait past startup grace
@@ -136,12 +131,13 @@ def main() -> int:
             sf.get_state(token, f"automation.{aid_c}").get("state") == "on",
         )
 
-        # --- BEST-EFFORT (4)+(5): force a drop, catch the pulse + trigger fire --
-        # Trip the off→on rule (target reports "off") so the engine enforces "on",
-        # then IMMEDIATELY suppress — racing the ~10ms event-driven confirm. A
-        # suppress win lands the reached ACK on the reached-but-dropped path →
-        # _fire_cancelled(reason "suppressed"). A confirm win (the common case on a
-        # compliant device) resolves as verified, not cancelled → SKIP.
+        # --- HARD (4)+(5): force a drop, catch the pulse + trigger fire --------
+        # TARGET is the silent-ignore fixture: it ACKs turn_on but never reaches
+        # "on", so the verify cycle stays PENDING the full ~5s window and the
+        # event confirm can never win. Suppressing mid-window therefore lands the
+        # cycle on the dropped path deterministically → _fire_cancelled → the
+        # cancelled sensor pulses ON for 30s. We assert on the SENSOR PULSE (the
+        # public contract); the exact internal drop reason is not asserted.
         sdt.reset_sink(token)
         sv.force_state(token, TARGET, "off")
         sf.api(
@@ -157,24 +153,11 @@ def main() -> int:
                 saw_on = True
                 break
             time.sleep(1)
-        if saw_on:
-            sf.check("recently_enforced_cancelled pulses ON after a forced drop", True)
-            # (5) the cancelled device-trigger automation fired → SINK on.
-            if sdt.sink_turned_on(token):
-                sf.check("cancelled device trigger fired live (SINK on)", True)
-            else:
-                print(
-                    "SKIP: cancelled sensor pulsed but device-trigger SINK edge not "
-                    "caught over REST (30s pulse-window race; attach locked by unit "
-                    "test test_attach_trigger_fires_on_new_event_types[cancelled])"
-                )
-        else:
-            print(
-                "SKIP: verify-drop-while-suppressed race not forced (compliant device "
-                "confirmed in ~10ms before suppress → verified, not cancelled) — "
-                "drop → EVENT_CANCELLED → sensor-arm chain is unit-locked "
-                "(test_verify_fire_cancelled_when_suppressed)"
-            )
+        sf.check("recently_enforced_cancelled pulses ON after a forced drop", saw_on)
+        # (5) the cancelled device-trigger automation fired → SINK on.
+        sf.check(
+            "cancelled device trigger fired live (SINK on)", sdt.sink_turned_on(token)
+        )
         # unsuppress so the verify-off leg below reloads from a clean rule state.
         sf.api(
             token, "POST", f"/api/services/{DOMAIN}/unsuppress", {"rule_id": entry_id}

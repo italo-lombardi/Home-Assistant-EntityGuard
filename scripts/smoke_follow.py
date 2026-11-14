@@ -207,7 +207,7 @@ def wait_for_armed(
     the wrong rule. Require the target set to match ours AND the status to be a
     live/enforcing state (armed/conditional/enforcing/cooldown/pending), never
     disabled/starting. Returns True once ready, False on timeout."""
-    live = {"armed", "conditional", "enforcing", "cooldown", "pending"}
+    live = {"armed", "conditional", "enforcing", "cooldown", "pending", "verifying"}
     want = sorted(targets)
     deadline = time.time() + timeout
     while time.time() < deadline:
