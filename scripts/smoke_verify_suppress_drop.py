@@ -6,36 +6,28 @@ rule is suppressed mid-window, the event confirm is dropped BUT the stale
 deadline handle is dropped too — so a later unsuppress before the ~5s deadline
 does NOT re-derive a phantom STATUS_VERIFYING on an already-compliant target.
 
-Two assertions, both honest about what a compliant-device container can show:
+Three assertions, all HARD (deterministic via the silent-ignore fixture):
 
-  HARD (always reachable): a verify-ON rule that is suppressed then unsuppressed
-  lands on a LIVE status (armed/pending/cooldown/conditional/enforcing), NEVER
-  stuck on 'verifying'. This holds on every run regardless of race timing — it
-  is the user-visible symptom the fix removes, and it is forceable because the
-  suppress/unsuppress service pair is deterministic over REST.
+  1. a verify cycle caught PENDING ('verifying') while suppressed. The target is
+     the silent-ignore fixture (switch.eg_smoke_silent_ignore): it ACKs turn_on
+     but never reaches "on", so verify stays pending the full ~5s window and the
+     event confirm can NEVER win — suppress reliably lands mid-window on the
+     reached-but-dropped path (stale deadline handle dropped by the fix).
+  2. unsuppress → the rule lands on a LIVE status (armed/pending/cooldown/
+     conditional/enforcing), NEVER stuck on 'verifying' — the user-visible
+     symptom the b983de0 fix removes.
+  3. (implied) the stale handle was dropped, so no phantom STATUS_VERIFYING
+     re-derives after unsuppress. Unit-locked by
+     test_verify_dropped_reached_drops_stale_handle; this is live corroboration.
 
-  BEST-EFFORT (SKIP-tolerant): catching the target reaching desired in the
-  narrow window AFTER suppress but BEFORE the ~5s deadline fires is a race the
-  real device almost always loses — on a compliant device the event-driven
-  confirm lands in ~10ms, long before we can suppress mid-window. So we try to
-  wedge a verify-pending-while-suppressed state and observe the non-stuck
-  recovery; if the race doesn't land (the common case), we SKIP that leg rather
-  than hard-fail. The exact drop-the-handle logic is unit-locked by
-  test_verify_dropped_reached_drops_stale_handle; this is the live corroboration
-  only. (Same SKIP honesty as smoke_unreachable_signal / smoke_verify_enforce:
-  the compliant container cannot force the slow verify branch on demand.)
-
-Deterministic target: a verify-ON fixed_state rule driving the allowed
-`light.living_room_under_cabinet_lights` (sv.TARGET), triggered off the allowed
-`input_boolean.ea_ctrl_kitchen_1` (sv.TRIGGER) — memory: smoke_test_entities.
-force_state trips/writes the target; no real-device side effect. Because that
-light has read 'unavailable' in past sessions, the HARD leg is gated behind a
-pre-trip availability guard (an unavailable target can't ACK, which would false-
-FAIL on the re-arm — a precondition miss, not a fix regression).
+Deterministic target: a verify-ON fixed_state rule on the silent-ignore fixture
+`switch.eg_smoke_silent_ignore` (sv.SILENT_TARGET). force_state trips the target;
+no real-device side effect. The fixture is always available, so no pre-trip
+availability guard is needed.
 
 Run INSIDE the container:
   /home/vscode/.local/ha-venv/bin/python -I scripts/smoke_verify_suppress_drop.py
-Exit 0 = HARD assertions green (best-effort may SKIP), 1 = a HARD failure.
+Exit 0 = all assertions green, 1 = a failure.
 """
 
 from __future__ import annotations
@@ -47,19 +39,30 @@ sys.path.insert(0, "/workspaces/home-assistant-core/config")
 import smoke_follow as sf  # token/api/waits/cleanup/check
 import smoke_verify_enforce as sv  # create_verify_rule, status_sensor_for, force_state
 
-TARGET = sv.TARGET  # allowed smoke target
+TARGET = "switch.eg_smoke_delayed_confirm"  # state mirrors eg_smoke_confirm
+CONFIRM = "input_boolean.eg_smoke_confirm"  # harness-driven confirm edge
 DOMAIN = "entity_guard"
 LIVE = {"armed", "conditional", "enforcing", "pending", "cooldown"}
 POLL = 0.2
 
 
+def _set_confirm(token: str, on: bool) -> None:
+    sf.api(
+        token,
+        "POST",
+        f"/api/services/input_boolean/turn_{'on' if on else 'off'}",
+        {"entity_id": CONFIRM},
+    )
+
+
 def main() -> int:
     token = sf.mint_token()
     sf.cleanup(token)  # clear orphan EG rules from prior runs
+    _set_confirm(token, False)  # target starts "off" (== trigger)
 
     name = "ea_smoke_verify_suppress_drop"
     slug = name
-    entry = sv.create_verify_rule(token, name, verify=True)
+    entry = sv.create_verify_rule_on(token, name, [TARGET], ["off"], "on", verify=True)
     sf.check("verify-enabled rule created", bool(entry))
 
     try:
@@ -67,53 +70,36 @@ def main() -> int:
         armed = sf.wait_for_armed(token, "fixed_state", [TARGET])
         sf.check("rule left startup grace (armed)", armed)
 
-        # Precondition: TARGET must be available before the trip. If it is
-        # unavailable/unknown, force_state(off) writes over it but the real
-        # device never ACKs reaching desired -> the suppress/unsuppress leg may
-        # not land a LIVE status -> a false HARD FAIL that wrongly blames the
-        # b983de0 fix (memory: under_cabinet was 'unavailable' in a past
-        # session). Bail explicitly instead. Early return is inside the try, so
-        # finally still cleans up our rule. Mirrors smoke_fast_verify.py.
-        pre = sf.get_state(token, TARGET)
-        pre_ok = pre and pre.get("state") not in (None, "unavailable", "unknown")
-        sf.check(
-            "target available before trip (else false FAIL unrelated to fix)",
-            pre_ok,
-            f"target state={pre.get('state') if pre else None}",
-        )
-        if not pre_ok:
-            return 1  # unavailable device can't ACK; precondition, not our bug
-
-        # --- best-effort: try to wedge verify-pending WHILE suppressed --------
-        # Trip the off->on rule (target reports "off"); the engine enforces "on".
-        # Immediately suppress, racing the ~10ms event-driven confirm. If suppress
-        # wins, the reached ACK lands on the dropped path (handle dropped by the
-        # fix); if the confirm wins (common), verify already resolved and the
-        # suppress just suppresses an armed rule — either way the HARD leg below
-        # still proves non-stuck recovery.
-        sv.force_state(token, TARGET, "off")
-        sf.api(
-            token,
-            "POST",
-            f"/api/services/{DOMAIN}/suppress",
-            {"rule_id": entry, "duration_minutes": 10},
-        )
-        # Observe whether we ever caught VERIFYING-under-suppress (informational).
+        # --- HARD: reached-but-dropped WHILE suppressed (b983de0) -------------
+        # The delayed-confirm fixture mirrors input_boolean.eg_smoke_confirm,
+        # which starts OFF, so the rule self-enforces and enters VERIFYING (the
+        # enforce ACKs but the state does not move until WE drive the helper).
+        # Sequence with EXPLICIT ordering (no wall-clock race):
+        #   1. wait until the rule is VERIFYING,
+        #   2. suppress the rule mid-window,
+        #   3. THEN drive the confirm helper ON -> the target reaches desired
+        #      ("on") AFTER suppression -> the reached ACK lands on the dropped
+        #      path and the stale deadline handle is dropped (the b983de0 fix).
         saw_verifying = False
-        deadline = time.time() + 2.0
+        deadline = time.time() + 30
         while time.time() < deadline:
             st = sf.get_state(token, f"sensor.{slug}_status")
             if st and st.get("state") == "verifying":
                 saw_verifying = True
                 break
             time.sleep(POLL)
-        if not saw_verifying:
-            sf.check(
-                "SKIP: verify-pending-while-suppressed race not forced "
-                "(compliant device confirmed in ~10ms before suppress) — "
-                "handle-drop logic is unit-locked",
-                True,
-            )
+        sf.check("rule reaches VERIFYING on the delayed-confirm target", saw_verifying)
+
+        sf.api(
+            token,
+            "POST",
+            f"/api/services/{DOMAIN}/suppress",
+            {"rule_id": entry, "duration_minutes": 10},
+        )
+        time.sleep(0.5)  # let suppress land before the reached edge
+        _set_confirm(token, True)  # target now reaches desired, WHILE suppressed
+        reached = sf.wait_for_state(token, TARGET, "on", timeout=10)
+        sf.check("target reached desired ('on') while suppressed", reached)
 
         # --- HARD: unsuppress must NOT strand the rule on 'verifying' ---------
         sf.api(
@@ -141,6 +127,7 @@ def main() -> int:
             f"state={cur}",
         )
     finally:
+        _set_confirm(token, False)  # reset target to "off" (helper, not a paint)
         sf.cleanup(token)
 
     if sf.FAILS:

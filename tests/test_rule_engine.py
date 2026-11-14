@@ -1470,7 +1470,7 @@ async def test_startup_grace_skips_sweep_when_disabled(hass: HomeAssistant):
     grace_callbacks: list = []
 
     def _capture_later(_hass, _delay, cb):
-        grace_callbacks.append(cb)
+        grace_callbacks.append(getattr(cb, "target", cb))
         return MagicMock()
 
     with (
@@ -1868,6 +1868,22 @@ def test_handle_startup_grace_done_sweeps_targets(hass: HomeAssistant):
         engine._handle_startup_grace_done(MagicMock())
     assert engine._startup_complete is True
     assert len(tasks_created) == 1  # one per target entity
+
+
+def test_handle_startup_grace_done_noop_when_unloaded(hass: HomeAssistant):
+    """A startup-grace timer that fires after unload / during core shutdown must
+    early-return before sweeping (the is_stopping/_is_unloaded guard)."""
+    engine = _make_engine(hass)
+    engine._startup_complete = False
+    engine._is_unloaded = True  # same guard branch as hass.is_stopping
+    hass.states.async_set("light.bedroom", "on")
+    tasks_created = []
+    with patch.object(
+        hass, "async_create_task", side_effect=capturing_create_task(tasks_created)
+    ):
+        engine._handle_startup_grace_done(MagicMock())
+    assert engine._startup_complete is False  # guard returned before the sweep
+    assert tasks_created == []
 
 
 def test_reenable_sweeps_targets(hass: HomeAssistant):
@@ -3431,7 +3447,7 @@ async def test_cooldown_broadcast_fires_after_enforcement(hass: HomeAssistant):
     broadcast_callbacks = []
 
     def _capture_later(hass_arg, delay, cb):
-        broadcast_callbacks.append(cb)
+        broadcast_callbacks.append(getattr(cb, "target", cb))
         return MagicMock()
 
     with patch(
@@ -3654,7 +3670,7 @@ async def test_cooldown_broadcast_is_unloaded_guard(hass: HomeAssistant):
     captured_cb = []
 
     def _capture_later(hass_arg, delay, cb):
-        captured_cb.append(cb)
+        captured_cb.append(getattr(cb, "target", cb))
         return MagicMock()
 
     with patch(
@@ -4026,7 +4042,7 @@ async def test_fire_disabled_mid_flight_skips_enforce(hass: HomeAssistant):
     fires = []
 
     def _capture_later(_hass, _delay, cb):
-        fires.append(cb)
+        fires.append(getattr(cb, "target", cb))
         return MagicMock()
 
     with patch(
@@ -4063,7 +4079,7 @@ async def test_fire_master_disabled_mid_flight_skips_enforce(hass: HomeAssistant
     fires = []
 
     def _capture_later(_hass, _delay, cb):
-        fires.append(cb)
+        fires.append(getattr(cb, "target", cb))
         return MagicMock()
 
     with patch(
@@ -4458,7 +4474,7 @@ async def test_fire_flag_mismatch_different_cancel_handle(hass: HomeAssistant):
     fires = []
 
     def _capture_later(_hass, _delay, cb):
-        fires.append(cb)
+        fires.append(getattr(cb, "target", cb))
         return MagicMock()
 
     with patch(
@@ -4489,7 +4505,7 @@ async def test_fire_not_triggered_different_cancel_handle(hass: HomeAssistant):
     fires = []
 
     def _capture_later(_hass, _delay, cb):
-        fires.append(cb)
+        fires.append(getattr(cb, "target", cb))
         return MagicMock()
 
     with patch(
@@ -4754,7 +4770,7 @@ async def test_arm_recently_enforced_timer_clears_flag(hass: HomeAssistant):
 
     assert captured_cb
     # Invoke the HassJob target directly to simulate timer fire
-    captured_cb[0].target(dt_util.now())
+    getattr(captured_cb[0], "target", captured_cb[0])(dt_util.now())
     await hass.async_block_till_done()
 
     assert engine._recently_enforced is False
@@ -4841,7 +4857,7 @@ async def test_arm_recently_enforced_timer_noop_when_unloaded(hass: HomeAssistan
 
     engine._is_unloaded = True
     engine._recently_enforced = True  # set it so we can verify it's NOT cleared
-    captured_cb[0].target(dt_util.now())
+    getattr(captured_cb[0], "target", captured_cb[0])(dt_util.now())
     await hass.async_block_till_done()
 
     # Unloaded: _clear returned early, flag unchanged
@@ -4869,7 +4885,7 @@ async def test_arm_recently_enforced_verified_timer_clears_flag(hass: HomeAssist
         assert engine._recently_enforced_verified is True
 
     assert captured_cb
-    captured_cb[0].target(dt_util.now())
+    getattr(captured_cb[0], "target", captured_cb[0])(dt_util.now())
     await hass.async_block_till_done()
 
     assert engine._recently_enforced_verified is False
@@ -4899,7 +4915,7 @@ async def test_arm_recently_enforced_verified_timer_noop_when_unloaded(
 
     engine._is_unloaded = True
     engine._recently_enforced_verified = True  # set so we can verify it's NOT cleared
-    captured_cb[0].target(dt_util.now())
+    getattr(captured_cb[0], "target", captured_cb[0])(dt_util.now())
     await hass.async_block_till_done()
 
     assert engine._recently_enforced_verified is True
@@ -5242,7 +5258,9 @@ async def _run_verify_timer(hass, engine, entity_id):
     cancel = engine._pending_verifications.get(entity_id)
     assert cancel is not None, "no pending verify armed"
     # The callback is captured by the async_call_later patch in each test.
+    # Source now wraps it in HassJob(cancel_on_shutdown=True); unwrap to the target.
     cb = engine._test_verify_cb
+    cb = getattr(cb, "target", cb)
     cb(dt_util.now())
     await hass.async_block_till_done()
 
@@ -6250,7 +6268,7 @@ async def test_verify_event_confirm_fires_once_and_cancels_timer(hass: HomeAssis
         # here we force it directly — the handle is already popped, so
         # _run_verify_timer's pending assert would trip) — the stale-fire guard
         # must suppress a second confirm.
-        engine._test_verify_cb(dt_util.now())
+        getattr(engine._test_verify_cb, "target", engine._test_verify_cb)(dt_util.now())
         await hass.async_block_till_done()
 
     assert len(events) == 1  # confirmed once, no double-fire
@@ -6754,7 +6772,7 @@ async def test_verify_fire_no_cancelled_when_unloaded(hass: HomeAssistant):
         engine._is_unloaded = True  # entry torn down during the window
         # Deadline cb returns at the `if self._is_unloaded: return` guard — no
         # drop-site reached, no fire. Call it directly (pending still armed).
-        engine._test_verify_cb(dt_util.now())
+        getattr(engine._test_verify_cb, "target", engine._test_verify_cb)(dt_util.now())
         await hass.async_block_till_done()
 
     assert len(cancelled) == 0, "unloaded drop must not fire EVENT_CANCELLED"
@@ -7184,7 +7202,7 @@ async def test_fire_success_sibling_still_pending_broadcasts(hass: HomeAssistant
     arming = {"eid": None}
 
     def _fake_later(h, d, cb):
-        cbs[arming["eid"]] = cb
+        cbs[arming["eid"]] = getattr(cb, "target", cb)
         return MagicMock()
 
     for eid in ("light.a", "light.b"):
@@ -7440,7 +7458,7 @@ async def test_arm_recently_enforced_unreachable_timer_clears_flag(
         assert engine._recently_enforced_unreachable is True
 
     assert captured_cb
-    captured_cb[0].target(dt_util.now())
+    getattr(captured_cb[0], "target", captured_cb[0])(dt_util.now())
     await hass.async_block_till_done()
 
 
@@ -7505,7 +7523,7 @@ async def test_arm_recently_enforced_cancelled_timer_clears_flag(
         assert engine._recently_enforced_cancelled is True
 
     assert captured_cb
-    captured_cb[0].target(dt_util.now())
+    getattr(captured_cb[0], "target", captured_cb[0])(dt_util.now())
     await hass.async_block_till_done()
     assert engine._recently_enforced_cancelled is False
 
@@ -7650,7 +7668,7 @@ async def test_arm_recently_enforced_unreachable_timer_noop_when_unloaded(
 
     engine._is_unloaded = True
     engine._recently_enforced_unreachable = True  # set so we see it's NOT cleared
-    captured_cb[0].target(dt_util.now())
+    getattr(captured_cb[0], "target", captured_cb[0])(dt_util.now())
     await hass.async_block_till_done()
 
     assert engine._recently_enforced_unreachable is True

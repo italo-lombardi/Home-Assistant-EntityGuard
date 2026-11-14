@@ -42,7 +42,7 @@ import smoke_follow as sf  # shared helpers, resolved inside the container
 import smoke_verified_signal as svs  # reuse set_verify_via_options
 import smoke_verify_enforce as sv  # reuse create_verify_rule + force_state
 
-TARGET = sv.TARGET
+TARGET = sv.SILENT_TARGET
 
 
 def main() -> int:
@@ -55,7 +55,9 @@ def main() -> int:
     verified_eid = f"binary_sensor.{slug}_recently_enforced_verified"
 
     # --- verify-ON rule ----------------------------------------------------
-    entry_id = sv.create_verify_rule(token, name, verify=True)
+    entry_id = sv.create_verify_rule_on(
+        token, name, [TARGET], ["off"], "on", verify=True
+    )
     sf.check("verify-enabled rule created", bool(entry_id))
     sv.status_sensor_for(token, slug)  # wait past startup grace
     # The engine IGNORES target events during startup grace (~60s); exhausting
@@ -75,50 +77,30 @@ def main() -> int:
     )
 
     # (2) silent non-compliance → engine exhausts → unreachable signal.
-    # Trip the trigger (target "off"), then keep re-injecting "off" across the
-    # whole verify window so the engine's real turn_on is observed as ignored →
-    # VERIFY_MAX_ATTEMPTS corrective re-enforces all fail → terminal
-    # unreachable_after_retries → _fire_unreachable fires EVENT_UNREACHABLE and
-    # arms the sensor ON for 30s.
-    #
-    # Both the engine latch and the sensor edge are BEST-EFFORT, not hard
-    # asserts. The target is a REAL working light: the engine's turn_on actually
-    # turns it on, so our raw /api/states re-inject of "off" is racing a service
-    # that genuinely complies — on a win the verify re-read sees "off" (exhaust),
-    # on a loss it sees "on" (clean success). Forcing a deterministic silent
-    # non-compliance needs a device that ACKs but ignores the command, which the
-    # serene_booth allow-list has none of. The exhaustion → EVENT_UNREACHABLE →
-    # sensor-arm chain is locked end-to-end by the unit tests; this smoke's HARD
-    # proof is the verify-only lifecycle (sensor present/disabled/re-enabled).
-    # smoke_verify_enforce treats this identical latch the same way (SKIP).
+    # TARGET is the silent-ignore fixture (switch.eg_smoke_silent_ignore): it
+    # ACKs turn_on but never reaches "on", so verify deterministically exhausts
+    # every run → terminal unreachable_after_retries → _fire_unreachable fires
+    # EVENT_UNREACHABLE and arms the sensor ON for 30s. Both the engine latch and
+    # the sensor ON edge are HARD now (no device race).
     status = sv.status_sensor_for(token, slug)
     latched = False
     saw_on = False
     sv.force_state(token, TARGET, "off")  # trip trigger
     deadline = time.time() + 35
     while time.time() < deadline:
-        sv.force_state(token, TARGET, "off")  # try to out-race the real turn_on
         if sf.get_state(token, unreachable_eid).get("state") == "on":
             saw_on = True
         st = sf.get_state(token, status)
         outcomes = (st.get("attributes") or {}).get("target_outcomes") or {}
         if outcomes.get(TARGET, {}).get("reason") == "unreachable_after_retries":
             latched = True
+        if latched and saw_on:
             break
-    if latched:
-        sf.check("verify exhaustion latches unreachable_after_retries (engine)", True)
-    else:
-        print(
-            "SKIP: live exhaustion not forced (real device complies with turn_on; "
-            "exhaustion → EVENT_UNREACHABLE → sensor-arm locked by unit tests)"
-        )
-    if saw_on:
-        sf.check("recently_enforced_unreachable pulses ON after exhaustion", True)
-    elif latched:
-        print(
-            "SKIP: unreachable sensor ON edge not caught over REST "
-            "(30s pulse-window race; sensor arming locked by unit tests)"
-        )
+        time.sleep(1)
+    sf.check("verify exhaustion latches unreachable_after_retries (engine)", latched)
+    sf.check("recently_enforced_unreachable pulses ON after exhaustion", saw_on)
+    # Reset the fixture paint so a later same-session smoke sees a clean "off".
+    sv.force_state(token, TARGET, "off")
 
     # (3) verify ON->OFF → the unreachable sensor's registry row is DISABLED:
     # its state leaves the state machine (get_state empty/unavailable).

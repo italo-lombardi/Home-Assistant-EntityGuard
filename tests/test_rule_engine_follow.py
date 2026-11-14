@@ -486,7 +486,8 @@ async def test_dynamic_state_delayed_fire_recomputes_source_flipped_back(
     assert "cb" in captured
 
     hass.states.async_set("binary_sensor.motion", "off")
-    captured["cb"](dt_util.now())
+    cb = captured["cb"]
+    getattr(cb, "target", cb)(dt_util.now())
     await hass.async_block_till_done()
     assert not calls
 

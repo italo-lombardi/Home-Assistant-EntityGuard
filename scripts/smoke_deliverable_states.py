@@ -25,13 +25,18 @@ lawn_mower — plus the on/off-fallback + input_select regression-fix (on/off on
 mode domain must NOT become set_hvac_mode(hvac_mode="on")). This exercises the
 map wiring live even where no safe actuatable entity exists.
 
-Honest scope / skips:
-  - climate live-actuate SKIPPED: the only climate entity in the container is the
-    user's real thermostat — must not actuate. Covered by the resolver assertion
-    instead.
-  - RESTRICT (pruned picker states) NOT smoke-tested: the state picker is a
-    config-flow schema, not cleanly REST-observable. Locked by unit tests
-    (tests/test_config_flow_helpers.py::test_states_for_entities_*).
+Climate live-actuate (deterministic, device-safe):
+  - Uses the disposable generic_thermostat fixture climate.eg_smoke_thermostat
+    (scripts/eg_smoke_fixtures.yaml), hvac_modes [off, heat]. A fixed_state rule
+    off->heat drives it to "heat" via climate.set_hvac_mode — the Feature-C mode
+    path on a real climate entity. NEVER the user's off-limits
+    climate.smart_thermostat_*.
+
+Honest scope:
+  - RESTRICT (pruned picker states) is NOT live-observable: the state picker is a
+    config-flow schema built before any rule exists, with no running-engine
+    artifact to poll. It is unit-locked by
+    tests/test_config_flow_helpers.py::test_states_for_entities_*.
 
 Usage: python3 smoke_deliverable_states.py
 Exit 0 = all green, 1 = a failure. Cleans up its helper + rules on any exit.
@@ -55,6 +60,9 @@ AUTH_STORE = "/workspaces/home-assistant-core/config/.storage/auth"
 RUN = str(int(time.time()))
 HELPER_SLUG = f"eg_smoke_{RUN}"
 HELPER_ENTITY = f"input_select.{HELPER_SLUG}"
+# Static disposable climate fixture (scripts/eg_smoke_fixtures.yaml); hvac_modes
+# [off, heat]. NOT the user's off-limits climate.smart_thermostat_*.
+CLIMATE_ENTITY = "climate.eg_smoke_thermostat"
 
 
 def mint_token() -> str:
@@ -158,12 +166,16 @@ def create_fixed_state_rule(
     )
     while result.get("type") == "form":
         guard_form(result)
-        if result.get("step_id") == "state":
+        step = result.get("step_id")
+        if step == "state":
             payload = {
                 "trigger_states": trigger_states,
                 "target_state": target_state,
                 "delay_seconds": 0,
             }
+        elif step == "safety":
+            # Safety domains (climate/cover/lock/valve) require an explicit ack.
+            payload = {"safety_acknowledged": True}
         else:
             payload = {}  # extras / preview — accept defaults
         result = api(
@@ -478,15 +490,54 @@ def main() -> int:
     except Exception as e:
         check("fixed_state(paused): create+enforce", False, str(e))
 
-    # --- Honest skips (printed, not asserted) ---------------------------------
-    print(
-        "  [SKIP] climate live-actuate — only climate entity is the user's real "
-        "thermostat; covered by the resolver assertion instead."
-    )
-    print(
-        "  [SKIP] RESTRICT picker pruning — config-flow schema, not cleanly "
-        "REST-observable; locked by unit tests (test_states_for_entities_*)."
-    )
+    # --- Climate live-actuate via the disposable generic_thermostat fixture ----
+    # climate.eg_smoke_thermostat (scripts/eg_smoke_fixtures.yaml) exposes
+    # hvac_modes [off, heat]. A fixed_state rule off->heat must drive it to 'heat'
+    # via climate.set_hvac_mode (DOMAIN_MODE_SERVICE_MAP). This is a disposable
+    # fixture — NEVER the user's off-limits climate.smart_thermostat_*.
+    print("Creating fixed_state rule on the climate fixture target_state=heat…")
+    try:
+        # Seed to 'off' so 'heat' is a real change.
+        api(
+            token,
+            "POST",
+            "/api/services/climate/set_hvac_mode",
+            {"entity_id": CLIMATE_ENTITY, "hvac_mode": "off"},
+        )
+        time.sleep(2)
+        cleanup_rules_only(token)  # drop the input_select rules first
+        create_fixed_state_rule(
+            token,
+            f"EG Smoke Deliverable Climate {RUN}",
+            [CLIMATE_ENTITY],
+            target_state="heat",
+            trigger_states=["off"],
+        )
+        armed = wait_for_armed(token, "fixed_state", [CLIMATE_ENTITY])
+        check("fixed_state(climate heat): rule armed past startup grace", armed)
+        # Trip: drive the thermostat to 'off' — the rule must drive it to 'heat'
+        # via climate.set_hvac_mode.
+        api(
+            token,
+            "POST",
+            "/api/services/climate/set_hvac_mode",
+            {"entity_id": CLIMATE_ENTITY, "hvac_mode": "off"},
+        )
+        check(
+            "deliver: climate driven off -> heat (set_hvac_mode fired)",
+            wait_for_state(token, CLIMATE_ENTITY, "heat"),
+            f"state={get_state(token, CLIMATE_ENTITY).get('state')}",
+        )
+    except Exception as e:
+        check("fixed_state(climate heat): create+enforce", False, str(e))
+    finally:
+        # Reset the fixture to 'off' so a later same-session smoke sees it clean.
+        api(
+            token,
+            "POST",
+            "/api/services/climate/set_hvac_mode",
+            {"entity_id": CLIMATE_ENTITY, "hvac_mode": "off"},
+        )
 
     print()
     if FAILS:

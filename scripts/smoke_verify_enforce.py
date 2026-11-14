@@ -64,18 +64,31 @@ import time
 sys.path.insert(0, "/workspaces/home-assistant-core/config")
 import smoke_follow as sf  # shared helpers, resolved inside the container
 
-# Allowed smoke target: a real light the engine drives via light.turn_on/off
-# (memory: smoke_test_entities). We force it OFF the desired state to simulate
-# a non-complying device.
+# Allowed smoke target: a real COMPLIANT light the engine drives via
+# light.turn_on/off (memory: smoke_test_entities). Used for the baseline leg
+# (a complying target records no unreachable outcome) and by sibling smokes'
+# VERIFIED legs. Exhaustion legs use SILENT_TARGET below instead.
 TARGET = "light.living_room_under_cabinet_lights"
-TRIGGER = "input_boolean.ea_ctrl_kitchen_1"  # allowed trigger/source
+
+# Deterministic silent-ignore fixture (scripts/eg_smoke_fixtures.yaml): a
+# template switch that ACKs turn_on/turn_off but never reaches the desired state,
+# so verify always exhausts -> reason == 'unreachable_after_retries'. Use this
+# (not the real compliant light) for the exhaustion legs.
+SILENT_TARGET = "switch.eg_smoke_silent_ignore"
 
 
-def create_verify_rule(token: str, name: str, verify: bool) -> str:
-    """Create a fixed_state rule, setting verify_enabled in the extras step.
+def create_verify_rule_on(
+    token: str,
+    name: str,
+    targets: list[str],
+    trigger_states: list[str],
+    target_state: str,
+    verify: bool = True,
+) -> str:
+    """Create a fixed_state rule with verify_enabled on an arbitrary target set.
 
-    Mirrors sf.create_fixed_state_rule but injects verify_enabled rather than
-    skipping the extras step with defaults.
+    Mirrors sf.create_fixed_state_rule but injects verify_enabled in the extras
+    step rather than skipping it with defaults.
     """
     flow = sf.api(
         token, "POST", "/api/config/config_entries/flow", {"handler": "entity_guard"}
@@ -85,7 +98,7 @@ def create_verify_rule(token: str, name: str, verify: bool) -> str:
         token,
         "POST",
         f"/api/config/config_entries/flow/{flow_id}",
-        {"rule_name": name, "target_entities": [TARGET], "mode": "fixed_state"},
+        {"rule_name": name, "target_entities": targets, "mode": "fixed_state"},
     )
     while result.get("type") == "form":
         sf.guard_form(result)
@@ -94,8 +107,8 @@ def create_verify_rule(token: str, name: str, verify: bool) -> str:
             # target_state must differ from trigger_states (a rule whose target
             # equals its trigger would loop; the flow rejects target_in_triggers).
             payload = {
-                "trigger_states": ["off"],
-                "target_state": "on",
+                "trigger_states": trigger_states,
+                "target_state": target_state,
                 "delay_seconds": 0,
             }
         elif step == "extras":
@@ -110,6 +123,11 @@ def create_verify_rule(token: str, name: str, verify: bool) -> str:
     entry_id = result["result"]["entry_id"]
     sf.CREATED.append(entry_id)
     return entry_id
+
+
+def create_verify_rule(token: str, name: str, verify: bool) -> str:
+    """Backward-compatible wrapper: verify rule on TARGET, off -> on."""
+    return create_verify_rule_on(token, name, [TARGET], ["off"], "on", verify)
 
 
 def status_sensor_for(token: str, name_slug: str, timeout: int = 100) -> str:
@@ -169,70 +187,68 @@ def main() -> int:
     )
     ok = ok and compliant_clean
 
-    # --- 2. unreachable flag + VERIFYING status (best-effort) ----------
-    # Rule triggers on target=="off" and drives it "on". We keep shoving the
-    # target back to "off" via a raw /api/states injection so it never reaches
-    # the desired "on" — simulating a device that ACKs turn_on but never changes.
-    # While the engine is between a successful enforce and its verify re-read the
-    # status sensor should read STATUS_VERIFYING (not armed/cooldown — the bug
-    # this smoke confirms live). Catching it over REST races the 5 s verify
-    # window, so it is asserted leniently like the flag below.
+    # --- 2. unreachable flag + VERIFYING status (deterministic) --------
+    # A SECOND rule on the silent-ignore fixture: it ACKs turn_on but its state
+    # never reaches "on", so verify exhausts every run (no device race). While
+    # the engine is between the enforce and its verify deadline the status sensor
+    # reads STATUS_VERIFYING; after VERIFY_MAX_ATTEMPTS correctives the outcome
+    # latches unreachable_after_retries. Both are HARD now.
+    si_name = "ea_smoke_verify_silent"
+    si_slug = si_name
+    si_entry = create_verify_rule_on(
+        token, si_name, [SILENT_TARGET], ["off"], "on", verify=True
+    )
+    sf.check("silent-ignore verify rule created", bool(si_entry))
+    ok = ok and bool(si_entry)
+    si_status = status_sensor_for(token, si_slug)
+    # Leave startup grace so target events are observed (engine ignores them
+    # during the ~60s grace → no enforce → no verify → false FAIL).
+    armed = sf.wait_for_armed(token, "fixed_state", [SILENT_TARGET])
+    sf.check("silent-ignore rule left startup grace (armed)", armed)
+    ok = ok and armed
+
     latched = False
     saw_verifying = False
-    force_state(token, TARGET, "off")  # trips the trigger (target now off)
+    # Trip the trigger once (switch rests at "off" already, but assert the edge).
+    force_state(token, SILENT_TARGET, "off")
     deadline = time.time() + 20
     while time.time() < deadline:
-        force_state(token, TARGET, "off")  # device "ignores" the turn_on
-        st = sf.get_state(token, status)
+        st = sf.get_state(token, si_status)
         if st.get("state") == "verifying":
             saw_verifying = True
         outcomes = (st.get("attributes") or {}).get("target_outcomes") or {}
-        tgt = outcomes.get(TARGET, {})
+        tgt = outcomes.get(SILENT_TARGET, {})
         if tgt.get("reason") == "unreachable_after_retries":
             latched = True
             break
         time.sleep(1)
-    if latched:
-        sf.check("verify flags unreachable_after_retries", True)
-    else:
-        print(
-            "SKIP: unreachable flag not observed over REST "
-            "(timing-dependent; exhaustion path locked by unit tests)"
-        )
-    if saw_verifying:
-        sf.check("status reads 'verifying' during the verify window", True)
-    else:
-        print(
-            "SKIP: 'verifying' status not caught over REST "
-            "(5 s window race; STATUS_VERIFYING locked by unit tests)"
-        )
+    sf.check("verify flags unreachable_after_retries (silent-ignore)", latched)
+    sf.check("status reads 'verifying' during the verify window", saw_verifying)
+    ok = ok and latched and saw_verifying
 
-    # --- 3. recovery clears a stale failed outcome (best-effort) --------
-    # Bug 1: a target flagged failed/unreachable that later recovers compliant
-    # on its own must NOT keep the stale failed outcome. Stop shoving it off,
-    # drive it to the desired "on", and the target_outcomes entry should drop
-    # the failed/unreachable flag. Only meaningful if the flag above appeared.
+    # --- 3. recovery clears a stale failed outcome (deterministic) ------
+    # A target flagged failed/unreachable that later recovers must NOT keep the
+    # stale failed outcome. Paint the silent switch to the desired "on" (a raw
+    # /api/states edge the engine's reactive confirm catches) → the failed
+    # outcome drops. Reset the paint in cleanup.
+    recovered = False
     if latched:
-        sf.actuate_target(token, "on")  # target now genuinely complies
-        recovered = False
+        force_state(token, SILENT_TARGET, "on")  # genuine state->desired edge
         deadline = time.time() + 20
         while time.time() < deadline:
-            st = sf.get_state(token, status)
+            st = sf.get_state(token, si_status)
             outcomes = (st.get("attributes") or {}).get("target_outcomes") or {}
-            tgt = outcomes.get(TARGET, {})
+            tgt = outcomes.get(SILENT_TARGET, {})
             if tgt.get("outcome") != "failed" and (
                 tgt.get("reason") != "unreachable_after_retries"
             ):
                 recovered = True
                 break
             time.sleep(1)
-        if recovered:
-            sf.check("recovered target clears the stale failed outcome", True)
-        else:
-            print(
-                "SKIP: recovery-clears-failed not observed over REST "
-                "(timing-dependent; locked by unit tests)"
-            )
+        sf.check("recovered target clears the stale failed outcome", recovered)
+        ok = ok and recovered
+    # Reset the fixture paint so a later same-session smoke sees a clean "off".
+    force_state(token, SILENT_TARGET, "off")
 
     sf.cleanup(token)
     print("RESULT:", "PASS" if ok else "FAIL")
