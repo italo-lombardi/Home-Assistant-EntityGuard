@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.2] — 2026-11-14
+
+### Fixed
+
+- **Timers no longer fire during a full Home Assistant shutdown.** A rule's pending delayed-enforce, verify re-read, cooldown-repaint and recently-enforced reset timers were cancelled when the config entry unloaded, but a full-HA (core) shutdown does not unload the entry — so a timer could still fire mid-shutdown and attempt a service call or state write while the system was tearing down. Each timer's fire path now also bails when Home Assistant is stopping, closing that window. No change to normal operation.
+
+### Internal
+
+- **Live smoke battery now runs with zero skipped checks.** Added a small set of deterministic test-fixture entities (a silent-ignore target, a permanently-unavailable member, a controlled-confirm target, and a disposable thermostat) so the smoke scripts can force every verify/unreachable/cancelled/group/climate path on demand instead of racing a real device and skipping when the race was lost. Test infrastructure only; no shipped-code change.
+
 ## [0.5.1] — 2026-11-04
 
 ### Fixed
