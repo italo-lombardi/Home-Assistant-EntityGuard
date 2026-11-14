@@ -1870,6 +1870,22 @@ def test_handle_startup_grace_done_sweeps_targets(hass: HomeAssistant):
     assert len(tasks_created) == 1  # one per target entity
 
 
+def test_handle_startup_grace_done_noop_when_unloaded(hass: HomeAssistant):
+    """A startup-grace timer that fires after unload / during core shutdown must
+    early-return before sweeping (the is_stopping/_is_unloaded guard)."""
+    engine = _make_engine(hass)
+    engine._startup_complete = False
+    engine._is_unloaded = True  # same guard branch as hass.is_stopping
+    hass.states.async_set("light.bedroom", "on")
+    tasks_created = []
+    with patch.object(
+        hass, "async_create_task", side_effect=capturing_create_task(tasks_created)
+    ):
+        engine._handle_startup_grace_done(MagicMock())
+    assert engine._startup_complete is False  # guard returned before the sweep
+    assert tasks_created == []
+
+
 def test_reenable_sweeps_targets(hass: HomeAssistant):
     engine = _make_engine(hass)
     engine._startup_complete = True
