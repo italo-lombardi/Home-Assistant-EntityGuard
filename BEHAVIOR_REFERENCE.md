@@ -209,3 +209,59 @@ that off the event bus, `unreachable` and its sibling
 `skipped(unreachable_after_retries)` fire **once per fresh exhaustion streak** —
 one pulse when the target first goes silent, then quiet however long it stays
 dead. A real recovery resets the streak, so a later death fires them again.
+
+---
+
+## 9. Self-heal streak lifecycle (the dead-device budget)
+
+The kill-switch streak (`CONSECUTIVE_EXHAUSTION_LIMIT` = 5 consecutive exhausted
+self-heal cycles, §2 `unreachable_loop`) grants each target a budget of retries
+before the rule auto-suppresses. What resets that streak to zero — granting a
+fresh 5-cycle budget — is a fixed contract:
+
+- **Any real target state event resets it.** A target emitting a real state
+  (anything that is not `unavailable`/`unknown`) is back on the bus and
+  reachable, so it earns a fresh budget — even if the new state is still not the
+  desired one. "Recovery" means *reachable again*, not *reached desired*: a
+  device that was offline and returns as `off` while the rule wants `on` gets a
+  fresh budget and is re-enforced. The streak is deliberately NOT gated on
+  reaching desired.
+
+- **Re-enabling the rule resets it.** Disabling a rule then re-enabling it starts
+  a fresh budget — a re-enable is treated like a recovery, so a rule you just
+  turned back on never auto-suppresses on its first post-re-enable cycle because
+  of a streak left over from before. The same holds across a hub master-switch
+  off→on cycle.
+
+What does NOT reset it:
+
+- **Clear History does not reset it.** The Clear History action resets the
+  visible/persisted counters (enforcements, skips, cooldowns, error counters, the
+  `recently_enforced_*` pulses) but leaves a live in-memory self-heal streak in
+  place — a history wipe reports stats, it does not abandon an in-flight healing
+  cycle.
+
+- **A suppression window expiring does not reset it.** After the kill-switch
+  trips and the suppression window ends, a target that is still dead does not get
+  a fresh budget: the first post-expiry exhaustion re-trips `unreachable_loop`
+  immediately, and — per §8 — the `unreachable` event stays quiet (no recovery
+  occurred). A still-dead device is re-suppressed with minimal extra traffic;
+  only a real recovery (a real state event, above) earns a new budget and a new
+  `unreachable` pulse.
+
+A reset only ever grants *more* retries, never fewer — it cannot cause a
+premature `unreachable_loop` suppression. A genuinely, silently dead target (no
+state events at all) accrues the streak uninterrupted and trips the kill-switch
+at 5 as designed.
+
+> **Follow-mode target "on" across multi-state domains.** The reached-check for a
+> `dynamic_state` (follow) target reads a running MODE as on, not just the literal
+> word `on`: a `climate` target counts as on in `heat`/`cool`/`auto`/`heat_cool`/
+> `fan_only`/`dry`, a `water_heater` in `eco`/`electric`/`gas`/`heat_pump`/
+> `high_demand`/`performance`, a `vacuum` in `cleaning`, a `cover` in `open`, a `lawn_mower` in
+> `mowing`. Transient/error states (e.g. `returning`, `opening`/`closing`,
+> `error`) are not "on". Binary and pinned domains — including `lock` (`unlocked`
+> = on, `locked` = off) — keep the flat on/off vocabulary. This is what stops a
+> correctly-running climate/water_heater follow target from being read as
+> never-reached and looped into a spurious `unreachable_loop` (or, with verify off,
+> `rate_limit`) suppression.

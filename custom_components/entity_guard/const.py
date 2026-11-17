@@ -354,6 +354,51 @@ FOLLOW_ON_STATES = frozenset(
 # States explicitly forbidden as trigger or target — entity is offline / state is undefined.
 FORBIDDEN_STATES = frozenset({"unavailable", "unknown", "none", ""})
 
+# Per-domain "running / on" states for the TARGET reached-check in dynamic_state
+# (follow) mode. FOLLOW_ON_STATES is a flat set that only knows literal on-ish
+# words (on/open/playing/…); it cannot express a multi-state domain whose RUNNING
+# state is a mode string. A climate target driven on settles to `heat` (never
+# literal `on`), a water_heater to `gas`/`eco`, etc. — none are in FOLLOW_ON_STATES,
+# so the flat check would read a correctly-running device as "not reached" forever,
+# looping the verify self-heal into a spurious unreachable_loop suppression (or, with
+# verify off, a rate_limit loop). This table lists, per domain, the states that mean
+# "on / at its active target" so `target_state_is_on` can judge the target correctly.
+#
+# Only domains whose running state is NOT a literal on-ish word need an entry.
+# Binary / pinned domains (light, switch, fan, media_player, humidifier, siren,
+# input_boolean, …) and LOCK stay on FOLLOW_ON_STATES (lock: `unlocked` = on,
+# `locked` = off — a flat "not-off = on" would wrongly invert it, so lock is
+# deliberately absent here). Transient/error states (vacuum `returning`/`error`,
+# cover `opening`/`closing`/`stopped`, lawn_mower `error`) are deliberately NOT
+# listed: a device mid-transit or errored is not "at its active target", so it
+# reads not-on and the verify cycle holds rather than false-confirming.
+DOMAIN_ON_STATES: dict[str, frozenset[str]] = {
+    "climate": frozenset({"heat", "cool", "auto", "heat_cool", "fan_only", "dry"}),
+    "water_heater": frozenset(
+        {"eco", "electric", "gas", "heat_pump", "high_demand", "performance"}
+    ),
+    "vacuum": frozenset({"cleaning"}),
+    "cover": frozenset({"open"}),
+    "lawn_mower": frozenset({"mowing"}),
+}
+
+
+def target_state_is_on(domain: str, state: str) -> bool:
+    """Return True if `state` means the TARGET is on / at its active target.
+
+    Target-side reached-check for dynamic_state (follow) mode. A domain with a
+    DOMAIN_ON_STATES entry (multi-state: climate, water_heater, vacuum, cover,
+    lawn_mower) is judged against that per-domain set; every other domain — binary
+    or pinned, including lock — falls back to the flat FOLLOW_ON_STATES. Callers
+    handle offline (STATE_UNAVAILABLE/STATE_UNKNOWN) separately BEFORE calling here;
+    this only maps a real state to on/off.
+    """
+    on_states = DOMAIN_ON_STATES.get(domain)
+    if on_states is not None:
+        return state in on_states
+    return state in FOLLOW_ON_STATES
+
+
 # Attribute clamp service map
 ATTRIBUTE_SERVICE_MAP: dict[str, tuple[str, str]] = {
     ATTR_BRIGHTNESS: ("light.turn_on", "brightness"),

@@ -78,6 +78,7 @@ from .const import (
     VERIFY_MAX_ATTEMPTS,
     signal_master,
     signal_rule_update,
+    target_state_is_on,
 )
 from .issue_helpers import (
     async_raise_unsupported_domain,
@@ -862,7 +863,14 @@ class RuleEngine:
             # Target offline/unknown — can't compare; leave it alone.
             return False, None
 
-        cur_on = new_state.state in FOLLOW_ON_STATES
+        # Per-domain on-check: a multi-state target (climate heat, water_heater gas,
+        # vacuum cleaning, …) reports a running MODE, never literal "on", so a flat
+        # FOLLOW_ON_STATES membership test would read a correctly-running device as
+        # not-reached forever and loop the self-heal into a spurious suppression.
+        # target_state_is_on judges such domains against DOMAIN_ON_STATES and every
+        # binary/pinned domain (incl. lock) against FOLLOW_ON_STATES, unchanged.
+        domain = entity_id.split(".", 1)[0]
+        cur_on = target_state_is_on(domain, new_state.state)
         return (cur_on != desired_on), None
 
     def _dynamic_source_value(self) -> Any | None:
@@ -2560,11 +2568,15 @@ class RuleEngine:
                 # mid-verify still reports forced=true on its cancelled signal.
                 was_forced = eid in self._forced_verifications
                 self._cancel_verify(eid)
-                # Drop the attempt counter so a quick re-enable + re-enforce starts
-                # a fresh verify cycle instead of reading a stale high count and
-                # latching exhaustion early (false EVENT_UNREACHABLE + a bogus
-                # _consecutive_exhaustions tick). Twin of the deadline/event drops.
+                # Drop ALL self-heal markers so a quick re-enable + re-enforce starts
+                # a fresh dead-device budget instead of reading a stale high count and
+                # latching exhaustion early (false EVENT_UNREACHABLE + a premature
+                # unreachable_loop trip). True twin of the :377 event-drop, which
+                # clears all three — a re-enable earns the same fresh budget a real
+                # device recovery would (BEHAVIOR_REFERENCE.md §9).
                 self._verify_attempts.pop(eid, None)
+                self._unreachable.discard(eid)
+                self._consecutive_exhaustions.pop(eid, None)
                 # Abandoned mid-window → the "disabled" cancelled signal. Skip on
                 # unload (entry tearing down, matching the no-fire-on-unload rule).
                 if had_pending and not self._is_unloaded:
@@ -2584,6 +2596,20 @@ class RuleEngine:
     @callback
     def _handle_master_changed(self) -> None:
         """Re-derive status when the master switch toggles."""
+        if not self._master_enabled_getter():
+            # Master just went OFF — an inactive transition, the master-path twin of
+            # the set_enabled disable drop (BEHAVIOR_REFERENCE.md §9). Clear the
+            # self-heal markers so a later master ON→sweep starts a fresh dead-device
+            # budget rather than inheriting a stale streak and tripping the
+            # unreachable_loop kill-switch early on the first post-master-on cycle.
+            for eid in self._config.target_entities:
+                # Cancel an armed verify timer too, mirroring the set_enabled disable
+                # path — otherwise an orphaned deadline could fire after master-ON and
+                # emit a spurious CANCELLED / run to a no-op. Idempotent when none armed.
+                self._cancel_verify(eid)
+                self._verify_attempts.pop(eid, None)
+                self._unreachable.discard(eid)
+                self._consecutive_exhaustions.pop(eid, None)
         self._apply_idle_status()
         if self._master_enabled_getter() and self._current_status == STATUS_COOLDOWN:
             # Master off cancelled the expiry timers but kept _state.cooldowns;
