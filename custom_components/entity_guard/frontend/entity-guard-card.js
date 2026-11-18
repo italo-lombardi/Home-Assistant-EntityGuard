@@ -8,7 +8,7 @@
  *   title: <optional override>
  */
 
-const CARD_VERSION = "0.5.0";
+const CARD_VERSION = "0.5.3";
 
 console.info(
   `%c ENTITY-GUARD-CARD %c v${CARD_VERSION} %c — github.com/italo-lombardi `,
@@ -1117,7 +1117,8 @@ class EntityGuardCard extends LitElement {
           let displayTarget;
           if (isDynamic) {
             compliant =
-              desiredOn === null || this._followLooksOn(state) === desiredOn;
+              desiredOn === null ||
+              this._targetLooksOn(id.split(".")[0], state) === desiredOn;
             displayTarget = this._formatHypotheticalState(
               id,
               desiredOn ? "on" : "off",
@@ -1180,7 +1181,8 @@ class EntityGuardCard extends LitElement {
 
   // Display-only on/off heuristic for follow targets. Mirrors the backend
   // FOLLOW_ON_STATES set (const.py) — keep the two in sync; the backend stays
-  // authoritative for enforcement, this only drives the ✓/⚠ hint.
+  // authoritative for enforcement, this only drives the ✓/⚠ hint. Used for the
+  // SOURCE-side on-ness and as the fallback for binary/pinned target domains.
   _followLooksOn(state) {
     return [
       "on",
@@ -1194,6 +1196,33 @@ class EntityGuardCard extends LitElement {
       "true",
       "1",
     ].includes(state);
+  }
+
+  // Per-domain "running/on" states for a follow TARGET — mirrors const.py
+  // DOMAIN_ON_STATES. Keep in lockstep with the backend: any change there must
+  // change this too (there is a parity test). A multi-state target reports a
+  // running MODE (climate "heat", water_heater "gas", …), not literal "on", so
+  // the flat _followLooksOn would paint it a false "⚠ not compliant" even when
+  // the engine verified it reached. This only drives the card's ✓/⚠ hint.
+  _domainOnStates() {
+    return {
+      climate: ["heat", "cool", "auto", "heat_cool", "fan_only", "dry"],
+      water_heater: ["eco", "electric", "gas", "heat_pump", "high_demand", "performance"],
+      vacuum: ["cleaning"],
+      cover: ["open"],
+      lawn_mower: ["mowing"],
+    };
+  }
+
+  // Display-only reached-check for a follow TARGET, domain-aware. Mirrors
+  // const.target_state_is_on: a domain with a DOMAIN_ON_STATES entry is judged
+  // against that per-domain set; every other domain (binary/pinned, incl. lock)
+  // falls back to the flat _followLooksOn. Offline (unavailable/unknown) is
+  // handled by the caller's null-desired path, not here.
+  _targetLooksOn(domain, state) {
+    const onStates = this._domainOnStates()[domain];
+    if (onStates) return onStates.includes(state);
+    return this._followLooksOn(state);
   }
 
   // Beautified attribute label — mirrors const.ATTRIBUTE_DISPLAY_NAMES /
