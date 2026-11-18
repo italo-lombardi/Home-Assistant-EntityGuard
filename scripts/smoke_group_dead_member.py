@@ -114,6 +114,51 @@ def make_switch_group(token: str, name: str, members: list[str]) -> tuple[str, s
     return entry_id, gid
 
 
+def make_light_group(token: str, name: str, members: list[str]) -> tuple[str, str]:
+    """Create a disposable light-group helper over `members`.
+
+    Twin of make_switch_group for LIGHT members: uses the group config-entry
+    flow's light sub-flow and resolves the `light.` group entity by member-list
+    match. Returns (config_entry_id, group_entity_id); caller tears down the entry.
+    """
+    flow = sf.api(
+        token, "POST", "/api/config/config_entries/flow", {"handler": "group"}
+    )
+    fid = flow["flow_id"]
+    sf.api(
+        token,
+        "POST",
+        f"/api/config/config_entries/flow/{fid}",
+        {"next_step_id": "light"},
+    )
+    result = sf.api(
+        token,
+        "POST",
+        f"/api/config/config_entries/flow/{fid}",
+        {"name": name, "entities": members, "hide_members": False, "all": False},
+    )
+    if result.get("type") != "create_entry":
+        raise RuntimeError(f"light group helper flow did not finish: {result}")
+    entry_id = result["result"]["entry_id"]
+    gid = None
+    deadline = time.time() + 15
+    while time.time() < deadline and gid is None:
+        for st in sf.api(token, "GET", "/api/states"):
+            eid = st["entity_id"]
+            if eid.startswith("light.") and isinstance(
+                st.get("attributes", {}).get("entity_id"), list
+            ):
+                if sorted(st["attributes"]["entity_id"]) == sorted(members):
+                    gid = eid
+                    break
+        if gid is None:
+            time.sleep(POLL)
+    if gid is None:
+        sf.api(token, "DELETE", f"/api/config/config_entries/entry/{entry_id}")
+        raise RuntimeError("group light entity never appeared after helper create")
+    return entry_id, gid
+
+
 def create_verify_rule_on(
     token: str, name: str, targets: list[str], trigger_states, target_state
 ) -> str:
