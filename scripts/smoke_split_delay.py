@@ -110,8 +110,16 @@ def pending_delay_seconds(token, status_e):
     return (due_dt - now).total_seconds()
 
 
-def wait_for_pending_delay(token, status_e, timeout=8):
-    """Poll until the rule is pending with a due entry; return the countdown s."""
+def wait_for_pending_delay(token, status_e, timeout=15):
+    """Poll until the rule is pending with a due entry; return the countdown s.
+
+    Timeout (15s) is wider than the old 8s — back-to-back in the full smoke
+    battery the loop is busy, so the source state_changed -> scheduled eval ->
+    pending transition can lag several seconds and 8s raced it (ON leg saw
+    countdown=None under load). It MUST stay below DELAY_ON (20s): the capture has
+    to land while the ON countdown is still mid-flight, or pending_delay_seconds
+    reads a near-zero/elapsed value and the direction value-check breaks. 15s sits
+    between the two — enough slack for a loaded loop, still safely under 20s."""
     deadline = time.time() + timeout
     while time.time() < deadline:
         d = pending_delay_seconds(token, status_e)

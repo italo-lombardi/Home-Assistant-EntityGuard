@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.3] — 2026-11-17
+
+### Fixed
+
+- **Follow rules targeting a climate or water_heater no longer auto-suppress a correctly-running device.** A dynamic_state (Follow) rule whose target is a multi-state domain — `climate`, `water_heater` — reads the target's reached state against a running *mode* (`heat`, `cool`, `gas`, `eco`, …), never the literal word `on`. The reached-check used a flat on-word set that contained none of those modes, so a device the rule had correctly turned on read as *never reached*: with verify enabled the self-heal loop exhausted its five cycles and tripped the dead-device kill-switch (`unreachable_loop`), auto-suppressing a healthy device with a misleading "target offline or being overridden" notice; with verify off it re-enforced every source tick and tripped the rate-limit loop instead. The reached-check now recognises each multi-state domain's running modes (also `vacuum` `cleaning`, `cover` `open`, `lawn_mower` `mowing`); binary and pinned domains — including `lock` (`unlocked`=on, `locked`=off) — are unchanged, and transient/error states (`returning`, `opening`/`closing`, `error`) are deliberately not treated as "on". Follow's source-side reading is unchanged.
+- **Re-enabling a rule now gives its target a fresh dead-device budget.** Disabling a rule while it was mid-self-heal on an unreachable target left the consecutive-exhaustion streak in place, so re-enabling the rule could trip the `unreachable_loop` kill-switch on the very first cycle instead of after the intended five. Disable now clears the full self-heal state (attempt counter, unreachable latch, and exhaustion streak) for every target — a re-enable starts clean, exactly as a real device recovery would.
+- **Cycling the hub master switch off→on now also resets the dead-device budget.** Same stranded-streak problem as the per-rule disable, on the master-switch path: turning the master off left each rule's exhaustion streak in place, so the master coming back on could trip the kill-switch early. The master-off transition now clears the self-heal state for every target.
+
+### Documentation
+
+- **`BEHAVIOR_REFERENCE.md` §9 "Self-heal streak lifecycle"** documents the dead-device budget contract so it reads as intended behaviour rather than a latent surprise: the streak resets on any real target state event (the target is reachable again, so it earns a fresh budget — "recovery" means reachable, not reached-desired), re-enabling a rule or cycling the master switch resets it, while Clear History (scoped to persisted counters) and a suppression window merely expiring on a still-dead target do **not**. Also documents the multi-state follow-target on-state vocabulary above.
+
 ## [0.5.2] — 2026-11-14
 
 ### Fixed

@@ -104,3 +104,51 @@ def test_attribute_display_names_match_strings_selector() -> None:
         "const.ATTRIBUTE_DISPLAY_NAMES must stay in sync with strings.json "
         "selector.attribute.options"
     )
+
+
+def test_target_state_is_on_multistate_domains() -> None:
+    """Multi-state targets read a running MODE as on (Fix for the follow-mode
+    reached-check: a climate at 'heat' must count as on, not just literal 'on')."""
+    assert const.target_state_is_on("climate", "heat")
+    assert const.target_state_is_on("climate", "cool")
+    assert const.target_state_is_on("water_heater", "gas")
+    assert const.target_state_is_on("water_heater", "eco")
+    assert const.target_state_is_on("water_heater", "performance")
+    assert const.target_state_is_on("vacuum", "cleaning")
+    assert const.target_state_is_on("cover", "open")
+    assert const.target_state_is_on("lawn_mower", "mowing")
+
+
+def test_target_state_is_on_off_states() -> None:
+    """The off / closed / docked state of a multi-state domain reads off."""
+    assert not const.target_state_is_on("climate", "off")
+    assert not const.target_state_is_on("water_heater", "off")
+    assert not const.target_state_is_on("cover", "closed")
+    assert not const.target_state_is_on("vacuum", "docked")
+
+
+def test_target_state_is_on_transient_and_error_not_on() -> None:
+    """Transient / error states are NOT on — a device mid-transit or errored is
+    not at its active target, so the verify cycle holds instead of false-confirming."""
+    assert not const.target_state_is_on("vacuum", "returning")
+    assert not const.target_state_is_on("vacuum", "error")
+    assert not const.target_state_is_on("cover", "opening")
+    assert not const.target_state_is_on("cover", "closing")
+    assert not const.target_state_is_on("cover", "stopped")
+    assert not const.target_state_is_on("lawn_mower", "error")
+
+
+def test_target_state_is_on_lock_not_inverted() -> None:
+    """Regression guard: lock stays on the flat vocabulary (unlocked = on,
+    locked = off). A naive 'not-off = on' would wrongly read locked as on."""
+    assert const.target_state_is_on("lock", "unlocked")
+    assert not const.target_state_is_on("lock", "locked")
+
+
+def test_target_state_is_on_binary_domains_unchanged() -> None:
+    """Binary / pinned domains fall back to FOLLOW_ON_STATES, unchanged."""
+    assert const.target_state_is_on("switch", "on")
+    assert not const.target_state_is_on("switch", "off")
+    assert const.target_state_is_on("light", "on")
+    assert not const.target_state_is_on("media_player", "idle")
+    assert not const.target_state_is_on("media_player", "paused")

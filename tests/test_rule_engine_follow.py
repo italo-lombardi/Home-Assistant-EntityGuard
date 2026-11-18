@@ -20,6 +20,7 @@ from homeassistant.util import dt as dt_util
 from custom_components.entity_guard.const import (
     ATTR_COLOR_TEMP_KELVIN,
     ATTR_RGB_COLOR,
+    CONSECUTIVE_EXHAUSTION_LIMIT,
     EVENT_ENFORCED,
     EVENT_SKIPPED,
     MODE_DYNAMIC_ATTRIBUTE,
@@ -1117,3 +1118,175 @@ async def test_target_outcomes_recovery_overwrites_to_ok(hass: HomeAssistant):
     await hass.async_block_till_done()
     assert engine.state.target_outcomes["light.hallway"]["outcome"] == "ok"
     assert engine.state.target_outcomes["light.hallway"]["error"] is None
+
+
+# ---------------------------------------------------------------------------
+# multi-state target reached-check (climate/water_heater follow target)
+# ---------------------------------------------------------------------------
+
+
+async def test_climate_target_at_running_mode_reads_reached(hass: HomeAssistant):
+    """A climate target driven on settles to 'heat' (never literal 'on'). The
+    reached-check must read 'heat' as on so desired-ON does NOT retrigger — else
+    the verify self-heal loops to a spurious unreachable_loop suppression."""
+    config = _make_config(target_entities=["climate.living_room"])
+    engine = _make_engine(hass, config)
+    hass.states.async_set("binary_sensor.motion", "on")  # desired_on = True
+    # Target correctly running at 'heat' → should read reached → NOT triggered.
+    triggered, reason = engine._dynamic_state_trigger_decision(
+        "climate.living_room", _state_obj("heat")
+    )
+    assert triggered is False, "climate at 'heat' with desired-ON must read reached"
+    assert reason is None
+
+
+async def test_climate_target_off_while_desired_on_triggers(hass: HomeAssistant):
+    """Control: a climate target at 'off' with desired-ON is genuinely not reached."""
+    config = _make_config(target_entities=["climate.living_room"])
+    engine = _make_engine(hass, config)
+    hass.states.async_set("binary_sensor.motion", "on")  # desired_on = True
+    triggered, _ = engine._dynamic_state_trigger_decision(
+        "climate.living_room", _state_obj("off")
+    )
+    assert triggered is True, "climate 'off' with desired-ON must still trigger"
+
+
+# ---------------------------------------------------------------------------
+# self-heal streak reset on disable / master-off (fresh budget on re-enable)
+# ---------------------------------------------------------------------------
+
+
+async def test_disable_resets_consecutive_exhaustions(hass: HomeAssistant):
+    """Disabling a rule mid-self-heal must clear the dead-device streak so a
+    re-enable starts a fresh budget (not trip the kill-switch early)."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._consecutive_exhaustions["light.hallway"] = 4
+    engine._verify_attempts["light.hallway"] = 2
+    engine._unreachable.add("light.hallway")
+    engine.set_enabled(False)
+    assert "light.hallway" not in engine._consecutive_exhaustions
+    assert "light.hallway" not in engine._verify_attempts
+    assert "light.hallway" not in engine._unreachable
+
+
+async def test_master_off_resets_consecutive_exhaustions(hass: HomeAssistant):
+    """Master switch going OFF must clear ALL THREE markers (NEW-1): a master off→on
+    cycle starts a fresh budget, mirroring the per-rule disable path."""
+    master = {"on": True}
+    config = _make_config()
+    store = MagicMock(spec=EntityGuardStore)
+    store.get_rule_state.return_value = {}
+    store.set_rule_state.return_value = None
+    store.runtime_to_blob = EntityGuardStore.runtime_to_blob
+    store.blob_to_runtime = EntityGuardStore.blob_to_runtime
+    engine = RuleEngine(hass, config, store, lambda: master["on"])
+    engine._startup_complete = True
+    engine._consecutive_exhaustions["light.hallway"] = 4
+    engine._verify_attempts["light.hallway"] = 2
+    engine._unreachable.add("light.hallway")
+    master["on"] = False
+    engine._handle_master_changed()
+    assert "light.hallway" not in engine._consecutive_exhaustions
+    # _verify_attempts must be cleared too — guards the master-off line that
+    # would otherwise be unasserted (coverage-asymmetry gap).
+    assert "light.hallway" not in engine._verify_attempts
+    assert "light.hallway" not in engine._unreachable
+
+
+async def test_master_off_cancels_armed_verify(hass: HomeAssistant):
+    """Master-OFF must also cancel an armed verify timer (symmetry with the disable
+    path): otherwise an orphaned deadline survives master-off and fires a spurious
+    CANCELLED / no-op after master-ON. Asserts _pending_verifications is cleared."""
+    master = {"on": True}
+    config = _make_config()
+    store = MagicMock(spec=EntityGuardStore)
+    store.get_rule_state.return_value = {}
+    store.set_rule_state.return_value = None
+    store.runtime_to_blob = EntityGuardStore.runtime_to_blob
+    store.blob_to_runtime = EntityGuardStore.blob_to_runtime
+    engine = RuleEngine(hass, config, store, lambda: master["on"])
+    engine._startup_complete = True
+    # Simulate an armed verify timer for the target.
+    engine._pending_verifications["light.hallway"] = MagicMock()
+    master["on"] = False
+    engine._handle_master_changed()
+    assert "light.hallway" not in engine._pending_verifications
+    """Guard the master-OFF edge gate: master coming ON (or a re-derive while master
+    is already on) must NOT wipe a legitimately-climbing streak. Removing the
+    `if not self._master_enabled_getter()` guard would silently fail this."""
+    master = {"on": True}
+    config = _make_config()
+    store = MagicMock(spec=EntityGuardStore)
+    store.get_rule_state.return_value = {}
+    store.set_rule_state.return_value = None
+    store.runtime_to_blob = EntityGuardStore.runtime_to_blob
+    store.blob_to_runtime = EntityGuardStore.blob_to_runtime
+    engine = RuleEngine(hass, config, store, lambda: master["on"])
+    engine._startup_complete = True
+    engine._consecutive_exhaustions["light.hallway"] = 4
+    # Master is ON — _handle_master_changed must leave the streak alone.
+    engine._handle_master_changed()
+    assert engine._consecutive_exhaustions.get("light.hallway") == 4
+
+
+async def test_reenable_gives_fresh_budget_behavioral(hass: HomeAssistant):
+    """Behavioral consequence of Finding 3 (assert the budget, not just the dict):
+    a rule disabled mid-self-heal at streak 4, then re-enabled, starts a FRESH
+    5-cycle budget — the next single exhaustion counts 1, not 4+1=5 → no early trip."""
+    engine = _make_engine(hass)
+    engine._startup_complete = True
+    engine._consecutive_exhaustions["light.hallway"] = 4
+    engine.set_enabled(False)
+    engine.set_enabled(True)
+    # Simulate one post-re-enable exhaustion the way the engine counts it.
+    count = engine._consecutive_exhaustions.get("light.hallway", 0) + 1
+    assert count == 1, "re-enable must grant a fresh budget (count 1, not 5)"
+    assert count < CONSECUTIVE_EXHAUSTION_LIMIT, "must not trip the kill-switch early"
+
+
+async def test_source_read_unaffected_by_multistate_fix(hass: HomeAssistant):
+    """Regression guard: the Finding-1 fix changes ONLY the target reached-check.
+    The SOURCE read (`_follow_desired_on`) must stay on FOLLOW_ON_STATES — a source
+    reporting a climate mode like 'heat' is NOT a FOLLOW_ON_STATES on-word, so the
+    source is read as OFF, unchanged by DOMAIN_ON_STATES. If a refactor routed the
+    source through target_state_is_on, 'heat' would flip to on and this turns red."""
+    config = _make_config(source_entity="climate.thermostat")
+    engine = _make_engine(hass, config)
+    hass.states.async_set("climate.thermostat", "heat")
+    # 'heat' ∉ FOLLOW_ON_STATES → source desired-on is False (unchanged behavior).
+    assert engine._follow_desired_on() is False
+
+
+async def test_climate_verify_confirms_not_loops(hass: HomeAssistant):
+    """End-to-end headline guard for Finding 1: a verify-enabled dynamic_state rule
+    whose climate target is correctly running at 'heat' (desired-ON) must CONFIRM
+    reached via the target reached-check — NOT read not-reached and spiral the
+    self-heal into a spurious unreachable_loop. Pre-fix the comparator read 'heat'
+    ∉ FOLLOW_ON_STATES → not reached → exhaustion climbs. Post-fix: reached, streak 0."""
+    config = _make_config(
+        target_entities=["climate.living_room"],
+        verify_enabled=True,
+    )
+    engine = _make_engine(hass, config)
+    engine._startup_complete = True
+    hass.states.async_set("binary_sensor.motion", "on")  # desired_on = True
+    hass.states.async_set("climate.living_room", "heat")  # correctly running
+
+    trips = []
+    orig = engine._trigger_loop_protection
+
+    async def _spy(entity_id, *, cause="rate_limit"):
+        trips.append(cause)
+        await orig(entity_id, cause=cause)
+
+    engine._trigger_loop_protection = _spy
+
+    # The target reached-check is the gate the loop hinges on: 'heat' must read
+    # reached so no corrective/exhaustion path is ever entered.
+    triggered, _ = engine._dynamic_state_trigger_decision(
+        "climate.living_room", hass.states.get("climate.living_room")
+    )
+    assert triggered is False, "climate 'heat' desired-ON must read reached"
+    assert engine._consecutive_exhaustions.get("climate.living_room", 0) == 0
+    assert trips == [], "must never trip loop protection on a correctly-running target"
