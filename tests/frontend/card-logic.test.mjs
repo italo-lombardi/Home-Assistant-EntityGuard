@@ -241,6 +241,37 @@ test("parity: _followLooksOn set == FOLLOW_ON_STATES in const.py", () => {
   assert.equal(Card.prototype._followLooksOn.call(bare, "off"), false);
 });
 
+test("parity: _domainOnStates == DOMAIN_ON_STATES in const.py", () => {
+  const pyBlock = constPy.match(/DOMAIN_ON_STATES[^=]*=\s*\{([\s\S]*?)\n\}/);
+  assert.ok(pyBlock, "DOMAIN_ON_STATES dict not found in const.py");
+  const pyMap = {};
+  for (const m of pyBlock[1].matchAll(
+    /"([a-z_]+)":\s*frozenset\(\s*\{([^}]*)\}/g,
+  )) {
+    pyMap[m[1]] = [...m[2].matchAll(/"([^"]+)"/g)].map((x) => x[1]).sort();
+  }
+  assert.ok(Object.keys(pyMap).length > 0, "parsed no DOMAIN_ON_STATES entries");
+
+  const jsMap = Card.prototype._domainOnStates.call(Card.prototype);
+  const jsNorm = {};
+  for (const k of Object.keys(jsMap)) jsNorm[k] = [...jsMap[k]].sort();
+
+  assert.deepEqual(
+    jsNorm,
+    pyMap,
+    "card _domainOnStates drifted from const.py DOMAIN_ON_STATES",
+  );
+
+  // Behavior: climate 'heat' reads on (the Finding-1 case); lock stays flat
+  // (locked=off via fallback — not inverted); a transient cover state is not-on.
+  assert.equal(Card.prototype._targetLooksOn.call(Card.prototype, "climate", "heat"), true);
+  assert.equal(Card.prototype._targetLooksOn.call(Card.prototype, "climate", "off"), false);
+  assert.equal(Card.prototype._targetLooksOn.call(Card.prototype, "lock", "unlocked"), true);
+  assert.equal(Card.prototype._targetLooksOn.call(Card.prototype, "lock", "locked"), false);
+  assert.equal(Card.prototype._targetLooksOn.call(Card.prototype, "cover", "closing"), false);
+  assert.equal(Card.prototype._targetLooksOn.call(Card.prototype, "switch", "on"), true);
+});
+
 test("parity: _attributeDisplayName matches ATTRIBUTE_DISPLAY_NAMES in const.py", () => {
   // const.py keys are ATTR_* constants, values are the display strings. We
   // assert every display string in the dict is produced by the JS map for its
